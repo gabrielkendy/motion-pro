@@ -32,15 +32,16 @@
                 <div style="font-size:14px;font-weight:700;letter-spacing:2px;color:var(--acc);margin-bottom:16px">WINDOWS</div>
                 <h3 style="font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:8px">Windows 10/11</h3>
                 <p style="color:var(--mut);font-size:14px;margin-bottom:24px">Premiere Pro CC 2019 ou superior</p>
-                <a href="#" class="btn btn--primary btn--full btn--lg" data-download="windows">Baixar para Windows <span class="arrow">↓</span></a>
-                <p style="font-size:12px;color:var(--mut);margin-top:12px">v1.0.0 · ~3MB</p>
+                <a href="https://github.com/gabrielkendy/motion-pro/releases/download/V1.0.1/MotionVault-Setup-1.0.1.exe" class="btn btn--primary btn--full btn--lg" download>Baixar para Windows <span class="arrow">↓</span></a>
+                <p style="font-size:12px;color:var(--mut);margin-top:12px">v1.0.1 · 37MB · Instalador profissional</p>
             </div>
-            <div style="border:1px solid var(--line);border-radius:12px;padding:32px;text-align:center">
+            <div style="border:1px solid var(--line);border-radius:12px;padding:32px;text-align:center;opacity:.55;position:relative">
+                <div style="position:absolute;top:14px;right:14px;background:var(--bg-soft);border:1px solid var(--line);padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--mut)">EM BREVE</div>
                 <div style="font-size:14px;font-weight:700;letter-spacing:2px;color:var(--acc);margin-bottom:16px">MACOS</div>
                 <h3 style="font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:8px">macOS 11+</h3>
                 <p style="color:var(--mut);font-size:14px;margin-bottom:24px">Intel ou Apple Silicon</p>
-                <a href="#" class="btn btn--dark btn--full btn--lg" data-download="macos">Baixar para macOS <span class="arrow">↓</span></a>
-                <p style="font-size:12px;color:var(--mut);margin-top:12px">v1.0.0 · ~3MB</p>
+                <a href="mailto:suporte@pacotesfx.com?subject=Quero%20MotionPro%20pra%20macOS" class="btn btn--dark btn--full btn--lg">Avisar quando lançar <span class="arrow">→</span></a>
+                <p style="font-size:12px;color:var(--mut);margin-top:12px">Lançamento Q3 2026</p>
             </div>
         </div>
 
@@ -71,12 +72,6 @@
 </footer>
 <script>
 document.getElementById('yr').textContent = new Date().getFullYear();
-document.querySelectorAll('[data-download]').forEach(btn => {
-    btn.addEventListener('click', e => {
-        e.preventDefault();
-        alert('Download será disponibilizado em breve. Estamos finalizando o instalador. Por enquanto, contacte suporte@pacotesfx.com pra receber o instalador beta.');
-    });
-});
 </script>
 </body>
 </html>
