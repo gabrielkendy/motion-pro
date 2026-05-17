@@ -878,17 +878,22 @@ function updateVerifyBar() {
     }
 }
 
-/* Periodic heartbeat: every 5 min refresh license; if revoked, force gate */
+/* Periodic heartbeat: every 5 min refresh license.
+ * FILOSOFIA: NUNCA deslogar usuário automaticamente. Se assinatura cair → mostra paywall.
+ * Logout só acontece em 2 casos: (1) token JWT inválido/expirado, (2) cliente clica "Sair".
+ * Device revogado também NÃO desloga (só bloqueia uso). */
 function startHeartbeat() {
     if (DEV_BYPASS) return;
     var fp = computeFingerprint();
     var tick = async function () {
         try {
             var r = await gateApi("/v1/license/heartbeat", { fingerprint: fp });
-            if (r.revoked) {
-                localStorage.removeItem("mv_session");
-                localStorage.removeItem("mv_license");
-                showGate("login");
+            if (r.revoked || r.subscription_inactive) {
+                // Sub revogada/cancelada/expirada → PAYWALL (não desloga)
+                localStorage.setItem("mv_plan", r.plan || "free");
+                localStorage.setItem("mv_status", r.status || "revoked");
+                if (r.expires_at) localStorage.setItem("mv_expires", r.expires_at);
+                updateTrialUI();   // updateTrialUI vai mostrar paywall pra status revoked/canceled/expired
                 return;
             }
             if (r.license) {
@@ -898,21 +903,39 @@ function startHeartbeat() {
                 localStorage.setItem("mv_expires", r.expires_at || "");
                 updateTrialUI();
             }
-        } catch (e) { /* offline grace — keep cached license */ }
+        } catch (e) {
+            // Erro de rede ou token expirado.
+            // Só desloga se backend retornar invalid_token EXPLICITAMENTE.
+            // Erros de rede mantém estado offline.
+            var msg = (typeof e === "string" ? e : (e && e.message)) || "";
+            if (msg === "invalid_token" || msg === "missing_token") {
+                // Token JWT realmente inválido — precisa relogar
+                localStorage.removeItem("mv_session");
+                localStorage.removeItem("mv_license");
+                localStorage.removeItem("mv_plan");
+                localStorage.removeItem("mv_status");
+                localStorage.removeItem("mv_expires");
+                showGate("login");
+            }
+            // Outros erros (offline, 500, timeout): mantém license cached, continua usando
+        }
     };
     tick();                              // primeira chamada já
     setInterval(tick, 5 * 60 * 1000);    // depois a cada 5 min
 }
 
-/* Check if we have a valid cached session; if yes, hide gate. */
+/* Restaura sessão do cache. Plugin NUNCA pede pra logar de novo se já tem token.
+ * Mesmo que license esteja expirada/inválida, mantém logado e mostra paywall via heartbeat. */
 function tryRestoreSession() {
     if (DEV_BYPASS) { hideGate(); return true; }
     var t = localStorage.getItem("mv_session");
-    var l = localStorage.getItem("mv_license");
-    if (t && l) {
+    // Só precisa do session_token pra considerar logado.
+    // License pode estar expirada — vai ser renovada no heartbeat ou bloqueada pelo paywall.
+    if (t) {
         hideGate();
         return true;
     }
+    // Sem token → primeira vez ou clicou Sair → mostra gate
     showGate("login");
     return false;
 }

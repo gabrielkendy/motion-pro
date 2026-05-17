@@ -70,18 +70,20 @@ var INDEX = [];
 
 function loadCatalog() {
     try {
-        // Catálogo local distribuído com o plugin (gerado pelo build do ZIP)
         var file = nodePath.join(EXT_PATH, "packs", "catalog.json");
         if (fs.existsSync(file)) {
-            CATALOG = JSON.parse(fs.readFileSync(file, "utf8"));
+            var raw = fs.readFileSync(file, "utf8");
+            if (raw.charCodeAt(0) === 0xFEFF) raw = raw.slice(1);    // strip BOM
+            CATALOG = JSON.parse(raw);
         } else {
-            // Fallback mínimo se catálogo não foi distribuído
             CATALOG = { packs: [], total_items: 0 };
         }
+        window.CATALOG_LEGENDAS = CATALOG;  // expõe pro editor.js
         return true;
     } catch (e) {
         console.error("loadCatalog fail:", e);
         CATALOG = { packs: [], total_items: 0 };
+        window.CATALOG_LEGENDAS = CATALOG;
         return false;
     }
 }
@@ -129,8 +131,10 @@ var STATE = {
     search: "",
     page: 0,
     pageSize: 60,
+    wordsFilter: null,    // null = todos, "1"/"2"/"3" = filtra por palavras
     items: []
 };
+window.LegendasState = STATE;
 
 // ============================================================ UI: tabs
 function renderTabs() {
@@ -238,18 +242,17 @@ function collectItems() {
         INDEX.forEach(function (e) { if (isFav(e.item)) out.push(e); });
         return out;
     }
-    var p = packById(STATE.pack); if (!p) return out;
-    function walkP(nodes, crumb) {
-        nodes.forEach(function (n) {
-            var path = crumb.concat(n.name);
-            if (n.items && (STATE.catPath.length === 0 || path.join("/").indexOf(STATE.catPath.join("/")) === 0)) {
-                n.items.forEach(function (it) { out.push({ pack: p, cat: path.join(" › "), item: it }); });
-            }
-            if (n.children) walkP(n.children, path);
+    // Filtro de palavras (1, 2 ou 3+)
+    if (STATE.wordsFilter) {
+        var wf = Number(STATE.wordsFilter);
+        INDEX.forEach(function (e) {
+            var n = e.item.name.trim().split(/\s+/).length;
+            if (wf === 3 ? n >= 3 : n === wf) out.push(e);
         });
+        return out;
     }
-    walkP(p.categories || [], []);
-    return out;
+    // Default: todos os items (Geral)
+    return INDEX.slice();
 }
 
 // ============================================================ MOCKUP SVG GEN
@@ -338,24 +341,36 @@ function escapeXml(s) {
     });
 }
 
+var SELECTED_ITEM_KEY = null;
+window.LegendasRenderGrid = function () { renderGrid(); };
 function renderGrid() {
-    var el = $("grid"); el.innerHTML = "";
+    var el = $("grid"); if (!el) return;
+    el.innerHTML = "";
     var items = collectItems();
     var page = items.slice(0, (STATE.page + 1) * STATE.pageSize);
-    $("count").textContent = items.length + " títulos";
 
-    page.forEach(function (e) {
+    page.forEach(function (e, i) {
+        var globalIdx = i + 1;
         var card = document.createElement("div");
         card.className = "card";
+        if (SELECTED_ITEM_KEY === favKey(e.item)) card.classList.add("selected");
         var fav = isFav(e.item) ? "on" : "";
         var preview = e.item.preview ? nodePath.join(EXT_PATH, "packs", e.item.preview) : null;
         var thumbHtml = preview
             ? '<img loading="lazy" src="' + esc("file:///" + preview.replace(/\\/g, "/")) + '">'
-            : mockupSvg(e.item.name, e.cat);
+            : (typeof mockupSvg === "function" ? mockupSvg(e.item.name, e.cat) : '<div class="card__placeholder">' + esc(e.item.name.substr(0,2).toUpperCase()) + '</div>');
+        var label = "Texto " + String(globalIdx).padStart(2, "0");
         card.innerHTML =
-            '<div class="card__thumb">' + thumbHtml + '</div>' +
-            '<div class="card__title" title="' + esc(e.item.name) + '">' + esc(e.item.name) + '</div>' +
-            '<button class="card__fav ' + fav + '" title="Favoritar">★</button>';
+            '<div class="card__thumb">' + thumbHtml +
+                '<button class="card__fav ' + fav + '" title="Favoritar">★</button>' +
+            '</div>' +
+            '<div class="card__title" title="' + esc(e.item.name) + '">' + label + '</div>';
+        // Click = seleciona (mostra no preview-slot). Duplo-clique = insere.
+        card.onclick = function () {
+            SELECTED_ITEM_KEY = favKey(e.item);
+            renderGrid();
+            updatePreviewSlot(e.item, e.cat);
+        };
         card.ondblclick = function () { insertItem(e.item); };
         card.querySelector(".card__fav").onclick = function (ev) {
             ev.stopPropagation(); toggleFav(e.item); renderGrid();
@@ -364,15 +379,42 @@ function renderGrid() {
     });
 
     if (items.length > page.length) {
-        var more = document.createElement("button");
-        more.className = "load-more";
-        more.textContent = "Carregar mais (" + (items.length - page.length) + ")";
-        more.onclick = function () { STATE.page++; renderGrid(); };
+        var more = document.createElement("div");
+        more.style.cssText = "grid-column:1/-1;padding:10px;text-align:center";
+        more.innerHTML = '<button style="background:var(--bg3);color:var(--txt);padding:8px 16px;border-radius:5px;font:600 11px Inter">Carregar mais (' + (items.length - page.length) + ')</button>';
+        more.querySelector("button").onclick = function () { STATE.page++; renderGrid(); };
         el.appendChild(more);
     }
     if (items.length === 0) {
-        el.innerHTML = '<div class="empty">Nenhum título encontrado</div>';
+        el.innerHTML = '<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--mut)">Nenhum template encontrado</div>';
     }
+
+    // Atualiza contagem de palavras na sidebar
+    updateWordCounts();
+}
+
+function updatePreviewSlot(item, cat) {
+    var slot = $("preview-slot"); if (!slot) return;
+    var preview = item.preview ? nodePath.join(EXT_PATH, "packs", item.preview) : null;
+    var thumb = preview
+        ? '<img style="max-width:100%;max-height:100%;object-fit:contain" src="' + esc("file:///" + preview.replace(/\\/g, "/")) + '">'
+        : (typeof mockupSvg === "function" ? mockupSvg(item.name, cat) : '<span class="muted">' + esc(item.name) + '</span>');
+    slot.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden">' + thumb + '</div>';
+}
+
+function updateWordCounts() {
+    if (!CATALOG || !CATALOG.packs) return;
+    var counts = { 1: 0, 2: 0, 3: 0 };
+    INDEX.forEach(function (e) {
+        var words = e.item.name.trim().split(/\s+/).length;
+        if (words === 1) counts[1]++;
+        else if (words === 2) counts[2]++;
+        else counts[3]++;
+    });
+    var c1 = $("cnt-1"), c2 = $("cnt-2"), c3 = $("cnt-3");
+    if (c1) c1.textContent = counts[1];
+    if (c2) c2.textContent = counts[2];
+    if (c3) c3.textContent = counts[3];
 }
 
 // ============================================================ insert
@@ -613,22 +655,21 @@ function updateVerifyBar() {
     else bar.classList.remove("hidden");
 }
 
+/* FILOSOFIA: nunca desloga automaticamente.
+ * Sub revogada/expirada → paywall.
+ * Token JWT inválido (após 30d) → relogin necessário. */
 function startHeartbeat() {
     if (DEV_BYPASS) return;
     var fp = computeFingerprint();
     var tick = async function () {
         try {
             var r = await gateApi("/v1/license/heartbeat", { fingerprint: fp, product_id: PRODUCT_ID });
-            if (r.revoked) {
-                if (r.subscription_inactive) {
-                    localStorage.setItem("mvl_plan", r.plan || "free");
-                    localStorage.setItem("mvl_status", r.status || "revoked");
-                    updateTrialUI();
-                } else {
-                    localStorage.removeItem("mv_session");
-                    localStorage.removeItem("mvl_license");
-                    showGate("login");
-                }
+            if (r.revoked || r.subscription_inactive) {
+                // Sub inativa → paywall, NÃO desloga
+                localStorage.setItem("mvl_plan", r.plan || "free");
+                localStorage.setItem("mvl_status", r.status || "revoked");
+                if (r.expires_at) localStorage.setItem("mvl_expires", r.expires_at);
+                updateTrialUI();
                 return;
             }
             if (r.license) {
@@ -639,29 +680,37 @@ function startHeartbeat() {
                 localStorage.setItem("mvl_via_bundle", r.covers_via_bundle ? "true" : "false");
                 updateTrialUI();
             }
-        } catch (e) {}
+        } catch (e) {
+            var msg = (typeof e === "string" ? e : (e && e.message)) || "";
+            if (msg === "invalid_token" || msg === "missing_token") {
+                ["mv_session","mvl_license","mvl_plan","mvl_status","mvl_expires"].forEach(function(k){ localStorage.removeItem(k); });
+                showGate("login");
+            }
+            // outros erros: offline grace
+        }
     };
     tick(); setInterval(tick, 5*60*1000);
 }
 
 function tryRestoreSession() {
     if (DEV_BYPASS) { hideGate(); return true; }
+    // Só precisa do session_token. License pode estar expirada — paywall trata.
     var t = localStorage.getItem("mv_session");
-    var l = localStorage.getItem("mvl_license");
-    if (t && l) { hideGate(); return true; }
+    if (t) { hideGate(); return true; }
     showGate("login");
     return false;
 }
 
 // ============================================================ boot
-var BUILD = "1.0.1-mockups";
+var BUILD = "3.0.0-editor-premium";
 
 function boot() {
     loadCatalog();
     buildIndex();
-    renderTabs();
-    if (CATALOG.packs && CATALOG.packs.length) selectPack(CATALOG.packs[0].id);
-    $("status").textContent = "Pronto · " + PRODUCT_NAME + " · build " + BUILD;
+    // No layout novo, mostra todos os items direto (sem precisar selectPack)
+    renderGrid();
+    var statusEl = $("status");
+    if (statusEl) statusEl.textContent = "Pronto · " + PRODUCT_NAME + " · build " + BUILD;
     bindGate();
     bindTrialUI();
     tryRestoreSession();

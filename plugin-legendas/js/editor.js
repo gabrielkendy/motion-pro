@@ -233,28 +233,17 @@ function updateSfxStatus() {
     }
 }
 
-// ============================================================ MODE TOGGLE (TEMPLATES | AUTOMAÇÃO SRT)
+// ============================================================ MODE TOGGLE
 var CURRENT_MODE = "templates";
 function setMode(mode) {
     CURRENT_MODE = mode;
-    $("mode-templates").classList.toggle("active", mode === "templates");
-    $("mode-automation").classList.toggle("active", mode === "automation");
-    var auto = $("automation");
-    if (mode === "automation") {
-        // Esconde grid normal, mostra panel de automation
-        $("grid").style.display = "none";
-        $("side").style.display = "none";
-        $("tabs").style.display = "none";
-        $("breadcrumb").style.display = "none";
-        if (auto) { auto.classList.remove("hidden"); auto.style.display = "block"; }
-        renderAutomationOptions();
-    } else {
-        $("grid").style.display = "";
-        $("side").style.display = "";
-        $("tabs").style.display = "";
-        $("breadcrumb").style.display = "";
-        if (auto) auto.classList.add("hidden");
-    }
+    var btnT = $("mode-templates"), btnA = $("mode-automation");
+    if (btnT) btnT.classList.toggle("active", mode === "templates");
+    if (btnA) btnA.classList.toggle("active", mode === "automation");
+    var mainT = $("main-templates"), mainA = $("main-automation");
+    if (mainT) mainT.classList.toggle("hidden", mode !== "templates");
+    if (mainA) mainA.classList.toggle("hidden", mode !== "automation");
+    if (mode === "automation") renderAutomationOptions();
     logLine("[MODE] " + mode.toUpperCase());
 }
 
@@ -313,32 +302,28 @@ function getAllWords() {
 }
 
 function renderAutomationOptions() {
-    var auto = $("automation"); if (!auto) return;
-    var preview = $("auto-preview"); if (!preview) return;
-    if (!SRT_DATA) {
-        preview.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mut)">Carregue um arquivo SRT primeiro (botão "Carregar agora" no topo)</div>';
-        return;
-    }
-    var perBlock = Number($("auto-words").value || 3);
-    var allWords = getAllWords();
-    var blocks = [];
-    for (var i = 0; i < allWords.length; i += perBlock) {
-        blocks.push(allWords.slice(i, i + perBlock).join(" "));
-    }
-    preview.innerHTML = "";
-    blocks.slice(0, 200).forEach(function (txt) {
-        var c = document.createElement("div");
-        c.className = "aw-chip";
-        c.textContent = txt;
-        c.title = txt;
-        preview.appendChild(c);
-    });
-    if (blocks.length > 200) {
-        var more = document.createElement("div");
-        more.className = "aw-chip";
-        more.style.background = "var(--bg)"; more.style.color = "var(--mut)";
-        more.textContent = "+" + (blocks.length - 200) + " mais";
-        preview.appendChild(more);
+    var auto = $("auto-template"); if (!auto) return;
+    if (window.CATALOG_LEGENDAS && window.CATALOG_LEGENDAS.packs && window.CATALOG_LEGENDAS.packs[0]) {
+        // popula select com templates do catalog
+        auto.innerHTML = '';
+        var allItems = [];
+        (window.CATALOG_LEGENDAS.packs[0].categories || []).forEach(function (cat) {
+            (cat.items || []).forEach(function (it, idx) {
+                allItems.push({ name: it.name, label: "Texto " + String(allItems.length + 1).padStart(2, "0") + " (" + cat.name.split(" - ").pop() + ")" });
+            });
+        });
+        if (allItems.length === 0) {
+            auto.innerHTML = '<option>Catálogo vazio</option>';
+        } else {
+            allItems.slice(0, 100).forEach(function (it, i) {
+                var opt = document.createElement("option");
+                opt.value = it.name;
+                opt.textContent = it.label;
+                auto.appendChild(opt);
+            });
+        }
+    } else {
+        auto.innerHTML = '<option>Carregando catálogo...</option>';
     }
 }
 
@@ -346,14 +331,11 @@ function renderAutomationOptions() {
 function logLine(text) {
     var body = $("log-body"); if (!body) return;
     var line = document.createElement("div");
-    line.style.padding = "2px 0";
+    line.className = "log-line";
     var t = new Date().toLocaleTimeString("pt-BR", { hour12: false });
     line.textContent = "[" + t + "] " + text;
     body.appendChild(line);
     body.scrollTop = body.scrollHeight;
-    // também atualiza status line
-    var status = $("status");
-    if (status) status.textContent = text.replace(/^\[\w+\]\s*/, "");
 }
 
 // ============================================================ TOP STATUS
@@ -376,16 +358,30 @@ function bindEditor() {
     if (btnT) btnT.onclick = function () { setMode("templates"); };
     if (btnA) btnA.onclick = function () { setMode("automation"); };
 
-    // SRT load
+    // SRT load (botão no topo)
     var btnSrt = $("btn-load-srt");
+    var btnSrt2 = $("btn-load-srt-2");
     var fileSrt = $("srt-file");
-    if (btnSrt && fileSrt) {
-        btnSrt.onclick = function () { fileSrt.click(); };
+    function openSrtPicker() { if (fileSrt) fileSrt.click(); }
+    if (btnSrt) btnSrt.onclick = openSrtPicker;
+    if (btnSrt2) btnSrt2.onclick = openSrtPicker;
+    if (fileSrt) {
         fileSrt.onchange = function (e) {
             var f = e.target.files && e.target.files[0];
             if (f) loadSRTFile(f);
         };
     }
+
+    // LOG toggle
+    var logHead = $("log-head");
+    if (logHead) logHead.onclick = function () {
+        var body = $("log-body");
+        var arrow = logHead.querySelector(".logbar__arrow");
+        if (!body) return;
+        var open = body.style.display !== "none";
+        body.style.display = open ? "none" : "block";
+        if (arrow) arrow.textContent = open ? "▼" : "▲";
+    };
 
     // SFX modal
     var openSfx = $("btn-open-sfx");
@@ -424,10 +420,31 @@ function bindEditor() {
     var logBtn = $("btn-debug");
     if (logBtn) logBtn.onclick = function () { $("log").classList.toggle("hidden"); };
 
+    // Sidebar (Categorias + Palavras)
+    document.querySelectorAll(".side__item").forEach(function (item) {
+        item.onclick = function () {
+            document.querySelectorAll(".side__item").forEach(function (x) { x.classList.remove("on"); });
+            item.classList.add("on");
+            // window.STATE_LEGENDAS é setado pelo app.js
+            var words = item.dataset.words;
+            if (window.LegendasState) {
+                window.LegendasState.wordsFilter = words || null;
+                window.LegendasState.page = 0;
+                if (window.LegendasRenderGrid) window.LegendasRenderGrid();
+            }
+        };
+    });
+
+    // APLICAR (footer)
+    var aplicar = $("btn-aplicar");
+    if (aplicar) aplicar.onclick = function () {
+        toast("Selecione um template e dê duplo-clique pra inserir na timeline", "warn");
+    };
+
     // Init UI
     updateTopStatus();
     updateSfxStatus();
-    logLine("[BOOT] Editor Premium · build 2.0.0");
+    logLine("[BOOT] Editor Premium · build 2.1");
 }
 
 // Toca pra app.js poder atualizar status quando logar

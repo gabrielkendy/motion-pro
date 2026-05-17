@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <ExtensionManifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    ExtensionBundleId="com.motionpro.legendas"
-                   ExtensionBundleVersion="2.0.0"
+                   ExtensionBundleVersion="3.0.0"
                    ExtensionBundleName="MotionPro Legendas"
                    Version="5.0">
     <ExtensionList>
-        <Extension Id="com.motionpro.legendas" Version="2.0.0" />
+        <Extension Id="com.motionpro.legendas" Version="3.0.0" />
     </ExtensionList>
     <ExecutionEnvironment>
         <HostList>

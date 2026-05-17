@@ -3,59 +3,34 @@
 <head>
 <meta charset="UTF-8">
 <title>MotionPro Legendas — Editor Premium</title>
-<link rel="stylesheet" href="css/app.css?v=200">
-<link rel="stylesheet" href="css/app-editor.css?v=200">
+<link rel="stylesheet" href="css/editor.css?v=300">
 </head>
 <body>
 
-<!-- ============ LOGIN GATE (overlay quando não autenticado) ============ -->
+<!-- ============ GATE (login overlay) ============ -->
 <div id="gate" class="gate hidden">
     <div class="gate__box">
-        <div class="gate__logo">MotionPro <em>Legendas</em></div>
+        <div class="gate__logo">Motion<em>Pro</em> Legendas</div>
         <div class="gate__sub">EDITOR PREMIUM · by PacotesFX</div>
-
-        <div id="gate-tabs" class="gate__tabs">
+        <div class="gate__tabs">
             <button id="gt-login" class="gt active">Entrar</button>
             <button id="gt-signup" class="gt">Criar conta · 14 dias grátis</button>
         </div>
-
         <div class="gate__form">
             <input id="g-name" type="text" placeholder="Nome completo" autocomplete="name" class="signup-only" hidden>
             <input id="g-phone" type="tel" placeholder="Telefone (opcional)" autocomplete="tel" class="signup-only" hidden>
             <input id="g-email" type="email" placeholder="seu@email.com" autocomplete="email">
             <input id="g-password" type="password" placeholder="Senha (mín 8 caracteres)" autocomplete="current-password">
             <label class="signup-only g-optin" id="g-optin-wrap" hidden>
-                <input id="g-optin" type="checkbox" checked> Quero receber novidades e ofertas
+                <input id="g-optin" type="checkbox" checked> Quero receber novidades
             </label>
             <button id="g-submit" class="g-btn">Entrar</button>
             <div id="g-msg" class="gate__msg"></div>
         </div>
-
-        <div class="gate__plans">
-            <div class="gate__plans-title">Planos disponíveis</div>
-            <div class="g-plan"><b>Trial 14 dias</b><span>Grátis</span></div>
-            <div class="g-plan"><b>Anual</b><span>R$ 149</span></div>
-            <div class="g-plan"><b>Vitalício</b><span>R$ 399</span></div>
-            <div class="g-plan featured"><b>Pacote Completo</b><span>R$ 299/ano</span></div>
-        </div>
-
         <div class="gate__footer">
             <a id="g-forgot" href="#">Esqueci minha senha</a>
         </div>
     </div>
-</div>
-
-<!-- ============ TRIAL BAR (compacta) ============ -->
-<div id="trial-bar" class="trialbar hidden">
-    <span id="trial-info" class="trialbar__info"></span>
-    <button id="btn-upgrade" class="trialbar__cta">Assinar agora →</button>
-</div>
-
-<!-- ============ EMAIL VERIFY BANNER ============ -->
-<div id="verify-bar" class="verifybar hidden">
-    <span class="verifybar__info">📧 Confirme seu e-mail</span>
-    <button id="btn-resend-verify" class="verifybar__cta">Reenviar</button>
-    <button id="btn-dismiss-verify" class="verifybar__dismiss">×</button>
 </div>
 
 <!-- ============ PAYWALL ============ -->
@@ -63,132 +38,151 @@
     <div class="paywall__box">
         <div class="paywall__icon">⏰</div>
         <h2 class="paywall__title">Seu trial expirou</h2>
-        <p class="paywall__sub">Pra continuar usando o editor premium de legendas, assine.</p>
+        <p class="paywall__sub">Pra continuar, assine. Cancele quando quiser.</p>
         <div class="paywall__plans">
             <div class="paywall__plan"><div class="paywall__plan-name">Anual</div><div class="paywall__plan-price">R$ 149<small>/ano</small></div></div>
             <div class="paywall__plan paywall__plan--feat"><div class="paywall__plan-name">Vitalício</div><div class="paywall__plan-price">R$ 399<small>uma vez</small></div></div>
         </div>
         <button id="paywall-cta" class="paywall__btn">Ver planos no site →</button>
         <button id="paywall-bundle" class="paywall__bundle">💎 Pacote Completo (MotionPro + Legendas) R$ 299/ano →</button>
-        <button id="paywall-logout" class="paywall__logout">Sair desta conta</button>
+        <button id="paywall-logout" class="paywall__logout">Sair</button>
     </div>
 </div>
 
-<!-- ============ TOP STATUS BAR (verde quando logado) ============ -->
-<div class="topstatus" id="topstatus">
-    <div class="topstatus__brand">
-        <span class="topstatus__title">EDITOR PREMIUM</span>
-        <span class="topstatus__sub">BIBLIOTECA</span>
-    </div>
-    <div class="topstatus__user" id="topstatus-user">
-        <span class="topstatus__dot"></span>
-        <span id="topstatus-email">—</span>
-    </div>
+<!-- ============ TOP BAR (header mínimo) ============ -->
+<div class="topbar">
+    <span class="topbar__name">EP Legendas</span>
+    <button class="topbar__menu" id="btn-menu">☰</button>
 </div>
 
-<!-- ============ SRT BAR (carregar arquivo de legendas) ============ -->
+<!-- ============ EDITOR HEADER ============ -->
+<div class="edhead">
+    <div class="edhead__title">
+        EDITOR <span class="edhead__premium">PREMIUM</span>
+        <span class="edhead__sub">BIBLIOTECA</span>
+    </div>
+    <span class="edhead__dot" id="conn-dot"></span>
+</div>
+
+<!-- ============ STATUS LINE (Logado — email) ============ -->
+<div class="status-login" id="status-login">
+    Logado — <span id="status-email">—</span>
+</div>
+
+<!-- ============ SRT BAR ============ -->
 <div class="srtbar">
-    <div class="srtbar__icon">📄</div>
-    <div class="srtbar__info">
-        <div class="srtbar__title" id="srt-title">Nenhum SRT carregado</div>
-        <div class="srtbar__sub" id="srt-sub">Importe um .srt pra aplicar templates em todas as palavras automaticamente</div>
-    </div>
-    <button class="srtbar__btn" id="btn-load-srt">Carregar agora</button>
+    <span class="srtbar__icon">📄</span>
+    <span class="srtbar__title" id="srt-title">Nenhum SRT carregado</span>
+    <button class="srtbar__btn" id="btn-load-srt">Carregar agora →</button>
     <input type="file" id="srt-file" accept=".srt,.vtt" hidden>
 </div>
 
 <!-- ============ MODE TABS (TEMPLATES | AUTOMAÇÃO SRT) ============ -->
-<div class="modebar">
-    <button id="mode-templates" class="modebtn active" data-mode="templates">TEMPLATES</button>
-    <button id="mode-automation" class="modebtn" data-mode="automation">AUTOMAÇÃO SRT</button>
+<div class="modetabs">
+    <button id="mode-templates" class="modetab active" data-mode="templates">TEMPLATES</button>
+    <button id="mode-automation" class="modetab" data-mode="automation">AUTOMAÇÃO SRT</button>
 </div>
 
-<!-- ============ HEADER (search + actions) ============ -->
-<header class="headbar">
-    <div class="headbar__search">
-        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input id="q" type="text" placeholder="Buscar templates..." autocomplete="off">
-        <button id="q-clear" class="q-clear hidden">×</button>
-    </div>
-    <div class="headbar__actions">
-        <button id="btn-favorites" class="iconbtn" title="Favoritos">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12,2 15,9 22,9.5 17,14 18.5,21 12,17.5 5.5,21 7,14 2,9.5 9,9"/></svg>
-        </button>
-        <button id="btn-debug" class="iconbtn" title="Console">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4,17 10,11 4,5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-        </button>
-    </div>
-</header>
+<!-- ============ SEARCH ============ -->
+<div class="searchbar">
+    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" type="text" placeholder="Buscar templates..." autocomplete="off">
+</div>
 
-<!-- ============ MAIN LAYOUT (sidebar + grid) ============ -->
-<aside id="side" class="sidebar">
-    <!-- Renderizado dinamicamente: CATEGORIAS > PALAVRAS (1/2/3) -->
-</aside>
-<main id="grid" class="grid"></main>
+<!-- ============ MAIN: SIDEBAR + GRID ============ -->
+<div class="main-area" id="main-templates">
+    <aside class="side">
+        <div class="side__group">CATEGORIAS</div>
+        <a class="side__item on" data-cat="geral">Geral</a>
+        <div class="side__group">PALAVRAS</div>
+        <a class="side__item" data-words="1">1 Palavra <span class="side__num" id="cnt-1">0</span></a>
+        <a class="side__item" data-words="2">2 Palavras <span class="side__num" id="cnt-2">0</span></a>
+        <a class="side__item" data-words="3">3 Palavras <span class="side__num" id="cnt-3">0</span></a>
+    </aside>
 
-<!-- ============ AUTOMATION VIEW (oculto até carregar SRT) ============ -->
-<div id="automation" class="automation hidden">
-    <div class="automation__head">
-        <h3>Automação SRT</h3>
-        <p>Pra cada palavra do seu SRT, o plugin vai inserir um template + SFX automaticamente na timeline.</p>
-    </div>
-    <div class="automation__cfg">
-        <div class="cfg-row">
-            <label>Template base:</label>
-            <select id="auto-template"></select>
+    <main class="content">
+        <div class="preview-slot" id="preview-slot">
+            <span class="muted">Selecione um template</span>
         </div>
-        <div class="cfg-row">
-            <label>SFX:</label>
-            <select id="auto-sfx"><option value="">(nenhum)</option></select>
+        <div class="grid" id="grid"></div>
+    </main>
+</div>
+
+<!-- ============ AUTOMATION VIEW ============ -->
+<div id="main-automation" class="main-area hidden">
+    <div class="auto-panel">
+        <button class="auto-srt-btn" id="btn-load-srt-2">
+            <span class="auto-srt-btn__icon">📥</span>
+            Trocar arquivo SRT
+        </button>
+        <div class="auto-row">
+            <label>Palavras:</label>
+            <input type="number" id="auto-words" min="1" max="10" value="3">
+            <label style="margin-left:18px">Template:</label>
+            <select id="auto-template"><option>Carregar SRT primeiro</option></select>
         </div>
-        <div class="cfg-row">
-            <label>Palavras por bloco:</label>
-            <select id="auto-words">
-                <option value="1">1 palavra</option>
-                <option value="2">2 palavras</option>
-                <option value="3" selected>3 palavras</option>
+        <div class="auto-row">
+            <label>Conectores:</label>
+            <select id="auto-connectors">
+                <option value="smart">Inteligente</option>
+                <option value="none">Sem conectores</option>
+                <option value="space">Espaço</option>
             </select>
         </div>
-    </div>
-    <div class="automation__words" id="auto-preview"></div>
-    <div class="automation__cta">
-        <button class="btn-primary" id="btn-apply-all">Aplicar em toda a timeline →</button>
+        <div class="auto-row">
+            <label>Track:</label>
+            <select id="auto-track">
+                <option value="last">Última track</option>
+                <option value="V2">V2</option>
+                <option value="V3">V3</option>
+                <option value="V4">V4</option>
+                <option value="new">Criar nova</option>
+            </select>
+        </div>
+        <div class="auto-row">
+            <label>SFX Track:</label>
+            <select id="auto-sfx-track">
+                <option value="">Nenhuma audio track</option>
+                <option value="A2">A2</option>
+                <option value="A3">A3</option>
+                <option value="A4">A4</option>
+            </select>
+        </div>
+        <button class="auto-apply" id="btn-apply-all">
+            ⚡ APLICAR NA TIMELINE
+        </button>
     </div>
 </div>
 
-<!-- ============ FOOTER BAR (apply mode + sfx config) ============ -->
-<footer class="footbar">
-    <div class="footbar__left">
+<!-- ============ FOOTER: Apply mode + APLICAR ============ -->
+<div class="footer">
+    <div class="footer__opts">
         Após aplicar:
-        <label class="opt-radio">
-            <input type="radio" name="apply-mode" value="keep" checked>
-            <span>Manter originais</span>
-        </label>
-        <label class="opt-radio">
-            <input type="radio" name="apply-mode" value="disable">
-            <span>Desativar originais</span>
-        </label>
+        <label class="opt-radio"><input type="radio" name="apply-mode" value="keep" checked><span>Manter originais</span></label>
+        <label class="opt-radio"><input type="radio" name="apply-mode" value="disable"><span>Desativar originais</span></label>
     </div>
-    <div class="footbar__right">
-        <label class="opt-chk">
-            <input type="checkbox" id="opt-with-sfx" checked>
-            <span>🔉 Com SFX</span>
-        </label>
+    <button class="aplicar-btn" id="btn-aplicar" disabled>APLICAR</button>
+    <div class="footer__sfx">
+        <label class="opt-chk"><input type="checkbox" id="opt-with-sfx"><span>🔉 Com SFX</span></label>
         <select id="opt-audio-track">
             <option value="">Nenhuma audio track</option>
-            <option value="A1">A1</option>
             <option value="A2">A2</option>
-            <option value="A3" selected>A3</option>
+            <option value="A3">A3</option>
             <option value="A4">A4</option>
         </select>
-        <button class="footbar__sfx" id="btn-open-sfx">⚡ Selecionar SFX</button>
+        <button class="footer__select-sfx" id="btn-open-sfx">⚡ Selecionar SFX</button>
     </div>
-</footer>
+</div>
 
-<!-- ============ STATUS / LOG ============ -->
-<div class="statusline">
-    <span id="status">Pronto</span>
-    <span id="count" class="muted"></span>
+<!-- ============ LOG (collapsível) ============ -->
+<div class="logbar">
+    <div class="logbar__head" id="log-head">
+        <span>LOG</span>
+        <span class="logbar__arrow">▼</span>
+    </div>
+    <div class="logbar__body" id="log-body" style="display:none">
+        <div class="log-line">[BOOT] Editor Premium · build 2.1</div>
+    </div>
 </div>
 
 <!-- ============ SFX MODAL ============ -->
@@ -211,18 +205,35 @@
     </div>
 </div>
 
-<!-- ============ DEBUG LOG ============ -->
-<div id="log" class="log hidden">
-    <div class="log__head">
-        <span>Console</span>
-        <button id="log-close">×</button>
-    </div>
-    <div id="log-body" class="log__body"></div>
+<!-- ============ TRIAL BAR (esconde quando lifetime) ============ -->
+<div id="trial-bar" class="trialbar hidden">
+    <span id="trial-info" class="trialbar__info"></span>
+    <button id="btn-upgrade" class="trialbar__cta">Assinar →</button>
 </div>
 
-<script src="js/lib/CSInterface.js?v=200"></script>
-<script src="js/config.js?v=200"></script>
-<script src="js/app.js?v=200"></script>
-<script src="js/editor.js?v=200"></script>
+<!-- ============ EMAIL VERIFY BANNER ============ -->
+<div id="verify-bar" class="verifybar hidden">
+    <span class="verifybar__info">📧 Confirme seu e-mail</span>
+    <button id="btn-resend-verify" class="verifybar__cta">Reenviar</button>
+    <button id="btn-dismiss-verify" class="verifybar__dismiss">×</button>
+</div>
+
+<!-- elementos legacy (ainda usados por app.js) — escondidos -->
+<div style="display:none">
+    <nav id="tabs"></nav>
+    <div id="breadcrumb"></div>
+    <div id="status"></div>
+    <div id="count"></div>
+    <button id="q-clear"></button>
+    <button id="btn-favorites"></button>
+    <button id="btn-debug"></button>
+    <div id="log"><div id="log-body-legacy"></div><button id="log-close"></button></div>
+    <div id="side"></div>
+</div>
+
+<script src="js/lib/CSInterface.js?v=300"></script>
+<script src="js/config.js?v=300"></script>
+<script src="js/app.js?v=300"></script>
+<script src="js/editor.js?v=300"></script>
 </body>
 </html>
