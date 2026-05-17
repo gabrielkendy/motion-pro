@@ -2,7 +2,7 @@
 const router = require("express").Router();
 const { pool } = require("../db");
 const { requireAuth } = require("../middleware/auth");
-const { signLicense } = require("../utils/jwt");
+const { signLicense, verifyLicense } = require("../utils/jwt");
 
 /* Per-plan device limits — easy to adjust later */
 const DEVICE_LIMITS = {
@@ -128,6 +128,56 @@ router.post("/heartbeat", requireAuth, async (req, res, next) => {
             plan: sub.plan,
             status: sub.status,
             expires_at: sub.expiresAt
+        });
+    } catch (e) { next(e); }
+});
+
+// === VALIDATE LICENSE (public) ===
+// Aceita um JWT de licença e devolve detalhes + status atual no banco.
+// Útil pro plugin re-verificar localmente e pra ferramentas externas/integrações.
+router.post("/validate", async (req, res, next) => {
+    try {
+        const { license, fingerprint } = req.body || {};
+        if (!license) return res.status(400).json({ error: "license_required" });
+        const payload = verifyLicense(license);
+        if (!payload) return res.status(401).json({ valid: false, error: "invalid_or_expired_license" });
+
+        // Cross-check com o banco: o usuário ainda existe? assinatura ainda ativa?
+        const u = await pool.query(
+            "SELECT id, email FROM users WHERE id=$1",
+            [payload.uid]
+        );
+        if (!u.rowCount) return res.status(401).json({ valid: false, error: "user_not_found" });
+
+        const sub = await getActiveSubscription(payload.uid);
+        const sameFp = fingerprint ? payload.fp === fingerprint : true;
+        const isActive = ["active", "trialing"].includes(sub.status) ||
+                         (sub.plan === "lifetime" && sub.status === "active");
+
+        // Se enviou fingerprint, checa se device foi revogado
+        let deviceRevoked = false;
+        if (fingerprint) {
+            const d = await pool.query(
+                "SELECT revoked FROM devices WHERE user_id=$1 AND fingerprint=$2",
+                [payload.uid, fingerprint]
+            );
+            deviceRevoked = d.rowCount > 0 && d.rows[0].revoked;
+        }
+
+        const valid = isActive && sameFp && !deviceRevoked;
+
+        res.json({
+            valid,
+            email: payload.sub,
+            plan: payload.plan,
+            current_plan: sub.plan,
+            status: sub.status,
+            expires_at: sub.expiresAt,
+            fingerprint_match: sameFp,
+            device_revoked: deviceRevoked,
+            packs: payload.packs || [],
+            exp: payload.exp ? new Date(payload.exp * 1000).toISOString() : null,
+            iat: payload.iat ? new Date(payload.iat * 1000).toISOString() : null
         });
     } catch (e) { next(e); }
 });

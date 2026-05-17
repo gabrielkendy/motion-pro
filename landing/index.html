@@ -328,6 +328,9 @@
                 <span data-switch="login">Já tem conta? <strong>Entrar</strong></span>
                 <span data-switch="signup" hidden>Não tem conta? <strong>Criar agora</strong></span>
             </p>
+            <p class="modal__forgot" id="forgot-link" hidden>
+                <a href="/reset-password.html"><strong>Esqueci minha senha</strong></a>
+            </p>
         </form>
     </div>
 </div>
@@ -382,6 +385,7 @@ function openModal(mode = 'signup', plan = null) {
         authPass.autocomplete = 'new-password';
         document.querySelector('[data-switch="login"]').hidden = false;
         document.querySelector('[data-switch="signup"]').hidden = true;
+        document.getElementById('forgot-link').hidden = true;
     } else {
         modalTag.textContent   = plan ? 'Entrar · ' + (plan === 'yearly' ? 'Anual' : 'Vitalício') : 'Entrar';
         modalTitle.textContent = 'Entre na sua conta';
@@ -392,6 +396,7 @@ function openModal(mode = 'signup', plan = null) {
         authPass.autocomplete = 'current-password';
         document.querySelector('[data-switch="login"]').hidden = true;
         document.querySelector('[data-switch="signup"]').hidden = false;
+        document.getElementById('forgot-link').hidden = false;
     }
     authError.textContent = '';
     const savedEmail = localStorage.getItem(EMAIL_KEY);

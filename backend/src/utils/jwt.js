@@ -22,4 +22,25 @@ function signLicense({ userId, email, plan, fingerprint, packs }) {
     );
 }
 
-module.exports = { signSession, verifySession, signLicense };
+function verifyLicense(token) {
+    try { return jwt.verify(token, LICENSE_SECRET, { issuer: "motionvault" }); }
+    catch (e) { return null; }
+}
+
+// Reset token: short-lived JWT signed with LICENSE_SECRET
+function signResetToken(userId, email) {
+    return jwt.sign(
+        { sub: userId, email, purpose: "password_reset" },
+        LICENSE_SECRET,
+        { expiresIn: "1h", issuer: "motionvault" }
+    );
+}
+function verifyResetToken(token) {
+    try {
+        const p = jwt.verify(token, LICENSE_SECRET, { issuer: "motionvault" });
+        if (p.purpose !== "password_reset") return null;
+        return p;
+    } catch (e) { return null; }
+}
+
+module.exports = { signSession, verifySession, signLicense, verifyLicense, signResetToken, verifyResetToken };
