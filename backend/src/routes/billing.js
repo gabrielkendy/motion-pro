@@ -33,8 +33,8 @@ router.post("/checkout", requireAuth, async (req, res, next) => {
             mode: plan === "lifetime" ? "payment" : "subscription",
             customer,
             line_items: [{ price, quantity: 1 }],
-            success_url: (process.env.PUBLIC_URL || "") + "/billing/success?cs={CHECKOUT_SESSION_ID}",
-            cancel_url:  (process.env.PUBLIC_URL || "") + "/billing/canceled",
+            success_url: (process.env.PUBLIC_URL || "") + "/success.html?cs={CHECKOUT_SESSION_ID}",
+            cancel_url:  (process.env.PUBLIC_URL || "") + "/cancel.html",
             allow_promotion_codes: true
         });
         res.json({ url: session.url, id: session.id });

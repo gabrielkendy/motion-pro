@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Checkout cancelado · MotionVault</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="nav">
+    <div class="wrap nav__inner">
+        <a href="/" class="brand">Motion<span class="brand-mark">·</span>Vault</a>
+        <div class="nav__actions">
+            <a href="/" class="nav-link">← Voltar ao site</a>
+        </div>
+    </div>
+</header>
+
+<section class="section" style="padding:120px 0">
+    <div class="wrap" style="max-width:560px;text-align:center">
+        <span class="section__tag" style="padding-left:36px">Checkout cancelado</span>
+        <h1 class="section__title" style="margin-bottom:24px;font-size:44px">Nenhuma cobrança foi feita<span class="period">.</span></h1>
+        <p style="font-size:17px;color:var(--mut);line-height:1.6;margin-bottom:40px">
+            Você cancelou o pagamento antes de finalizar. Sua conta foi criada e seu trial de 14 dias está ativo &mdash; quando quiser, é só voltar e finalizar a assinatura.
+        </p>
+        <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+            <a href="/#pricing" class="btn btn--primary btn--lg">Voltar aos planos <span class="arrow">→</span></a>
+            <a href="/" class="btn btn--ghost btn--lg">Ir pra home</a>
+        </div>
+    </div>
+</section>
+
+<footer class="foot">
+    <div class="wrap" style="text-align:center;padding:32px 0;border-top:1px solid var(--line-dark)">
+        <p style="color:var(--mut-inv);font-size:13px">© <span id="yr"></span> MotionVault · uma marca PacotesFX</p>
+    </div>
+</footer>
+<script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+</body>
+</html>
