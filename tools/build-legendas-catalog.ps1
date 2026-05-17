@@ -70,7 +70,8 @@ foreach ($pack in $Packs) {
         }
     }
 
-    $Catalog.packs += @{
+    # Ordem garantida com [ordered] pra ConvertTo-Json manter campos
+    $Catalog.packs += [ordered]@{
         id = $pack.id
         name = $pack.name
         categories = $categories
@@ -79,9 +80,10 @@ foreach ($pack in $Packs) {
     Write-Host "  Total no pack: $packTotal" -ForegroundColor Green
 }
 
-# Salva catalog.json
+# Salva catalog.json (UTF-8 sem BOM)
 $catalogPath = Join-Path $Dst "catalog.json"
-$Catalog | ConvertTo-Json -Depth 10 | Set-Content -Path $catalogPath -Encoding UTF8
+$json = $Catalog | ConvertTo-Json -Depth 10 -Compress:$false
+[System.IO.File]::WriteAllText($catalogPath, $json, [System.Text.UTF8Encoding]::new($false))
 $size = (Get-ChildItem -Recurse $Dst | Measure-Object -Sum Length).Sum
 
 Write-Host ""
