@@ -2,19 +2,38 @@
 const router = require("express").Router();
 const bcrypt = require("bcrypt");
 const { pool } = require("../db");
-const { signSession, signResetToken, verifyResetToken } = require("../utils/jwt");
-const { resetPasswordEmail } = require("../utils/email");
+const { signSession, signResetToken, verifyResetToken, signEmailVerifyToken, verifyEmailToken } = require("../utils/jwt");
+const { resetPasswordEmail, verifyEmailMessage } = require("../utils/email");
+
+const PUBLIC_URL = process.env.PUBLIC_URL || "https://motionpro-lp.vercel.app";
+
+// Normaliza telefone pra E.164 simplificado (mantém só dígitos, + opcional)
+function normalizePhone(p) {
+    if (!p) return null;
+    const s = String(p).trim();
+    if (!s) return null;
+    const digits = s.replace(/[^\d+]/g, "");
+    return digits.length >= 8 ? digits : null;
+}
 
 router.post("/signup", async (req, res, next) => {
     try {
-        const { email, password } = req.body || {};
+        const { email, password, name, phone, marketing_optin } = req.body || {};
         if (!email || !password || password.length < 8) {
             return res.status(400).json({ error: "email_and_password_required" });
         }
         const hash = await bcrypt.hash(password, 12);
+        const normEmail = email.toLowerCase().trim();
+        const normName = name ? String(name).trim().slice(0, 120) : null;
+        const normPhone = normalizePhone(phone);
+        const optin = marketing_optin === false ? false : true;
+
         const r = await pool.query(
-            "INSERT INTO users(email, password_hash) VALUES($1,$2) ON CONFLICT (email) DO NOTHING RETURNING id, email",
-            [email.toLowerCase().trim(), hash]
+            `INSERT INTO users(email, password_hash, name, phone, marketing_optin)
+             VALUES($1,$2,$3,$4,$5)
+             ON CONFLICT (email) DO NOTHING
+             RETURNING id, email, name, phone, email_verified`,
+            [normEmail, hash, normName, normPhone, optin]
         );
         if (r.rowCount === 0) return res.status(409).json({ error: "email_taken" });
         const u = r.rows[0];
@@ -28,10 +47,24 @@ router.post("/signup", async (req, res, next) => {
             [u.id, expiresAt]
         );
 
+        // Manda email de verificação (não bloqueia signup se falhar)
+        try {
+            const token = signEmailVerifyToken(u.id, u.email);
+            const verifyUrl = `${PUBLIC_URL}/verify-email.html?token=${encodeURIComponent(token)}`;
+            await verifyEmailMessage({ email: u.email, name: u.name, verifyUrl });
+        } catch (e) { console.error("[signup] verify email fail", e.message); }
+
+        // Log no audit
+        await pool.query(
+            "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'signup', $2)",
+            [u.id, { has_name: !!normName, has_phone: !!normPhone, trial_days: trialDays }]
+        );
+
         res.json({
             session_token: signSession(u.id, u.email),
             user: u,
-            trial: { active: true, expires_at: expiresAt, days_remaining: trialDays }
+            trial: { active: true, expires_at: expiresAt, days_remaining: trialDays },
+            email_verification_sent: true
         });
     } catch (e) { next(e); }
 });
@@ -145,6 +178,88 @@ router.post("/change-password", async (req, res, next) => {
             [session.sub, { method: "self_service" }]
         );
         res.json({ ok: true });
+    } catch (e) { next(e); }
+});
+
+// === VERIFY EMAIL (público, recebe token via URL) ===
+router.post("/verify-email", async (req, res, next) => {
+    try {
+        const { token } = req.body || {};
+        if (!token) return res.status(400).json({ error: "token_required" });
+        const payload = verifyEmailToken(token);
+        if (!payload) return res.status(401).json({ error: "invalid_or_expired_token" });
+
+        const r = await pool.query(
+            `UPDATE users SET email_verified=true, email_verified_at=now()
+             WHERE id=$1 AND email_verified=false
+             RETURNING id, email, name, email_verified, email_verified_at`,
+            [payload.sub]
+        );
+        // Se já era verificado, ainda retorna sucesso (idempotente)
+        const u = r.rowCount
+            ? r.rows[0]
+            : (await pool.query("SELECT id, email, name, email_verified, email_verified_at FROM users WHERE id=$1", [payload.sub])).rows[0];
+        if (!u) return res.status(404).json({ error: "user_not_found" });
+
+        await pool.query(
+            "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'email_verified', $2)",
+            [u.id, { method: "token" }]
+        );
+
+        res.json({ ok: true, user: u, already_verified: r.rowCount === 0 });
+    } catch (e) { next(e); }
+});
+
+// === RESEND VERIFICATION (autenticado) ===
+router.post("/resend-verification", async (req, res, next) => {
+    try {
+        const h = (req.headers.authorization || "").match(/^Bearer (.+)$/);
+        if (!h) return res.status(401).json({ error: "missing_token" });
+        const { verifySession } = require("../utils/jwt");
+        const session = verifySession(h[1]);
+        if (!session) return res.status(401).json({ error: "invalid_token" });
+
+        const r = await pool.query("SELECT id, email, name, email_verified FROM users WHERE id=$1", [session.sub]);
+        if (!r.rowCount) return res.status(404).json({ error: "user_not_found" });
+        const u = r.rows[0];
+        if (u.email_verified) return res.json({ ok: true, already_verified: true });
+
+        const token = signEmailVerifyToken(u.id, u.email);
+        const verifyUrl = `${PUBLIC_URL}/verify-email.html?token=${encodeURIComponent(token)}`;
+        const result = await verifyEmailMessage({ email: u.email, name: u.name, verifyUrl });
+        res.json({ ok: true, sent: result?.ok === true });
+    } catch (e) { next(e); }
+});
+
+// === UPDATE PROFILE (autenticado) ===
+router.post("/update-profile", async (req, res, next) => {
+    try {
+        const h = (req.headers.authorization || "").match(/^Bearer (.+)$/);
+        if (!h) return res.status(401).json({ error: "missing_token" });
+        const { verifySession } = require("../utils/jwt");
+        const session = verifySession(h[1]);
+        if (!session) return res.status(401).json({ error: "invalid_token" });
+
+        const { name, phone, marketing_optin } = req.body || {};
+        const normName = name !== undefined ? (name ? String(name).trim().slice(0, 120) : null) : undefined;
+        const normPhone = phone !== undefined ? normalizePhone(phone) : undefined;
+
+        const sets = [];
+        const vals = [];
+        let i = 1;
+        if (normName !== undefined)    { sets.push(`name=$${i++}`);  vals.push(normName); }
+        if (normPhone !== undefined)   { sets.push(`phone=$${i++}`); vals.push(normPhone); }
+        if (marketing_optin !== undefined) { sets.push(`marketing_optin=$${i++}`); vals.push(!!marketing_optin); }
+        // Se telefone mudou, invalida verificação (cliente precisa verificar de novo)
+        if (normPhone !== undefined) { sets.push(`phone_verified=false, phone_verified_at=NULL`); }
+        if (!sets.length) return res.status(400).json({ error: "no_fields_to_update" });
+
+        vals.push(session.sub);
+        const r = await pool.query(
+            `UPDATE users SET ${sets.join(", ")} WHERE id=$${i} RETURNING id, email, name, phone, email_verified, phone_verified, marketing_optin`,
+            vals
+        );
+        res.json({ ok: true, user: r.rows[0] });
     } catch (e) { next(e); }
 });
 

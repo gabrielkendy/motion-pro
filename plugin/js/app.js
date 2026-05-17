@@ -644,6 +644,12 @@ function setGateMode(mode) {
     document.getElementById("g-msg").textContent = "";
     document.getElementById("g-msg").className = "gate__msg";
     document.getElementById("g-submit").dataset.mode = mode;
+    // Mostra/esconde campos extras do signup
+    [].forEach.call(document.querySelectorAll(".signup-only"), function (el) {
+        el.hidden = !isSignup;
+    });
+    // autocomplete da senha
+    document.getElementById("g-password").autocomplete = isSignup ? "new-password" : "current-password";
 }
 
 function bindGate() {
@@ -674,13 +680,25 @@ function bindGate() {
         var mode = sub.dataset.mode || "login";
         var email = document.getElementById("g-email").value.trim().toLowerCase();
         var password = document.getElementById("g-password").value;
+        var name = document.getElementById("g-name").value.trim();
+        var phone = document.getElementById("g-phone").value.trim();
+        var optin = document.getElementById("g-optin").checked;
         if (!email || password.length < 8) {
             msg.textContent = "Email e senha (mín 8) obrigatórios"; return;
+        }
+        if (mode === "signup" && name.length < 2) {
+            msg.textContent = "Digite seu nome completo"; return;
         }
         sub.disabled = true; msg.textContent = "Conectando..."; msg.className = "gate__msg";
         try {
             var fp = computeFingerprint();
-            var data = await gateApi("/v1/auth/" + mode, { email: email, password: password, fingerprint: fp });
+            var payload = { email: email, password: password, fingerprint: fp };
+            if (mode === "signup") {
+                payload.name = name;
+                payload.phone = phone || null;
+                payload.marketing_optin = optin;
+            }
+            var data = await gateApi("/v1/auth/" + mode, payload);
             localStorage.setItem("mv_session", data.session_token);
             localStorage.setItem("mv_email", email);
             // issue license
@@ -689,9 +707,18 @@ function bindGate() {
             localStorage.setItem("mv_plan", lic.plan);
             localStorage.setItem("mv_status", lic.status || "");
             localStorage.setItem("mv_expires", lic.expires_at || "");
-            msg.textContent = "✓ " + (mode === "signup" ? "Conta criada! Trial de 14 dias ativo." : "Bem-vindo!");
+            // Marca email como não verificado no signup (vai mostrar banner)
+            if (mode === "signup") {
+                localStorage.setItem("mv_email_verified", "false");
+                localStorage.removeItem("mv_verify_dismissed_until");
+                if (name) localStorage.setItem("mv_name", name);
+            } else {
+                // No login, busca status atual do banco
+                setTimeout(checkEmailVerified, 800);
+            }
+            msg.textContent = "✓ " + (mode === "signup" ? "Conta criada! Verifique seu e-mail. Trial de 14 dias ativo." : "Bem-vindo!");
             msg.className = "gate__msg ok";
-            setTimeout(function () { hideGate(); updateTrialUI(); }, 500);
+            setTimeout(function () { hideGate(); updateTrialUI(); updateVerifyBar(); }, 500);
         } catch (e) {
             msg.textContent = "Erro: " + (typeof e === "string" ? e : (e.message || "falha"));
             msg.className = "gate__msg";
@@ -784,10 +811,70 @@ function bindTrialUI() {
             localStorage.removeItem("mv_plan");
             localStorage.removeItem("mv_status");
             localStorage.removeItem("mv_expires");
+            localStorage.removeItem("mv_email_verified");
             var pw = document.getElementById("paywall");
             if (pw) pw.classList.add("hidden");
             showGate("login");
         };
+    }
+
+    // Verify email bar
+    var resendBtn = document.getElementById("btn-resend-verify");
+    if (resendBtn) {
+        resendBtn.onclick = async function () {
+            resendBtn.disabled = true;
+            var orig = resendBtn.textContent;
+            resendBtn.textContent = "Enviando...";
+            try {
+                var r = await gateApi("/v1/auth/resend-verification", {});
+                if (r.already_verified) {
+                    localStorage.setItem("mv_email_verified", "true");
+                    document.getElementById("verify-bar").classList.add("hidden");
+                    toast("Seu e-mail já estava verificado", "ok");
+                } else {
+                    resendBtn.textContent = "✓ E-mail enviado";
+                    toast("Verifique sua caixa de entrada", "ok");
+                    setTimeout(function () { resendBtn.textContent = orig; resendBtn.disabled = false; }, 3000);
+                }
+            } catch (e) {
+                resendBtn.textContent = orig;
+                resendBtn.disabled = false;
+                toast("Erro: " + (typeof e === "string" ? e : e.message), "err");
+            }
+        };
+    }
+    var dismissBtn = document.getElementById("btn-dismiss-verify");
+    if (dismissBtn) {
+        dismissBtn.onclick = function () {
+            document.getElementById("verify-bar").classList.add("hidden");
+            // Lembra dismiss por 24h
+            localStorage.setItem("mv_verify_dismissed_until", Date.now() + 24*60*60*1000);
+        };
+    }
+}
+
+// Verifica status de email_verified e mostra banner se necessário
+async function checkEmailVerified() {
+    var token = localStorage.getItem("mv_session");
+    if (!token) return;
+    try {
+        var r = await gateApi("/v1/me");
+        var verified = r.user && r.user.email_verified;
+        localStorage.setItem("mv_email_verified", verified ? "true" : "false");
+        if (r.user && r.user.name) localStorage.setItem("mv_name", r.user.name);
+        updateVerifyBar();
+    } catch (e) { /* offline */ }
+}
+
+function updateVerifyBar() {
+    var bar = document.getElementById("verify-bar");
+    if (!bar) return;
+    var verified = localStorage.getItem("mv_email_verified") === "true";
+    var dismissedUntil = Number(localStorage.getItem("mv_verify_dismissed_until") || 0);
+    if (verified || Date.now() < dismissedUntil) {
+        bar.classList.add("hidden");
+    } else {
+        bar.classList.remove("hidden");
     }
 }
 
@@ -831,7 +918,7 @@ function tryRestoreSession() {
 }
 
 // ============================================================ boot
-var BUILD = "2.3.0-trust";
+var BUILD = "2.4.0-profile-verify";
 
 /* Diagnostic dump: alert details about the first card's computed styles.
  * Triggered by Ctrl+Shift+D. Tells us exactly what the browser sees. */
@@ -875,6 +962,8 @@ if (loadCatalog()) {
     bindTrialUI();
     tryRestoreSession();
     updateTrialUI();
+    updateVerifyBar();
+    checkEmailVerified();
     startHeartbeat();
 }
 

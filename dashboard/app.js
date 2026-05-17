@@ -179,8 +179,15 @@ function renderUsers(users) {
         const venc = sub?.current_period_end ? fmtDate(sub.current_period_end) : (sub?.plan === "lifetime" ? "♾️ nunca" : "—");
         const dias = sub?.current_period_end ? daysUntil(sub.current_period_end) : null;
         const vencSub = dias !== null ? `<small>${dias > 0 ? "em " + dias + "d" : Math.abs(dias) + "d atrás"}</small>` : "";
+        const nameDisplay = u.name ? `<strong>${u.name}</strong><br>` : '';
+        const emailVerifyIcon = u.email_verified
+            ? '<span title="E-mail verificado" style="color:var(--green);margin-left:4px">✓</span>'
+            : '<span title="E-mail NÃO verificado" style="color:var(--orange);margin-left:4px">⚠</span>';
+        const phoneDisplay = u.phone
+            ? `<small style="color:var(--mut);display:block;margin-top:2px">📱 ${u.phone}</small>`
+            : '';
         return `<tr data-id="${u.id}">
-            <td class="email-cell">${u.email}${u.is_admin ? ' <span class="badge badge--purple" style="margin-left:6px">ADMIN</span>' : ''}<span class="id">${u.id.slice(0,8)}…</span></td>
+            <td class="email-cell">${nameDisplay}${u.email}${emailVerifyIcon}${u.is_admin ? ' <span class="badge badge--purple" style="margin-left:6px">ADMIN</span>' : ''}<span class="id">${u.id.slice(0,8)}…</span>${phoneDisplay}</td>
             <td>${sub ? planBadge(sub.plan) : '<span class="muted">sem assinatura</span>'}</td>
             <td>${sub ? statusBadge(sub.status) : '—'}</td>
             <td class="date-cell">${fmtDate(u.created_at)}</td>
@@ -322,11 +329,14 @@ async function openUserDrawer(id) {
             <div class="drawer-section">
                 <h4>Dados da conta</h4>
                 <div class="drawer-grid">
-                    <div class="drawer-field"><div class="drawer-field-label">ID</div><div class="drawer-field-value"><code>${u.id}</code></div></div>
-                    <div class="drawer-field"><div class="drawer-field-label">Email</div><div class="drawer-field-value">${u.email}</div></div>
+                    <div class="drawer-field"><div class="drawer-field-label">Nome</div><div class="drawer-field-value">${u.name || '<span class="muted">não informado</span>'}</div></div>
+                    <div class="drawer-field"><div class="drawer-field-label">Telefone</div><div class="drawer-field-value">${u.phone ? '📱 ' + u.phone : '<span class="muted">não informado</span>'} ${u.phone && u.phone_verified ? '<span style="color:var(--green)">✓ verificado</span>' : ''}</div></div>
+                    <div class="drawer-field"><div class="drawer-field-label">E-mail</div><div class="drawer-field-value">${u.email} ${u.email_verified ? '<span style="color:var(--green)">✓ verificado</span>' : '<span style="color:var(--orange)">⚠ não verificado</span>'}</div></div>
+                    <div class="drawer-field"><div class="drawer-field-label">Marketing opt-in</div><div class="drawer-field-value">${u.marketing_optin ? '✅ Aceita' : '🚫 Recusou'}</div></div>
                     <div class="drawer-field"><div class="drawer-field-label">Cadastro</div><div class="drawer-field-value">${fmtDateTime(u.created_at)}</div></div>
                     <div class="drawer-field"><div class="drawer-field-label">Admin?</div><div class="drawer-field-value">${u.is_admin ? '✅ Sim' : '—'}</div></div>
-                    <div class="drawer-field"><div class="drawer-field-label">Stripe Customer</div><div class="drawer-field-value"><code>${u.stripe_customer || '—'}</code></div></div>
+                    <div class="drawer-field" style="grid-column:1/-1"><div class="drawer-field-label">ID</div><div class="drawer-field-value"><code>${u.id}</code></div></div>
+                    <div class="drawer-field" style="grid-column:1/-1"><div class="drawer-field-label">Stripe Customer</div><div class="drawer-field-value"><code>${u.stripe_customer || '—'}</code></div></div>
                 </div>
             </div>
 

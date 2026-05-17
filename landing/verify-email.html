@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Confirmar e-mail · MotionPro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="nav">
+    <div class="wrap nav__inner">
+        <a href="/" class="brand">Motion<span class="brand-mark">·</span>Pro</a>
+        <div class="nav__actions"><a href="/" class="nav-link">← Voltar ao site</a></div>
+    </div>
+</header>
+
+<section class="section" style="padding:100px 0">
+    <div class="wrap" style="max-width:520px;text-align:center">
+
+        <!-- LOADING -->
+        <div id="step-loading">
+            <div style="display:inline-block;width:48px;height:48px;border:3px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:24px"></div>
+            <h1 class="section__title" style="font-size:32px;margin-bottom:16px">Verificando seu e-mail<span class="period">...</span></h1>
+            <p style="color:var(--mut);font-size:15px">Aguarde alguns segundos.</p>
+        </div>
+
+        <!-- SUCESSO -->
+        <div id="step-success" hidden>
+            <div style="display:inline-flex;align-items:center;justify-content:center;width:80px;height:80px;border-radius:50%;background:var(--acc-soft);margin-bottom:32px">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="color:var(--acc)">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </div>
+            <span class="section__tag" style="padding-left:36px">E-mail confirmado</span>
+            <h1 class="section__title" style="font-size:40px;margin-bottom:18px">Tudo certo<span class="period">!</span></h1>
+            <p style="color:var(--mut);font-size:16px;line-height:1.6;margin-bottom:36px">
+                Seu e-mail <strong id="ok-email" style="color:var(--txt)"></strong> está verificado. Agora você vai receber todos os comunicados importantes do MotionPro.
+            </p>
+            <a href="/" class="btn btn--primary btn--lg">Voltar ao site <span class="arrow">→</span></a>
+        </div>
+
+        <!-- JÁ VERIFICADO -->
+        <div id="step-already" hidden>
+            <div style="font-size:48px;margin-bottom:18px">✓</div>
+            <h1 class="section__title" style="font-size:32px;margin-bottom:16px">Já confirmado<span class="period">.</span></h1>
+            <p style="color:var(--mut);font-size:15px;line-height:1.6;margin-bottom:32px">
+                Esse e-mail já foi verificado antes. Tudo certo, você pode fechar esta página.
+            </p>
+            <a href="/" class="btn btn--ghost btn--lg">Voltar ao site</a>
+        </div>
+
+        <!-- ERRO -->
+        <div id="step-error" hidden>
+            <div style="display:inline-flex;align-items:center;justify-content:center;width:80px;height:80px;border-radius:50%;background:rgba(220,38,38,.08);margin-bottom:32px">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="color:#dc2626">
+                    <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </div>
+            <span class="section__tag" style="padding-left:36px;color:#dc2626">Link inválido</span>
+            <h1 class="section__title" style="font-size:32px;margin-bottom:16px">Não conseguimos confirmar<span class="period">.</span></h1>
+            <p id="err-msg" style="color:var(--mut);font-size:15px;line-height:1.6;margin-bottom:32px">
+                O link expirou (válido por 7 dias) ou já foi usado.
+            </p>
+            <p style="color:var(--mut);font-size:14px;margin-bottom:24px">
+                Abre o plugin no Premiere → click em <strong>"Reenviar e-mail de confirmação"</strong> pra receber um novo link.
+            </p>
+            <a href="/" class="btn btn--ghost btn--lg">Voltar ao site</a>
+        </div>
+
+    </div>
+</section>
+
+<footer class="foot">
+    <div class="wrap" style="text-align:center;padding:32px 0;border-top:1px solid var(--line-dark)">
+        <p style="color:var(--mut-inv);font-size:13px">© <span id="yr"></span> MotionPro · uma marca PacotesFX</p>
+    </div>
+</footer>
+
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+<script>
+document.getElementById('yr').textContent = new Date().getFullYear();
+const API = window.MV_API || "https://motionpro.vercel.app";
+const token = new URLSearchParams(location.search).get('token');
+
+function show(id) {
+    ['step-loading','step-success','step-already','step-error'].forEach(s => {
+        document.getElementById(s).hidden = (s !== id);
+    });
+}
+
+(async () => {
+    if (!token) {
+        document.getElementById('err-msg').textContent = "Link sem token. Reenvie pelo plugin.";
+        show('step-error'); return;
+    }
+    try {
+        const r = await fetch(API + '/v1/auth/verify-email', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ token })
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || 'erro');
+        if (data.already_verified) {
+            show('step-already');
+        } else {
+            document.getElementById('ok-email').textContent = data.user?.email || '';
+            show('step-success');
+        }
+    } catch (e) {
+        const msg = {
+            invalid_or_expired_token: 'Link expirado ou inválido. Solicite um novo pelo plugin.',
+            token_required: 'Link sem token.',
+            user_not_found: 'Usuário não encontrado.'
+        }[e.message] || ('Erro: ' + e.message);
+        document.getElementById('err-msg').textContent = msg;
+        show('step-error');
+    }
+})();
+</script>
+</body>
+</html>

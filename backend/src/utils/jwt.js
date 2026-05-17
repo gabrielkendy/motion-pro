@@ -43,4 +43,25 @@ function verifyResetToken(token) {
     } catch (e) { return null; }
 }
 
-module.exports = { signSession, verifySession, signLicense, verifyLicense, signResetToken, verifyResetToken };
+// Email verification token (válido 7 dias)
+function signEmailVerifyToken(userId, email) {
+    return jwt.sign(
+        { sub: userId, email, purpose: "email_verify" },
+        LICENSE_SECRET,
+        { expiresIn: "7d", issuer: "motionvault" }
+    );
+}
+function verifyEmailToken(token) {
+    try {
+        const p = jwt.verify(token, LICENSE_SECRET, { issuer: "motionvault" });
+        if (p.purpose !== "email_verify") return null;
+        return p;
+    } catch (e) { return null; }
+}
+
+module.exports = {
+    signSession, verifySession,
+    signLicense, verifyLicense,
+    signResetToken, verifyResetToken,
+    signEmailVerifyToken, verifyEmailToken
+};

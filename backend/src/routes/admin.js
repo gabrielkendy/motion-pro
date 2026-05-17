@@ -56,6 +56,11 @@ router.get("/users", requireAdmin, async (req, res, next) => {
             SELECT
               u.id,
               u.email,
+              u.name,
+              u.phone,
+              u.email_verified,
+              u.phone_verified,
+              u.marketing_optin,
               u.created_at,
               u.is_admin,
               u.stripe_customer,
@@ -85,7 +90,11 @@ router.get("/users", requireAdmin, async (req, res, next) => {
 // === USER DETAIL ===
 router.get("/users/:id", requireAdmin, async (req, res, next) => {
     try {
-        const u = await pool.query("SELECT id, email, created_at, is_admin, stripe_customer FROM users WHERE id=$1", [req.params.id]);
+        const u = await pool.query(
+            `SELECT id, email, name, phone, email_verified, email_verified_at,
+                    phone_verified, phone_verified_at, marketing_optin,
+                    created_at, is_admin, stripe_customer
+             FROM users WHERE id=$1`, [req.params.id]);
         if (!u.rowCount) return res.status(404).json({ error: "not_found" });
         const subs = await pool.query("SELECT * FROM subscriptions WHERE user_id=$1 ORDER BY created_at DESC", [req.params.id]);
         const devices = await pool.query("SELECT * FROM devices WHERE user_id=$1 ORDER BY last_seen DESC", [req.params.id]);

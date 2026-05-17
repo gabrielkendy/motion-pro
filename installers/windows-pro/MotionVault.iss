@@ -24,7 +24,7 @@
 ; ════════════════════════════════════════════════════════════════
 
 #define MyAppName "MotionPro"
-#define MyAppVersion "1.0.3"
+#define MyAppVersion "1.0.4"
 #define MyAppPublisher "PacotesFX"
 #define MyAppURL "https://motionpro-lp.vercel.app"
 #define MyAppSupportURL "https://motionpro-lp.vercel.app/seguranca.html"
@@ -47,7 +47,7 @@ AppCopyright={#MyAppCopyright}
 AppComments=Plugin oficial MotionPro para Adobe Premiere Pro CC 2019+. 7.906 templates premium organizados.
 
 ; === METADATA do .exe (visíveis em propriedades do Windows + ajudam SmartScreen) ===
-VersionInfoVersion=1.0.3.0
+VersionInfoVersion=1.0.4.0
 VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription={#MyAppName} {#MyAppVersion} - Installer
 VersionInfoProductName={#MyAppName}

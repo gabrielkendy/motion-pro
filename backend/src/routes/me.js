@@ -5,7 +5,10 @@ const { requireAuth } = require("../middleware/auth");
 
 router.get("/", requireAuth, async (req, res, next) => {
     try {
-        const u = await pool.query("SELECT id, email, created_at, stripe_customer FROM users WHERE id=$1", [req.user.id]);
+        const u = await pool.query(
+            `SELECT id, email, name, phone, created_at, stripe_customer,
+                    email_verified, email_verified_at, phone_verified, phone_verified_at, marketing_optin
+             FROM users WHERE id=$1`, [req.user.id]);
         const s = await pool.query(
             `SELECT plan, status, current_period_end, cancel_at FROM subscriptions
              WHERE user_id=$1 ORDER BY started_at DESC LIMIT 1`, [req.user.id]

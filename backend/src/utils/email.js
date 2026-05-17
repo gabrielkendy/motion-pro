@@ -185,4 +185,38 @@ ${BRAND_FOOTER}
     });
 }
 
-module.exports = { sendEmail, welcomeEmail, resetPasswordEmail, paymentFailedEmail };
+function verifyEmailMessage({ email, name, verifyUrl }) {
+    const greet = name ? `Olá, ${name}!` : "Olá!";
+    const html = `
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MotionPro</title></head><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
+${BRAND_HEADER}
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#fff;max-width:560px;margin:0 auto">
+  <tr><td style="padding:48px 40px 32px">
+    <h1 style="font:800 26px Inter,Arial,sans-serif;color:#0a0a0a;margin:0 0 18px;letter-spacing:-.8px">
+      Confirme seu e-mail
+    </h1>
+    <p style="color:#444;font:400 15px/1.6 Inter,Arial,sans-serif;margin:0 0 24px">
+      ${greet} Bem-vindo ao MotionPro. Pra ativar seu trial de 14 dias e garantir que você receba comunicados importantes, confirme seu e-mail clicando no botão abaixo.
+    </p>
+    <a href="${verifyUrl}" style="display:inline-block;background:#2563EB;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font:600 15px Inter,Arial,sans-serif">
+      Confirmar meu e-mail →
+    </a>
+    <p style="color:#888;font:400 13px/1.6 Inter,Arial,sans-serif;margin:28px 0 0">
+      O link é válido por 7 dias. Se você não criou conta no MotionPro, ignore este e-mail.
+    </p>
+    <p style="color:#888;font:400 12px/1.5 Inter,Arial,sans-serif;margin:18px 0 0;word-break:break-all">
+      Se o botão não funcionar, cole no navegador:<br><span style="color:#2563EB">${verifyUrl}</span>
+    </p>
+  </td></tr>
+</table>
+${BRAND_FOOTER}
+</body></html>`;
+    return sendEmail({
+        to: email,
+        subject: "✉️ Confirme seu e-mail · MotionPro",
+        html,
+        text: `${greet} Confirme seu e-mail abrindo: ${verifyUrl}\n\nVálido por 7 dias.`
+    });
+}
+
+module.exports = { sendEmail, welcomeEmail, resetPasswordEmail, paymentFailedEmail, verifyEmailMessage };
