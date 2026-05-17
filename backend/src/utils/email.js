@@ -68,15 +68,16 @@ const BRAND_FOOTER = `
   </td></tr>
 </table>`;
 
-function welcomeEmail({ email, password, plan, downloadUrl }) {
+function welcomeEmail({ email, password, plan, downloadUrl, productName }) {
     const planName = plan === "lifetime" ? "Vitalício" : plan === "yearly" ? "Anual" : plan;
+    const pName = productName || "MotionPro";
     const html = `
 <!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MotionPro</title></head><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
 ${BRAND_HEADER}
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#fff;max-width:560px;margin:0 auto">
   <tr><td style="padding:48px 40px 32px">
     <h1 style="font:800 28px Inter,Arial,sans-serif;color:#0a0a0a;margin:0 0 18px;letter-spacing:-.8px">
-      Bem-vindo ao MotionPro.
+      Bem-vindo ao ${pName}.
     </h1>
     <p style="color:#444;font:400 16px/1.6 Inter,Arial,sans-serif;margin:0 0 28px">
       Sua assinatura <strong>${planName}</strong> está ativa. Tudo pronto pra começar:
@@ -109,7 +110,7 @@ ${BRAND_HEADER}
     <div style="background:#f6f6f8;border:1px solid #e6e6ea;border-radius:8px;padding:20px">
       <div style="font:600 11px Inter,Arial,sans-serif;color:#2563EB;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px">03 · Abra o Premiere e faça login</div>
       <p style="color:#444;font:400 14px/1.6 Inter,Arial,sans-serif;margin:0">
-        Menu <strong>Janela → Extensões → MotionPro</strong>. Use o e-mail e a senha acima. Pronto, os 7.906 templates estão liberados.
+        Menu <strong>Janela → Extensões → ${pName}</strong>. Use o e-mail e a senha acima. Pronto, está liberado.
       </p>
     </div>
 
@@ -122,9 +123,9 @@ ${BRAND_FOOTER}
 </body></html>`;
     return sendEmail({
         to: email,
-        subject: "✅ Bem-vindo ao MotionPro · suas credenciais + download",
+        subject: `✅ Bem-vindo ao ${pName} · suas credenciais + download`,
         html,
-        text: `Bem-vindo ao MotionPro!\n\nSeu plano ${planName} está ativo.\n\nE-mail: ${email}\nSenha temporária: ${password}\n\nBaixe o plugin: ${downloadUrl}\n\nDepois abra o Premiere em Janela > Extensões > MotionPro e faça login.\n\nDúvidas: suporte@pacotesfx.com`
+        text: `Bem-vindo ao ${pName}!\n\nSeu plano ${planName} está ativo.\n\nE-mail: ${email}\nSenha temporária: ${password}\n\nBaixe o plugin: ${downloadUrl}\n\nDepois abra o Premiere em Janela > Extensões > ${pName} e faça login.\n\nDúvidas: suporte@pacotesfx.com`
     });
 }
 

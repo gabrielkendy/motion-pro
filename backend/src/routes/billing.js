@@ -9,15 +9,43 @@ const { welcomeEmail, paymentFailedEmail } = require("../utils/email");
 
 const stripe = Stripe(process.env.STRIPE_SECRET || "sk_test_xxx");
 
-const PRICE_MAP = {
-    yearly:   process.env.STRIPE_PRICE_YEARLY,
-    lifetime: process.env.STRIPE_PRICE_LIFETIME
+// Fallback caso DB esteja indisponível — só pro motionpro
+const FALLBACK_PRICES = {
+    motionpro: {
+        yearly:   process.env.STRIPE_PRICE_YEARLY,
+        lifetime: process.env.STRIPE_PRICE_LIFETIME
+    }
 };
-const PLAN_FROM_PRICE = Object.fromEntries(
-    Object.entries(PRICE_MAP).map(([k, v]) => [v, k])
-);
 
 const PUBLIC_URL = process.env.PUBLIC_URL || "https://motionpro-lp.vercel.app";
+
+// Busca price_id do produto+plano no banco
+async function getStripePriceId(productId, plan) {
+    try {
+        const r = await pool.query(
+            "SELECT stripe_price_id FROM product_prices WHERE product_id=$1 AND plan=$2 AND is_active=true",
+            [productId, plan]
+        );
+        if (r.rowCount) return r.rows[0].stripe_price_id;
+    } catch (_) {}
+    return FALLBACK_PRICES[productId]?.[plan] || null;
+}
+
+// Resolve plan a partir do priceId (pro webhook)
+async function planAndProductFromPriceId(priceId) {
+    try {
+        const r = await pool.query(
+            "SELECT product_id, plan FROM product_prices WHERE stripe_price_id=$1",
+            [priceId]
+        );
+        if (r.rowCount) return r.rows[0];
+    } catch (_) {}
+    // Fallback: motionpro
+    for (const [plan, pid] of Object.entries(FALLBACK_PRICES.motionpro)) {
+        if (pid === priceId) return { product_id: "motionpro", plan };
+    }
+    return { product_id: "motionpro", plan: "yearly" };
+}
 
 // ============================================================
 // CHECKOUT — PÚBLICO (não precisa estar logado)
@@ -27,8 +55,12 @@ const PUBLIC_URL = process.env.PUBLIC_URL || "https://motionpro-lp.vercel.app";
 router.post("/checkout", async (req, res, next) => {
     try {
         const plan = (req.query.plan || req.body?.plan || "yearly").toLowerCase();
-        const price = PRICE_MAP[plan];
-        if (!price) return res.status(400).json({ error: "unknown_plan", available: Object.keys(PRICE_MAP) });
+        const product_id = (req.query.product || req.body?.product || "motionpro").toLowerCase();
+        const price = await getStripePriceId(product_id, plan);
+        if (!price) return res.status(400).json({
+            error: "unknown_product_or_plan",
+            product: product_id, plan
+        });
 
         // Se o user JÁ estiver logado, anexa ao customer dele
         let customerId = null;
@@ -61,7 +93,7 @@ router.post("/checkout", async (req, res, next) => {
             cancel_url:  PUBLIC_URL + "/cancel.html",
             allow_promotion_codes: true,
             billing_address_collection: "auto",
-            metadata: { plan }
+            metadata: { plan, product_id }
         };
         if (customerId) {
             sessionParams.customer = customerId;
@@ -128,20 +160,21 @@ async function findOrCreateUser({ email, stripeCustomerId }) {
     return { user: ins.rows[0], created: true, plainPassword: plain };
 }
 
-async function upsertSubscription({ userId, plan, status, stripeSubId, periodEnd, cancelAt }) {
-    // Tenta atualizar existente
+async function upsertSubscription({ userId, productId, plan, status, stripeSubId, periodEnd, cancelAt }) {
+    const product = productId || "motionpro";
     if (stripeSubId) {
         const upd = await pool.query(
-            `UPDATE subscriptions SET status=$1, plan=$2, current_period_end=$3, cancel_at=$4, updated_at=now()
-             WHERE stripe_sub_id=$5 RETURNING id`,
-            [status, plan, periodEnd, cancelAt, stripeSubId]
+            `UPDATE subscriptions
+                SET status=$1, plan=$2, product_id=$3, current_period_end=$4, cancel_at=$5, updated_at=now()
+              WHERE stripe_sub_id=$6 RETURNING id`,
+            [status, plan, product, periodEnd, cancelAt, stripeSubId]
         );
         if (upd.rowCount) return upd.rows[0].id;
     }
     const ins = await pool.query(
-        `INSERT INTO subscriptions(user_id, plan, status, stripe_sub_id, current_period_end, cancel_at)
-         VALUES($1,$2,$3,$4,$5,$6) RETURNING id`,
-        [userId, plan, status, stripeSubId, periodEnd, cancelAt]
+        `INSERT INTO subscriptions(user_id, product_id, plan, status, stripe_sub_id, current_period_end, cancel_at)
+         VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+        [userId, product, plan, status, stripeSubId, periodEnd, cancelAt]
     );
     return ins.rows[0].id;
 }
@@ -187,6 +220,7 @@ async function webhook(req, res) {
                 const customerId = cs.customer;
                 const email = cs.customer_details?.email || cs.customer_email;
                 const plan = cs.metadata?.plan || "yearly";
+                const product_id = cs.metadata?.product_id || "motionpro";
 
                 if (!email) { console.warn("[webhook] checkout sem email", cs.id); break; }
 
@@ -208,22 +242,28 @@ async function webhook(req, res) {
                 }
 
                 await upsertSubscription({
-                    userId: user.id, plan, status, stripeSubId, periodEnd, cancelAt: null
+                    userId: user.id, productId: product_id, plan, status, stripeSubId, periodEnd, cancelAt: null
                 });
 
                 await pool.query(
                     "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'checkout_completed', $2)",
-                    [user.id, { plan, mode: cs.mode, amount: cs.amount_total, stripe_session: cs.id }]
+                    [user.id, { plan, product_id, mode: cs.mode, amount: cs.amount_total, stripe_session: cs.id }]
                 );
 
                 // Manda welcome (com senha temporária se foi criado agora)
-                const downloadUrl = PUBLIC_URL + "/download.html";
+                const productName = product_id === "legendas" ? "MotionPro Legendas"
+                                  : product_id === "bundle_all" ? "Pacote Completo MotionPro"
+                                  : "MotionPro";
+                const downloadUrl = product_id === "legendas"
+                    ? PUBLIC_URL + "/legendas/download.html"
+                    : PUBLIC_URL + "/download.html";
                 const passwordToSend = plainPassword || "(use a senha que você já tem cadastrada)";
                 try {
                     await welcomeEmail({
                         email: user.email,
                         password: passwordToSend,
                         plan,
+                        productName,
                         downloadUrl
                     });
                 } catch (e) { console.error("[webhook] welcome email fail", e.message); }
@@ -238,10 +278,11 @@ async function webhook(req, res) {
                 const userR = await pool.query("SELECT id, email FROM users WHERE stripe_customer=$1", [customerId]);
                 if (!userR.rowCount) break;
                 const priceId = sub.items?.data?.[0]?.price?.id;
-                const plan = PLAN_FROM_PRICE[priceId] || "yearly";
+                const pp = await planAndProductFromPriceId(priceId);
                 await upsertSubscription({
                     userId: userR.rows[0].id,
-                    plan,
+                    productId: pp.product_id,
+                    plan: pp.plan,
                     status: sub.status,
                     stripeSubId: sub.id,
                     periodEnd: sub.current_period_end ? new Date(sub.current_period_end * 1000) : null,

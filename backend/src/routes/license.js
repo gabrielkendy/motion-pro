@@ -4,7 +4,7 @@ const { pool } = require("../db");
 const { requireAuth } = require("../middleware/auth");
 const { signLicense, verifyLicense } = require("../utils/jwt");
 
-/* Per-plan device limits — easy to adjust later */
+/* Per-plan device limits */
 const DEVICE_LIMITS = {
     trial:    2,
     yearly:   2,
@@ -12,56 +12,62 @@ const DEVICE_LIMITS = {
     pro_all:  5
 };
 
-/* Status that are allowed to receive a valid license.
- * Tudo o que NÃO estiver nessa lista bloqueia a emissão (revoked, canceled, past_due, expired, etc). */
 const ACTIVE_STATUSES = new Set(["active", "trialing"]);
+const DEFAULT_PRODUCT = "motionpro";
 
-/* Retorna a assinatura "vencedora" do usuário:
- *   - Prioriza subs ativas (active/trialing) sobre revogadas/canceladas
- *   - Lifetime ativa sempre ganha
- *   - Atualiza trials vencidos pra "expired"
- *   - Quando NENHUMA sub ativa existe, retorna {plan:"free", status:"none|expired|revoked"} */
-async function getActiveSubscription(userId) {
-    // Pega TODAS as subs do user; lógica de prioridade no JS
+/* Retorna sub ativa do usuário PRO PRODUTO especificado.
+ * Bundle 'bundle_all' cobre todos os produtos automaticamente. */
+async function getActiveSubscription(userId, productId = DEFAULT_PRODUCT) {
+    // 1. Bundle ativo cobre TUDO
+    const bundle = await pool.query(
+        `SELECT plan, status, current_period_end FROM subscriptions
+         WHERE user_id=$1 AND product_id='bundle_all' AND status IN ('active','trialing')
+         ORDER BY started_at DESC LIMIT 1`,
+        [userId]
+    );
+    if (bundle.rowCount) {
+        const s = bundle.rows[0];
+        return { plan: s.plan, status: s.status, expiresAt: s.current_period_end, product: "bundle_all" };
+    }
+
+    // 2. Subs do produto específico
     const r = await pool.query(
         `SELECT plan, status, current_period_end, cancel_at, started_at
          FROM subscriptions
-         WHERE user_id=$1
+         WHERE user_id=$1 AND product_id=$2
          ORDER BY started_at DESC`,
-        [userId]
+        [userId, productId]
     );
-    if (r.rowCount === 0) return { plan: "free", status: "none", expiresAt: null };
+    if (r.rowCount === 0) return { plan: "free", status: "none", expiresAt: null, product: productId };
 
-    // 1. Lifetime active vence sobre tudo
+    // 3. Lifetime active vence
     const lifetime = r.rows.find(s => s.plan === "lifetime" && s.status === "active");
-    if (lifetime) return { plan: "lifetime", status: "active", expiresAt: null };
+    if (lifetime) return { plan: "lifetime", status: "active", expiresAt: null, product: productId };
 
-    // 2. Procura primeira sub ativa/trialing válida (não vencida)
+    // 4. Primeira ativa/trial válida
     const now = new Date();
     for (const s of r.rows) {
-        // Trial vencido? marca como expired no banco
         if (s.status === "trialing" && s.current_period_end && new Date(s.current_period_end) < now) {
             await pool.query(
-                "UPDATE subscriptions SET status='expired', updated_at=now() WHERE user_id=$1 AND status='trialing' AND current_period_end<now()",
-                [userId]
+                "UPDATE subscriptions SET status='expired', updated_at=now() WHERE user_id=$1 AND product_id=$2 AND status='trialing' AND current_period_end<now()",
+                [userId, productId]
             );
-            continue;   // tenta próxima sub
+            continue;
         }
-        // Sub ativa (active ou trialing) com expires no futuro (ou sem expires = lifetime)
         if (ACTIVE_STATUSES.has(s.status)) {
             const notExpired = !s.current_period_end || new Date(s.current_period_end) >= now;
             if (notExpired) {
-                return { plan: s.plan, status: s.status, expiresAt: s.current_period_end };
+                return { plan: s.plan, status: s.status, expiresAt: s.current_period_end, product: productId };
             }
         }
     }
 
-    // 3. Nenhuma sub ativa → retorna status mais relevante pra UX (revoked > canceled > expired)
-    const latest = r.rows[0];   // mais recente
+    const latest = r.rows[0];
     return {
         plan: "free",
-        status: latest.status || "none",       // "revoked" | "canceled" | "expired"
-        expiresAt: latest.current_period_end
+        status: latest.status || "none",
+        expiresAt: latest.current_period_end,
+        product: productId
     };
 }
 
@@ -74,10 +80,11 @@ async function audit(userId, deviceId, action, detail) {
 
 router.post("/issue", requireAuth, async (req, res, next) => {
     try {
-        const { fingerprint } = req.body || {};
+        const { fingerprint, product_id } = req.body || {};
         if (!fingerprint) return res.status(400).json({ error: "fingerprint_required" });
+        const product = product_id || DEFAULT_PRODUCT;
 
-        const sub = await getActiveSubscription(req.user.id);
+        const sub = await getActiveSubscription(req.user.id, product);
 
         // 🔒 GATE: só emite license se status for "active" ou "trialing"
         if (!ACTIVE_STATUSES.has(sub.status)) {
@@ -118,20 +125,23 @@ router.post("/issue", requireAuth, async (req, res, next) => {
         }
         await pool.query("UPDATE devices SET last_seen=now() WHERE id=$1", [deviceId]);
 
-        // Compose license
+        // Compose license (license JWT inclui product)
         const license = signLicense({
             userId: req.user.id,
             email: req.user.email,
             plan: sub.plan,
+            product,                            // ← product no JWT
             fingerprint,
             packs: ["*"]
         });
-        await audit(req.user.id, deviceId, "issue", { plan: sub.plan });
+        await audit(req.user.id, deviceId, "issue", { plan: sub.plan, product });
 
         res.json({
             license,
             plan: sub.plan,
             status: sub.status,
+            product,
+            covers_via_bundle: sub.product === "bundle_all",
             expires_at: sub.expiresAt,
             max_devices: limit
         });
@@ -140,7 +150,8 @@ router.post("/issue", requireAuth, async (req, res, next) => {
 
 router.post("/heartbeat", requireAuth, async (req, res, next) => {
     try {
-        const { fingerprint } = req.body || {};
+        const { fingerprint, product_id } = req.body || {};
+        const product = product_id || DEFAULT_PRODUCT;
         const d = await pool.query(
             "SELECT id, revoked FROM devices WHERE user_id=$1 AND fingerprint=$2",
             [req.user.id, fingerprint]
@@ -149,7 +160,7 @@ router.post("/heartbeat", requireAuth, async (req, res, next) => {
         if (d.rows[0].revoked) return res.json({ revoked: true });
 
         await pool.query("UPDATE devices SET last_seen=now() WHERE id=$1", [d.rows[0].id]);
-        const sub = await getActiveSubscription(req.user.id);
+        const sub = await getActiveSubscription(req.user.id, product);
 
         // 🔒 GATE: se sub inativa, sinaliza pro plugin (não emite nova license)
         if (!ACTIVE_STATUSES.has(sub.status)) {
@@ -167,15 +178,18 @@ router.post("/heartbeat", requireAuth, async (req, res, next) => {
             userId: req.user.id,
             email: req.user.email,
             plan: sub.plan,
+            product,
             fingerprint,
             packs: ["*"]
         });
-        await audit(req.user.id, d.rows[0].id, "heartbeat", { plan: sub.plan });
+        await audit(req.user.id, d.rows[0].id, "heartbeat", { plan: sub.plan, product });
 
         res.json({
             license,
             plan: sub.plan,
             status: sub.status,
+            product,
+            covers_via_bundle: sub.product === "bundle_all",
             expires_at: sub.expiresAt
         });
     } catch (e) { next(e); }

@@ -66,6 +66,7 @@ router.get("/users", requireAdmin, async (req, res, next) => {
               u.stripe_customer,
               (SELECT json_agg(json_build_object(
                   'id', s.id,
+                  'product_id', s.product_id,
                   'plan', s.plan,
                   'status', s.status,
                   'stripe_sub_id', s.stripe_sub_id,
