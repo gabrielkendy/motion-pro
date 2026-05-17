@@ -553,7 +553,28 @@ function showFatal(msg) {
 
 // ============================================================ AUTH (login/signup gate)
 var API_BASE = (window.MV_CONFIG && window.MV_CONFIG.apiBaseUrl) || "https://motionpro.vercel.app";
+var LANDING_URL = "https://motionpro-lp.vercel.app";
 var DEV_BYPASS = (window.MV_CONFIG && window.MV_CONFIG.devMode === true);
+
+// Abre URL no navegador externo (Chrome/Safari/Edge), nunca dentro do CEP
+function openInBrowser(url) {
+    try {
+        if (typeof CSInterface !== "undefined") {
+            var cs = new CSInterface();
+            cs.openURLInDefaultBrowser(url);
+            return true;
+        }
+    } catch (_) {}
+    try {
+        if (window.cep && window.cep.util && window.cep.util.openURLInDefaultBrowser) {
+            window.cep.util.openURLInDefaultBrowser(url);
+            return true;
+        }
+    } catch (_) {}
+    try { window.open(url, "_blank"); return true; } catch (_) {}
+    toast("Não consegui abrir o navegador. Cole no browser: " + url, "warn", 5000);
+    return false;
+}
 
 function gateApi(path, body) {
     var token = localStorage.getItem("mv_session");
@@ -630,10 +651,24 @@ function bindGate() {
     var gtS = document.getElementById("gt-signup");
     var sub = document.getElementById("g-submit");
     var msg = document.getElementById("g-msg");
+    var forgot = document.getElementById("g-forgot");
     if (!gtL) return;
 
     gtL.onclick = function () { setGateMode("login"); };
     gtS.onclick = function () { setGateMode("signup"); };
+
+    // Esqueci minha senha → abre browser na página de reset
+    if (forgot) {
+        forgot.onclick = function (e) {
+            e.preventDefault();
+            var email = document.getElementById("g-email").value.trim();
+            var url = LANDING_URL + "/reset-password.html";
+            if (email) url += "?email=" + encodeURIComponent(email);
+            openInBrowser(url);
+            msg.textContent = "✓ Página de recuperação aberta no navegador";
+            msg.className = "gate__msg ok";
+        };
+    }
 
     sub.onclick = async function () {
         var mode = sub.dataset.mode || "login";
@@ -652,10 +687,11 @@ function bindGate() {
             var lic = await gateApi("/v1/license/issue", { fingerprint: fp });
             localStorage.setItem("mv_license", lic.license);
             localStorage.setItem("mv_plan", lic.plan);
+            localStorage.setItem("mv_status", lic.status || "");
             localStorage.setItem("mv_expires", lic.expires_at || "");
             msg.textContent = "✓ " + (mode === "signup" ? "Conta criada! Trial de 14 dias ativo." : "Bem-vindo!");
             msg.className = "gate__msg ok";
-            setTimeout(hideGate, 500);
+            setTimeout(function () { hideGate(); updateTrialUI(); }, 500);
         } catch (e) {
             msg.textContent = "Erro: " + (typeof e === "string" ? e : (e.message || "falha"));
             msg.className = "gate__msg";
@@ -664,11 +700,102 @@ function bindGate() {
     };
 }
 
-/* Periodic heartbeat: every 30 min refresh license; if revoked, force gate */
+/* ============================================================
+   TRIAL BAR + PAYWALL
+   Mostra status do plano no topo. Bloqueia se trial expirou.
+   ============================================================ */
+function daysBetween(future) {
+    if (!future) return null;
+    var d = (new Date(future) - new Date()) / (1000 * 60 * 60 * 24);
+    return Math.max(0, Math.ceil(d));
+}
+
+function updateTrialUI() {
+    var plan = localStorage.getItem("mv_plan") || "";
+    var status = localStorage.getItem("mv_status") || "";
+    var expires = localStorage.getItem("mv_expires") || "";
+    var bar = document.getElementById("trial-bar");
+    var info = document.getElementById("trial-info");
+    var paywall = document.getElementById("paywall");
+    if (!bar) return;
+
+    // Plano pago — esconde tudo
+    if (plan === "yearly" || plan === "lifetime") {
+        bar.className = "trialbar hidden";
+        if (paywall) paywall.classList.add("hidden");
+        return;
+    }
+
+    // Trial ativo
+    if (plan === "trial" || status === "trialing") {
+        var days = daysBetween(expires);
+        if (days === null || days <= 0) {
+            // Trial vencido → paywall
+            showPaywall("Seu trial expirou");
+            return;
+        }
+        var warn = days <= 3;
+        bar.className = "trialbar" + (warn ? " warn" : "");
+        info.textContent = "⏰ Trial: " + days + " dia" + (days === 1 ? "" : "s") + " restante" + (days === 1 ? "" : "s");
+        if (paywall) paywall.classList.add("hidden");
+        return;
+    }
+
+    // Plano free/expired/canceled → paywall total
+    if (plan === "free" || plan === "expired" || status === "expired" || status === "canceled" || status === "revoked") {
+        showPaywall(plan === "free" ? "Sem assinatura ativa" : "Sua assinatura expirou");
+        return;
+    }
+
+    // Default: esconde
+    bar.className = "trialbar hidden";
+}
+
+function showPaywall(title) {
+    var pw = document.getElementById("paywall");
+    var bar = document.getElementById("trial-bar");
+    if (!pw) return;
+    var t = pw.querySelector(".paywall__title");
+    if (t && title) t.textContent = title;
+    pw.classList.remove("hidden");
+    if (bar) bar.className = "trialbar expired";
+    var info = document.getElementById("trial-info");
+    if (info) info.textContent = "⚠️ " + title;
+}
+
+function bindTrialUI() {
+    var btnUpgrade = document.getElementById("btn-upgrade");
+    if (btnUpgrade) {
+        btnUpgrade.onclick = function () {
+            openInBrowser(LANDING_URL + "/#pricing");
+        };
+    }
+    var pwCta = document.getElementById("paywall-cta");
+    if (pwCta) {
+        pwCta.onclick = function () {
+            openInBrowser(LANDING_URL + "/#pricing");
+        };
+    }
+    var pwLogout = document.getElementById("paywall-logout");
+    if (pwLogout) {
+        pwLogout.onclick = function () {
+            localStorage.removeItem("mv_session");
+            localStorage.removeItem("mv_license");
+            localStorage.removeItem("mv_plan");
+            localStorage.removeItem("mv_status");
+            localStorage.removeItem("mv_expires");
+            var pw = document.getElementById("paywall");
+            if (pw) pw.classList.add("hidden");
+            showGate("login");
+        };
+    }
+}
+
+/* Periodic heartbeat: every 5 min refresh license; if revoked, force gate */
 function startHeartbeat() {
     if (DEV_BYPASS) return;
     var fp = computeFingerprint();
-    setInterval(async function () {
+    var tick = async function () {
         try {
             var r = await gateApi("/v1/license/heartbeat", { fingerprint: fp });
             if (r.revoked) {
@@ -680,10 +807,14 @@ function startHeartbeat() {
             if (r.license) {
                 localStorage.setItem("mv_license", r.license);
                 localStorage.setItem("mv_plan", r.plan);
+                localStorage.setItem("mv_status", r.status || "");
                 localStorage.setItem("mv_expires", r.expires_at || "");
+                updateTrialUI();
             }
         } catch (e) { /* offline grace — keep cached license */ }
-    }, 30 * 60 * 1000);
+    };
+    tick();                              // primeira chamada já
+    setInterval(tick, 5 * 60 * 1000);    // depois a cada 5 min
 }
 
 /* Check if we have a valid cached session; if yes, hide gate. */
@@ -700,7 +831,7 @@ function tryRestoreSession() {
 }
 
 // ============================================================ boot
-var BUILD = "2.1.0-auth-trial";
+var BUILD = "2.2.0-trial-paywall";
 
 /* Diagnostic dump: alert details about the first card's computed styles.
  * Triggered by Ctrl+Shift+D. Tells us exactly what the browser sees. */
@@ -741,7 +872,9 @@ if (loadCatalog()) {
     $("count").textContent = CATALOG.total_items.toLocaleString("pt-BR") + " templates · " + CATALOG.packs.length + " packs · build " + BUILD;
     $("status").textContent = "Pronto · build " + BUILD;
     bindGate();
+    bindTrialUI();
     tryRestoreSession();
+    updateTrialUI();
     startHeartbeat();
 }
 

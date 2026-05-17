@@ -19,7 +19,7 @@
 ; ════════════════════════════════════════════════════════════════
 
 #define MyAppName "MotionPro"
-#define MyAppVersion "1.0.1"
+#define MyAppVersion "1.0.2"
 #define MyAppPublisher "PacotesFX"
 #define MyAppURL "https://motionpro-lp.vercel.app"
 #define MyAppExtensionId "com.motionvault.panel"
