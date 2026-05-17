@@ -104,9 +104,12 @@ ${BRAND_HEADER}
     </div>
 
     <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:16px 20px;margin-bottom:32px">
-      <div style="font:600 11px Inter,Arial,sans-serif;color:#c2410c;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">⚠️ Aviso do Windows</div>
-      <p style="color:#7c2d12;font:400 13px/1.6 Inter,Arial,sans-serif;margin:0">
-        Ao abrir o instalador, o Windows pode mostrar <em>"O Windows protegeu o computador"</em>. Isso é normal pra apps novos. Click em <strong>"Mais informações" → "Executar assim mesmo"</strong> pra continuar.
+      <div style="font:600 11px Inter,Arial,sans-serif;color:#c2410c;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">⚠️ Aviso do Windows ao abrir o instalador</div>
+      <p style="color:#7c2d12;font:400 13px/1.6 Inter,Arial,sans-serif;margin:0 0 10px">
+        Vai aparecer <em>"O Windows protegeu o computador"</em>. Isso é normal pra apps novos e <strong>não é vírus</strong>. Click no link azul <strong>"Mais informações"</strong> → vai aparecer botão <strong>"Executar assim mesmo"</strong> → click pra continuar.
+      </p>
+      <p style="color:#7c2d12;font:400 12px Inter,Arial,sans-serif;margin:0">
+        Verifique você mesmo: <a href="https://motionpro-lp.vercel.app/seguranca.html" style="color:#c2410c;font-weight:600">hashes SHA-256, VirusTotal e código aberto →</a>
       </p>
     </div>
 

@@ -831,7 +831,7 @@ function tryRestoreSession() {
 }
 
 // ============================================================ boot
-var BUILD = "2.2.0-trial-paywall";
+var BUILD = "2.3.0-trust";
 
 /* Diagnostic dump: alert details about the first card's computed styles.
  * Triggered by Ctrl+Shift+D. Tells us exactly what the browser sees. */

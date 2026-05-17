@@ -16,23 +16,50 @@
 ;   • Cria entrada no Adicionar/Remover Programas
 ;   • Limpa cache CEP do Adobe
 ;   • Pergunta se quer fechar Premiere/AE se estiverem abertos
+;
+;   PARA REDUZIR/ELIMINAR WINDOWS SMARTSCREEN:
+;   1) Metadados completos (já configurados abaixo)
+;   2) Comprar certificado code-signing e descomentar SignTool
+;      ver COMPRAR-CERTIFICADO.md pra opções
 ; ════════════════════════════════════════════════════════════════
 
 #define MyAppName "MotionPro"
-#define MyAppVersion "1.0.2"
+#define MyAppVersion "1.0.3"
 #define MyAppPublisher "PacotesFX"
 #define MyAppURL "https://motionpro-lp.vercel.app"
+#define MyAppSupportURL "https://motionpro-lp.vercel.app/seguranca.html"
 #define MyAppExtensionId "com.motionvault.panel"
 #define MyAppExeName "MotionPro-Uninstaller.exe"
+#define MyAppCopyright "Copyright (C) 2026 PacotesFX. Todos os direitos reservados."
 
 [Setup]
+; === Identidade do app ===
 AppId={{C8F2A1B3-9D4E-4A7C-8E5F-1234ABCDEF01}}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
+AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
-AppSupportURL={#MyAppURL}/support
+AppSupportURL={#MyAppSupportURL}
 AppUpdatesURL={#MyAppURL}/download
+AppContact={#MyAppPublisher} - suporte@pacotesfx.com
+AppCopyright={#MyAppCopyright}
+AppComments=Plugin oficial MotionPro para Adobe Premiere Pro CC 2019+. 7.906 templates premium organizados.
+
+; === METADATA do .exe (visíveis em propriedades do Windows + ajudam SmartScreen) ===
+VersionInfoVersion=1.0.3.0
+VersionInfoCompany={#MyAppPublisher}
+VersionInfoDescription={#MyAppName} {#MyAppVersion} - Installer
+VersionInfoProductName={#MyAppName}
+VersionInfoProductVersion={#MyAppVersion}
+VersionInfoProductTextVersion={#MyAppVersion}
+VersionInfoCopyright={#MyAppCopyright}
+VersionInfoOriginalFileName=MotionPro-Setup-{#MyAppVersion}.exe
+
+; === Identidade única (mutex) — Windows reconhece como mesma app entre execuções ===
+AppMutex=MotionProInstaller_Singleton_2026
+
+; === Instalação ===
 DefaultDirName={userappdata}\Adobe\CEP\extensions\{#MyAppExtensionId}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
@@ -46,9 +73,20 @@ Compression=lzma2/ultra
 SolidCompression=yes
 WizardStyle=modern
 PrivilegesRequired=lowest
+PrivilegesRequiredOverridesAllowed=dialog
 ArchitecturesInstallIn64BitMode=x64
 UninstallDisplayIcon={app}\icon.ico
 UninstallDisplayName={#MyAppName}
+UninstallFilesDir={app}\uninst
+TouchDate=current
+TouchTime=current
+MinVersion=10.0
+SetupLogging=no
+
+; === SIGNTOOL — descomenta quando comprar certificado code-signing ===
+; Padrão: certificado .pfx no mesmo diretório. Ver COMPRAR-CERTIFICADO.md
+; SignTool=signtool sign /f $qcert.pfx$q /p $qSUA_SENHA$q /tr http://timestamp.digicert.com /td sha256 /fd sha256 /d $qMotionPro Installer$q /du $q{#MyAppURL}$q $f
+; SignedUninstaller=yes
 
 [Languages]
 Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
@@ -87,6 +125,8 @@ end;
 [Run]
 ; Limpa cache CEP do Adobe pra evitar carregar versão antiga
 Filename: "{cmd}"; Parameters: "/c rmdir /s /q ""{localappdata}\Temp\cep_cache"" 2>nul"; Flags: runhidden waituntilterminated
+; Marca arquivo como confiável removendo Mark-of-the-Web (Zone.Identifier)
+Filename: "{cmd}"; Parameters: "/c powershell -NoProfile -Command ""Get-ChildItem -Path '{app}' -Recurse -Force | Unblock-File"""; Flags: runhidden waituntilterminated
 ; Abre Premiere se o user marcou
 Filename: "{commonpf64}\Adobe\Adobe Premiere Pro 2024\Adobe Premiere Pro.exe"; Description: "Abrir Premiere"; Tasks: openpremiere; Flags: nowait postinstall skipifsilent shellexec
 
