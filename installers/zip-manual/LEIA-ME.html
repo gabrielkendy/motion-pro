@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MotionPro · Instalação</title>
+<style>
+:root{
+    --bg:#0a0a0a;--bg2:#16161a;--bg3:#1f1f26;
+    --border:#26262e;--txt:#f0f0f3;--mut:#9a9aa6;
+    --acc:#2563EB;--acc2:#1d4ed8;--green:#22c55e;--orange:#f59e0b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+    background:var(--bg);color:var(--txt);
+    font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    padding:40px 20px;min-height:100vh;
+}
+.wrap{max-width:680px;margin:0 auto}
+.brand{font-weight:800;font-size:28px;letter-spacing:-.8px;margin-bottom:6px}
+.brand span{color:var(--acc)}
+.tag{font-size:11px;font-weight:700;color:var(--mut);letter-spacing:2px;text-transform:uppercase;margin-bottom:24px}
+h1{font-size:42px;font-weight:800;letter-spacing:-1.5px;line-height:1.1;margin-bottom:18px}
+h1 em{font-style:normal;color:var(--acc)}
+.lead{color:var(--mut);font-size:17px;line-height:1.6;margin-bottom:36px}
+.box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:28px;margin-bottom:18px}
+.box-head{font-size:12px;font-weight:700;color:var(--acc);letter-spacing:1.8px;text-transform:uppercase;margin-bottom:18px;display:flex;align-items:center;gap:12px}
+.box-head .num{background:var(--acc);color:#fff;width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+.box h2{font-size:20px;font-weight:700;margin-bottom:12px;letter-spacing:-.4px}
+.box p{color:var(--mut);font-size:15px;line-height:1.65;margin-bottom:14px}
+.box p:last-child{margin-bottom:0}
+code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:var(--bg3);padding:3px 8px;border-radius:4px;color:var(--acc);font-size:14px}
+.kbd{display:inline-block;background:var(--bg3);border:1px solid var(--border);border-bottom:2px solid var(--border);padding:2px 8px;border-radius:4px;font:600 13px ui-monospace,monospace;color:var(--txt)}
+.opt{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+@media (max-width:640px){.opt{grid-template-columns:1fr}}
+.opt-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:20px;position:relative}
+.opt-card.featured{border-color:var(--acc)}
+.opt-card .badge{position:absolute;top:-9px;right:14px;background:var(--acc);color:#fff;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase}
+.opt-card h3{font-size:16px;font-weight:700;margin-bottom:8px}
+.opt-card p{color:var(--mut);font-size:13px;line-height:1.55}
+.steps{counter-reset:s;list-style:none}
+.steps li{counter-increment:s;padding:16px 0;border-bottom:1px solid var(--border);display:flex;gap:18px;align-items:flex-start}
+.steps li:last-child{border:none}
+.steps li::before{content:counter(s,decimal-leading-zero);font:800 22px ui-monospace,monospace;color:var(--acc);min-width:36px;line-height:1}
+.steps li strong{display:block;color:var(--txt);font-size:15px;margin-bottom:4px}
+.steps li span{color:var(--mut);font-size:14px;line-height:1.55}
+.alert{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:#fcd34d;padding:14px 18px;border-radius:8px;font-size:14px;line-height:1.6;margin:18px 0}
+.alert strong{color:var(--orange)}
+.success{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:#86efac;padding:14px 18px;border-radius:8px;font-size:14px;line-height:1.6;margin:18px 0}
+.success strong{color:var(--green)}
+.foot{margin-top:48px;padding-top:24px;border-top:1px solid var(--border);text-align:center;color:var(--mut);font-size:13px}
+.foot a{color:var(--acc);text-decoration:none;font-weight:600}
+.cmd{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:14px 16px;font-family:ui-monospace,monospace;font-size:13px;color:var(--acc);overflow-x:auto;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="brand">Motion<span>·</span>Pro</div>
+<div class="tag">Pacote de Instalação · v1.0.3</div>
+
+<h1>Como <em>instalar</em> o MotionPro no seu Premiere<span style="color:var(--acc)">.</span></h1>
+<p class="lead">
+    Duas formas. Escolhe a que você prefere. Em qualquer uma, em ~30 segundos o plugin tá rodando.
+</p>
+
+<!-- ============ ESCOLHA ============ -->
+<div class="opt">
+    <div class="opt-card featured">
+        <span class="badge">Recomendado</span>
+        <h3>🚀 Instalação automática</h3>
+        <p>Duplo-clique no <code>INSTALAR.bat</code>. Ele faz tudo: copia, configura registro, limpa cache, pergunta se quer abrir o Premiere. Zero passo manual.</p>
+    </div>
+    <div class="opt-card">
+        <h3>📁 Manual (arrastar pasta)</h3>
+        <p>Você arrasta a pasta <code>MotionPro</code> pro local certo do Adobe CEP. Tem que habilitar registro manualmente.</p>
+    </div>
+</div>
+
+<!-- ============ OPÇÃO 1: AUTOMÁTICA ============ -->
+<div class="box">
+    <div class="box-head"><span class="num">A</span> Instalação automática (recomendado)</div>
+    <h2>Duplo-clique no INSTALAR.bat</h2>
+    <ol class="steps">
+        <li>
+            <div>
+                <strong>Feche o Adobe Premiere Pro</strong>
+                <span>Se estiver aberto, feche antes (o script vai avisar caso esqueça).</span>
+            </div>
+        </li>
+        <li>
+            <div>
+                <strong>Duplo-clique em <code>INSTALAR.bat</code></strong>
+                <span>Vai abrir uma janela preta (terminal). É normal. NÃO é vírus. O script faz tudo em 10 segundos.</span>
+            </div>
+        </li>
+        <li>
+            <div>
+                <strong>Aguarde aparecer "✓ MOTIONPRO INSTALADO"</strong>
+                <span>Vai perguntar se quer abrir o Premiere agora. Digite <span class="kbd">S</span> e aperta Enter.</span>
+            </div>
+        </li>
+        <li>
+            <div>
+                <strong>No Premiere: <code>Janela → Extensões → MotionPro</code></strong>
+                <span>O painel abre. Faça login (ou crie conta com 14 dias grátis).</span>
+            </div>
+        </li>
+    </ol>
+    <div class="success">
+        <strong>✓ Sem aviso de segurança.</strong> Esse método não dispara o Windows SmartScreen porque .bat é script, não binário executável.
+    </div>
+</div>
+
+<!-- ============ OPÇÃO 2: MANUAL ============ -->
+<div class="box">
+    <div class="box-head"><span class="num">B</span> Instalação manual (arrastar pasta)</div>
+    <h2>Se preferir fazer no braço</h2>
+    <ol class="steps">
+        <li>
+            <div>
+                <strong>Abra o Explorer e cole esse caminho na barra de endereço:</strong>
+                <div class="cmd" style="margin-top:8px">%APPDATA%\Adobe\CEP\extensions\</div>
+                <span style="display:block;margin-top:8px">Se a pasta <code>CEP</code> ou <code>extensions</code> não existir, crie.</span>
+            </div>
+        </li>
+        <li>
+            <div>
+                <strong>Arraste a pasta <code>MotionPro</code> (da raiz deste ZIP) pra lá</strong>
+                <span>O resultado tem que ficar: <code>%APPDATA%\Adobe\CEP\extensions\com.motionvault.panel\index.html</code></span>
+            </div>
+        </li>
+        <li>
+            <div>
+                <strong>⚠️ IMPORTANTE: renomeie a pasta copiada</strong>
+                <span>De <code>MotionPro</code> pra <code>com.motionvault.panel</code> (ID que o Premiere reconhece).</span>
+            </div>
+        </li>
+        <li>
+            <div>
+                <strong>Habilite o PlayerDebugMode no registro do Windows</strong>
+                <span>Abra <span class="kbd">Win+R</span> → digite <code>regedit</code> → Enter. Navegue até:</span>
+                <div class="cmd" style="margin-top:8px">HKEY_CURRENT_USER\Software\Adobe\CSXS.9</div>
+                <span style="display:block;margin-top:8px">Crie uma chave <strong>String (REG_SZ)</strong> com nome <code>PlayerDebugMode</code> e valor <code>1</code>.</span>
+                <span style="display:block;margin-top:4px">Repete pra CSXS.10, CSXS.11 e CSXS.12 (uma de cada).</span>
+            </div>
+        </li>
+        <li>
+            <div>
+                <strong>Abra o Premiere → <code>Janela → Extensões → MotionPro</code></strong>
+                <span>Pronto. Faça login.</span>
+            </div>
+        </li>
+    </ol>
+    <div class="alert">
+        <strong>💡 Dica:</strong> a opção A (automática) faz TUDO isso pra você. Use a manual só se tiver alguma restrição corporativa que bloqueia execução de .bat.
+    </div>
+</div>
+
+<!-- ============ DESINSTALAR ============ -->
+<div class="box">
+    <div class="box-head"><span class="num">×</span> Desinstalar (quando quiser)</div>
+    <p>Duplo-clique em <code>DESINSTALAR.bat</code>. Ele remove o plugin e limpa cache. Sua conta MotionPro online permanece intacta (você pode reinstalar a qualquer momento).</p>
+</div>
+
+<!-- ============ AJUDA ============ -->
+<div class="foot">
+    <p style="margin-bottom:6px"><strong style="color:var(--txt)">Algo deu errado?</strong></p>
+    <p>Cheque a página de instalação detalhada com prints:<br>
+    <a href="https://motionpro-lp.vercel.app/instalar-manual.html">motionpro-lp.vercel.app/instalar-manual</a></p>
+    <p style="margin-top:14px">Suporte: <a href="mailto:suporte@pacotesfx.com">suporte@pacotesfx.com</a></p>
+    <p style="margin-top:24px;font-size:11px;color:var(--mut)">© 2026 MotionPro · uma marca PacotesFX</p>
+</div>
+
+</div>
+</body>
+</html>

@@ -93,23 +93,16 @@ ${BRAND_HEADER}
       </p>
     </div>
 
-    <div style="background:#f6f6f8;border:1px solid #e6e6ea;border-radius:8px;padding:20px;margin-bottom:18px">
-      <div style="font:600 11px Inter,Arial,sans-serif;color:#2563EB;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px">02 · Instale o plugin</div>
-      <p style="color:#444;font:400 14px/1.6 Inter,Arial,sans-serif;margin:0 0 16px">
-        Baixe o instalador, dê duplo clique e siga as instruções. Premiere Pro CC 2019+, Windows 10/11.
+    <div style="background:#f6f6f8;border:1px solid #e6e6ea;border-radius:8px;padding:20px;margin-bottom:32px">
+      <div style="font:600 11px Inter,Arial,sans-serif;color:#2563EB;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px">02 · Baixe e instale o plugin</div>
+      <p style="color:#444;font:400 14px/1.6 Inter,Arial,sans-serif;margin:0 0 18px">
+        Recomendamos a versão <strong>.ZIP</strong>: você extrai, dá duplo-clique em <code style="background:#fff;padding:2px 5px;border-radius:3px;font-size:13px">INSTALAR.bat</code> e pronto. <strong>Sem aviso do Windows.</strong>
       </p>
       <a href="${downloadUrl}" style="display:inline-block;background:#2563EB;color:#fff;padding:14px 24px;border-radius:6px;text-decoration:none;font:600 14px Inter,Arial,sans-serif">
-        Baixar o instalador →
+        Ir pra página de download →
       </a>
-    </div>
-
-    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:16px 20px;margin-bottom:32px">
-      <div style="font:600 11px Inter,Arial,sans-serif;color:#c2410c;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">⚠️ Aviso do Windows ao abrir o instalador</div>
-      <p style="color:#7c2d12;font:400 13px/1.6 Inter,Arial,sans-serif;margin:0 0 10px">
-        Vai aparecer <em>"O Windows protegeu o computador"</em>. Isso é normal pra apps novos e <strong>não é vírus</strong>. Click no link azul <strong>"Mais informações"</strong> → vai aparecer botão <strong>"Executar assim mesmo"</strong> → click pra continuar.
-      </p>
-      <p style="color:#7c2d12;font:400 12px Inter,Arial,sans-serif;margin:0">
-        Verifique você mesmo: <a href="https://motionpro-lp.vercel.app/seguranca.html" style="color:#c2410c;font-weight:600">hashes SHA-256, VirusTotal e código aberto →</a>
+      <p style="color:#666;font:400 12px Inter,Arial,sans-serif;margin:14px 0 0">
+        Premiere Pro CC 2019+, Windows 10/11. Versão macOS em breve.
       </p>
     </div>
 
