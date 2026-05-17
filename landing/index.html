@@ -96,40 +96,32 @@
         <h2>Escolha seu plano</h2>
         <p class="muted center">Cancele quando quiser. Sem fidelidade.</p>
         <div class="grid3 pricing">
-            <div class="plan">
-                <h3>Monthly</h3>
-                <div class="price"><strong>$19</strong><span>/mês</span></div>
-                <ul>
-                    <li>✓ 7.906 templates</li>
-                    <li>✓ 2 dispositivos</li>
-                    <li>✓ Suporte por e-mail</li>
-                    <li>✓ Atualizações</li>
-                </ul>
-                <button class="btn btn--primary buy" data-plan="monthly">Assinar mensal</button>
-            </div>
             <div class="plan plan--featured">
                 <div class="ribbon">MAIS POPULAR</div>
-                <h3>Yearly</h3>
-                <div class="price"><strong>$149</strong><span>/ano</span></div>
-                <div class="save">Economize 35% (~$12.42/mês)</div>
+                <h3>Anual</h3>
+                <div class="price"><strong>R$199</strong><span>/ano</span></div>
+                <div class="save">~R$16,58/mês · economize 60% vs vitalício</div>
                 <ul>
-                    <li>✓ Tudo do Monthly</li>
-                    <li>✓ 2 dispositivos</li>
+                    <li>✓ 7.906 templates premium</li>
+                    <li>✓ 2 dispositivos simultâneos</li>
+                    <li>✓ Atualizações inclusas</li>
                     <li>✓ Suporte prioritário</li>
-                    <li>✓ Atualizações</li>
+                    <li>✓ Cancele quando quiser</li>
                 </ul>
                 <button class="btn btn--primary buy" data-plan="yearly">Assinar anual</button>
             </div>
             <div class="plan">
-                <h3>Lifetime</h3>
-                <div class="price"><strong>$399</strong><span>uma vez</span></div>
+                <h3>Vitalício</h3>
+                <div class="price"><strong>R$499</strong><span>pagamento único</span></div>
+                <div class="save">Economiza após 2,5 anos vs Anual</div>
                 <ul>
                     <li>✓ Acesso vitalício</li>
-                    <li>✓ 3 dispositivos</li>
+                    <li>✓ 3 dispositivos simultâneos</li>
+                    <li>✓ Todas atualizações futuras</li>
                     <li>✓ Suporte vitalício</li>
-                    <li>✓ Atualizações inclusas</li>
+                    <li>✓ Sem mensalidade nunca mais</li>
                 </ul>
-                <button class="btn btn--primary buy" data-plan="lifetime">Comprar lifetime</button>
+                <button class="btn btn--primary buy" data-plan="lifetime">Comprar vitalício</button>
             </div>
         </div>
     </div>
@@ -149,11 +141,11 @@
             </details>
             <details>
                 <summary>Quantas máquinas posso usar?</summary>
-                <p>Monthly e Yearly: 2 dispositivos simultâneos. Lifetime: 3. Você pode revogar e ativar em outra máquina a qualquer momento.</p>
+                <p>Plano Anual: 2 dispositivos simultâneos. Vitalício: 3. Você pode revogar e ativar em outra máquina a qualquer momento.</p>
             </details>
             <details>
                 <summary>E se eu cancelar?</summary>
-                <p>Você mantém o acesso até o fim do ciclo pago. Depois disso, a licença pausa. Lifetime nunca pausa.</p>
+                <p>Você mantém o acesso até o fim do ciclo pago. Depois disso, a licença pausa. O Vitalício nunca pausa.</p>
             </details>
             <details>
                 <summary>Política de reembolso?</summary>
@@ -182,7 +174,7 @@
 document.getElementById('yr').textContent = new Date().getFullYear();
 
 // Config: aponte para sua API
-window.MV_API = window.MV_API || "https://api.motionvault.app";
+window.MV_API = window.MV_API || "https://motionpro.vercel.app";
 
 document.querySelectorAll('.buy').forEach(btn => {
     btn.addEventListener('click', async () => {
