@@ -44,4 +44,11 @@ desktop.ini
 *key*.txt
 PREMIERE PRO.txt
 
+# Doc master com credenciais (NUNCA subir)
+ACESSOS-MASTER.md
+acessos-master.md
+ACCESSES.md
+CREDENTIALS.md
+secrets/
+
 .vercel
