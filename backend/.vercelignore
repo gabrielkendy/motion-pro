@@ -1,0 +1,7 @@
+node_modules
+.env
+.env.local
+*.log
+.git
+.vercel
+run-migration.js
