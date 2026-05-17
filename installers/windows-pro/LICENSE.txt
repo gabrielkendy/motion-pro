@@ -1,0 +1,45 @@
+TERMOS DE USO DO MOTIONVAULT
+
+Última atualização: 2026
+
+1. ACEITE
+Ao instalar o MotionVault, você concorda com estes termos. Se não concorda, cancele a instalação.
+
+2. LICENÇA
+A licença concedida é PESSOAL e INTRANSFERÍVEL. Você pode usar o plugin nas máquinas permitidas pelo seu plano:
+- Plano Anual: até 2 dispositivos simultâneos
+- Plano Vitalício: até 3 dispositivos simultâneos
+
+3. USO COMERCIAL
+Os 7.906 templates inclusos podem ser usados em projetos comerciais sem royalties adicionais (publicidade, vídeos de cliente, conteúdo monetizado).
+
+4. PROIBIDO
+- Redistribuir, vender, ou disponibilizar os templates ou o plugin
+- Realizar engenharia reversa do sistema de licenciamento
+- Compartilhar suas credenciais com terceiros
+- Usar em mais máquinas do que seu plano permite
+
+5. CANCELAMENTO E REEMBOLSO
+- Reembolso integral em até 14 dias da compra
+- Solicitação pelo e-mail suporte@pacotesfx.com
+- Estorno processado pelo Stripe em até 7 dias úteis
+
+6. ATUALIZAÇÕES
+O plugin atualiza automaticamente o catálogo. Novas versões serão notificadas. Não somos responsáveis por incompatibilidades com versões futuras do Premiere Pro.
+
+7. PRIVACIDADE
+Coletamos apenas: e-mail, fingerprint do dispositivo (anônimo), e métricas de uso agregadas. Não vendemos dados. Política completa em https://motionpro-lp.vercel.app/privacy.html
+
+8. SUPORTE
+Anual e Vitalício têm suporte por e-mail (suporte@pacotesfx.com), resposta em até 48h úteis.
+
+9. LIMITAÇÃO DE RESPONSABILIDADE
+O MotionVault é fornecido "como está". Não nos responsabilizamos por perda de trabalho, dados, ou prejuízos causados pelo uso indevido.
+
+10. JURISDIÇÃO
+Estes termos seguem a legislação brasileira. Foro: comarca do desenvolvedor.
+
+──────────────────────────────────────
+MotionVault · uma marca PacotesFX
+suporte@pacotesfx.com
+──────────────────────────────────────

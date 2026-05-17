@@ -118,6 +118,8 @@ tr:hover td{background:var(--bg3)}
 
 /* ===== DRAWER ===== */
 .drawer{position:fixed;inset:0;z-index:100;display:flex;justify-content:flex-end}
+.drawer[hidden]{display:none !important}
+.modal[hidden],.toast[hidden]{display:none !important}
 .drawer-overlay{position:absolute;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px)}
 .drawer-panel{position:relative;width:680px;max-width:96vw;background:var(--bg);border-left:1px solid var(--border);box-shadow:-20px 0 60px rgba(0,0,0,.5);height:100vh;display:flex;flex-direction:column;animation:slideIn .25s ease}
 @keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}

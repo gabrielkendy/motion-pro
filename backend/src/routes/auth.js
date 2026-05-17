@@ -3,6 +3,7 @@ const router = require("express").Router();
 const bcrypt = require("bcrypt");
 const { pool } = require("../db");
 const { signSession, signResetToken, verifyResetToken } = require("../utils/jwt");
+const { resetPasswordEmail } = require("../utils/email");
 
 router.post("/signup", async (req, res, next) => {
     try {
@@ -74,13 +75,15 @@ router.post("/forgot-password", async (req, res, next) => {
         const publicUrl = process.env.PUBLIC_URL || "https://motionpro-lp.vercel.app";
         const reset_link = `${publicUrl}/reset-password.html?token=${encodeURIComponent(token)}`;
 
-        // TODO: enviar por e-mail via Resend/SES. Por enquanto retorna no payload
-        // (apenas em dev/MVP — produção NÃO deve devolver o link na resposta).
-        res.json({
-            ...generic,
-            reset_link,        // remover quando email estiver configurado
-            expires_in: "1h"
-        });
+        // Tenta mandar por e-mail (Resend). Se não tiver API key, fallback retorna link na resposta.
+        let emailResult = null;
+        try { emailResult = await resetPasswordEmail({ email: u.email, resetUrl: reset_link }); }
+        catch (e) { console.error("[forgot] email fail", e.message); }
+
+        const payload = { ...generic, expires_in: "1h", email_sent: !!emailResult?.ok };
+        // Em dev/MVP sem email, ainda retorna o link pra UI mostrar
+        if (!emailResult?.ok) payload.reset_link = reset_link;
+        res.json(payload);
     } catch (e) { next(e); }
 });
 

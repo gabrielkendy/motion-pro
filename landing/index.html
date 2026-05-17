@@ -485,36 +485,32 @@ authForm.addEventListener('submit', async e => {
 });
 
 // ============================================================
-// BUY BUTTONS
+// BUY BUTTONS — Stripe Checkout direto (sem signup obrigatório)
+// Após pagamento, o webhook cria a conta + manda e-mail com credenciais.
 // ============================================================
 document.querySelectorAll('.buy').forEach(btn => {
     btn.addEventListener('click', async () => {
         const plan = btn.dataset.plan;
-        const token = localStorage.getItem(TOKEN_KEY);
-        if (!token) {
-            openModal('signup', plan);
-            return;
-        }
-        // já logado — tenta direto o checkout
         btn.disabled = true;
         const original = btn.innerHTML;
-        btn.innerHTML = '<span class="spinner"></span> Indo pro checkout...';
+        btn.innerHTML = '<span class="spinner"></span> Redirecionando pra Stripe...';
         try {
+            const token = localStorage.getItem(TOKEN_KEY);
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) headers.Authorization = 'Bearer ' + token;
+            const savedEmail = localStorage.getItem(EMAIL_KEY);
             const cs = await fetch(window.MV_API + '/v1/billing/checkout?plan=' + plan, {
                 method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
+                headers,
+                body: savedEmail ? JSON.stringify({ email: savedEmail }) : undefined
             }).then(r => r.json());
             if (cs.url) {
                 window.location.href = cs.url;
-            } else if (cs.error === 'missing_token' || cs.error === 'invalid_token') {
-                localStorage.removeItem(TOKEN_KEY);
-                openModal('signup', plan);
             } else {
                 throw new Error(cs.error || 'checkout_failed');
             }
         } catch (e) {
             toast('Erro ao iniciar checkout: ' + e.message, 'error');
-        } finally {
             btn.disabled = false;
             btn.innerHTML = original;
         }
