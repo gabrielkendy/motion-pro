@@ -84,7 +84,26 @@ router.post("/issue", requireAuth, async (req, res, next) => {
         if (!fingerprint) return res.status(400).json({ error: "fingerprint_required" });
         const product = product_id || DEFAULT_PRODUCT;
 
-        const sub = await getActiveSubscription(req.user.id, product);
+        let sub = await getActiveSubscription(req.user.id, product);
+
+        // 🎁 PRIMEIRA VEZ NESSE PRODUTO? Cria trial automático (14 dias).
+        // Aplica só se: status=none (nunca teve sub desse produto) e produto válido (não bundle).
+        if (sub.status === "none" && product !== "bundle_all") {
+            const prodExists = await pool.query("SELECT 1 FROM products WHERE id=$1 AND is_active=true", [product]);
+            if (prodExists.rowCount) {
+                const trialDays = Number(process.env.TRIAL_DAYS || 14);
+                const expiresAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
+                await pool.query(
+                    `INSERT INTO subscriptions(user_id, product_id, plan, status, current_period_end)
+                     VALUES($1, $2, 'trial', 'trialing', $3)
+                     ON CONFLICT DO NOTHING`,
+                    [req.user.id, product, expiresAt]
+                );
+                await audit(req.user.id, null, "trial_auto_started", { product, days: trialDays });
+                // Re-busca pra pegar a nova sub
+                sub = await getActiveSubscription(req.user.id, product);
+            }
+        }
 
         // 🔒 GATE: só emite license se status for "active" ou "trialing"
         if (!ACTIVE_STATUSES.has(sub.status)) {

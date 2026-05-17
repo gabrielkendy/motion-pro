@@ -120,22 +120,24 @@ router.get("/users/:id", requireAdmin, async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
-// === GRANT FREE ACCESS ===
+// === GRANT FREE ACCESS (product-aware) ===
 router.post("/users/:id/grant", requireAdmin, async (req, res, next) => {
     try {
-        const { plan = "lifetime", reason = "courtesy" } = req.body || {};
+        const { plan = "lifetime", reason = "courtesy", product_id = "motionpro" } = req.body || {};
         if (!["yearly", "lifetime", "trial"].includes(plan)) return res.status(400).json({ error: "invalid_plan" });
+        const p = await pool.query("SELECT 1 FROM products WHERE id=$1 AND is_active=true", [product_id]);
+        if (!p.rowCount) return res.status(400).json({ error: "invalid_product" });
         const expiresAt = plan === "lifetime" ? null
             : plan === "yearly" ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
             : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
         const r = await pool.query(
-            `INSERT INTO subscriptions(user_id, plan, status, stripe_sub_id, current_period_end)
-             VALUES($1, $2, 'active', $3, $4) RETURNING *`,
-            [req.params.id, plan, "manual_" + reason + "_" + Date.now(), expiresAt]
+            `INSERT INTO subscriptions(user_id, product_id, plan, status, stripe_sub_id, current_period_end)
+             VALUES($1, $2, $3, 'active', $4, $5) RETURNING *`,
+            [req.params.id, product_id, plan, "manual_" + reason + "_" + Date.now(), expiresAt]
         );
         await pool.query(
             "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'admin_grant', $2)",
-            [req.params.id, { plan, reason, by: req.user.email }]
+            [req.params.id, { plan, product_id, reason, by: req.user.email }]
         );
         res.json({ subscription: r.rows[0] });
     } catch (e) { next(e); }

@@ -56,3 +56,10 @@ secrets/
 # Inno Setup output
 installers/windows-pro/output/
 *.exe
+
+# Plugin Legendas — packs gerados localmente via tools/build-legendas-catalog.ps1
+plugin-legendas/packs/
+
+# Build temporário dos ZIPs
+installers/zip-manual-legendas/output/
+installers/zip-manual-legendas/build/

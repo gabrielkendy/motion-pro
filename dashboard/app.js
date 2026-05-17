@@ -114,6 +114,16 @@ function planBadge(plan) {
     const label = plan === "lifetime" ? "Vitalício" : plan === "yearly" ? "Anual" : plan === "trial" ? "Trial" : plan || "—";
     return `<span class="badge badge--${c}">${label}</span>`;
 }
+function productBadge(productId) {
+    if (!productId) return '';
+    const map = {
+        motionpro:  { emoji: "🎬", label: "MotionPro", color: "blue" },
+        legendas:   { emoji: "💬", label: "Legendas",  color: "green" },
+        bundle_all: { emoji: "💎", label: "Bundle",    color: "purple" }
+    };
+    const p = map[productId] || { emoji: "📦", label: productId, color: "gray" };
+    return `<span class="badge badge--${p.color}" title="${productId}">${p.emoji} ${p.label}</span>`;
+}
 function statusBadge(s) {
     const map = {
         active: ["green", "Ativo"], trialing: ["orange", "Trial"],
@@ -186,8 +196,14 @@ function renderUsers(users) {
         const phoneDisplay = u.phone
             ? `<small style="color:var(--mut);display:block;margin-top:2px">📱 ${u.phone}</small>`
             : '';
+        // Lista TODOS os produtos que o user tem (active/trialing)
+        const activeProducts = (u.subscriptions || []).filter(s => ["active","trialing"].includes(s.status));
+        const productsHtml = activeProducts.length
+            ? activeProducts.map(s => productBadge(s.product_id)).join(' ')
+            : '<span class="muted">—</span>';
         return `<tr data-id="${u.id}">
             <td class="email-cell">${nameDisplay}${u.email}${emailVerifyIcon}${u.is_admin ? ' <span class="badge badge--purple" style="margin-left:6px">ADMIN</span>' : ''}<span class="id">${u.id.slice(0,8)}…</span>${phoneDisplay}</td>
+            <td>${productsHtml}</td>
             <td>${sub ? planBadge(sub.plan) : '<span class="muted">sem assinatura</span>'}</td>
             <td>${sub ? statusBadge(sub.status) : '—'}</td>
             <td class="date-cell">${fmtDate(u.created_at)}</td>
@@ -222,6 +238,7 @@ async function refreshSubs() {
             (u.subscriptions || []).filter(s => ["active", "trialing"].includes(s.status)).forEach(s => {
                 rows.push(`<tr>
                     <td class="email-cell">${u.email}</td>
+                    <td>${productBadge(s.product_id || 'motionpro')}</td>
                     <td>${planBadge(s.plan)}</td>
                     <td>${statusBadge(s.status)}</td>
                     <td class="date-cell">${fmtDate(s.started_at)}</td>
@@ -319,9 +336,14 @@ async function openUserDrawer(id) {
         document.getElementById("drawer-title").textContent = u.email;
         document.getElementById("drawer-body").innerHTML = `
             <div class="drawer-actions">
+                <select id="grant-product" style="background:var(--bg2);border:1px solid var(--border2);color:var(--txt);border-radius:6px;padding:7px 10px;font:600 12px Inter;cursor:pointer">
+                    <option value="motionpro">🎬 MotionPro</option>
+                    <option value="legendas">💬 Legendas</option>
+                    <option value="bundle_all">💎 Bundle Completo</option>
+                </select>
                 <button class="btn btn--primary btn--sm" data-act="grant-yearly">+ Anual cortesia</button>
                 <button class="btn btn--primary btn--sm" data-act="grant-lifetime">+ Vitalício cortesia</button>
-                <button class="btn btn--danger btn--sm" data-act="revoke">🚫 Revogar acesso</button>
+                <button class="btn btn--danger btn--sm" data-act="revoke">🚫 Revogar TUDO</button>
                 ${!u.is_admin ? '<button class="btn btn--ghost btn--sm" data-act="promote">🛡 Promover a admin</button>' : ''}
                 ${u.stripe_customer ? `<a class="btn btn--ghost btn--sm" target="_blank" href="https://dashboard.stripe.com/customers/${u.stripe_customer}">↗ Stripe</a>` : ''}
             </div>
@@ -344,7 +366,7 @@ async function openUserDrawer(id) {
                 <h4>Assinaturas (${d.subscriptions.length})</h4>
                 ${d.subscriptions.length === 0 ? '<p class="muted">Sem assinaturas</p>' : d.subscriptions.map(s => `
                     <div class="drawer-field" style="margin-bottom:10px">
-                        ${planBadge(s.plan)} ${statusBadge(s.status)}
+                        ${productBadge(s.product_id || 'motionpro')} ${planBadge(s.plan)} ${statusBadge(s.status)}
                         <div style="margin-top:8px;font-size:13px">
                             <div>Início: <strong>${fmtDateTime(s.started_at)}</strong></div>
                             <div>Próxima cobrança: <strong>${s.current_period_end ? fmtDateTime(s.current_period_end) : (s.plan === 'lifetime' ? '♾️ nunca' : '—')}</strong></div>
@@ -406,12 +428,14 @@ async function openUserDrawer(id) {
         // Wire action buttons
         const wire = (sel, fn) => document.querySelector(sel)?.addEventListener("click", fn);
         wire('[data-act="grant-yearly"]', async () => {
-            if (!confirm("Dar 1 ANO de cortesia?")) return;
-            try { await api(`/v1/admin/users/${id}/grant`, { method: "POST", body: JSON.stringify({ plan: "yearly", reason: "courtesy" }) }); toast("Acesso anual concedido"); openUserDrawer(id); } catch (e) { toast(e.message, "error"); }
+            const product_id = document.getElementById("grant-product").value;
+            if (!confirm(`Dar 1 ANO de cortesia do produto "${product_id}"?`)) return;
+            try { await api(`/v1/admin/users/${id}/grant`, { method: "POST", body: JSON.stringify({ plan: "yearly", product_id, reason: "courtesy" }) }); toast("Anual concedido pra " + product_id); openUserDrawer(id); refreshUsers(); } catch (e) { toast(e.message, "error"); }
         });
         wire('[data-act="grant-lifetime"]', async () => {
-            if (!confirm("Dar VITALÍCIO de cortesia?")) return;
-            try { await api(`/v1/admin/users/${id}/grant`, { method: "POST", body: JSON.stringify({ plan: "lifetime", reason: "courtesy" }) }); toast("Vitalício concedido"); openUserDrawer(id); } catch (e) { toast(e.message, "error"); }
+            const product_id = document.getElementById("grant-product").value;
+            if (!confirm(`Dar VITALÍCIO de cortesia do produto "${product_id}"?`)) return;
+            try { await api(`/v1/admin/users/${id}/grant`, { method: "POST", body: JSON.stringify({ plan: "lifetime", product_id, reason: "courtesy" }) }); toast("Vitalício concedido pra " + product_id); openUserDrawer(id); refreshUsers(); } catch (e) { toast(e.message, "error"); }
         });
         wire('[data-act="revoke"]', async () => {
             if (!confirm("⚠️ REVOGAR todo o acesso deste usuário? Vai desativar a licença e todos dispositivos.")) return;
