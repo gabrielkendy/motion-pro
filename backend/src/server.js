@@ -18,10 +18,23 @@ const app = express();
 // Stripe webhook needs raw body — register *before* express.json()
 app.use("/v1/billing/webhook", express.raw({ type: "application/json" }), billing.webhook);
 
-app.use(helmet());
-app.use(cors());
+// Helmet: configurado pra API pública (sem CSP/COOP/CORP que bloqueariam browsers cross-origin)
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginOpenerPolicy: false,
+    crossOriginEmbedderPolicy: false,
+    contentSecurityPolicy: false,
+    referrerPolicy: { policy: "no-referrer-when-downgrade" }
+}));
+app.use(cors({
+    origin: true,            // reflete o Origin do request
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    maxAge: 86400
+}));
 app.use(express.json({ limit: "1mb" }));
-app.use(rateLimit({ windowMs: 60_000, max: 120 }));
+app.use(rateLimit({ windowMs: 60_000, max: 300 }));
 
 app.get("/health", (_req, res) => res.json({ ok: true, ts: Date.now() }));
 
