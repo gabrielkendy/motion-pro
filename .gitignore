@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+
+# Environment (CHAVES SECRETAS — NUNCA SUBIR)
+.env
+.env.local
+.env.production
+backend/.env
+backend/.env.local
+backend/.env.production
+landing/.env
+
+# Build outputs
+plugin/js-min/
+
+# Generated assets (regenerados via tools/)
+plugin/catalog/
+plugin/thumbs/
+
+# Backups (zips locais)
+_backups/
+*.zip
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Vercel
+.vercel/
+
+# Secrets de qualquer tipo
+*secret*.txt
+*key*.txt
+PREMIERE PRO.txt

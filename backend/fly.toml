@@ -1,0 +1,49 @@
+# fly.toml — Fly.io deployment config for MotionVault API
+# Use:
+#   fly auth login
+#   fly launch --no-deploy   (escolha um nome, ex.: motionvault-api)
+#   fly postgres create --name motionvault-db --region gru
+#   fly postgres attach motionvault-db
+#   fly secrets set JWT_SECRET=$(openssl rand -hex 64) \
+#                   LICENSE_SECRET=$(openssl rand -hex 64) \
+#                   STRIPE_SECRET=sk_live_xxx \
+#                   STRIPE_WEBHOOK_SECRET=whsec_xxx \
+#                   STRIPE_PRICE_MONTHLY=price_xxx \
+#                   STRIPE_PRICE_YEARLY=price_xxx \
+#                   STRIPE_PRICE_LIFETIME=price_xxx \
+#                   CDN_SIGN_SECRET=$(openssl rand -hex 32) \
+#                   CDN_BASE=https://cdn.motionvault.app \
+#                   PUBLIC_URL=https://motionvault.app
+#   fly deploy
+
+app = "motionvault-api"
+primary_region = "gru"   # São Paulo (latência baixa Brasil/LatAm)
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "8080"
+  LICENSE_TTL_HOURS = "24"
+  MAX_DEVICES_PER_LICENSE = "2"
+  CDN_URL_TTL_MIN = "60"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[http_service.checks]]
+  grace_period = "10s"
+  interval = "30s"
+  method = "GET"
+  timeout = "5s"
+  path = "/health"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512

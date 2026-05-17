@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Conta — MotionVault</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="nav"><div class="wrap nav__inner">
+    <a href="/" class="brand">Motion<span>Vault</span></a>
+    <nav><a href="/" class="btn btn--ghost">← Voltar</a></nav>
+</div></header>
+
+<section class="section">
+<div class="wrap" style="max-width:520px">
+    <h2 style="text-align:left;margin-bottom:30px" id="title">Entrar</h2>
+
+    <div id="login" class="card">
+        <input id="email" placeholder="E-mail" style="width:100%;padding:12px;background:var(--bg);border:1px solid #2c2c33;color:#fff;border-radius:8px;margin-bottom:10px;font-family:inherit;font-size:14px">
+        <input id="password" type="password" placeholder="Senha" style="width:100%;padding:12px;background:var(--bg);border:1px solid #2c2c33;color:#fff;border-radius:8px;margin-bottom:14px;font-family:inherit;font-size:14px">
+        <button id="btn-login" class="btn btn--primary" style="width:100%">Entrar</button>
+        <p style="text-align:center;margin-top:14px;color:var(--mut);font-size:13px">
+            Não tem conta? <a href="#" id="to-signup" style="color:var(--acc)">Criar conta grátis</a>
+        </p>
+        <div id="msg" style="text-align:center;color:#ff5566;font-size:13px;margin-top:10px"></div>
+    </div>
+
+    <div id="account" style="display:none">
+        <div class="card">
+            <h3 style="font-size:18px;margin-bottom:14px;color:var(--acc)">Bem-vindo</h3>
+            <p style="color:var(--mut);font-size:13px;margin-bottom:4px">E-mail</p>
+            <p id="acc-email" style="font-weight:600;margin-bottom:14px">-</p>
+            <p style="color:var(--mut);font-size:13px;margin-bottom:4px">Plano</p>
+            <p id="acc-plan" style="font-weight:600;margin-bottom:14px">-</p>
+            <p style="color:var(--mut);font-size:13px;margin-bottom:4px">Renova em</p>
+            <p id="acc-renew" style="font-weight:600;margin-bottom:20px">-</p>
+            <button id="btn-portal" class="btn btn--primary" style="width:100%;margin-bottom:8px">Gerenciar assinatura (Stripe)</button>
+            <button id="btn-logout" class="btn btn--ghost" style="width:100%">Sair</button>
+        </div>
+        <div class="card" style="margin-top:18px">
+            <h3 style="font-size:16px;margin-bottom:10px">Suas máquinas</h3>
+            <div id="machines" style="color:var(--mut);font-size:13px">Carregando...</div>
+        </div>
+    </div>
+</div>
+</section>
+
+<script>
+window.MV_API = window.MV_API || "https://api.motionvault.app";
+
+const $ = id => document.getElementById(id);
+function token() { return localStorage.getItem('mv_session'); }
+async function api(path, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign({ 'Content-Type':'application/json' }, opts.headers||{});
+    if (token()) opts.headers['Authorization'] = 'Bearer ' + token();
+    if (opts.body) opts.body = JSON.stringify(opts.body);
+    const r = await fetch(window.MV_API + path, opts);
+    const d = await r.json().catch(()=>({}));
+    if (!r.ok) throw new Error(d.error || ('http_' + r.status));
+    return d;
+}
+
+let mode = 'login';
+$('to-signup').addEventListener('click', e => {
+    e.preventDefault();
+    mode = (mode === 'login') ? 'signup' : 'login';
+    $('title').textContent = (mode === 'login') ? 'Entrar' : 'Criar conta';
+    $('btn-login').textContent = (mode === 'login') ? 'Entrar' : 'Criar conta';
+    $('to-signup').textContent = (mode === 'login') ? 'Criar conta grátis' : 'Já tenho conta';
+});
+
+$('btn-login').addEventListener('click', async () => {
+    $('msg').textContent = '';
+    try {
+        const d = await api('/v1/auth/' + mode, {
+            method:'POST',
+            body: { email: $('email').value.trim(), password: $('password').value }
+        });
+        localStorage.setItem('mv_session', d.session_token);
+        localStorage.setItem('mv_email', d.user.email);
+        await loadAccount();
+    } catch (e) { $('msg').textContent = 'Erro: ' + e.message; }
+});
+
+async function loadAccount() {
+    if (!token()) return;
+    try {
+        const m = await api('/v1/me');
+        $('login').style.display = 'none';
+        $('account').style.display = 'block';
+        $('title').textContent = 'Minha conta';
+        $('acc-email').textContent = m.user.email;
+        $('acc-plan').textContent = (m.subscription && m.subscription.plan) || 'sem plano';
+        $('acc-renew').textContent = (m.subscription && m.subscription.current_period_end)
+            ? new Date(m.subscription.current_period_end).toLocaleDateString('pt-BR') : '-';
+        const mm = await api('/v1/me/machines');
+        $('machines').innerHTML = mm.devices.map(d => `
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #25252b">
+                <span>${d.label || d.fingerprint.slice(0,12) + '...'}<br><small style="color:var(--mut)">Visto ${new Date(d.last_seen).toLocaleString('pt-BR')}</small></span>
+                <button class="btn btn--ghost" style="padding:4px 10px;font-size:11px" data-id="${d.id}">Revogar</button>
+            </div>`).join('') || '<em>Nenhuma máquina ativada ainda</em>';
+        $('machines').querySelectorAll('button').forEach(b => b.onclick = async () => {
+            await api('/v1/me/machines/' + b.dataset.id, { method:'DELETE' });
+            loadAccount();
+        });
+    } catch (e) {
+        localStorage.removeItem('mv_session');
+    }
+}
+
+$('btn-logout').addEventListener('click', () => {
+    localStorage.removeItem('mv_session');
+    location.reload();
+});
+$('btn-portal').addEventListener('click', async () => {
+    try { const r = await api('/v1/billing/portal', { method:'POST' }); location.href = r.url; }
+    catch (e) { alert('Erro: ' + e.message); }
+});
+
+loadAccount();
+</script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: motionvault
+      POSTGRES_PASSWORD: motionvault
+      POSTGRES_DB: motionvault
+    ports: ["5432:5432"]
+    volumes: ["pg:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U motionvault"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://motionvault:motionvault@postgres:5432/motionvault
+    ports: ["8080:8080"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    volumes:
+      - ./src:/app/src
+
+volumes:
+  pg: {}
