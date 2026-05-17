@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MotionVault Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen" class="login-screen">
+  <div class="login-card">
+    <div class="login-brand">Motion<span>Vault</span><em>admin</em></div>
+    <h1>Acessar painel</h1>
+    <p class="muted">Somente contas com privilégio admin podem entrar.</p>
+    <form id="login-form">
+      <label>Email</label>
+      <input id="login-email" type="email" autocomplete="username" required>
+      <label>Senha</label>
+      <input id="login-pass" type="password" autocomplete="current-password" required>
+      <button class="btn btn--primary btn--full" type="submit">Entrar</button>
+      <div id="login-error" class="error-msg"></div>
+    </form>
+    <div class="login-foot">
+      API: <code id="api-url-display"></code>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="app" hidden>
+  <aside class="sidebar">
+    <div class="brand">Motion<span>Vault</span><em>admin</em></div>
+    <nav>
+      <a href="#" class="nav-item active" data-view="overview">📊 Visão geral</a>
+      <a href="#" class="nav-item" data-view="users">👥 Usuários</a>
+      <a href="#" class="nav-item" data-view="subscriptions">🔁 Assinaturas</a>
+      <a href="#" class="nav-item" data-view="devices">💻 Dispositivos</a>
+      <a href="#" class="nav-item" data-view="audit">📜 Auditoria</a>
+    </nav>
+    <div class="sidebar-foot">
+      <div id="me-email" class="me-email"></div>
+      <button id="logout-btn" class="btn btn--ghost btn--sm">Sair</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- OVERVIEW -->
+    <section id="view-overview" class="view active">
+      <header class="view-head">
+        <h2>Visão geral</h2>
+        <button id="refresh-stats" class="btn btn--ghost btn--sm">🔄 Atualizar</button>
+      </header>
+      <div id="kpis" class="kpi-grid"></div>
+      <div class="row2">
+        <div class="card">
+          <h3>Distribuição de planos</h3>
+          <div id="plan-distribution"></div>
+        </div>
+        <div class="card">
+          <h3>Últimos 7 dias</h3>
+          <div id="recent-stats"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- USERS -->
+    <section id="view-users" class="view">
+      <header class="view-head">
+        <h2>Usuários</h2>
+        <div class="filters">
+          <input id="users-search" placeholder="🔍 buscar email..." />
+          <select id="users-status">
+            <option value="all">Todos status</option>
+            <option value="active">Ativos</option>
+            <option value="trialing">Em trial</option>
+            <option value="canceled">Cancelados</option>
+            <option value="revoked">Revogados</option>
+          </select>
+          <button id="refresh-users" class="btn btn--ghost btn--sm">🔄</button>
+        </div>
+      </header>
+      <div class="table-wrap">
+        <table id="users-table">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Plano</th>
+              <th>Status</th>
+              <th>Cadastro</th>
+              <th>Vence</th>
+              <th>Dispositivos</th>
+              <th>Stripe</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+        <div id="users-empty" class="empty" hidden>Nenhum usuário encontrado</div>
+      </div>
+    </section>
+
+    <!-- SUBSCRIPTIONS -->
+    <section id="view-subscriptions" class="view">
+      <header class="view-head">
+        <h2>Assinaturas ativas</h2>
+        <button id="refresh-subs" class="btn btn--ghost btn--sm">🔄</button>
+      </header>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Plano</th>
+              <th>Status</th>
+              <th>Início</th>
+              <th>Próxima cobrança</th>
+              <th>Stripe Sub</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="subs-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- DEVICES -->
+    <section id="view-devices" class="view">
+      <header class="view-head">
+        <h2>Dispositivos</h2>
+      </header>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Usuário</th>
+              <th>Fingerprint</th>
+              <th>Label</th>
+              <th>Primeiro acesso</th>
+              <th>Último acesso</th>
+              <th>Status</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody id="devices-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- AUDIT -->
+    <section id="view-audit" class="view">
+      <header class="view-head">
+        <h2>Auditoria</h2>
+        <button id="refresh-audit" class="btn btn--ghost btn--sm">🔄</button>
+      </header>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Quando</th>
+              <th>Usuário</th>
+              <th>Ação</th>
+              <th>Detalhe</th>
+            </tr>
+          </thead>
+          <tbody id="audit-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- USER DETAIL DRAWER -->
+<div id="drawer" class="drawer" hidden>
+  <div class="drawer-overlay"></div>
+  <div class="drawer-panel">
+    <header class="drawer-head">
+      <h3 id="drawer-title">Detalhes</h3>
+      <button id="drawer-close" class="btn btn--ghost btn--sm">✕</button>
+    </header>
+    <div id="drawer-body" class="drawer-body"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast" hidden></div>
+
+<script src="/app.js"></script>
+</body>
+</html>

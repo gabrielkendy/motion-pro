@@ -3,8 +3,8 @@
  * o modo dev.
  */
 window.MV_CONFIG = {
-    // URL do backend MotionVault em produção (Fly.io / seu domínio)
-    apiBaseUrl: "https://api.motionvault.app",
+    // URL do backend MotionVault em produção (Vercel)
+    apiBaseUrl: "https://motionpro.vercel.app",
 
     // Chave pública pra verificar licenças JWT localmente (RS256) — opcional
     // Quando usando HS256 (dev), deixe placeholder; verificação completa é via backend

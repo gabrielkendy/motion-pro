@@ -1,7 +1,7 @@
 /* api.js — HTTP client for MotionVault SaaS backend. */
 const API = (function () {
     const CONFIG = {
-        baseUrl: (window.MV_CONFIG && window.MV_CONFIG.apiBaseUrl) || "https://api.motionvault.app",
+        baseUrl: (window.MV_CONFIG && window.MV_CONFIG.apiBaseUrl) || "https://motionpro.vercel.app",
         publicKey: (window.MV_CONFIG && window.MV_CONFIG.licensePublicKey) || "MV_PUB_KEY_PLACEHOLDER",
         timeoutMs: 12000
     };

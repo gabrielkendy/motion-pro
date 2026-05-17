@@ -11,6 +11,7 @@ const billing = require("./routes/billing");
 const me = require("./routes/me");
 const catalog = require("./routes/catalog");
 const assets = require("./routes/assets");
+const admin = require("./routes/admin");
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use("/v1/billing", billing.router);
 app.use("/v1/me", me.router);
 app.use("/v1/catalog", catalog.router);
 app.use("/v1/assets", assets.router);
+app.use("/v1/admin", admin.router);
 
 app.use((err, _req, res, _next) => {
     console.error(err);

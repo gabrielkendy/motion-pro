@@ -552,7 +552,7 @@ function showFatal(msg) {
 }
 
 // ============================================================ AUTH (login/signup gate)
-var API_BASE = (window.MV_CONFIG && window.MV_CONFIG.apiBaseUrl) || "https://api.motionvault.app";
+var API_BASE = (window.MV_CONFIG && window.MV_CONFIG.apiBaseUrl) || "https://motionpro.vercel.app";
 var DEV_BYPASS = (window.MV_CONFIG && window.MV_CONFIG.devMode === true);
 
 function gateApi(path, body) {
