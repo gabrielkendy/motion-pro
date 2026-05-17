@@ -93,14 +93,21 @@ ${BRAND_HEADER}
       </p>
     </div>
 
-    <div style="background:#f6f6f8;border:1px solid #e6e6ea;border-radius:8px;padding:20px;margin-bottom:32px">
+    <div style="background:#f6f6f8;border:1px solid #e6e6ea;border-radius:8px;padding:20px;margin-bottom:18px">
       <div style="font:600 11px Inter,Arial,sans-serif;color:#2563EB;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px">02 · Instale o plugin</div>
       <p style="color:#444;font:400 14px/1.6 Inter,Arial,sans-serif;margin:0 0 16px">
-        Baixe o instalador, dê duplo clique e siga as instruções. Funciona em Windows e macOS, Premiere Pro CC 2019+.
+        Baixe o instalador, dê duplo clique e siga as instruções. Premiere Pro CC 2019+, Windows 10/11.
       </p>
       <a href="${downloadUrl}" style="display:inline-block;background:#2563EB;color:#fff;padding:14px 24px;border-radius:6px;text-decoration:none;font:600 14px Inter,Arial,sans-serif">
         Baixar o instalador →
       </a>
+    </div>
+
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:16px 20px;margin-bottom:32px">
+      <div style="font:600 11px Inter,Arial,sans-serif;color:#c2410c;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">⚠️ Aviso do Windows</div>
+      <p style="color:#7c2d12;font:400 13px/1.6 Inter,Arial,sans-serif;margin:0">
+        Ao abrir o instalador, o Windows pode mostrar <em>"O Windows protegeu o computador"</em>. Isso é normal pra apps novos. Click em <strong>"Mais informações" → "Executar assim mesmo"</strong> pra continuar.
+      </p>
     </div>
 
     <div style="background:#f6f6f8;border:1px solid #e6e6ea;border-radius:8px;padding:20px">
