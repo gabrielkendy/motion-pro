@@ -4,7 +4,7 @@
  * Resend free tier: 3000 emails/mês, dominio padrão onboarding@resend.dev
  * (depois você configura motionvault.app via DNS).
  */
-const FROM      = process.env.EMAIL_FROM || "MotionVault <onboarding@resend.dev>";
+const FROM      = process.env.EMAIL_FROM || "MotionPro <onboarding@resend.dev>";
 const RESEND    = process.env.RESEND_API_KEY;
 const PUBLIC_URL = process.env.PUBLIC_URL || "https://motionpro-lp.vercel.app";
 
@@ -14,13 +14,29 @@ async function sendEmail({ to, subject, html, text }) {
         return { ok: false, skipped: true, reason: "no_api_key" };
     }
     try {
+        // Garante HTML completo com charset UTF-8 declarado
+        const fullHtml = html.includes("<!DOCTYPE")
+            ? html
+            : `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>${html}</body></html>`;
+
+        const body = JSON.stringify({
+            from: FROM,
+            to,
+            subject,
+            html: fullHtml,
+            text,
+            headers: {
+                "Content-Type": "text/html; charset=UTF-8"
+            }
+        });
+
         const r = await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: {
                 "Authorization": "Bearer " + RESEND,
-                "Content-Type": "application/json"
+                "Content-Type": "application/json; charset=utf-8"
             },
-            body: JSON.stringify({ from: FROM, to, subject, html, text })
+            body: Buffer.from(body, "utf8")    // força bytes UTF-8 no wire
         });
         const data = await r.json();
         if (!r.ok) {
@@ -39,7 +55,7 @@ const BRAND_HEADER = `
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0a;padding:24px 0">
   <tr><td align="center">
     <div style="font:800 22px Inter,Arial,sans-serif;color:#fff;letter-spacing:-.5px">
-      Motion<span style="color:#2563EB">·</span>Vault
+      Motion<span style="color:#2563EB">·</span>Pro
     </div>
   </td></tr>
 </table>`;
@@ -47,7 +63,7 @@ const BRAND_HEADER = `
 const BRAND_FOOTER = `
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0a;padding:24px;margin-top:32px">
   <tr><td align="center" style="color:#888;font:400 12px Inter,Arial,sans-serif">
-    © ${new Date().getFullYear()} MotionVault · uma marca PacotesFX<br>
+    © ${new Date().getFullYear()} MotionPro · uma marca PacotesFX<br>
     Se você não esperava este e-mail, ignore.
   </td></tr>
 </table>`;
@@ -55,12 +71,12 @@ const BRAND_FOOTER = `
 function welcomeEmail({ email, password, plan, downloadUrl }) {
     const planName = plan === "lifetime" ? "Vitalício" : plan === "yearly" ? "Anual" : plan;
     const html = `
-<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MotionPro</title></head><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
 ${BRAND_HEADER}
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#fff;max-width:560px;margin:0 auto">
   <tr><td style="padding:48px 40px 32px">
     <h1 style="font:800 28px Inter,Arial,sans-serif;color:#0a0a0a;margin:0 0 18px;letter-spacing:-.8px">
-      Bem-vindo ao MotionVault.
+      Bem-vindo ao MotionPro.
     </h1>
     <p style="color:#444;font:400 16px/1.6 Inter,Arial,sans-serif;margin:0 0 28px">
       Sua assinatura <strong>${planName}</strong> está ativa. Tudo pronto pra começar:
@@ -90,7 +106,7 @@ ${BRAND_HEADER}
     <div style="background:#f6f6f8;border:1px solid #e6e6ea;border-radius:8px;padding:20px">
       <div style="font:600 11px Inter,Arial,sans-serif;color:#2563EB;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px">03 · Abra o Premiere e faça login</div>
       <p style="color:#444;font:400 14px/1.6 Inter,Arial,sans-serif;margin:0">
-        Menu <strong>Janela → Extensões → MotionVault</strong>. Use o e-mail e a senha acima. Pronto, os 7.906 templates estão liberados.
+        Menu <strong>Janela → Extensões → MotionPro</strong>. Use o e-mail e a senha acima. Pronto, os 7.906 templates estão liberados.
       </p>
     </div>
 
@@ -103,15 +119,15 @@ ${BRAND_FOOTER}
 </body></html>`;
     return sendEmail({
         to: email,
-        subject: "✅ Bem-vindo ao MotionVault · suas credenciais + download",
+        subject: "✅ Bem-vindo ao MotionPro · suas credenciais + download",
         html,
-        text: `Bem-vindo ao MotionVault!\n\nSeu plano ${planName} está ativo.\n\nE-mail: ${email}\nSenha temporária: ${password}\n\nBaixe o plugin: ${downloadUrl}\n\nDepois abra o Premiere em Janela > Extensões > MotionVault e faça login.\n\nDúvidas: suporte@pacotesfx.com`
+        text: `Bem-vindo ao MotionPro!\n\nSeu plano ${planName} está ativo.\n\nE-mail: ${email}\nSenha temporária: ${password}\n\nBaixe o plugin: ${downloadUrl}\n\nDepois abra o Premiere em Janela > Extensões > MotionPro e faça login.\n\nDúvidas: suporte@pacotesfx.com`
     });
 }
 
 function resetPasswordEmail({ email, resetUrl }) {
     const html = `
-<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MotionPro</title></head><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
 ${BRAND_HEADER}
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#fff;max-width:560px;margin:0 auto">
   <tr><td style="padding:48px 40px 32px">
@@ -119,7 +135,7 @@ ${BRAND_HEADER}
       Recuperação de senha
     </h1>
     <p style="color:#444;font:400 15px/1.6 Inter,Arial,sans-serif;margin:0 0 24px">
-      Recebemos uma solicitação pra redefinir a senha da sua conta MotionVault. Clique no botão abaixo pra criar uma nova senha. <strong>O link expira em 1 hora.</strong>
+      Recebemos uma solicitação pra redefinir a senha da sua conta MotionPro. Clique no botão abaixo pra criar uma nova senha. <strong>O link expira em 1 hora.</strong>
     </p>
     <a href="${resetUrl}" style="display:inline-block;background:#2563EB;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font:600 15px Inter,Arial,sans-serif">
       Redefinir minha senha →
@@ -133,7 +149,7 @@ ${BRAND_FOOTER}
 </body></html>`;
     return sendEmail({
         to: email,
-        subject: "🔐 Recuperação de senha · MotionVault",
+        subject: "🔐 Recuperação de senha · MotionPro",
         html,
         text: `Pra redefinir sua senha, abra: ${resetUrl}\n\nLink válido por 1 hora. Se não foi você, ignore.`
     });
@@ -141,7 +157,7 @@ ${BRAND_FOOTER}
 
 function paymentFailedEmail({ email, retryUrl }) {
     const html = `
-<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MotionPro</title></head><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
 ${BRAND_HEADER}
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#fff;max-width:560px;margin:0 auto">
   <tr><td style="padding:48px 40px 32px">
@@ -149,7 +165,7 @@ ${BRAND_HEADER}
       Tivemos problema com o pagamento
     </h1>
     <p style="color:#444;font:400 15px/1.6 Inter,Arial,sans-serif;margin:0 0 24px">
-      A cobrança da sua assinatura MotionVault não foi processada. Pode ser cartão expirado, sem limite, ou bloqueio do banco. Atualize seu método de pagamento pra continuar com acesso.
+      A cobrança da sua assinatura MotionPro não foi processada. Pode ser cartão expirado, sem limite, ou bloqueio do banco. Atualize seu método de pagamento pra continuar com acesso.
     </p>
     <a href="${retryUrl || PUBLIC_URL + '/account.html'}" style="display:inline-block;background:#dc2626;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font:600 14px Inter,Arial,sans-serif">
       Atualizar pagamento →
@@ -160,7 +176,7 @@ ${BRAND_FOOTER}
 </body></html>`;
     return sendEmail({
         to: email,
-        subject: "⚠️ Pagamento da sua assinatura MotionVault falhou",
+        subject: "⚠️ Pagamento da sua assinatura MotionPro falhou",
         html,
         text: `Não conseguimos processar o pagamento da sua assinatura. Atualize seu cartão em ${retryUrl || PUBLIC_URL + '/account.html'}`
     });

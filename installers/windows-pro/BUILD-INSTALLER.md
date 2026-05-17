@@ -1,6 +1,6 @@
 # 🛠️ Como gerar o instalador .exe profissional
 
-Este script Inno Setup gera um **MotionVault-Setup-1.0.1.exe** que faz instalação completa em 1 clique (estilo Adobe, Office, etc).
+Este script Inno Setup gera um **MotionPro-Setup-1.0.1.exe** que faz instalação completa em 1 clique (estilo Adobe, Office, etc).
 
 ---
 
@@ -22,19 +22,19 @@ Inno Setup precisa de um ícone `.ico`. Você pode:
 3. Baixa o `.ico` e coloca como `installers/windows-pro/icon.ico`
 
 **Opção B — sem ícone (placeholder):**
-- Comenta a linha `SetupIconFile=icon.ico` no arquivo `MotionVault.iss`
+- Comenta a linha `SetupIconFile=icon.ico` no arquivo `MotionPro.iss`
 - Comenta também `Source: "icon.ico"...` na seção `[Files]`
 
 ---
 
 ## Passo 3 · Compilar
 
-1. Dá duplo-clique em `MotionVault.iss` → abre no Inno Setup Compiler
+1. Dá duplo-clique em `MotionPro.iss` → abre no Inno Setup Compiler
 2. Menu **Build → Compile** (F9)
 3. Aguarda ~30 segundos
 4. Vai gerar:
    ```
-   installers/windows-pro/output/MotionVault-Setup-1.0.1.exe
+   installers/windows-pro/output/MotionPro-Setup-1.0.1.exe
    ```
 
 Esse `.exe` é o seu instalador FINAL.
@@ -49,14 +49,14 @@ O `.exe` provavelmente vai ter uns 60-100MB (por causa dos templates). Tem 3 op�
 1. https://github.com/gabrielkendy/motion-pro/releases/new
 2. Tag: `v1.0.1`
 3. Faz upload do `.exe`
-4. URL fica tipo `https://github.com/gabrielkendy/motion-pro/releases/download/v1.0.1/MotionVault-Setup-1.0.1.exe`
+4. URL fica tipo `https://github.com/gabrielkendy/motion-pro/releases/download/v1.0.1/MotionPro-Setup-1.0.1.exe`
 5. Atualiza `landing/download.html` com essa URL
 
 ### Opção B — Cloudflare R2 (gratuito até 10GB, 1 milhão req/mês)
 - Cria conta em https://dash.cloudflare.com
 - Cria bucket "motionvault-installers"
 - Faz upload do .exe
-- URL pública: `https://pub-XXXX.r2.dev/MotionVault-Setup-1.0.1.exe`
+- URL pública: `https://pub-XXXX.r2.dev/MotionPro-Setup-1.0.1.exe`
 
 ### Opção C — Vercel Blob (pago após 1GB)
 - Não recomendado pra arquivos grandes
@@ -75,9 +75,9 @@ Antes de publicar, **testa em outro PC** (ou VM):
 1. Roda o `.exe`
 2. Aceita os termos
 3. Instala
-4. Abre Premiere → Janela → Extensões → MotionVault deve aparecer
+4. Abre Premiere → Janela → Extensões → MotionPro deve aparecer
 5. Login com conta de teste deve funcionar
-6. Vai em "Adicionar/Remover Programas" → MotionVault → Desinstalar → deve sumir limpo
+6. Vai em "Adicionar/Remover Programas" → MotionPro → Desinstalar → deve sumir limpo
 
 ---
 

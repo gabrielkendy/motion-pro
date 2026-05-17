@@ -52,3 +52,7 @@ CREDENTIALS.md
 secrets/
 
 .vercel
+
+# Inno Setup output
+installers/windows-pro/output/
+*.exe

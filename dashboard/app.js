@@ -1,4 +1,4 @@
-// MotionVault Admin Dashboard
+// MotionPro Admin Dashboard
 const API = window.MV_API || "https://motionpro.vercel.app";
 const TOKEN_KEY = "mv_admin_token";
 

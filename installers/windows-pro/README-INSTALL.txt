@@ -1,5 +1,5 @@
 ════════════════════════════════════════════════════════════════
-   MotionVault · Antes de Instalar
+   MotionPro · Antes de Instalar
 ════════════════════════════════════════════════════════════════
 
 REQUISITOS:
@@ -21,7 +21,7 @@ O QUE ESTE INSTALADOR FAZ:
 
 DEPOIS DE INSTALAR:
 1. Abra o Premiere Pro
-2. Menu Janela → Extensões → MotionVault
+2. Menu Janela → Extensões → MotionPro
 3. Faça login com suas credenciais
 4. Pronto! 7.906 templates disponíveis no painel.
 

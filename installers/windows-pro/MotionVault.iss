@@ -1,11 +1,11 @@
 ; ════════════════════════════════════════════════════════════════
-;   MotionVault · Inno Setup Script
+;   MotionPro · Inno Setup Script
 ;   Cria um instalador .exe profissional para Windows
 ;
 ;   COMO USAR (uma vez só):
 ;   1) Baixe Inno Setup grátis: https://jrsoftware.org/isinfo.php
 ;   2) Abra este .iss no Inno Setup Compiler
-;   3) Build → vai gerar MotionVault-Setup-x.x.x.exe em /output
+;   3) Build → vai gerar MotionPro-Setup-x.x.x.exe em /output
 ;   4) Publique esse .exe (S3, R2, Vercel static, GitHub Releases)
 ;
 ;   O instalador faz:
@@ -18,12 +18,12 @@
 ;   • Pergunta se quer fechar Premiere/AE se estiverem abertos
 ; ════════════════════════════════════════════════════════════════
 
-#define MyAppName "MotionVault"
+#define MyAppName "MotionPro"
 #define MyAppVersion "1.0.1"
 #define MyAppPublisher "PacotesFX"
 #define MyAppURL "https://motionpro-lp.vercel.app"
 #define MyAppExtensionId "com.motionvault.panel"
-#define MyAppExeName "MotionVault-Uninstaller.exe"
+#define MyAppExeName "MotionPro-Uninstaller.exe"
 
 [Setup]
 AppId={{C8F2A1B3-9D4E-4A7C-8E5F-1234ABCDEF01}}
@@ -40,7 +40,7 @@ DisableDirPage=yes
 LicenseFile=LICENSE.txt
 InfoBeforeFile=README-INSTALL.txt
 OutputDir=output
-OutputBaseFilename=MotionVault-Setup-{#MyAppVersion}
+OutputBaseFilename=MotionPro-Setup-{#MyAppVersion}
 SetupIconFile=icon.ico
 Compression=lzma2/ultra
 SolidCompression=yes
@@ -60,7 +60,7 @@ Name: "openpremiere"; Description: "Abrir o Adobe Premiere Pro após instalar"; 
 [Files]
 ; Plugin files
 Source: "..\..\plugin\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-; Optional icon
+; Icon
 Source: "icon.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Registry]
@@ -99,5 +99,5 @@ Type: filesandordirs; Name: "{app}"
 
 [Messages]
 brazilianportuguese.WelcomeLabel1=Bem-vindo ao Instalador do [name]
-brazilianportuguese.WelcomeLabel2=Este assistente vai instalar o MotionVault no seu Adobe Premiere Pro.%n%nFeche o Premiere antes de continuar.%n%nClique em Avançar pra começar.
-brazilianportuguese.FinishedLabel=O MotionVault foi instalado com sucesso.%n%nAbra o Premiere Pro e vá em Janela → Extensões → MotionVault.%n%nFaça login com a conta que você criou na compra. As credenciais foram enviadas pro seu e-mail.
+brazilianportuguese.WelcomeLabel2=Este assistente vai instalar o MotionPro no seu Adobe Premiere Pro.%n%nFeche o Premiere antes de continuar.%n%nClique em Avançar pra começar.
+brazilianportuguese.FinishedLabel=O MotionPro foi instalado com sucesso.%n%nAbra o Premiere Pro e vá em Janela → Extensões → MotionPro.%n%nFaça login com a conta que você criou na compra. As credenciais foram enviadas pro seu e-mail.

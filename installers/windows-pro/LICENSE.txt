@@ -3,7 +3,7 @@ TERMOS DE USO DO MOTIONVAULT
 Última atualização: 2026
 
 1. ACEITE
-Ao instalar o MotionVault, você concorda com estes termos. Se não concorda, cancele a instalação.
+Ao instalar o MotionPro, você concorda com estes termos. Se não concorda, cancele a instalação.
 
 2. LICENÇA
 A licença concedida é PESSOAL e INTRANSFERÍVEL. Você pode usar o plugin nas máquinas permitidas pelo seu plano:
@@ -34,12 +34,12 @@ Coletamos apenas: e-mail, fingerprint do dispositivo (anônimo), e métricas de 
 Anual e Vitalício têm suporte por e-mail (suporte@pacotesfx.com), resposta em até 48h úteis.
 
 9. LIMITAÇÃO DE RESPONSABILIDADE
-O MotionVault é fornecido "como está". Não nos responsabilizamos por perda de trabalho, dados, ou prejuízos causados pelo uso indevido.
+O MotionPro é fornecido "como está". Não nos responsabilizamos por perda de trabalho, dados, ou prejuízos causados pelo uso indevido.
 
 10. JURISDIÇÃO
 Estes termos seguem a legislação brasileira. Foro: comarca do desenvolvedor.
 
 ──────────────────────────────────────
-MotionVault · uma marca PacotesFX
+MotionPro · uma marca PacotesFX
 suporte@pacotesfx.com
 ──────────────────────────────────────
