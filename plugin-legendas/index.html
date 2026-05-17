@@ -2,16 +2,17 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>MotionPro Legendas</title>
-<link rel="stylesheet" href="css/app.css?v=110">
+<title>MotionPro Legendas — Editor Premium</title>
+<link rel="stylesheet" href="css/app.css?v=200">
+<link rel="stylesheet" href="css/app-editor.css?v=200">
 </head>
 <body>
 
-<!-- ============ LOGIN GATE ============ -->
+<!-- ============ LOGIN GATE (overlay quando não autenticado) ============ -->
 <div id="gate" class="gate hidden">
     <div class="gate__box">
         <div class="gate__logo">MotionPro <em>Legendas</em></div>
-        <div class="gate__sub">by PacotesFX</div>
+        <div class="gate__sub">EDITOR PREMIUM · by PacotesFX</div>
 
         <div id="gate-tabs" class="gate__tabs">
             <button id="gt-login" class="gt active">Entrar</button>
@@ -44,7 +45,7 @@
     </div>
 </div>
 
-<!-- ============ TRIAL BAR ============ -->
+<!-- ============ TRIAL BAR (compacta) ============ -->
 <div id="trial-bar" class="trialbar hidden">
     <span id="trial-info" class="trialbar__info"></span>
     <button id="btn-upgrade" class="trialbar__cta">Assinar agora →</button>
@@ -54,7 +55,7 @@
 <div id="verify-bar" class="verifybar hidden">
     <span class="verifybar__info">📧 Confirme seu e-mail</span>
     <button id="btn-resend-verify" class="verifybar__cta">Reenviar</button>
-    <button id="btn-dismiss-verify" class="verifybar__dismiss" title="Fechar">×</button>
+    <button id="btn-dismiss-verify" class="verifybar__dismiss">×</button>
 </div>
 
 <!-- ============ PAYWALL ============ -->
@@ -62,39 +63,51 @@
     <div class="paywall__box">
         <div class="paywall__icon">⏰</div>
         <h2 class="paywall__title">Seu trial expirou</h2>
-        <p class="paywall__sub">Pra continuar usando os títulos e lower thirds, assine um plano. Stripe seguro, cancele quando quiser.</p>
+        <p class="paywall__sub">Pra continuar usando o editor premium de legendas, assine.</p>
         <div class="paywall__plans">
-            <div class="paywall__plan">
-                <div class="paywall__plan-name">Anual</div>
-                <div class="paywall__plan-price">R$ 149<small>/ano</small></div>
-                <div class="paywall__plan-sub">~R$ 12,40/mês</div>
-            </div>
-            <div class="paywall__plan paywall__plan--feat">
-                <div class="paywall__plan-name">Vitalício</div>
-                <div class="paywall__plan-price">R$ 399<small>uma vez</small></div>
-                <div class="paywall__plan-sub">Sem mensalidade</div>
-            </div>
+            <div class="paywall__plan"><div class="paywall__plan-name">Anual</div><div class="paywall__plan-price">R$ 149<small>/ano</small></div></div>
+            <div class="paywall__plan paywall__plan--feat"><div class="paywall__plan-name">Vitalício</div><div class="paywall__plan-price">R$ 399<small>uma vez</small></div></div>
         </div>
         <button id="paywall-cta" class="paywall__btn">Ver planos no site →</button>
-        <button id="paywall-bundle" class="paywall__bundle">💎 Ou pegue o Pacote Completo (MotionPro + Legendas) R$ 299/ano →</button>
+        <button id="paywall-bundle" class="paywall__bundle">💎 Pacote Completo (MotionPro + Legendas) R$ 299/ano →</button>
         <button id="paywall-logout" class="paywall__logout">Sair desta conta</button>
     </div>
 </div>
 
-<!-- ============ HEADER ============ -->
-<header class="headbar">
-    <div class="headbar__brand">
-        <div class="headbar__logo">
-            <svg viewBox="0 0 32 32" width="22" height="22"><circle cx="16" cy="16" r="14" fill="url(#gl)"/><text x="16" y="22" font-size="14" font-weight="900" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif">L</text><defs><linearGradient id="gl" x1="0" y1="0" x2="32" y2="32"><stop offset="0" stop-color="#2563EB"/><stop offset="1" stop-color="#1D4ED8"/></linearGradient></defs></svg>
-        </div>
-        <div class="headbar__text">
-            <div class="headbar__name">Legendas</div>
-            <div class="headbar__sub">MotionPro</div>
-        </div>
+<!-- ============ TOP STATUS BAR (verde quando logado) ============ -->
+<div class="topstatus" id="topstatus">
+    <div class="topstatus__brand">
+        <span class="topstatus__title">EDITOR PREMIUM</span>
+        <span class="topstatus__sub">BIBLIOTECA</span>
     </div>
+    <div class="topstatus__user" id="topstatus-user">
+        <span class="topstatus__dot"></span>
+        <span id="topstatus-email">—</span>
+    </div>
+</div>
+
+<!-- ============ SRT BAR (carregar arquivo de legendas) ============ -->
+<div class="srtbar">
+    <div class="srtbar__icon">📄</div>
+    <div class="srtbar__info">
+        <div class="srtbar__title" id="srt-title">Nenhum SRT carregado</div>
+        <div class="srtbar__sub" id="srt-sub">Importe um .srt pra aplicar templates em todas as palavras automaticamente</div>
+    </div>
+    <button class="srtbar__btn" id="btn-load-srt">Carregar agora</button>
+    <input type="file" id="srt-file" accept=".srt,.vtt" hidden>
+</div>
+
+<!-- ============ MODE TABS (TEMPLATES | AUTOMAÇÃO SRT) ============ -->
+<div class="modebar">
+    <button id="mode-templates" class="modebtn active" data-mode="templates">TEMPLATES</button>
+    <button id="mode-automation" class="modebtn" data-mode="automation">AUTOMAÇÃO SRT</button>
+</div>
+
+<!-- ============ HEADER (search + actions) ============ -->
+<header class="headbar">
     <div class="headbar__search">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input id="q" type="text" placeholder="Buscar título..." autocomplete="off">
+        <input id="q" type="text" placeholder="Buscar templates..." autocomplete="off">
         <button id="q-clear" class="q-clear hidden">×</button>
     </div>
     <div class="headbar__actions">
@@ -107,21 +120,96 @@
     </div>
 </header>
 
-<!-- ============ PACK TABS ============ -->
-<nav id="tabs" class="tabs"></nav>
-
-<!-- ============ BREADCRUMB ============ -->
-<div id="breadcrumb" class="breadcrumb"></div>
-
-<!-- ============ MAIN ============ -->
-<aside id="side" class="sidebar"></aside>
+<!-- ============ MAIN LAYOUT (sidebar + grid) ============ -->
+<aside id="side" class="sidebar">
+    <!-- Renderizado dinamicamente: CATEGORIAS > PALAVRAS (1/2/3) -->
+</aside>
 <main id="grid" class="grid"></main>
 
-<!-- ============ STATUS BAR ============ -->
-<footer class="statusbar">
-    <span id="status">Carregando...</span>
-    <span id="count" class="muted"></span>
+<!-- ============ AUTOMATION VIEW (oculto até carregar SRT) ============ -->
+<div id="automation" class="automation hidden">
+    <div class="automation__head">
+        <h3>Automação SRT</h3>
+        <p>Pra cada palavra do seu SRT, o plugin vai inserir um template + SFX automaticamente na timeline.</p>
+    </div>
+    <div class="automation__cfg">
+        <div class="cfg-row">
+            <label>Template base:</label>
+            <select id="auto-template"></select>
+        </div>
+        <div class="cfg-row">
+            <label>SFX:</label>
+            <select id="auto-sfx"><option value="">(nenhum)</option></select>
+        </div>
+        <div class="cfg-row">
+            <label>Palavras por bloco:</label>
+            <select id="auto-words">
+                <option value="1">1 palavra</option>
+                <option value="2">2 palavras</option>
+                <option value="3" selected>3 palavras</option>
+            </select>
+        </div>
+    </div>
+    <div class="automation__words" id="auto-preview"></div>
+    <div class="automation__cta">
+        <button class="btn-primary" id="btn-apply-all">Aplicar em toda a timeline →</button>
+    </div>
+</div>
+
+<!-- ============ FOOTER BAR (apply mode + sfx config) ============ -->
+<footer class="footbar">
+    <div class="footbar__left">
+        Após aplicar:
+        <label class="opt-radio">
+            <input type="radio" name="apply-mode" value="keep" checked>
+            <span>Manter originais</span>
+        </label>
+        <label class="opt-radio">
+            <input type="radio" name="apply-mode" value="disable">
+            <span>Desativar originais</span>
+        </label>
+    </div>
+    <div class="footbar__right">
+        <label class="opt-chk">
+            <input type="checkbox" id="opt-with-sfx" checked>
+            <span>🔉 Com SFX</span>
+        </label>
+        <select id="opt-audio-track">
+            <option value="">Nenhuma audio track</option>
+            <option value="A1">A1</option>
+            <option value="A2">A2</option>
+            <option value="A3" selected>A3</option>
+            <option value="A4">A4</option>
+        </select>
+        <button class="footbar__sfx" id="btn-open-sfx">⚡ Selecionar SFX</button>
+    </div>
 </footer>
+
+<!-- ============ STATUS / LOG ============ -->
+<div class="statusline">
+    <span id="status">Pronto</span>
+    <span id="count" class="muted"></span>
+</div>
+
+<!-- ============ SFX MODAL ============ -->
+<div id="sfx-modal" class="sfx-modal hidden">
+    <div class="sfx-modal__overlay"></div>
+    <div class="sfx-modal__card">
+        <header class="sfx-modal__head">
+            <h3>SFX padrão para Templates</h3>
+            <button class="sfx-modal__close" id="sfx-close">×</button>
+        </header>
+        <div class="sfx-modal__search">
+            <input id="sfx-q" type="text" placeholder="🔍 Buscar SFX...">
+        </div>
+        <div class="sfx-modal__tabs" id="sfx-tabs"></div>
+        <div class="sfx-modal__list" id="sfx-list"></div>
+        <footer class="sfx-modal__foot">
+            <button class="sfx-modal__danger" id="sfx-remove">Remover SFX deste grupo</button>
+            <button class="sfx-modal__refresh" id="sfx-refresh">Atualizar catálogo</button>
+        </footer>
+    </div>
+</div>
 
 <!-- ============ DEBUG LOG ============ -->
 <div id="log" class="log hidden">
@@ -132,8 +220,9 @@
     <div id="log-body" class="log__body"></div>
 </div>
 
-<script src="js/lib/CSInterface.js?v=110"></script>
-<script src="js/config.js?v=110"></script>
-<script src="js/app.js?v=110"></script>
+<script src="js/lib/CSInterface.js?v=200"></script>
+<script src="js/config.js?v=200"></script>
+<script src="js/app.js?v=200"></script>
+<script src="js/editor.js?v=200"></script>
 </body>
 </html>
