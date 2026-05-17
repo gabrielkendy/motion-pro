@@ -12,36 +12,56 @@ const DEVICE_LIMITS = {
     pro_all:  5
 };
 
-/* Returns the user's current effective plan, status, and expiration.
- * Handles trial expiration automatically (returns "free" if trial expired
- * without conversion). */
+/* Status that are allowed to receive a valid license.
+ * Tudo o que NÃO estiver nessa lista bloqueia a emissão (revoked, canceled, past_due, expired, etc). */
+const ACTIVE_STATUSES = new Set(["active", "trialing"]);
+
+/* Retorna a assinatura "vencedora" do usuário:
+ *   - Prioriza subs ativas (active/trialing) sobre revogadas/canceladas
+ *   - Lifetime ativa sempre ganha
+ *   - Atualiza trials vencidos pra "expired"
+ *   - Quando NENHUMA sub ativa existe, retorna {plan:"free", status:"none|expired|revoked"} */
 async function getActiveSubscription(userId) {
+    // Pega TODAS as subs do user; lógica de prioridade no JS
     const r = await pool.query(
-        `SELECT plan, status, current_period_end, cancel_at
+        `SELECT plan, status, current_period_end, cancel_at, started_at
          FROM subscriptions
          WHERE user_id=$1
-         ORDER BY started_at DESC LIMIT 1`,
+         ORDER BY started_at DESC`,
         [userId]
     );
     if (r.rowCount === 0) return { plan: "free", status: "none", expiresAt: null };
 
-    const s = r.rows[0];
-    // Lifetime never expires
-    if (s.plan === "lifetime" && s.status === "active") {
-        return { plan: "lifetime", status: "active", expiresAt: null };
+    // 1. Lifetime active vence sobre tudo
+    const lifetime = r.rows.find(s => s.plan === "lifetime" && s.status === "active");
+    if (lifetime) return { plan: "lifetime", status: "active", expiresAt: null };
+
+    // 2. Procura primeira sub ativa/trialing válida (não vencida)
+    const now = new Date();
+    for (const s of r.rows) {
+        // Trial vencido? marca como expired no banco
+        if (s.status === "trialing" && s.current_period_end && new Date(s.current_period_end) < now) {
+            await pool.query(
+                "UPDATE subscriptions SET status='expired', updated_at=now() WHERE user_id=$1 AND status='trialing' AND current_period_end<now()",
+                [userId]
+            );
+            continue;   // tenta próxima sub
+        }
+        // Sub ativa (active ou trialing) com expires no futuro (ou sem expires = lifetime)
+        if (ACTIVE_STATUSES.has(s.status)) {
+            const notExpired = !s.current_period_end || new Date(s.current_period_end) >= now;
+            if (notExpired) {
+                return { plan: s.plan, status: s.status, expiresAt: s.current_period_end };
+            }
+        }
     }
-    // Trial expiration check
-    if (s.status === "trialing" && s.current_period_end && new Date(s.current_period_end) < new Date()) {
-        await pool.query(
-            "UPDATE subscriptions SET status='expired', updated_at=now() WHERE user_id=$1 AND status='trialing'",
-            [userId]
-        );
-        return { plan: "free", status: "expired", expiresAt: s.current_period_end };
-    }
+
+    // 3. Nenhuma sub ativa → retorna status mais relevante pra UX (revoked > canceled > expired)
+    const latest = r.rows[0];   // mais recente
     return {
-        plan: s.plan,
-        status: s.status,
-        expiresAt: s.current_period_end
+        plan: "free",
+        status: latest.status || "none",       // "revoked" | "canceled" | "expired"
+        expiresAt: latest.current_period_end
     };
 }
 
@@ -58,6 +78,22 @@ router.post("/issue", requireAuth, async (req, res, next) => {
         if (!fingerprint) return res.status(400).json({ error: "fingerprint_required" });
 
         const sub = await getActiveSubscription(req.user.id);
+
+        // 🔒 GATE: só emite license se status for "active" ou "trialing"
+        if (!ACTIVE_STATUSES.has(sub.status)) {
+            await audit(req.user.id, null, "issue_denied", { reason: sub.status, plan: sub.plan, fingerprint });
+            return res.status(403).json({
+                error: "subscription_inactive",
+                plan: sub.plan,
+                status: sub.status,
+                message: sub.status === "revoked" ? "Acesso revogado pelo administrador" :
+                         sub.status === "canceled" ? "Assinatura cancelada" :
+                         sub.status === "expired" ? "Trial ou assinatura expirou" :
+                         sub.status === "past_due" ? "Pagamento pendente — atualize cartão" :
+                         "Sem assinatura ativa"
+            });
+        }
+
         const limit = DEVICE_LIMITS[sub.plan] || 0;
 
         // Device cap check (existing fingerprint always allowed)
@@ -88,7 +124,7 @@ router.post("/issue", requireAuth, async (req, res, next) => {
             email: req.user.email,
             plan: sub.plan,
             fingerprint,
-            packs: sub.plan === "free" ? [] : ["*"]
+            packs: ["*"]
         });
         await audit(req.user.id, deviceId, "issue", { plan: sub.plan });
 
@@ -114,12 +150,25 @@ router.post("/heartbeat", requireAuth, async (req, res, next) => {
 
         await pool.query("UPDATE devices SET last_seen=now() WHERE id=$1", [d.rows[0].id]);
         const sub = await getActiveSubscription(req.user.id);
+
+        // 🔒 GATE: se sub inativa, sinaliza pro plugin (não emite nova license)
+        if (!ACTIVE_STATUSES.has(sub.status)) {
+            await audit(req.user.id, d.rows[0].id, "heartbeat_inactive", { reason: sub.status, plan: sub.plan });
+            return res.json({
+                revoked: true,                       // plugin trata como revoked
+                subscription_inactive: true,
+                plan: sub.plan,
+                status: sub.status,
+                expires_at: sub.expiresAt
+            });
+        }
+
         const license = signLicense({
             userId: req.user.id,
             email: req.user.email,
             plan: sub.plan,
             fingerprint,
-            packs: sub.plan === "free" ? [] : ["*"]
+            packs: ["*"]
         });
         await audit(req.user.id, d.rows[0].id, "heartbeat", { plan: sub.plan });
 

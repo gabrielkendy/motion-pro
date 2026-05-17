@@ -162,6 +162,23 @@ async function webhook(req, res) {
         return res.status(400).send("bad signature");
     }
 
+    // 🔒 IDEMPOTÊNCIA: previne processar o mesmo evento 2x se Stripe reenviar.
+    try {
+        const dup = await pool.query(
+            "INSERT INTO stripe_events_seen(event_id, type) VALUES($1,$2) ON CONFLICT DO NOTHING RETURNING event_id",
+            [event.id, event.type]
+        );
+        if (dup.rowCount === 0) {
+            console.log("[webhook] evento duplicado ignorado:", event.id);
+            return res.json({ received: true, duplicate: true });
+        }
+    } catch (e) {
+        // Se a tabela não existe ainda, continua (não bloqueia webhook)
+        if (!String(e.message).includes("does not exist")) {
+            console.error("[webhook] idempotency check fail", e.message);
+        }
+    }
+
     try {
         switch (event.type) {
             // -------- CHECKOUT FINALIZADO --------

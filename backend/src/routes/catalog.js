@@ -1,7 +1,10 @@
 "use strict";
 const router = require("express").Router();
 const { pool } = require("../db");
+const { requireAdmin } = require("../middleware/auth");
 
+// GET /v1/catalog — público (plugin precisa baixar mesmo sem login).
+// Conteúdo do catálogo é só metadata (nomes de packs/items), não tem assets.
 router.get("/", async (req, res, next) => {
     try {
         const v = (req.query.v || "latest");
@@ -18,8 +21,9 @@ router.get("/", async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
-// Admin-only publish endpoint (gated elsewhere; for dev convenience)
-router.post("/publish", async (req, res, next) => {
+// POST /v1/catalog/publish — SOMENTE admin.
+// Bug crítico anterior: estava sem auth, qualquer um podia sobrescrever o catálogo.
+router.post("/publish", requireAdmin, async (req, res, next) => {
     try {
         const body = req.body;
         if (!body || !body.version) return res.status(400).json({ error: "version_required" });
@@ -27,6 +31,10 @@ router.post("/publish", async (req, res, next) => {
         await pool.query(
             "INSERT INTO catalog_versions(version, content, is_active) VALUES($1,$2,true)",
             [body.version, body]
+        );
+        await pool.query(
+            "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'catalog_publish', $2)",
+            [req.user.id, { version: body.version }]
         );
         res.json({ ok: true, version: body.version });
     } catch (e) { next(e); }
