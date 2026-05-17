@@ -86,6 +86,7 @@ document.querySelectorAll(".nav-item").forEach(item => {
         document.querySelectorAll(".nav-item").forEach(n => n.classList.toggle("active", n === item));
         document.querySelectorAll(".view").forEach(s => s.classList.toggle("active", s.id === "view-" + v));
         if (v === "overview") refreshOverview();
+        if (v === "analytics") refreshAnalytics();
         if (v === "users") refreshUsers();
         if (v === "subscriptions") refreshSubs();
         if (v === "devices") refreshDevices();
@@ -306,6 +307,117 @@ async function refreshDevices() {
         });
     } catch (e) { toast("Erro: " + e.message, "error"); }
 }
+
+// ===== ANALYTICS =====
+let charts = { signups: null, revenue: null, products: null };
+async function refreshAnalytics() {
+    const days = document.getElementById("analytics-range").value || "30";
+    try {
+        const d = await api("/v1/admin/stats/timeline?days=" + days);
+
+        // Conversion cards (por produto)
+        document.getElementById("conv-cards").innerHTML = d.conversion.map(c => {
+            const productName = { motionpro: "MotionPro", legendas: "Legendas", bundle_all: "Bundle" }[c.product_id] || c.product_id;
+            const emoji = { motionpro: "🎬", legendas: "💬", bundle_all: "💎" }[c.product_id] || "📦";
+            return `<div class="kpi">
+                <div class="kpi-label">${emoji} ${productName} · Conversão</div>
+                <div class="kpi-value ${c.conversion_rate >= 30 ? 'green' : c.conversion_rate >= 15 ? 'blue' : 'orange'}">${c.conversion_rate}%</div>
+                <div class="kpi-sub">${c.converted} pagantes de ${c.trials} trials</div>
+            </div>`;
+        }).join("") || `<div class="kpi"><div class="kpi-label">Sem dados ainda</div><div class="kpi-value muted">—</div></div>`;
+
+        // Chart 1: signups por dia
+        const signupsByDay = {};
+        d.signups.forEach(s => signupsByDay[s.day.slice(0,10)] = s.count);
+        const labels = fillDateRange(Number(days));
+        const signupData = labels.map(l => signupsByDay[l] || 0);
+        renderLine("chart-signups", labels, [
+            { label: "Novos usuários", data: signupData, color: "#2563EB" }
+        ]);
+
+        // Chart 2: revenue por dia
+        const revByDay = {};
+        d.checkouts.forEach(c => {
+            const day = c.day.slice(0,10);
+            revByDay[day] = (revByDay[day] || 0) + Number(c.revenue || 0);
+        });
+        const revData = labels.map(l => revByDay[l] || 0);
+        renderLine("chart-revenue", labels, [
+            { label: "Receita (R$)", data: revData, color: "#22c55e" }
+        ], { yLabel: "R$" });
+
+        // Chart 3: subs por produto (doughnut)
+        const byProduct = {};
+        d.subs_active.forEach(s => {
+            if (s.status === "active" || s.status === "trialing") {
+                const key = s.product_id || "motionpro";
+                byProduct[key] = (byProduct[key] || 0) + s.count;
+            }
+        });
+        renderDoughnut("chart-products",
+            Object.keys(byProduct).map(k => ({
+                motionpro: "MotionPro", legendas: "Legendas", bundle_all: "Bundle"
+            }[k] || k)),
+            Object.values(byProduct),
+            ["#2563EB", "#22c55e", "#a855f7", "#f59e0b"]
+        );
+    } catch (e) { toast("Erro: " + e.message, "error"); }
+}
+
+function fillDateRange(days) {
+    const out = [];
+    const now = new Date();
+    for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(now); d.setDate(d.getDate() - i);
+        out.push(d.toISOString().slice(0, 10));
+    }
+    return out;
+}
+
+function renderLine(canvasId, labels, datasets, opts) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx || typeof Chart === "undefined") return;
+    if (charts[canvasId]) { charts[canvasId].destroy(); }
+    charts[canvasId] = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: labels.map(l => l.slice(5)),
+            datasets: datasets.map(d => ({
+                label: d.label, data: d.data,
+                borderColor: d.color, backgroundColor: d.color + "22",
+                fill: true, tension: 0.3, borderWidth: 2,
+                pointRadius: 0, pointHoverRadius: 5
+            }))
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: "#a0a0aa", font: { family: "Inter" }}}},
+            scales: {
+                x: { ticks: { color: "#7e8395", maxTicksLimit: 10 }, grid: { color: "#26262e" }},
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: "#7e8395", callback: v => (opts?.yLabel ? opts.yLabel + " " + v : v) },
+                    grid: { color: "#26262e" }
+                }
+            }
+        }
+    });
+}
+function renderDoughnut(canvasId, labels, data, colors) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx || typeof Chart === "undefined") return;
+    if (charts[canvasId]) { charts[canvasId].destroy(); }
+    charts[canvasId] = new Chart(ctx, {
+        type: "doughnut",
+        data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: "#06070a", borderWidth: 2 }]},
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: "bottom", labels: { color: "#a0a0aa", font: { family: "Inter" }, padding: 14 }}}
+        }
+    });
+}
+document.getElementById("refresh-analytics").addEventListener("click", refreshAnalytics);
+document.getElementById("analytics-range").addEventListener("change", refreshAnalytics);
 
 // ===== AUDIT =====
 async function refreshAudit() {

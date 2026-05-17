@@ -12,6 +12,7 @@ const me = require("./routes/me");
 const catalog = require("./routes/catalog");
 const assets = require("./routes/assets");
 const admin = require("./routes/admin");
+const cron = require("./routes/cron");
 
 const app = express();
 
@@ -73,6 +74,7 @@ app.use("/v1/me", me.router);
 app.use("/v1/catalog", catalog.router);
 app.use("/v1/assets", assets.router);
 app.use("/v1/admin", admin.router);
+app.use("/v1/cron", cron.router);
 
 // Error handler: NÃO loga senhas, tokens nem PII completa
 app.use((err, req, res, _next) => {

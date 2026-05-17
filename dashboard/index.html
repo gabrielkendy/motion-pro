@@ -37,6 +37,7 @@
     <div class="brand">Motion<span>Pro</span><em>admin</em></div>
     <nav>
       <a href="#" class="nav-item active" data-view="overview">📊 Visão geral</a>
+      <a href="#" class="nav-item" data-view="analytics">📈 Analytics</a>
       <a href="#" class="nav-item" data-view="users">👥 Usuários</a>
       <a href="#" class="nav-item" data-view="subscriptions">🔁 Assinaturas</a>
       <a href="#" class="nav-item" data-view="devices">💻 Dispositivos</a>
@@ -64,6 +65,40 @@
         <div class="card">
           <h3>Últimos 7 dias</h3>
           <div id="recent-stats"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ANALYTICS -->
+    <section id="view-analytics" class="view">
+      <header class="view-head">
+        <h2>Analytics</h2>
+        <div class="filters">
+          <select id="analytics-range">
+            <option value="7">Últimos 7 dias</option>
+            <option value="30" selected>Últimos 30 dias</option>
+            <option value="90">Últimos 90 dias</option>
+            <option value="180">Últimos 180 dias</option>
+          </select>
+          <button id="refresh-analytics" class="btn btn--ghost btn--sm">🔄 Atualizar</button>
+        </div>
+      </header>
+
+      <div id="conv-cards" class="kpi-grid" style="margin-bottom:28px"></div>
+
+      <div class="card" style="margin-bottom:20px">
+        <h3>📈 Novos usuários por dia</h3>
+        <div style="position:relative;height:280px"><canvas id="chart-signups"></canvas></div>
+      </div>
+
+      <div class="row2">
+        <div class="card">
+          <h3>💰 Receita por dia</h3>
+          <div style="position:relative;height:240px"><canvas id="chart-revenue"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>📦 Assinaturas por produto</h3>
+          <div style="position:relative;height:240px"><canvas id="chart-products"></canvas></div>
         </div>
       </div>
     </section>
@@ -191,6 +226,7 @@
 <!-- TOAST -->
 <div id="toast" class="toast" hidden></div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
 <script src="/app.js"></script>
 </body>
 </html>

@@ -252,6 +252,92 @@ function collectItems() {
     return out;
 }
 
+// ============================================================ MOCKUP SVG GEN
+// Gera preview visual realista por categoria (sem precisar renderizar mogrt)
+function categoryStyle(catName) {
+    var c = String(catName).toLowerCase();
+    if (c.indexOf("simple") >= 0)    return { bg: "#0a0a0a", fg: "#fff",     font: "Inter,sans-serif",  weight: 700, align: "center",  size: 28, kind: "title" };
+    if (c.indexOf("fashion") >= 0)   return { bg: "#1a0a14", fg: "#ffd9e6",   font: "Playfair Display,serif", weight: 400, align: "center", size: 26, kind: "fashion" };
+    if (c.indexOf("urban") >= 0)     return { bg: "#1a1a1a", fg: "#ffeb3b",   font: "Impact,sans-serif", weight: 900, align: "left",   size: 30, kind: "urban" };
+    if (c.indexOf("glitch") >= 0)    return { bg: "#000",    fg: "#0ff",      font: "Courier,monospace", weight: 700, align: "center", size: 26, kind: "glitch" };
+    if (c.indexOf("huge") >= 0)      return { bg: "#0a0a0a", fg: "#fff",      font: "Inter,sans-serif",  weight: 900, align: "center", size: 36, kind: "huge" };
+    if (c.indexOf("minimal") >= 0)   return { bg: "#fafafa", fg: "#0a0a0a",   font: "Inter,sans-serif",  weight: 300, align: "center", size: 22, kind: "minimal" };
+    if (c.indexOf("wedding") >= 0)   return { bg: "#f5ede0", fg: "#3a2820",   font: "Playfair Display,serif", weight: 400, align: "center", size: 24, kind: "wedding" };
+    if (c.indexOf("elegant") >= 0)   return { bg: "#16161a", fg: "#d4af37",   font: "Playfair Display,serif", weight: 500, align: "center", size: 24, kind: "elegant" };
+    if (c.indexOf("corporate") >= 0) return { bg: "#1a2540", fg: "#fff",      font: "Inter,sans-serif",  weight: 600, align: "left",   size: 24, kind: "corporate" };
+    if (c.indexOf("lower") >= 0)     return { bg: "#1a1a20", fg: "#fff",      font: "Inter,sans-serif",  weight: 600, align: "left",   size: 18, kind: "lowerthird" };
+    return { bg: "#1a1a20", fg: "#fff", font: "Inter,sans-serif", weight: 600, align: "center", size: 24, kind: "title" };
+}
+
+function shortenTitle(name) {
+    // "Simple Title_01" → "Simple Title"
+    var s = String(name).replace(/[_\-\s]+\d+$/, "").trim();
+    if (s.length > 20) s = s.slice(0, 18) + "…";
+    return s;
+}
+
+function mockupSvg(name, catPath) {
+    var lastCat = (catPath || "").split(/[ ›\/]+/).filter(Boolean).pop() || "";
+    var s = categoryStyle(lastCat);
+    var label = shortenTitle(name);
+    var W = 240, H = 135;   // 16:9
+    var content = "";
+
+    if (s.kind === "glitch") {
+        // 3 cópias deslocadas pra simular RGB glitch
+        var ts = function(c, dx) { return '<text x="' + (W/2+dx) + '" y="' + (H/2+8) + '" fill="' + c + '" font-family="' + s.font + '" font-weight="' + s.weight + '" font-size="' + s.size + '" text-anchor="middle" letter-spacing="1.5">' + escapeXml(label.toUpperCase()) + '</text>'; };
+        content = ts("#ff0080", -3) + ts("#00ffff", 3) + ts("#fff", 0);
+    } else if (s.kind === "lowerthird") {
+        // Barra inferior + texto e linha
+        content =
+            '<rect x="14" y="' + (H - 50) + '" width="' + (W - 28) + '" height="34" fill="' + s.bg + '" stroke="' + s.fg + '" stroke-width="1" opacity="0.95"/>' +
+            '<rect x="14" y="' + (H - 50) + '" width="4" height="34" fill="' + s.fg + '"/>' +
+            '<text x="28" y="' + (H - 30) + '" fill="' + s.fg + '" font-family="' + s.font + '" font-weight="' + s.weight + '" font-size="13">' + escapeXml(label) + '</text>' +
+            '<text x="28" y="' + (H - 17) + '" fill="' + s.fg + '" font-family="' + s.font + '" font-weight="400" font-size="9" opacity="0.6">SUBTITLE / CARGO</text>';
+    } else if (s.kind === "urban") {
+        // Texto torto + traços
+        content =
+            '<g transform="rotate(-4 ' + (W/2) + ' ' + (H/2) + ')">' +
+            '<rect x="20" y="' + (H/2 - 5) + '" width="' + (W - 40) + '" height="4" fill="' + s.fg + '"/>' +
+            '<text x="20" y="' + (H/2 - 12) + '" fill="' + s.fg + '" font-family="' + s.font + '" font-weight="' + s.weight + '" font-size="' + s.size + '" letter-spacing="2">' + escapeXml(label.toUpperCase()) + '</text>' +
+            '</g>';
+    } else if (s.kind === "wedding" || s.kind === "elegant") {
+        // Linha fina decorativa
+        var lineY = H/2 + 22;
+        content =
+            '<text x="' + (W/2) + '" y="' + (H/2 + 4) + '" fill="' + s.fg + '" font-family="' + s.font + '" font-weight="' + s.weight + '" font-size="' + s.size + '" text-anchor="middle" font-style="italic">' + escapeXml(label) + '</text>' +
+            '<line x1="' + (W/2 - 30) + '" y1="' + lineY + '" x2="' + (W/2 + 30) + '" y2="' + lineY + '" stroke="' + s.fg + '" stroke-width="0.6"/>' +
+            '<circle cx="' + (W/2) + '" cy="' + lineY + '" r="1.6" fill="' + s.fg + '"/>';
+    } else if (s.kind === "huge") {
+        content = '<text x="' + (W/2) + '" y="' + (H/2 + 12) + '" fill="' + s.fg + '" font-family="' + s.font + '" font-weight="' + s.weight + '" font-size="' + s.size + '" text-anchor="middle" letter-spacing="-1">' + escapeXml(label.toUpperCase()) + '</text>';
+    } else if (s.kind === "minimal") {
+        content =
+            '<line x1="' + (W/2 - 15) + '" y1="' + (H/2 - 18) + '" x2="' + (W/2 + 15) + '" y2="' + (H/2 - 18) + '" stroke="' + s.fg + '" stroke-width="1"/>' +
+            '<text x="' + (W/2) + '" y="' + (H/2 + 8) + '" fill="' + s.fg + '" font-family="' + s.font + '" font-weight="' + s.weight + '" font-size="' + s.size + '" text-anchor="middle" letter-spacing="3">' + escapeXml(label.toLowerCase()) + '</text>';
+    } else if (s.kind === "corporate") {
+        content =
+            '<rect x="20" y="' + (H/2 - 18) + '" width="4" height="36" fill="' + s.fg + '"/>' +
+            '<text x="32" y="' + (H/2 + 2) + '" fill="' + s.fg + '" font-family="' + s.font + '" font-weight="' + s.weight + '" font-size="' + s.size + '">' + escapeXml(label) + '</text>' +
+            '<text x="32" y="' + (H/2 + 18) + '" fill="' + s.fg + '" font-family="' + s.font + '" font-weight="400" font-size="10" opacity="0.6">CORPORATE</text>';
+    } else if (s.kind === "fashion") {
+        content =
+            '<text x="' + (W/2) + '" y="' + (H/2 + 8) + '" fill="' + s.fg + '" font-family="' + s.font + '" font-weight="' + s.weight + '" font-size="' + s.size + '" text-anchor="middle" letter-spacing="4">' + escapeXml(label.toUpperCase()) + '</text>';
+    } else {
+        content = '<text x="' + (W/2) + '" y="' + (H/2 + 8) + '" fill="' + s.fg + '" font-family="' + s.font + '" font-weight="' + s.weight + '" font-size="' + s.size + '" text-anchor="middle">' + escapeXml(label) + '</text>';
+    }
+
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">' +
+           '<rect width="' + W + '" height="' + H + '" fill="' + s.bg + '"/>' +
+           content +
+           '</svg>';
+}
+
+function escapeXml(s) {
+    return String(s).replace(/[<>&"']/g, function (c) {
+        return { "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+}
+
 function renderGrid() {
     var el = $("grid"); el.innerHTML = "";
     var items = collectItems();
@@ -263,10 +349,11 @@ function renderGrid() {
         card.className = "card";
         var fav = isFav(e.item) ? "on" : "";
         var preview = e.item.preview ? nodePath.join(EXT_PATH, "packs", e.item.preview) : null;
+        var thumbHtml = preview
+            ? '<img loading="lazy" src="' + esc("file:///" + preview.replace(/\\/g, "/")) + '">'
+            : mockupSvg(e.item.name, e.cat);
         card.innerHTML =
-            '<div class="card__thumb">' +
-                (preview ? '<img loading="lazy" src="' + esc("file:///" + preview.replace(/\\/g, "/")) + '">' : '<div class="card__placeholder">' + esc(e.item.name.substr(0,2).toUpperCase()) + '</div>') +
-            '</div>' +
+            '<div class="card__thumb">' + thumbHtml + '</div>' +
             '<div class="card__title" title="' + esc(e.item.name) + '">' + esc(e.item.name) + '</div>' +
             '<button class="card__fav ' + fav + '" title="Favoritar">★</button>';
         card.ondblclick = function () { insertItem(e.item); };
@@ -567,7 +654,7 @@ function tryRestoreSession() {
 }
 
 // ============================================================ boot
-var BUILD = "1.0.0";
+var BUILD = "1.0.1-mockups";
 
 function boot() {
     loadCatalog();

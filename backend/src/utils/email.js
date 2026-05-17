@@ -220,4 +220,74 @@ ${BRAND_FOOTER}
     });
 }
 
-module.exports = { sendEmail, welcomeEmail, resetPasswordEmail, paymentFailedEmail, verifyEmailMessage };
+function trialReminderEmail({ email, name, productName, daysLeft, pricingUrl }) {
+    const greet = name ? `Olá, ${name.split(" ")[0]}!` : "Olá!";
+    const urgency = daysLeft <= 1
+        ? { color: "#dc2626", label: "ÚLTIMAS HORAS" }
+        : daysLeft <= 3
+        ? { color: "#ea580c", label: `${daysLeft} DIAS RESTANTES` }
+        : { color: "#2563EB", label: `${daysLeft} DIAS RESTANTES` };
+    const html = `
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
+${BRAND_HEADER}
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#fff;max-width:560px;margin:0 auto">
+  <tr><td style="padding:48px 40px 32px">
+    <div style="display:inline-block;background:${urgency.color};color:#fff;padding:6px 12px;border-radius:99px;font:700 11px Inter,Arial,sans-serif;letter-spacing:1.5px;margin-bottom:18px">⏰ ${urgency.label}</div>
+    <h1 style="font:800 26px Inter,Arial,sans-serif;color:#0a0a0a;margin:0 0 18px;letter-spacing:-.8px">
+      ${greet} Seu trial do <span style="color:#2563EB">${productName}</span> está acabando.
+    </h1>
+    <p style="color:#444;font:400 15px/1.6 Inter,Arial,sans-serif;margin:0 0 24px">
+      Faltam <strong>${daysLeft} dia${daysLeft === 1 ? "" : "s"}</strong> pra seu acesso encerrar. Continue usando todos os títulos premium sem interrupção — escolha um plano e siga editando:
+    </p>
+    <a href="${pricingUrl}" style="display:inline-block;background:#2563EB;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font:600 15px Inter,Arial,sans-serif">
+      Assinar agora →
+    </a>
+    <p style="color:#888;font:400 13px/1.6 Inter,Arial,sans-serif;margin:24px 0 0">
+      Cancele em 1 clique no portal do cliente. Sem fidelidade.
+    </p>
+  </td></tr>
+</table>
+${BRAND_FOOTER}
+</body></html>`;
+    return sendEmail({
+        to: email,
+        subject: daysLeft <= 1
+            ? `⏰ Última chance: trial do ${productName} acaba hoje`
+            : `⏰ Faltam ${daysLeft} dias do trial do ${productName}`,
+        html,
+        text: `${greet} Seu trial do ${productName} acaba em ${daysLeft} dia(s). Assine pra continuar: ${pricingUrl}`
+    });
+}
+
+function trialExpiredEmail({ email, name, productName, pricingUrl }) {
+    const greet = name ? `Olá, ${name.split(" ")[0]}!` : "Olá!";
+    const html = `
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
+${BRAND_HEADER}
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#fff;max-width:560px;margin:0 auto">
+  <tr><td style="padding:48px 40px 32px">
+    <h1 style="font:800 26px Inter,Arial,sans-serif;color:#0a0a0a;margin:0 0 18px;letter-spacing:-.8px">
+      ${greet} Seu trial do <span style="color:#2563EB">${productName}</span> expirou.
+    </h1>
+    <p style="color:#444;font:400 15px/1.6 Inter,Arial,sans-serif;margin:0 0 24px">
+      Esperamos que você tenha curtido testar. Quando quiser voltar, é só assinar — seus favoritos e configurações ficam guardados na sua conta.
+    </p>
+    <a href="${pricingUrl}" style="display:inline-block;background:#2563EB;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font:600 15px Inter,Arial,sans-serif">
+      Ver planos →
+    </a>
+    <p style="color:#888;font:400 13px/1.6 Inter,Arial,sans-serif;margin:24px 0 0">
+      Suporte: <a href="mailto:suporte@pacotesfx.com" style="color:#2563EB">suporte@pacotesfx.com</a>
+    </p>
+  </td></tr>
+</table>
+${BRAND_FOOTER}
+</body></html>`;
+    return sendEmail({
+        to: email,
+        subject: `Seu trial do ${productName} terminou — volte quando quiser`,
+        html,
+        text: `${greet} Trial do ${productName} terminou. Volte quando quiser: ${pricingUrl}`
+    });
+}
+
+module.exports = { sendEmail, welcomeEmail, resetPasswordEmail, paymentFailedEmail, verifyEmailMessage, trialReminderEmail, trialExpiredEmail };

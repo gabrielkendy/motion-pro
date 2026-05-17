@@ -36,6 +36,73 @@ router.get("/stats", requireAdmin, async (_req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// === TIMELINE (signups + revenue por dia, últimos N dias) ===
+router.get("/stats/timeline", requireAdmin, async (req, res, next) => {
+    try {
+        const days = Math.min(Math.max(Number(req.query.days) || 30, 7), 365);
+
+        // Signups por dia
+        const signups = await pool.query(`
+            SELECT date_trunc('day', created_at)::date AS day, COUNT(*)::int AS count
+              FROM users
+             WHERE created_at > now() - ($1 || ' days')::interval
+             GROUP BY day ORDER BY day
+        `, [days]);
+
+        // Subscriptions ativas por produto (cumulative)
+        const subsActive = await pool.query(`
+            SELECT product_id, plan, status, COUNT(*)::int AS count
+              FROM subscriptions
+             GROUP BY product_id, plan, status
+        `);
+
+        // Eventos de checkout (revenue) — derivado do license_audit
+        const checkouts = await pool.query(`
+            SELECT date_trunc('day', created_at)::date AS day,
+                   (detail->>'product_id')::text AS product_id,
+                   (detail->>'plan')::text AS plan,
+                   SUM(((detail->>'amount')::int / 100.0))::float AS revenue,
+                   COUNT(*)::int AS count
+              FROM license_audit
+             WHERE action = 'checkout_completed'
+               AND created_at > now() - ($1 || ' days')::interval
+             GROUP BY day, product_id, plan
+             ORDER BY day
+        `, [days]);
+
+        // Conversão: trials que viraram paid
+        const conversion = await pool.query(`
+            WITH user_trials AS (
+                SELECT user_id, product_id, MIN(created_at) AS trial_start
+                  FROM subscriptions WHERE plan='trial' GROUP BY user_id, product_id
+            ),
+            user_paid AS (
+                SELECT user_id, product_id, MIN(created_at) AS paid_start
+                  FROM subscriptions WHERE plan IN ('yearly','lifetime') AND status='active'
+                  GROUP BY user_id, product_id
+            )
+            SELECT t.product_id,
+                   COUNT(t.user_id)::int AS trials,
+                   COUNT(p.user_id)::int AS converted,
+                   CASE WHEN COUNT(t.user_id) = 0 THEN 0
+                        ELSE ROUND(100.0 * COUNT(p.user_id) / COUNT(t.user_id), 1)
+                   END AS conversion_rate
+              FROM user_trials t
+              LEFT JOIN user_paid p ON p.user_id=t.user_id AND p.product_id=t.product_id
+             GROUP BY t.product_id
+        `);
+
+        res.json({
+            days,
+            generated_at: new Date().toISOString(),
+            signups: signups.rows,
+            subs_active: subsActive.rows,
+            checkouts: checkouts.rows,
+            conversion: conversion.rows
+        });
+    } catch (e) { next(e); }
+});
+
 // === LIST USERS (with subscriptions + devices count) ===
 router.get("/users", requireAdmin, async (req, res, next) => {
     try {
