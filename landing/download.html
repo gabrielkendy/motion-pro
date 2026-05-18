@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="/css/system.css">
 <style>
 .dl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1100px; margin: 0 auto; }
+.dl-grid--single { grid-template-columns: 1fr; max-width: 620px; }
 @media (max-width: 800px) { .dl-grid { grid-template-columns: 1fr; } }
 .dl-card { background: white; border: 1px solid var(--border); border-radius: 20px; padding: 44px 40px; position: relative; display: flex; flex-direction: column; transition: all .4s var(--ease-out); }
 .dl-card:hover { transform: translateY(-6px); border-color: var(--border-hover); box-shadow: 0 30px 60px -20px rgba(37,99,235,.15); }
@@ -68,17 +69,17 @@ code { background: white; padding: 2px 6px; border-radius: 4px; border: 1px soli
       </div>
     </div>
 
-    <div class="dl-grid">
+    <div class="dl-grid dl-grid--single">
       <div class="dl-card featured reveal">
-        <span class="price-badge">Recomendado</span>
-        <div class="price-tag">01 · Pacote .ZIP</div>
+        <div class="price-tag">Pacote .ZIP</div>
         <h3>MotionPro Plugin</h3>
         <div class="ver">v1.0.3 · ~36 MB · Windows + macOS</div>
-        <div class="dl-meta"><span>Sem SmartScreen</span><span>Setup manual</span></div>
+        <div class="dl-meta"><span>Sem SmartScreen</span><span>Instalador automático</span></div>
         <ul class="feat-list">
-          <li>Extraia a pasta no diretório de extensões CEP</li>
-          <li>Funciona em qualquer máquina sem prompt do Windows</li>
-          <li>Atualização: substitua a pasta</li>
+          <li>7.906 motion graphics premium prontos pro Premiere</li>
+          <li>Duplo-clique em <code>INSTALAR.bat</code> dentro do .zip</li>
+          <li>Funciona sem aviso de segurança do Windows</li>
+          <li>Atualização futura: substitua a pasta</li>
         </ul>
         <a href="https://github.com/gabrielkendy/motion-pro/releases/download/v1.0.3/MotionPro-Plugin-1.0.3.zip" class="btn btn-primary btn-full btn-lg" download>
           Baixar .ZIP <span class="arrow">↓</span>
@@ -87,31 +88,6 @@ code { background: white; padding: 2px 6px; border-radius: 4px; border: 1px soli
           Veja instruções abaixo
         </div>
       </div>
-
-      <div class="dl-card reveal">
-        <div class="price-tag" style="color:var(--fg-muted)">02 · Instalador .EXE</div>
-        <h3>MotionPro Setup</h3>
-        <div class="ver">v1.0.2 · ~37 MB · Windows</div>
-        <div class="dl-meta"><span>Avisa SmartScreen</span><span>Instalação automática</span></div>
-        <ul class="feat-list">
-          <li>Roda como instalador convencional</li>
-          <li>Pode aparecer aviso do Windows (veja abaixo)</li>
-          <li>Atualização: rode a versão nova</li>
-        </ul>
-        <a href="https://github.com/gabrielkendy/motion-pro/releases/download/v1.0.2/MotionPro-Setup-1.0.2.exe" class="btn btn-dark btn-full btn-lg" download>
-          Baixar .EXE <span class="arrow">↓</span>
-        </a>
-        <div class="price-foot" style="margin-top:14px; font-size:12.5px; color:var(--fg-subtle); text-align:center; font-family:'JetBrains Mono', monospace;">
-          Versão tradicional
-        </div>
-      </div>
-    </div>
-
-    <div class="smartscreen-note reveal">
-      <h4>Sobre o aviso do Windows SmartScreen</h4>
-      <p>
-        Acontece com todo <code>.exe</code> de empresa nova (Notion, Discord, OBS também passaram por isso). Não é vírus — só significa que ainda não compramos o certificado de assinatura. Pra evitar o aviso, use o <strong>Pacote .ZIP</strong>. Pra ignorar o aviso no .EXE, clique em <code>Mais informações → Executar mesmo assim</code>.
-      </p>
     </div>
 
     <!-- ════════════ MOTIONPRO LEGENDAS ════════════ -->
