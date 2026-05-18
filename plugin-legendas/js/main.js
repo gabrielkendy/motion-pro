@@ -11,7 +11,7 @@
 (function () {
 "use strict";
 
-var BUILD = "4.7.0-distribuicao-inteligente+3abas";
+var BUILD = "4.8.0-criar-legendas-do-zero+fontes-premium";
 
 var nodePath = typeof require === "function" ? require("path") : null;
 var nodeFs   = typeof require === "function" ? require("fs") : null;
@@ -514,6 +514,86 @@ function smartDistribute(blocks) {
     return groups;
 }
 
+// === GERA SRT DO ZERO A PARTIR DE SCRIPT ===
+// Quebra o texto OTIMIZADO pelos word counts dos templates disponíveis
+// e CALCULA timings baseado em WPM (palavras-por-minuto)
+function scriptToSrt(text, opts) {
+    opts = opts || {};
+    var wpm = opts.wpm || 150;
+    var gap = opts.gap || 0.3;            // pausa em segundos após ponto final
+    var startSec = opts.startSec || 0;
+    var secPerWord = 60 / wpm;             // duração média de 1 palavra
+
+    if (!TPLS_BY_WC) buildTplIndex();
+    var availableWcs = Object.keys(TPLS_BY_WC).map(Number).filter(function (k) { return k > 0; }).sort(function (a, b) { return a - b; });
+    var maxWc = availableWcs[availableWcs.length - 1] || 4;
+
+    // Tokeniza preservando pontuação
+    var sentences = text.replace(/\s+/g, " ").trim().split(/(?<=[\.!?])\s+/).filter(Boolean);
+
+    var groups = [];
+    var cursor = startSec;
+
+    sentences.forEach(function (sentence) {
+        var words = sentence.split(/\s+/).filter(Boolean);
+        if (!words.length) return;
+
+        // Divide a frase em chunks que casam com templates
+        var chunks = greedyChunkForTemplates(words, availableWcs);
+
+        // Distribui timing proporcional à contagem de palavras
+        chunks.forEach(function (chunk) {
+            var dur = Math.max(0.5, chunk.length * secPerWord);
+            groups.push({
+                start: cursor,
+                end: cursor + dur,
+                text: chunk.join(" "),
+                wc: chunk.length,
+                tplName: null,
+                selected: false
+            });
+            cursor += dur + 0.05;          // pequeno gap entre legendas
+        });
+
+        cursor += gap;                     // pausa após pontuação final
+    });
+
+    return groups;
+}
+
+// Greedy: a partir das word counts disponíveis, distribui as palavras
+// preferindo chunks que existem como template, e quando possível 3-4 palavras
+function greedyChunkForTemplates(words, availableWcs) {
+    var out = [];
+    var i = 0;
+    while (i < words.length) {
+        var remaining = words.length - i;
+        var picked;
+
+        // Tenta achar size que existe nos templates, preferindo "near 3"
+        var byPref = availableWcs.slice().sort(function (a, b) {
+            // sort: 1) size <= remaining preferido 2) proximidade de 3 3) decrescente
+            var distA = Math.abs(a - 3), distB = Math.abs(b - 3);
+            var fitA = a <= remaining ? 0 : 100, fitB = b <= remaining ? 0 : 100;
+            return (fitA - fitB) || (distA - distB);
+        });
+        picked = byPref[0] || 3;
+        if (picked > remaining) picked = remaining;
+
+        // Se a sobra após esse chunk for "lixo" (1 palavra solta no fim),
+        // tenta agregar pra evitar
+        if (i + picked < words.length - 1 && words.length - (i + picked) === 1 && picked < maxWcOf(availableWcs)) {
+            picked = Math.min(picked + 1, remaining);
+        }
+
+        out.push(words.slice(i, i + picked));
+        i += picked;
+    }
+    return out;
+}
+
+function maxWcOf(arr) { return arr.length ? arr[arr.length - 1] : 5; }
+
 function applySmartDistribution() {
     if (!SRT_DATA.length) { toast("Carregue um SRT primeiro", "warn"); return; }
     SRT_GROUPS = smartDistribute(SRT_DATA);
@@ -524,6 +604,130 @@ function applySmartDistribution() {
     var withTpl = SRT_GROUPS.filter(function (g) { return g.tplName; }).length;
     log("⚡ Distribuição Inteligente: " + SRT_GROUPS.length + " grupos · " + withTpl + " com template", "info");
     toast("⚡ " + SRT_GROUPS.length + " grupos distribuídos", "ok");
+}
+
+// ────────────────────────────────────────────────  CRIAR LEGENDAS DO ZERO
+
+function timecodeToSecs(tc) {
+    var m = /(\d+):(\d+):(\d+)[,.](\d+)/.exec(tc || "00:00:00,000");
+    if (!m) return 0;
+    return Number(m[1])*3600 + Number(m[2])*60 + Number(m[3]) + Number(m[4]) / 1000;
+}
+function secsToTimecode(s) {
+    var h = Math.floor(s / 3600); s -= h*3600;
+    var m = Math.floor(s / 60);   s -= m*60;
+    var sec = Math.floor(s);
+    var ms = Math.round((s - sec) * 1000);
+    function pad(n, w) { var v = String(n); while (v.length < w) v = "0" + v; return v; }
+    return pad(h,2) + ":" + pad(m,2) + ":" + pad(sec,2) + "," + pad(ms,3);
+}
+
+function generateLegendasFromScript() {
+    var text = ($("create-script") && $("create-script").value || "").trim();
+    if (!text) { toast("Escreva ou cole o roteiro primeiro", "warn"); return; }
+    var startSec = timecodeToSecs($("create-start").value);
+    var wpm = parseInt($("create-wpm").value, 10) || 150;
+    var gap = parseFloat($("create-gap").value) || 0;
+
+    var groups = scriptToSrt(text, { startSec: startSec, wpm: wpm, gap: gap });
+    if (!groups.length) { toast("Não consegui gerar grupos do texto", "err"); return; }
+
+    // Atribui templates por wc
+    groups.forEach(function (g) { g.tplName = defaultTplForWc(g.wc); g.selected = false; });
+
+    // Cria SRT_DATA (formato bloco) e SRT_GROUPS (já distribuído)
+    SRT_DATA = groups.map(function (g) { return { start: g.start, end: g.end, text: g.text }; });
+    SRT_GROUPS = groups;
+
+    // Renderiza preview na própria tab
+    renderCreatePreview(groups);
+    log("✨ Script → SRT: " + groups.length + " grupos (" + wpm + " wpm)", "info");
+}
+
+function renderCreatePreview(groups) {
+    var box = $("create-preview");
+    var list = $("create-preview-list");
+    var count = $("create-preview-count");
+    if (!box || !list) return;
+    box.classList.remove("hidden");
+    count.textContent = groups.length + " grupos · duração " + groups[groups.length-1].end.toFixed(1) + "s";
+    list.innerHTML = "";
+    groups.slice(0, 60).forEach(function (g) {
+        var row = document.createElement("div");
+        row.className = "create-prev-row";
+        row.innerHTML =
+            '<span class="t">' + fmtTime(g.start) + '</span>' +
+            '<span class="x">' + esc(g.text) + '</span>' +
+            '<span class="w">' + g.wc + 'p</span>' +
+            '<span class="tpl">' + esc(g.tplName || "—") + '</span>';
+        list.appendChild(row);
+    });
+    if (groups.length > 60) {
+        var more = document.createElement("div");
+        more.className = "create-prev-row";
+        more.style.cssText = "justify-content:center;color:var(--text-3);font-style:italic";
+        more.textContent = "… +" + (groups.length - 60) + " grupos";
+        list.appendChild(more);
+    }
+}
+
+function applyCreatedLegendas() {
+    if (!SRT_GROUPS.length) { toast("Gere as legendas primeiro", "warn"); return; }
+    // marca SRT como carregado
+    var bar = $("ep-srt-status-banner");
+    if (bar) {
+        bar.classList.add("loaded");
+        bar.querySelector(".ep-srt-status-text").textContent = "✓ Roteiro gerado · " + SRT_GROUPS.length + " grupos";
+        bar.querySelector(".ep-srt-status-action").textContent = "Editar →";
+    }
+    $("auto-srt-bulk-bar").classList.add("show");
+    var bs = $("btn-srt-smart-dist"); if (bs) bs.disabled = false;
+    renderSrtEditor(); updateSrtSummary();
+    var ap = $("btn-auto-srt-apply"); if (ap) ap.disabled = false;
+    hideEditorEmpty();
+    switchTab("tab-srt-editor");
+    toast("✓ SRT pronto · revise e clique APLICAR NA TIMELINE", "ok", 4500);
+}
+
+// ────────────────────────────────────────────────  FONTES
+
+function checkFontsBanner() {
+    if (localStorage.getItem("mpl_fonts_dismiss")) return;
+    if (!cs || !nodePath) return;
+    var fontsDir = nodePath.join(EXT_PATH, "fonts");
+    jsx("$.global.EP_checkFonts(" + JSON.stringify(fontsDir) + ");", function (d) {
+        if (d.error) return;
+        if (d.missing > 0) {
+            var banner = $("font-banner");
+            if (banner) {
+                banner.classList.remove("hidden");
+                var txt = $("font-banner-text");
+                if (txt) txt.textContent = "🔤 " + d.missing + " fontes premium dos templates faltando — instale pra renderizar correto";
+            }
+        }
+    });
+}
+
+function installFonts() {
+    if (!cs || !nodePath) { toast("Node FS indisponível", "err"); return; }
+    var fontsDir = nodePath.join(EXT_PATH, "fonts");
+    var btn = $("btn-install-fonts");
+    if (btn) { btn.textContent = "Instalando…"; btn.disabled = true; }
+    log("Instalando fontes de " + fontsDir, "info");
+    jsx("$.global.EP_installFonts(" + JSON.stringify(fontsDir) + ");", function (d) {
+        if (btn) { btn.disabled = false; }
+        if (d.error) {
+            log("✗ Fontes: " + d.error, "err"); openLog();
+            toast("Erro: " + d.error, "err", 5000);
+            if (btn) btn.textContent = "Tentar novamente";
+            return;
+        }
+        log("✓ Fontes: " + d.installed + " instaladas · " + d.skipped + " já existiam", "info");
+        log("  pasta: " + d.fontDir, "info");
+        toast("✓ " + d.installed + " fontes instaladas! Reinicie o Premiere pra elas aparecerem.", "ok", 6000);
+        $("font-banner").classList.add("hidden");
+        localStorage.setItem("mpl_fonts_dismiss", "1");
+    });
 }
 
 // Cache de templates agrupados por wc pra picking eficiente
@@ -1121,6 +1325,21 @@ function bind() {
 
     // ⚡ Distribuição Inteligente
     var btnSmart = $("btn-srt-smart-dist"); if (btnSmart) btnSmart.onclick = applySmartDistribution;
+
+    // ✍️ CRIAR LEGENDAS DO ZERO
+    var btnCreateGen = $("btn-create-srt"); if (btnCreateGen) btnCreateGen.onclick = generateLegendasFromScript;
+    var btnCreateApply = $("btn-create-apply"); if (btnCreateApply) btnCreateApply.onclick = applyCreatedLegendas;
+    var btnCreateCti = $("btn-create-from-cti"); if (btnCreateCti) btnCreateCti.onclick = function () {
+        jsx("$.global.EP_getCTI();", function (d) {
+            if (d.error || !d.seconds) { toast("Sem CTI", "warn"); return; }
+            $("create-start").value = secsToTimecode(d.seconds);
+        });
+    };
+
+    // 🔤 INSTALAR FONTES
+    checkFontsBanner();
+    var btnInstFont = $("btn-install-fonts"); if (btnInstFont) btnInstFont.onclick = installFonts;
+    var btnDismiss = $("btn-dismiss-fonts"); if (btnDismiss) btnDismiss.onclick = function () { $("font-banner").classList.add("hidden"); localStorage.setItem("mpl_fonts_dismiss", "1"); };
 
     // re-chunk on words change
     var ws = $("auto-srt-groupsize"); if (ws) ws.onchange = function () { if (SRT_DATA.length) rebuildGroups(); };

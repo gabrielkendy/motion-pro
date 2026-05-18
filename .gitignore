@@ -63,3 +63,6 @@ plugin-legendas/packs/
 # Build temporário dos ZIPs
 installers/zip-manual-legendas/output/
 installers/zip-manual-legendas/build/
+
+# Fontes premium do EP Legendas (4.6MB de OTF/TTF)
+plugin-legendas/fonts/

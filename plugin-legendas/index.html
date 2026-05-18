@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src *; img-src * data: blob: file: filesystem:; style-src 'self' 'unsafe-inline'; media-src * data: blob: file: filesystem:;">
 <title>MotionPro Legendas — Premiere</title>
-<link rel="stylesheet" href="css/ep.css?v=470">
+<link rel="stylesheet" href="css/ep.css?v=480">
 </head>
 <body>
 
@@ -34,6 +34,13 @@
 </div>
 <div id="license-active-msg" class="hidden"></div>
 
+<!-- ════════════ FONT INSTALL BANNER ════════════ -->
+<div id="font-banner" class="hidden">
+    <span id="font-banner-text">🔤 Instale as fontes premium dos templates pra elas renderizarem corretamente</span>
+    <button id="btn-install-fonts" class="btn-link">Instalar agora</button>
+    <button id="btn-dismiss-fonts" class="btn-link">×</button>
+</div>
+
 <!-- ════════════ SRT STATUS BANNER ════════════ -->
 <div id="ep-srt-status-banner" title="Clique para ir à Automação SRT">
     <span class="ep-srt-status-icon">📋</span>
@@ -44,6 +51,7 @@
 <!-- ════════════ TAB BAR ════════════ -->
 <div id="tab-bar">
     <button class="tab-btn active" data-tab="tab-templates">Templates</button>
+    <button class="tab-btn" data-tab="tab-create">✍️ Criar</button>
     <button class="tab-btn" data-tab="tab-auto-srt">SRT · Config</button>
     <button class="tab-btn" data-tab="tab-srt-editor">SRT · Editar</button>
 </div>
@@ -96,6 +104,66 @@
                 <button id="tpl-sfx-pick-btn" class="btn-util" title="Escolher SFX">⚡ <span id="tpl-sfx-pick-name">Selecionar SFX</span></button>
             </div>
             <div id="hybrid-apply-info"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════ TAB: CRIAR LEGENDAS (script → SRT alinhado aos templates) ════════════ -->
+<div id="tab-create" class="tab-panel">
+    <div id="create-body">
+        <div class="auto-row help-row">
+            <span class="help-icon">✨</span>
+            <span class="help-text">
+                <b>Crie legendas direto aqui</b> — escreva ou cole o roteiro, plugin gera o SRT
+                <b>já cortado nos templates disponíveis</b>. Sem precisar de SRT pronto.
+            </span>
+        </div>
+
+        <div class="create-section">
+            <label class="create-label">Roteiro completo</label>
+            <textarea id="create-script" rows="8" placeholder="Cole ou digite o texto inteiro. Ex:&#10;&#10;Esse navegador aqui que eu vou te mostrar. Ele custava 1.000 reais por mês. Agora é grátis pra sempre."></textarea>
+            <div class="create-hint">Use pontuação natural. Pontos finais marcam quebras obrigatórias.</div>
+        </div>
+
+        <div class="auto-row">
+            <label title="Onde a primeira legenda começa na timeline">Início:</label>
+            <input type="text" id="create-start" value="00:00:00,000" style="flex:1;font-family:monospace">
+            <label title="Pegar do CTI do Premiere">
+                <button id="btn-create-from-cti" class="btn-util" style="font-size:10px">↺ CTI</button>
+            </label>
+        </div>
+
+        <div class="auto-row">
+            <label title="Quantas palavras o leitor diz por minuto (típico fala = 150)">Velocidade fala:</label>
+            <select id="create-wpm">
+                <option value="120">Devagar (120 wpm)</option>
+                <option value="150" selected>Normal (150 wpm)</option>
+                <option value="180">Rápido (180 wpm)</option>
+                <option value="220">Reels/TikTok (220 wpm)</option>
+            </select>
+        </div>
+
+        <div class="auto-row">
+            <label title="Pausa entre frases (após . ! ?)">Pausa frase:</label>
+            <select id="create-gap">
+                <option value="0">Sem pausa</option>
+                <option value="0.3" selected>Curta (0.3s)</option>
+                <option value="0.6">Média (0.6s)</option>
+                <option value="1.0">Longa (1s)</option>
+            </select>
+        </div>
+
+        <button id="btn-create-srt" class="btn-smart-dist">
+            ✨ Gerar legendas
+            <span class="smart-sub">analisa o texto + escolhe templates + calcula timing</span>
+        </button>
+
+        <div id="create-preview" class="create-preview hidden">
+            <div class="create-preview-head">
+                <span id="create-preview-count">0 grupos</span>
+                <button id="btn-create-apply" class="btn-modal-primary">Usar este SRT →</button>
+            </div>
+            <div id="create-preview-list"></div>
         </div>
     </div>
 </div>
@@ -326,9 +394,9 @@
     <div id="side"></div>
 </div>
 
-<script src="js/lib/CSInterface.js?v=470"></script>
-<script src="js/config.js?v=470"></script>
-<script src="js/auth.js?v=470"></script>
-<script src="js/main.js?v=470"></script>
+<script src="js/lib/CSInterface.js?v=480"></script>
+<script src="js/config.js?v=480"></script>
+<script src="js/auth.js?v=480"></script>
+<script src="js/main.js?v=480"></script>
 </body>
 </html>

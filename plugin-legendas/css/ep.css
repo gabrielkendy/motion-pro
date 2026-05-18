@@ -514,6 +514,76 @@ body {
     overflow-y: auto;
 }
 
+/* === FONT INSTALL BANNER === */
+#font-banner {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    background: linear-gradient(90deg, rgba(109, 40, 217, .2), rgba(76, 29, 149, .2));
+    border-bottom: 1px solid rgba(109, 40, 217, .35);
+    color: #d4b5f9; padding: 8px 14px;
+    font: 600 11px Inter;
+    flex-shrink: 0;
+}
+#font-banner #btn-install-fonts {
+    color: #fff; background: rgba(109, 40, 217, .8);
+    padding: 4px 12px; border-radius: 4px;
+    font: 700 10.5px Inter; letter-spacing: .3px;
+    text-decoration: none;
+}
+#font-banner #btn-install-fonts:hover { background: rgba(109, 40, 217, 1) }
+#font-banner #btn-dismiss-fonts {
+    color: #d4b5f9; background: transparent;
+    padding: 2px 8px; font: 700 14px Inter;
+}
+#font-banner #btn-dismiss-fonts:hover { color: #fff }
+
+/* === CREATE TAB === */
+#create-body {
+    flex: 1; padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 10px;
+    overflow-y: auto;
+}
+.create-section { display: flex; flex-direction: column; gap: 4px }
+.create-label {
+    font: 700 10px Inter; color: var(--text-3);
+    letter-spacing: 1px; text-transform: uppercase;
+}
+#create-script {
+    width: 100%; min-height: 140px;
+    background: var(--input-bg); border: 1px solid var(--border);
+    color: var(--text); padding: 10px 12px;
+    font: 500 12.5px/1.5 Inter;
+    border-radius: 6px; outline: none;
+    resize: vertical;
+}
+#create-script:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(56, 226, 135, .08) }
+.create-hint { font: 500 10px Inter; color: var(--text-3); font-style: italic }
+
+.create-preview {
+    margin-top: 6px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px;
+    display: flex; flex-direction: column; gap: 6px;
+}
+.create-preview-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 6px; border-bottom: 1px solid var(--border);
+}
+#create-preview-count { font: 700 12px Inter; color: var(--accent) }
+#create-preview-list {
+    max-height: 260px; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 3px;
+}
+.create-prev-row {
+    display: grid; grid-template-columns: 56px 1fr 24px 70px;
+    gap: 6px; align-items: center;
+    padding: 5px 7px; border-radius: 4px;
+    background: var(--panel-alt); font-size: 11px;
+}
+.create-prev-row .t { font: 600 9.5px Consolas, monospace; color: var(--text-3) }
+.create-prev-row .x { color: var(--text); }
+.create-prev-row .w { color: var(--text-3); font-weight: 700; text-align: center }
+.create-prev-row .tpl { color: var(--accent); font-size: 9.5px; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+
 /* ════════════ MODALS ════════════ */
 #login-overlay,
 #paywall,

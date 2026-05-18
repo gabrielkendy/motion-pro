@@ -488,6 +488,99 @@ $.global._MPL_VERSION = "4.0.0";
         } catch (e) { return err(e.message); }
     }
 
+    // ──────────────────────────────────────────────── FONT INSTALL
+    // Copia fontes do plugin/fonts pra %LOCALAPPDATA%\Microsoft\Windows\Fonts
+    // que é o destino user-mode (não precisa admin).
+    function EP_installFonts(fontsSrcPath) {
+        try {
+            var srcDir = new Folder(fontsSrcPath);
+            if (!srcDir.exists) return err("Pasta de fontes não existe: " + fontsSrcPath);
+
+            // Acha pasta de fontes do user
+            var localAppData = "";
+            try { localAppData = $.getenv("LOCALAPPDATA"); } catch (e) {}
+            if (!localAppData) return err("LOCALAPPDATA não definido");
+
+            var userFontDir = new Folder(localAppData + "/Microsoft/Windows/Fonts");
+            if (!userFontDir.exists) userFontDir.create();
+
+            var fontFiles = srcDir.getFiles(/\.(ttf|otf|TTF|OTF)$/);
+            var installed = 0;
+            var skipped = 0;
+            var errors = [];
+            var alreadyInstalled = [];
+
+            for (var i = 0; i < fontFiles.length; i++) {
+                var f = fontFiles[i];
+                var dest = new File(userFontDir.fsName + "/" + f.name);
+                try {
+                    if (dest.exists) {
+                        alreadyInstalled.push(f.name);
+                        skipped++;
+                    } else {
+                        if (f.copy(dest.fsName)) {
+                            installed++;
+                            // registra no registry pra Windows reconhecer
+                            try {
+                                var regCmd = 'reg add "HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts" /v "' +
+                                    f.name.replace(/\.(ttf|otf)$/i, "") + ' (' + (f.name.match(/\.ttf$/i) ? "TrueType" : "OpenType") + ')" /t REG_SZ /d "' +
+                                    dest.fsName.replace(/\\/g, "\\\\") + '" /f';
+                                if (system && system.callSystem) system.callSystem(regCmd);
+                            } catch (eReg) {}
+                        } else {
+                            errors.push(f.name);
+                        }
+                    }
+                } catch (eCp) {
+                    errors.push(f.name + ": " + eCp.message);
+                }
+            }
+
+            return ok({
+                ok: true,
+                installed: installed,
+                skipped: skipped,
+                alreadyInstalled: alreadyInstalled.slice(0, 5),
+                errors: errors,
+                fontDir: userFontDir.fsName,
+                note: "Fontes instaladas no user space. Pode ser necessário reiniciar o Premiere pra elas aparecerem."
+            });
+        } catch (e) { return err(e.message); }
+    }
+
+    // Checa quantas fontes do plugin já estão instaladas
+    function EP_checkFonts(fontsSrcPath) {
+        try {
+            var srcDir = new Folder(fontsSrcPath);
+            if (!srcDir.exists) return ok({ ok: false, missing: 0, total: 0, reason: "no_src" });
+
+            var localAppData = "";
+            try { localAppData = $.getenv("LOCALAPPDATA"); } catch (e) {}
+            var userFontDir = new Folder(localAppData + "/Microsoft/Windows/Fonts");
+            var winFontDir = new Folder("C:/Windows/Fonts");
+
+            var fontFiles = srcDir.getFiles(/\.(ttf|otf|TTF|OTF)$/);
+            var installed = 0, missing = 0;
+            var missingNames = [];
+
+            for (var i = 0; i < fontFiles.length; i++) {
+                var name = fontFiles[i].name;
+                var inUser = new File(userFontDir.fsName + "/" + name);
+                var inSys = new File(winFontDir.fsName + "/" + name);
+                if (inUser.exists || inSys.exists) installed++;
+                else { missing++; missingNames.push(name); }
+            }
+
+            return ok({
+                ok: true,
+                total: fontFiles.length,
+                installed: installed,
+                missing: missing,
+                missingNames: missingNames.slice(0, 5)
+            });
+        } catch (e) { return err(e.message); }
+    }
+
     // ──────────────────────────────────────────────── EXPORT
     $.global.MotionProLegendas = {
         // novos nomes (EP-compat)
@@ -507,6 +600,8 @@ $.global._MPL_VERSION = "4.0.0";
         EP_getDataFolderPath: EP_getDataFolderPath,
         EP_openDataFolder: EP_openDataFolder,
         EP_inspectMogrt: EP_inspectMogrt,
+        EP_installFonts: EP_installFonts,
+        EP_checkFonts: EP_checkFonts,
         // helper texto utilizável pelo main.js via $.global.setMogrtTextOnClip
         _setMogrtText: setMogrtText,
         // aliases legados
