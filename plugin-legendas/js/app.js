@@ -463,9 +463,28 @@ function insertItem(item) {
     cs.evalScript(jsx, function (r) {
         try {
             var d = JSON.parse(r);
-            if (d.error) toast("Erro: " + d.error, "err", 3500);
-            else toast("✓ " + (d.name || item.name) + " inserido", "ok");
-        } catch (e) { toast("Falha ao inserir", "err"); }
+            if (d.error) {
+                toast("Erro: " + d.error, "err", 4500);
+                // Auto-abre log + escreve detalhes
+                var lb = document.getElementById("log-body"); if (lb) lb.style.display = "block";
+                var lh = document.getElementById("log-head"); if (lh) { var a = lh.querySelector(".logbar__arrow"); if (a) a.textContent = "▲"; }
+                console.error("[INSERT FAIL]", item.name, "→", d.error, "path:", abs);
+                var div = document.createElement("div"); div.className = "log-line";
+                div.style.color = "#ff5566";
+                div.textContent = "[INSERT ✗] " + item.name + " → " + d.error;
+                if (lb) lb.appendChild(div);
+            } else {
+                toast("✓ " + (d.name || item.name) + " · V" + ((d.track||0)+1), "ok");
+            }
+        } catch (e) {
+            toast("Falha — clique no botão TESTAR", "err", 5000);
+            console.error("[INSERT PARSE FAIL]", r, e);
+            var lb2 = document.getElementById("log-body"); if (lb2) lb2.style.display = "block";
+            var div2 = document.createElement("div"); div2.className = "log-line";
+            div2.style.color = "#ff5566";
+            div2.textContent = "[INSERT ✗ parse] resposta bruta = " + String(r).slice(0, 200);
+            if (lb2) lb2.appendChild(div2);
+        }
     });
 }
 
@@ -740,7 +759,7 @@ function tryRestoreSession() {
 }
 
 // ============================================================ boot
-var BUILD = "3.3.0-premiere-integration-real";
+var BUILD = "3.4.0-diag-mode";
 
 function boot() {
     loadCatalog();

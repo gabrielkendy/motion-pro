@@ -309,6 +309,110 @@ function updateAutomationUI(name) {
     }
 }
 
+// =============================== DIAGNÓSTICO LIVE
+// Roda uma série de testes e mostra o resultado no LOG (auto-expande)
+function openLog() {
+    var body = $("log-body");
+    var head = $("log-head");
+    if (body) body.style.display = "block";
+    if (head) {
+        var arrow = head.querySelector(".logbar__arrow");
+        if (arrow) arrow.textContent = "▲";
+    }
+}
+
+function runDiagnostics() {
+    openLog();
+    var btn = $("btn-diag");
+    if (btn) { btn.className = "topbar__diag"; btn.textContent = "🩺 Testando…"; }
+    logLine("════════ DIAGNÓSTICO LIVE ════════");
+
+    // 1) Ambiente
+    var hasCS = typeof CSInterface !== "undefined";
+    logLine("[1] CSInterface.js: " + (hasCS ? "OK ✓" : "AUSENTE ✗"));
+    if (!hasCS) { if (btn) { btn.className = "topbar__diag err"; btn.textContent = "✗ FALHA"; } return; }
+
+    var cs = new CSInterface();
+    var hostEnv = cs.getHostEnvironment();
+    logLine("[2] Host: " + hostEnv.appName + " v" + hostEnv.appVersion + " (id=" + hostEnv.appId + ")");
+    if (hostEnv.appId !== "PPRO" && hostEnv.appId !== "AEFT") {
+        logLine("    ⚠ Plugin foi feito pra Premiere/AE. Você tá em: " + hostEnv.appId);
+    }
+
+    // 3) Catalog
+    var cat = window.CATALOG_LEGENDAS;
+    if (cat && cat.packs) {
+        var n = 0;
+        cat.packs.forEach(function (p) { (p.categories || []).forEach(function (c) { n += (c.items || []).length; }); });
+        logLine("[3] Catálogo: " + n + " items carregados ✓");
+    } else {
+        logLine("[3] Catálogo: NÃO CARREGADO ✗ (window.CATALOG_LEGENDAS undefined)");
+    }
+
+    // 4) Ping ExtendScript
+    logLine("[4] Pingando ExtendScript…");
+    cs.evalScript("typeof MotionProLegendas", function (typeofResult) {
+        logLine("    typeof MotionProLegendas = " + JSON.stringify(typeofResult));
+        if (String(typeofResult).indexOf("object") < 0) {
+            logLine("    ✗ host.jsx NÃO foi carregado pelo Premiere!");
+            logLine("    Possíveis causas:");
+            logLine("    - manifest ScriptPath errado");
+            logLine("    - Plugin instalado mas Premiere reiniciado é preciso");
+            logLine("    - Erro de sintaxe no host.jsx (cheque ExtendScript Toolkit)");
+            if (btn) { btn.className = "topbar__diag err"; btn.textContent = "✗ host.jsx OFF"; }
+            return;
+        }
+
+        // 5) ping()
+        cs.evalScript("MotionProLegendas.ping();", function (res) {
+            logLine("[5] ping() = " + res);
+
+            // 6) Sequência ativa
+            cs.evalScript("MotionProLegendas.getActiveSequenceInfo();", function (res2) {
+                logLine("[6] getActiveSequenceInfo() = " + res2);
+                var info; try { info = JSON.parse(res2 || "{}"); } catch (e) { info = {}; }
+                if (!info.hasSequence) {
+                    logLine("    ⚠ Nenhuma sequência ativa. Abra um .prproj com timeline aberta!");
+                    if (btn) { btn.className = "topbar__diag err"; btn.textContent = "⚠ Sem sequência"; }
+                    return;
+                }
+                logLine("    ✓ Sequência: " + info.name + " · V" + info.videoTracks + " · A" + info.audioTracks);
+                logLine("    ✓ CTI em " + info.cti.toFixed(2) + "s");
+                logLine("    ✓ Captions: " + (info.hasCaptions ? "SIM (transcribe pronta)" : "NÃO (faça Window → Text → Transcript no Premiere)"));
+
+                // 7) Teste de import de 1 MOGRT (se houver template selecionado OU pega o primeiro)
+                var sel = window.LegendasGetSelected && window.LegendasGetSelected();
+                var firstItem = null;
+                if (!sel && cat && cat.packs && cat.packs[0] && cat.packs[0].categories && cat.packs[0].categories[0]) {
+                    firstItem = cat.packs[0].categories[0].items[0];
+                }
+                var item = sel ? sel.item : firstItem;
+                if (!item || !item.mogrt) {
+                    logLine("[7] ✗ Sem item.mogrt pra testar import");
+                    if (btn) { btn.className = "topbar__diag ok"; btn.textContent = "✓ Conectado"; }
+                    return;
+                }
+                var abs = window.LegendasResolveMogrtPath(item.mogrt);
+                logLine("[7] Testando importMogrt: " + item.name);
+                logLine("    path: " + abs);
+                var jsx = 'MotionProLegendas.importMogrt(' + JSON.stringify(abs) + ');';
+                cs.evalScript(jsx, function (res3) {
+                    logLine("    result: " + res3);
+                    var d; try { d = JSON.parse(res3 || "{}"); } catch (e) { d = {}; }
+                    if (d.error) {
+                        logLine("    ✗ FALHOU: " + d.error);
+                        if (btn) { btn.className = "topbar__diag err"; btn.textContent = "✗ Import falhou"; }
+                    } else {
+                        logLine("    ✓ Inserido " + (d.name || "?") + " na V" + ((d.track||0)+1));
+                        if (btn) { btn.className = "topbar__diag ok"; btn.textContent = "✓ Tudo OK"; }
+                    }
+                    logLine("══════════════════════════════════");
+                });
+            });
+        });
+    });
+}
+
 // =============================== TRANSCRIBE — usa Speech-to-Text NATIVO do Premiere
 // Premiere 2024+ tem transcrição AI nativa em Window → Text → Transcript.
 // Quando ela cria captions na sequência, lemos via ExtendScript e populamos SRT_DATA.
@@ -596,6 +700,10 @@ function bindEditor() {
     // NOVO: Transcrever do clipe selecionado
     var btnTr = $("btn-transcribe-clip");
     if (btnTr) btnTr.onclick = transcribeSelectedClip;
+
+    // 🩺 Diagnóstico
+    var btnDiag = $("btn-diag");
+    if (btnDiag) btnDiag.onclick = runDiagnostics;
 
     // LOG toggle
     var logHead = $("log-head");

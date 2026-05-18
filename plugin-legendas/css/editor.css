@@ -100,6 +100,15 @@ body { display: flex; flex-direction: column }
     border-radius: 4px;
 }
 .topbar__menu:hover { background: var(--bg-3); color: var(--txt-0) }
+.topbar__diag {
+    background: rgba(255, 184, 74, .15); border: 1px solid rgba(255, 184, 74, .35);
+    color: var(--warn); font: 700 9.5px Inter;
+    padding: 4px 8px; border-radius: 5px;
+    letter-spacing: .5px;
+}
+.topbar__diag:hover { background: rgba(255, 184, 74, .25); color: #fff }
+.topbar__diag.ok { background: rgba(56, 226, 135, .12); border-color: rgba(56, 226, 135, .35); color: var(--acc) }
+.topbar__diag.err { background: rgba(255, 85, 102, .12); border-color: rgba(255, 85, 102, .35); color: var(--danger) }
 
 /* ═══════════════ STATUS LOGIN (faixa fina) ═══════════════ */
 .status-login {
