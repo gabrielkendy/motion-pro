@@ -723,7 +723,7 @@ function tryRestoreSession() {
 }
 
 // ============================================================ boot
-var BUILD = "3.1.0-cards-fixos+automation-full";
+var BUILD = "3.2.0-identidade-unificada-pacotesfx";
 
 function boot() {
     loadCatalog();
