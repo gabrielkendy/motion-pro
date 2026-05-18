@@ -1,0 +1,149 @@
+/* ════════════════════════════════════════════════════════════════
+   EXTRAS v3.1 — animações de cards + AUTOMAÇÃO SRT full-width
+   ════════════════════════════════════════════════════════════════ */
+
+/* === CARD MOTION (hover anima o texto do preview) === */
+.card { perspective: 600px }
+.card__thumb { transition: transform .25s ease; transform-origin: center }
+.card__thumb svg, .card__thumb img {
+    transition: transform .35s cubic-bezier(.2, .8, .4, 1), opacity .25s;
+    transform-origin: center;
+}
+.card:hover .card__thumb svg, .card:hover .card__thumb img {
+    transform: scale(1.06);
+}
+/* Pulse no texto SVG quando hover (cria sensação de "motion") */
+@keyframes card-pulse {
+    0%, 100% { transform: scale(1) }
+    50% { transform: scale(1.08) }
+}
+@keyframes card-slide-in {
+    0% { transform: translateX(-15%); opacity: 0 }
+    100% { transform: translateX(0); opacity: 1 }
+}
+@keyframes card-glitch {
+    0%, 100% { transform: translate(0, 0) }
+    20% { transform: translate(-2px, 1px) }
+    40% { transform: translate(2px, -1px) }
+    60% { transform: translate(-1px, 2px) }
+    80% { transform: translate(1px, -2px) }
+}
+@keyframes card-fade-up {
+    0% { transform: translateY(20%); opacity: 0 }
+    100% { transform: translateY(0); opacity: 1 }
+}
+
+/* Aplica animações específicas por categoria quando hover */
+.card[data-cat~="glitch"]:hover .card__thumb svg { animation: card-glitch .35s infinite }
+.card[data-cat~="urban"]:hover .card__thumb svg { animation: card-slide-in .4s ease-out }
+.card[data-cat~="huge"]:hover .card__thumb svg { animation: card-pulse 1.2s ease-in-out infinite }
+.card[data-cat~="minimal"]:hover .card__thumb svg { animation: card-fade-up .35s ease-out }
+.card[data-cat~="elegant"]:hover .card__thumb svg,
+.card[data-cat~="wedding"]:hover .card__thumb svg { animation: card-fade-up .5s ease-out }
+.card[data-cat~="lower"]:hover .card__thumb svg { animation: card-slide-in .35s ease-out }
+.card[data-cat~="simple"]:hover .card__thumb svg,
+.card[data-cat~="fashion"]:hover .card__thumb svg,
+.card[data-cat~="corporate"]:hover .card__thumb svg { animation: card-fade-up .35s ease-out }
+
+/* Selected ring + brilho */
+.card.selected {
+    box-shadow: 0 0 0 2px var(--orange-bright), 0 4px 16px rgba(224, 112, 32, .3);
+}
+
+/* === AUTOMAÇÃO SRT — full width, sem sidebar === */
+#main-automation {
+    display: block !important;
+    grid-template-columns: none !important;
+    overflow-y: auto;
+    padding: 0;
+}
+.auto-panel {
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 12px;
+    max-width: 720px; margin: 0 auto;
+    width: 100%;
+}
+
+/* Header com 2 botões grandes lado a lado: Trocar SRT + Transcrever Áudio */
+.auto-actions {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+@media (max-width: 480px) { .auto-actions { grid-template-columns: 1fr } }
+.auto-action-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 14px; border-radius: 8px;
+    color: #fff; font: 700 12px Inter; letter-spacing: .3px;
+    transition: transform .12s, opacity .12s;
+}
+.auto-action-btn:hover { transform: translateY(-1px); opacity: .92 }
+.auto-action-btn span.icon { font-size: 20px; line-height: 1 }
+.auto-action-btn span.label { display: block; text-align: center }
+.auto-action-btn span.sub { font: 500 10px Inter; opacity: .85; margin-top: 2px }
+.auto-action-srt {
+    background: linear-gradient(135deg, #2563EB, #1D4ED8);
+}
+.auto-action-audio {
+    background: linear-gradient(135deg, #9333ea, #6d28d9);
+    position: relative;
+}
+.auto-action-audio::after {
+    content: "AI"; position: absolute; top: 6px; right: 8px;
+    background: #fff; color: #9333ea;
+    font: 800 8px Inter; padding: 2px 6px; border-radius: 99px;
+    letter-spacing: .5px;
+}
+
+/* Status SRT loaded card */
+.srt-loaded-card {
+    background: rgba(34, 197, 94, .08); border: 1px solid rgba(34, 197, 94, .3);
+    padding: 10px 14px; border-radius: 6px;
+    display: flex; align-items: center; gap: 10px; font: 500 12px Inter;
+}
+.srt-loaded-card .ok { color: #22c55e; font-weight: 700 }
+.srt-loaded-card__count {
+    background: rgba(34, 197, 94, .2); color: #22c55e;
+    padding: 2px 8px; border-radius: 99px;
+    font: 700 11px Inter;
+}
+
+/* Configs em grid clean */
+.auto-grid {
+    display: grid; grid-template-columns: 100px 1fr; gap: 8px 12px;
+    align-items: center;
+    background: var(--bg2); padding: 14px;
+    border-radius: 8px; border: 1px solid var(--border);
+}
+.auto-grid label {
+    font: 600 11.5px Inter; color: var(--mut);
+}
+.auto-grid input, .auto-grid select {
+    background: var(--bg3); border: 1px solid var(--border2);
+    color: var(--txt); padding: 7px 10px; border-radius: 5px;
+    font: 500 12px Inter; outline: none; width: 100%;
+}
+.auto-grid input:focus, .auto-grid select:focus { border-color: var(--orange) }
+
+/* Botão APLICAR NA TIMELINE grande verde */
+.auto-apply-big {
+    margin-top: 8px; padding: 16px;
+    background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff;
+    font: 800 13px Inter; letter-spacing: 1px; text-transform: uppercase;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, .25);
+    transition: all .15s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.auto-apply-big:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(34, 197, 94, .4) }
+.auto-apply-big:disabled {
+    background: var(--bg3); color: var(--mut); cursor: not-allowed;
+    box-shadow: none; transform: none;
+}
+
+/* Empty state quando sem SRT */
+.auto-empty {
+    background: var(--bg2); border: 1px dashed var(--border2);
+    border-radius: 8px; padding: 32px;
+    text-align: center; color: var(--mut); font: 500 13px Inter;
+}
+.auto-empty .icon { font-size: 32px; opacity: .5; margin-bottom: 8px }
+.auto-empty .hint { font-size: 11px; margin-top: 6px; color: var(--dim) }

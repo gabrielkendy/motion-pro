@@ -279,6 +279,22 @@ function shortenTitle(name) {
     return s;
 }
 
+function categoryWords(cat) {
+    // Palavras de exemplo por categoria pra mostrar nos previews
+    var c = String(cat || "").toLowerCase();
+    if (c.indexOf("simple") >= 0)    return ["Simple Title", "Preciso", "Agora"];
+    if (c.indexOf("fashion") >= 0)   return ["FASHION", "Style", "Vogue"];
+    if (c.indexOf("urban") >= 0)     return ["URBAN", "Street", "Vibe"];
+    if (c.indexOf("glitch") >= 0)    return ["GLITCH", "ERROR", "404"];
+    if (c.indexOf("huge") >= 0)      return ["HUGE", "BIG TEXT", "IMPACT"];
+    if (c.indexOf("minimal") >= 0)   return ["minimal", "less is more", "clean"];
+    if (c.indexOf("wedding") >= 0)   return ["Forever", "Love", "Wedding"];
+    if (c.indexOf("elegant") >= 0)   return ["Elegant", "Luxury", "Royal"];
+    if (c.indexOf("corporate") >= 0) return ["Corporate", "Business", "Pro"];
+    if (c.indexOf("lower") >= 0)     return ["João Silva\nCEO · MotionPro", "Maria\nDesigner", "Nome\nCargo"];
+    return ["Title", "Texto", "Demo"];
+}
+
 function mockupSvg(name, catPath) {
     var lastCat = (catPath || "").split(/[ ›\/]+/).filter(Boolean).pop() || "";
     var s = categoryStyle(lastCat);
@@ -353,12 +369,17 @@ function renderGrid() {
         var globalIdx = i + 1;
         var card = document.createElement("div");
         card.className = "card";
+        // data-cat dispara animação correta no hover (ver editor-extras.css)
+        card.setAttribute("data-cat", (e.cat || "") + " " + (e.item && e.item.name ? String(e.item.name).toLowerCase() : ""));
         if (SELECTED_ITEM_KEY === favKey(e.item)) card.classList.add("selected");
         var fav = isFav(e.item) ? "on" : "";
         var preview = e.item.preview ? nodePath.join(EXT_PATH, "packs", e.item.preview) : null;
+        // Palavra de exemplo varia por card (rotaciona entre 3 opções da categoria)
+        var words = (typeof categoryWords === "function") ? categoryWords(e.cat) : ["Title"];
+        var sampleWord = words[i % words.length];
         var thumbHtml = preview
             ? '<img loading="lazy" src="' + esc("file:///" + preview.replace(/\\/g, "/")) + '">'
-            : (typeof mockupSvg === "function" ? mockupSvg(e.item.name, e.cat) : '<div class="card__placeholder">' + esc(e.item.name.substr(0,2).toUpperCase()) + '</div>');
+            : (typeof mockupSvg === "function" ? mockupSvg(sampleWord, e.cat) : '<div class="card__placeholder">' + esc(sampleWord) + '</div>');
         var label = "Texto " + String(globalIdx).padStart(2, "0");
         card.innerHTML =
             '<div class="card__thumb">' + thumbHtml +
@@ -702,7 +723,7 @@ function tryRestoreSession() {
 }
 
 // ============================================================ boot
-var BUILD = "3.0.0-editor-premium";
+var BUILD = "3.1.0-cards-fixos+automation-full";
 
 function boot() {
     loadCatalog();

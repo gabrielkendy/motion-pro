@@ -243,7 +243,7 @@ function setMode(mode) {
     var mainT = $("main-templates"), mainA = $("main-automation");
     if (mainT) mainT.classList.toggle("hidden", mode !== "templates");
     if (mainA) mainA.classList.toggle("hidden", mode !== "automation");
-    if (mode === "automation") renderAutomationOptions();
+    if (mode === "automation") { renderAutomationOptions(); updateAutomationUI(SRT_DATA ? "SRT atual" : null); }
     logLine("[MODE] " + mode.toUpperCase());
 }
 
@@ -277,9 +277,9 @@ function loadSRTFile(file) {
     reader.onload = function (e) {
         try {
             SRT_DATA = parseSRT(e.target.result);
-            $("srt-title").textContent = "✓ " + file.name + " · " + SRT_DATA.length + " blocos";
-            $("srt-sub").textContent = "Pronto para automação. Clique em AUTOMAÇÃO SRT pra processar.";
-            document.querySelector(".srtbar").classList.add("loaded");
+            var t = $("srt-title"); if (t) t.textContent = "✓ " + file.name + " · " + SRT_DATA.length + " blocos";
+            var bar = document.querySelector(".srtbar"); if (bar) bar.classList.add("loaded");
+            updateAutomationUI(file.name);
             logLine("[SRT] Carregado: " + file.name + " · " + SRT_DATA.length + " linhas");
         } catch (err) {
             logLine("[SRT] ERRO: " + err.message);
@@ -287,6 +287,66 @@ function loadSRTFile(file) {
         }
     };
     reader.readAsText(file, "utf-8");
+}
+
+// Atualiza painel AUTOMAÇÃO (empty state vs SRT carregado + botão APLICAR)
+function updateAutomationUI(name) {
+    var empty = $("auto-empty");
+    var loaded = $("srt-loaded");
+    var apply = $("btn-apply-all");
+    if (SRT_DATA && SRT_DATA.length) {
+        if (empty) empty.classList.add("hidden");
+        if (loaded) {
+            loaded.classList.remove("hidden");
+            var n = $("srt-loaded-name"); if (n) n.textContent = name || "SRT carregado";
+            var c = $("srt-loaded-count"); if (c) c.textContent = SRT_DATA.length + " linhas";
+        }
+        if (apply) apply.disabled = false;
+    } else {
+        if (empty) empty.classList.remove("hidden");
+        if (loaded) loaded.classList.add("hidden");
+        if (apply) apply.disabled = true;
+    }
+}
+
+// =============================== TRANSCRIBE FROM SELECTED CLIP (NOVO)
+// Chama ExtendScript pra pegar o clipe selecionado e (futuramente) manda
+// pra API de transcrição. Por enquanto registra no log + toast informativo.
+function transcribeSelectedClip() {
+    var cs = (typeof CSInterface !== "undefined") ? new CSInterface() : null;
+    if (!cs) {
+        toast("CSInterface indisponível", "err");
+        return;
+    }
+    logLine("[TRANSCRIBE] Pedindo clipe selecionado ao Premiere…");
+    var script = "" +
+        "(function(){ try {" +
+        "  if (!app || !app.project || !app.project.activeSequence) return JSON.stringify({err:'Nenhuma sequência ativa'});" +
+        "  var seq = app.project.activeSequence;" +
+        "  var sel = [];" +
+        "  for (var i=0; i<seq.audioTracks.numTracks; i++) {" +
+        "    var tr = seq.audioTracks[i];" +
+        "    for (var j=0; j<tr.clips.numItems; j++) {" +
+        "      var c = tr.clips[j];" +
+        "      if (c.isSelected()) sel.push({name:c.name, start:c.start.seconds, end:c.end.seconds, track:i+1});" +
+        "    }" +
+        "  }" +
+        "  if (!sel.length) return JSON.stringify({err:'Nenhum clipe de áudio selecionado'});" +
+        "  return JSON.stringify({ok:true, clips:sel});" +
+        "} catch(e) { return JSON.stringify({err:String(e)}); } })();";
+    cs.evalScript(script, function (res) {
+        var data; try { data = JSON.parse(res || "{}"); } catch (e) { data = { err: "parse: " + res }; }
+        if (data.err) {
+            logLine("[TRANSCRIBE] " + data.err);
+            toast(data.err, "warn", 4000);
+            return;
+        }
+        var clip = data.clips[0];
+        logLine("[TRANSCRIBE] Clipe: " + clip.name + " · " + (clip.end - clip.start).toFixed(1) + "s · track A" + clip.track);
+        toast("Transcrição AI em breve — clipe identificado: " + clip.name, "ok", 4500);
+        // TODO fase 2: enviar áudio extraído pra endpoint /v1/ai/transcribe
+        // que retorna SRT-compatible JSON; popular SRT_DATA com isso e chamar updateAutomationUI.
+    });
 }
 
 function getAllWords() {
@@ -358,7 +418,7 @@ function bindEditor() {
     if (btnT) btnT.onclick = function () { setMode("templates"); };
     if (btnA) btnA.onclick = function () { setMode("automation"); };
 
-    // SRT load (botão no topo)
+    // SRT load (botão no topo + dentro de AUTOMAÇÃO)
     var btnSrt = $("btn-load-srt");
     var btnSrt2 = $("btn-load-srt-2");
     var fileSrt = $("srt-file");
@@ -371,6 +431,10 @@ function bindEditor() {
             if (f) loadSRTFile(f);
         };
     }
+
+    // NOVO: Transcrever do clipe selecionado
+    var btnTr = $("btn-transcribe-clip");
+    if (btnTr) btnTr.onclick = transcribeSelectedClip;
 
     // LOG toggle
     var logHead = $("log-head");

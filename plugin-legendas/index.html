@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <title>MotionPro Legendas — Editor Premium</title>
-<link rel="stylesheet" href="css/editor.css?v=300">
+<link rel="stylesheet" href="css/editor.css?v=310">
+<link rel="stylesheet" href="css/editor-extras.css?v=310">
 </head>
 <body>
 
@@ -111,26 +112,46 @@
 <!-- ============ AUTOMATION VIEW ============ -->
 <div id="main-automation" class="main-area hidden">
     <div class="auto-panel">
-        <button class="auto-srt-btn" id="btn-load-srt-2">
-            <span class="auto-srt-btn__icon">📥</span>
-            Trocar arquivo SRT
-        </button>
-        <div class="auto-row">
-            <label>Palavras:</label>
-            <input type="number" id="auto-words" min="1" max="10" value="3">
-            <label style="margin-left:18px">Template:</label>
-            <select id="auto-template"><option>Carregar SRT primeiro</option></select>
+
+        <!-- 2 botões grandes: Trocar SRT  +  Transcrever Áudio (NOVO) -->
+        <div class="auto-actions">
+            <button class="auto-action-btn auto-action-srt" id="btn-load-srt-2">
+                <span class="icon">📥</span>
+                <span class="label">Trocar arquivo SRT</span>
+                <span class="sub">.srt ou .vtt do seu PC</span>
+            </button>
+            <button class="auto-action-btn auto-action-audio" id="btn-transcribe-clip">
+                <span class="icon">🎙️</span>
+                <span class="label">Transcrever do clipe</span>
+                <span class="sub">Áudio selecionado no Premiere</span>
+            </button>
         </div>
-        <div class="auto-row">
-            <label>Conectores:</label>
+
+        <!-- Status: nenhum SRT  OU  SRT carregado -->
+        <div class="auto-empty" id="auto-empty">
+            <div class="icon">📄</div>
+            <div>Nenhum SRT carregado</div>
+            <div class="hint">Escolha um arquivo ou transcreva o áudio do clipe selecionado</div>
+        </div>
+        <div class="srt-loaded-card hidden" id="srt-loaded">
+            <span class="ok">✓</span>
+            <span id="srt-loaded-name">arquivo.srt</span>
+            <span class="srt-loaded-card__count" id="srt-loaded-count">0 linhas</span>
+        </div>
+
+        <!-- Configurações em grid (label / input) -->
+        <div class="auto-grid">
+            <label>Palavras</label>
+            <input type="number" id="auto-words" min="1" max="10" value="3">
+            <label>Template</label>
+            <select id="auto-template"><option>Carregar SRT primeiro</option></select>
+            <label>Conectores</label>
             <select id="auto-connectors">
                 <option value="smart">Inteligente</option>
                 <option value="none">Sem conectores</option>
                 <option value="space">Espaço</option>
             </select>
-        </div>
-        <div class="auto-row">
-            <label>Track:</label>
+            <label>Track</label>
             <select id="auto-track">
                 <option value="last">Última track</option>
                 <option value="V2">V2</option>
@@ -138,9 +159,7 @@
                 <option value="V4">V4</option>
                 <option value="new">Criar nova</option>
             </select>
-        </div>
-        <div class="auto-row">
-            <label>SFX Track:</label>
+            <label>SFX Track</label>
             <select id="auto-sfx-track">
                 <option value="">Nenhuma audio track</option>
                 <option value="A2">A2</option>
@@ -148,7 +167,8 @@
                 <option value="A4">A4</option>
             </select>
         </div>
-        <button class="auto-apply" id="btn-apply-all">
+
+        <button class="auto-apply-big" id="btn-apply-all" disabled>
             ⚡ APLICAR NA TIMELINE
         </button>
     </div>
@@ -231,9 +251,9 @@
     <div id="side"></div>
 </div>
 
-<script src="js/lib/CSInterface.js?v=300"></script>
-<script src="js/config.js?v=300"></script>
-<script src="js/app.js?v=300"></script>
-<script src="js/editor.js?v=300"></script>
+<script src="js/lib/CSInterface.js?v=310"></script>
+<script src="js/config.js?v=310"></script>
+<script src="js/app.js?v=310"></script>
+<script src="js/editor.js?v=310"></script>
 </body>
 </html>
