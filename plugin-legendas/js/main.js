@@ -11,7 +11,7 @@
 (function () {
 "use strict";
 
-var BUILD = "4.0.0-ep-pipeline";
+var BUILD = "4.1.0-path-fix";
 
 var nodePath = typeof require === "function" ? require("path") : null;
 var nodeFs   = typeof require === "function" ? require("fs") : null;
@@ -21,7 +21,19 @@ var TICKS = 254016000000;
 var $ = function (id) { return document.getElementById(id); };
 
 var cs = (typeof CSInterface !== "undefined") ? new CSInterface() : null;
-var EXT_PATH = cs ? cs.getSystemPath(CSInterface.SystemPath.EXTENSION) : "";
+var EXT_PATH = cs ? normalizeExtPath(cs.getSystemPath(CSInterface.SystemPath.EXTENSION)) : "";
+
+function normalizeExtPath(p) {
+    if (!p) return "";
+    p = String(p);
+    // CSInterface devolve "file:///C:/..." em alguns Premieres — remove prefixo
+    p = p.replace(/^file:\/{2,3}/i, "").replace(/^file:/i, "");
+    // converte URI-style /C:/ pra C:/ no Windows
+    p = p.replace(/^\/([A-Za-z]:)/, "$1");
+    // URI decode (espaços etc.)
+    try { p = decodeURI(p); } catch (e) {}
+    return p;
+}
 
 // ── STATE
 var CATALOG = null;            // { packs: [...] }
@@ -70,9 +82,18 @@ function jsx(funcCall, cb) {
 
 // ────────────────────────────────────────────────  CATALOG
 function loadCatalog() {
-    if (!nodeFs || !nodePath) { log("Node FS indisponível", "err"); return; }
+    if (!nodeFs || !nodePath) { log("Node FS indisponível", "err"); openLog(); return; }
+    log("EXT_PATH = " + EXT_PATH, "info");
     var path = nodePath.join(EXT_PATH, "packs", "catalog.json");
+    log("catalog path = " + path, "info");
     try {
+        if (!nodeFs.existsSync(path)) {
+            log("Catalog NÃO EXISTE em " + path, "err"); openLog();
+            // tenta fallback (path com forward slashes)
+            var alt = path.replace(/\\/g, "/");
+            if (nodeFs.existsSync(alt)) { path = alt; }
+            else { toast("Catálogo não encontrado", "err"); return; }
+        }
         var raw = nodeFs.readFileSync(path, "utf8");
         CATALOG = JSON.parse(raw);
         ALL_TEMPLATES = flatten(CATALOG);
@@ -83,8 +104,8 @@ function loadCatalog() {
         renderAutoSrtTemplateOptions();
         populateSfxTracks();
     } catch (e) {
-        log("Catalog FAIL: " + e.message, "err");
-        toast("Catálogo não carregou", "err");
+        log("Catalog FAIL: " + e.message, "err"); openLog();
+        toast("Catálogo não carregou — veja LOG", "err", 5000);
     }
 }
 
