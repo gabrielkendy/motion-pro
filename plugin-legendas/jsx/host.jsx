@@ -394,29 +394,85 @@ $.global._MPL_VERSION = "4.0.0";
         }
     }
 
-    // ──────────────────────────────────────────────── CAPTIONS (transcribe nativa Premiere)
+    // ──────────────────────────────────────────────── CAPTIONS / TRANSCRIPT
+    // Tenta MÚLTIPLAS APIs do Premiere:
+    //   1. seq.captionTracks (closed captions — quando user cria "Captions from transcript")
+    //   2. seq.captionTrack(0) (versão singular, Premiere 2024+)
+    //   3. seq.transcripts (transcript propriamente — algumas versões)
+    //   4. app.project.transcripts (transcript no project, não na sequência)
+    //   5. Procura nos audio clips por transcript metadata
     function EP_readCaptions() {
         try {
             var seq = app.project && app.project.activeSequence;
             if (!seq) return err("Abra uma sequência primeiro");
-            if (!seq.captionTracks || seq.captionTracks.numTracks === 0) {
-                return err("Sem captions. No Premiere: Window → Text → Transcript → Create transcription");
-            }
+
             var out = [];
-            for (var t = 0; t < seq.captionTracks.numTracks; t++) {
-                var ct = seq.captionTracks[t];
-                if (!ct || !ct.captions) continue;
-                for (var i = 0; i < ct.captions.length; i++) {
-                    var c = ct.captions[i];
-                    var s, e, x;
-                    try { s = Number(c.start.seconds); } catch (er1) { s = 0; }
-                    try { e = Number(c.end.seconds); } catch (er2) { e = s + 1; }
-                    try { x = String(c.text || ""); } catch (er3) { x = ""; }
-                    if (x) out.push({ start: s, end: e, text: x });
+            var triedMethods = [];
+
+            // MÉTODO 1: captionTracks (closed caption tracks)
+            try {
+                if (seq.captionTracks && seq.captionTracks.numTracks > 0) {
+                    for (var t = 0; t < seq.captionTracks.numTracks; t++) {
+                        var ct = seq.captionTracks[t];
+                        if (!ct || !ct.captions) continue;
+                        for (var i = 0; i < ct.captions.length; i++) {
+                            var c = ct.captions[i];
+                            var s, e, x;
+                            try { s = Number(c.start.seconds); } catch (er1) { s = 0; }
+                            try { e = Number(c.end.seconds); } catch (er2) { e = s + 1; }
+                            try { x = String(c.text || ""); } catch (er3) { x = ""; }
+                            if (x) out.push({ start: s, end: e, text: x });
+                        }
+                    }
+                    if (out.length) return ok({ ok: true, source: "captionTracks", blocks: out });
+                    triedMethods.push("captionTracks:empty");
+                } else { triedMethods.push("captionTracks:none"); }
+            } catch (eA) { triedMethods.push("captionTracks:err"); }
+
+            // MÉTODO 2: captionTrack singular
+            try {
+                if (typeof seq.captionTrack === "function") {
+                    var ctSingle = seq.captionTrack(0);
+                    if (ctSingle && ctSingle.captions) {
+                        for (var j = 0; j < ctSingle.captions.length; j++) {
+                            var cc = ctSingle.captions[j];
+                            try {
+                                var ss = Number(cc.start.seconds);
+                                var ee = Number(cc.end.seconds);
+                                var xx = String(cc.text || "");
+                                if (xx) out.push({ start: ss, end: ee, text: xx });
+                            } catch (eIn) {}
+                        }
+                        if (out.length) return ok({ ok: true, source: "captionTrack(0)", blocks: out });
+                    }
+                    triedMethods.push("captionTrack:empty");
                 }
-            }
-            if (!out.length) return err("Captions vazias");
-            return ok({ ok: true, blocks: out });
+            } catch (eB) { triedMethods.push("captionTrack:err"); }
+
+            // MÉTODO 3: procura transcript no project (raw transcript items)
+            try {
+                if (app.project.transcripts && app.project.transcripts.length > 0) {
+                    for (var k = 0; k < app.project.transcripts.length; k++) {
+                        var tr = app.project.transcripts[k];
+                        if (tr && tr.segments) {
+                            for (var sg = 0; sg < tr.segments.length; sg++) {
+                                var seg = tr.segments[sg];
+                                try {
+                                    var st = Number(seg.startTime);
+                                    var en = Number(seg.endTime);
+                                    var tx = String(seg.text || seg.speakerText || "");
+                                    if (tx) out.push({ start: st, end: en, text: tx });
+                                } catch (eS) {}
+                            }
+                        }
+                    }
+                    if (out.length) return ok({ ok: true, source: "transcripts", blocks: out });
+                    triedMethods.push("transcripts:empty");
+                }
+            } catch (eC) { triedMethods.push("transcripts:err"); }
+
+            // Nenhum método funcionou — devolve erro acionável
+            return err("Transcrição não encontrada via API. No Premiere: 1) Window → Text → Captions (não Transcript). 2) 'Create captions from transcript'. 3) Volte aqui. Tentei: " + triedMethods.join(", "));
         } catch (e) { return err(e.message); }
     }
 

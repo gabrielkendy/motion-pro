@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src *; img-src * data: blob: file: filesystem:; style-src 'self' 'unsafe-inline'; media-src * data: blob: file: filesystem:;">
 <title>MotionPro Legendas — Premiere</title>
-<link rel="stylesheet" href="css/ep.css?v=490">
+<link rel="stylesheet" href="css/ep.css?v=410a">
 </head>
 <body>
 
@@ -200,16 +200,20 @@
         </button>
 
         <div class="auto-row">
-            <label title="Quantas palavras por legenda. Recomendado: 3">Palavras:</label>
+            <label title="Quantas palavras por legenda quando NÃO usa Distribuição Inteligente. Default: 3">Palavras por grupo:</label>
             <input type="number" id="auto-srt-groupsize" value="3" min="1" max="10">
-            <label title="Template padrão quando não usa Distribuição Inteligente">Template:</label>
-            <select id="auto-srt-default-tpl"><option value="">Auto por palavras</option></select>
+        </div>
+
+        <div class="auto-row">
+            <label title="(Opcional) Forçar todos os grupos do mesmo wc usarem este template">Override template:</label>
+            <select id="auto-srt-default-tpl"><option value="">Auto inteligente (recomendado)</option></select>
         </div>
 
         <div class="auto-row help-row">
-            <span class="help-icon">ℹ️</span>
+            <span class="help-icon">🧠</span>
             <span class="help-text">
-                <b>Auto por palavras</b>: escolhe o template do mesmo n° de palavras do grupo.
+                <b>Auto inteligente</b>: grupo de 3 palavras → template de 3p. Grupo de 1 palavra → template de 1p. <b>Sempre acerta</b>.
+                Use <b>Override</b> só se quer um estilo fixo (ex: só "Texto 16" pra tudo).
             </span>
         </div>
 
@@ -364,6 +368,56 @@
     </div>
 </div>
 
+<!-- ════════════ CAPTIONS HELP MODAL ════════════ -->
+<div id="captions-help-overlay" class="hidden">
+    <div class="capture-modal" style="max-width: 460px">
+        <div class="capture-modal-header">
+            <span>🎙️ Importar transcrição do Premiere</span>
+            <button id="captions-help-close">✕</button>
+        </div>
+        <div class="capture-modal-body">
+            <div style="font:500 12.5px/1.5 Inter;color:var(--text-dim);margin-bottom:14px">
+                Não encontrei <b>captions</b> na sequência. Se você criou <b>Transcrição</b>, precisa converter em <b>Captions</b> primeiro (são coisas diferentes no Premiere).
+            </div>
+            <div class="caphelp-step">
+                <span class="caphelp-num">1</span>
+                <div>
+                    <b>Window → Text</b><br>
+                    <span class="caphelp-dim">Abra o painel Text do Premiere</span>
+                </div>
+            </div>
+            <div class="caphelp-step">
+                <span class="caphelp-num">2</span>
+                <div>
+                    Clique na aba <b>Captions</b> (não "Transcript")<br>
+                    <span class="caphelp-dim">Fica ao lado direito de "Transcript"</span>
+                </div>
+            </div>
+            <div class="caphelp-step">
+                <span class="caphelp-num">3</span>
+                <div>
+                    Clique em <b>"Create captions"</b><br>
+                    <span class="caphelp-dim">Se já tem transcrição: "Create captions from transcript"</span>
+                </div>
+            </div>
+            <div class="caphelp-step">
+                <span class="caphelp-num">4</span>
+                <div>
+                    Volte aqui e clique <b>Captions Premiere</b> novamente<br>
+                    <span class="caphelp-dim">Agora o plugin vai conseguir ler</span>
+                </div>
+            </div>
+            <div style="margin-top:14px;padding:10px;background:var(--panel-alt);border-radius:6px;font:500 11px/1.5 Inter;color:var(--text-dim)">
+                💡 <b>Dica</b>: se não quer fazer esses passos, baixe o SRT do Premiere (botão "Export" no painel Captions) e use <b>Importar → Trocar arquivo SRT</b> aqui.
+            </div>
+        </div>
+        <div class="capture-modal-footer">
+            <button id="captions-help-retry" class="btn-modal-secondary">Tentar de novo</button>
+            <button id="captions-help-ok" class="btn-modal-primary">Entendi</button>
+        </div>
+    </div>
+</div>
+
 <!-- ════════════ TPL PICKER MODAL ════════════ -->
 <div id="tpl-picker-overlay" class="hidden">
     <div class="capture-modal" style="width:320px">
@@ -419,9 +473,9 @@
     <div id="side"></div>
 </div>
 
-<script src="js/lib/CSInterface.js?v=490"></script>
-<script src="js/config.js?v=490"></script>
-<script src="js/auth.js?v=490"></script>
-<script src="js/main.js?v=490"></script>
+<script src="js/lib/CSInterface.js?v=410a"></script>
+<script src="js/config.js?v=410a"></script>
+<script src="js/auth.js?v=410a"></script>
+<script src="js/main.js?v=410a"></script>
 </body>
 </html>

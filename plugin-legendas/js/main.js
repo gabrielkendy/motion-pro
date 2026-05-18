@@ -11,7 +11,7 @@
 (function () {
 "use strict";
 
-var BUILD = "4.9.0-wizard-ui-sticky-footer";
+var BUILD = "4.10.0-wc-correct+captions-multi-api+helpModal";
 
 var nodePath = typeof require === "function" ? require("path") : null;
 var nodeFs   = typeof require === "function" ? require("fs") : null;
@@ -596,12 +596,21 @@ function maxWcOf(arr) { return arr.length ? arr[arr.length - 1] : 5; }
 
 function applySmartDistribution() {
     if (!SRT_DATA.length) { toast("Carregue um SRT primeiro", "warn"); return; }
+    resetAutoPickRotation();
     SRT_GROUPS = smartDistribute(SRT_DATA);
     SRT_GROUPS.forEach(function (g) { g.tplName = defaultTplForWc(g.wc); g.selected = false; });
     renderSrtEditor(); updateSrtSummary();
-    var withTpl = SRT_GROUPS.filter(function (g) { return g.tplName; }).length;
-    log("⚡ Distribuição Inteligente: " + SRT_GROUPS.length + " grupos · " + withTpl + " com template", "info");
-    toast("⚡ " + SRT_GROUPS.length + " grupos distribuídos · revise →", "ok");
+
+    // Log estatística: distribuição por wc
+    var byWc = {};
+    SRT_GROUPS.forEach(function (g) { byWc[g.wc] = (byWc[g.wc] || 0) + 1; });
+    var stats = Object.keys(byWc).sort().map(function (k) { return k + "p:" + byWc[k]; }).join(" · ");
+    log("⚡ Distribuição: " + SRT_GROUPS.length + " grupos · " + stats, "info");
+    // Mostra exemplos
+    SRT_GROUPS.slice(0, 5).forEach(function (g, i) {
+        log("   #" + (i+1) + " '" + g.text + "' (" + g.wc + "p) → " + g.tplName, "info");
+    });
+    toast("⚡ " + SRT_GROUPS.length + " grupos · revise →", "ok");
     switchTab("tab-srt-editor");
 }
 
@@ -741,31 +750,46 @@ function buildTplIndex() {
 }
 
 // Escolhe template AUTO por wc (rotaciona entre disponíveis pra variar visual)
+// IMPORTANTE: sempre prioriza o wc REAL do grupo, independente do dropdown.
+// Dropdown "Template" só sobrescreve quando user explicitamente fixou.
 var AUTO_PICK_IDX = {};
 function defaultTplForWc(wc) {
     var tplSel = $("auto-srt-default-tpl");
-    var defName = tplSel && tplSel.value;
-    if (defName) return defName;  // user escolheu fixo no dropdown — usa ele
+    var fixedName = tplSel && tplSel.value;
 
     if (!TPLS_BY_WC) buildTplIndex();
+
+    // 1) Se user escolheu template fixo no dropdown E ele bate com o wc do grupo, usa
+    if (fixedName) {
+        var fixedTpl = ALL_TEMPLATES.find(function (t) { return t.name === fixedName; });
+        if (fixedTpl && fixedTpl.wc === wc) return fixedName;
+        // Se não bate, IGNORA o dropdown e escolhe certo pelo wc
+    }
+
+    // 2) Acha pool do wc EXATO do grupo
     var pool = TPLS_BY_WC[wc];
     if (!pool || !pool.length) {
-        // fallback: wc mais próximo
+        // fallback: wc mais próximo disponível
         var keys = Object.keys(TPLS_BY_WC).map(Number).filter(function (k) { return k > 0; }).sort(function (a, b) {
             return Math.abs(a - wc) - Math.abs(b - wc);
         });
         if (!keys.length) return ALL_TEMPLATES[0] ? ALL_TEMPLATES[0].name : null;
         pool = TPLS_BY_WC[keys[0]];
     }
-    // rotação por wc pra variar visualmente entre grupos do mesmo wc
+
+    // 3) Rotação pra variar visualmente entre grupos do mesmo wc
     var key = "wc" + wc;
     var idx = AUTO_PICK_IDX[key] || 0;
     AUTO_PICK_IDX[key] = (idx + 1) % pool.length;
     return pool[idx].name;
 }
 
+// Reset rotação (chamado quando user faz nova distribuição)
+function resetAutoPickRotation() { AUTO_PICK_IDX = {}; }
+
 function rebuildGroups() {
     var per = parseInt($("auto-srt-groupsize") && $("auto-srt-groupsize").value, 10) || 3;
+    resetAutoPickRotation();
     SRT_GROUPS = chunkByWords(SRT_DATA, per);
     SRT_GROUPS.forEach(function (g) { g.tplName = defaultTplForWc(g.wc); g.selected = false; });
     renderSrtEditor();
@@ -872,14 +896,22 @@ function hideEditorEmpty() {
     var em = $("editor-no-srt"); if (em) em.style.display = "none";
 }
 
+function showCaptionsHelpModal() {
+    var ov = $("captions-help-overlay"); if (ov) ov.classList.remove("hidden");
+}
+function hideCaptionsHelpModal() {
+    var ov = $("captions-help-overlay"); if (ov) ov.classList.add("hidden");
+}
+
 function loadCaptions() {
-    log("Lendo captions nativas do Premiere…");
+    log("Lendo captions/transcript nativos do Premiere…");
     jsx("$.global.EP_readCaptions();", function (d) {
         if (d.error) {
             log(d.error, "warn"); openLog();
-            toast("Sem captions. Window → Text → Transcript → Create transcription", "warn", 7000);
+            showCaptionsHelpModal();
             return;
         }
+        log("✓ Lido via " + (d.source || "?") + " · " + d.blocks.length + " blocos", "info");
         SRT_DATA = d.blocks;
         log("✓ " + SRT_DATA.length + " captions importadas", "info");
         var bar = $("ep-srt-status-banner");
@@ -1388,6 +1420,9 @@ function bind() {
 
     // captions Premiere
     var btnCap = $("btn-auto-srt-captions"); if (btnCap) btnCap.onclick = loadCaptions;
+    var capClose = $("captions-help-close"); if (capClose) capClose.onclick = hideCaptionsHelpModal;
+    var capOk = $("captions-help-ok"); if (capOk) capOk.onclick = hideCaptionsHelpModal;
+    var capRetry = $("captions-help-retry"); if (capRetry) capRetry.onclick = function () { hideCaptionsHelpModal(); loadCaptions(); };
 
     // ⚡ Distribuição Inteligente
     var btnSmart = $("btn-srt-smart-dist"); if (btnSmart) btnSmart.onclick = applySmartDistribution;
