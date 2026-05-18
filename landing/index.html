@@ -1,521 +1,961 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MotionPro — Acervo definitivo de Motion Graphics para Premiere Pro</title>
-<meta name="description" content="7.906 templates premium organizados em um único plugin para Premiere Pro. Assinatura anual ou vitalícia.">
-<meta property="og:title" content="MotionPro — 7.906 templates premium para Premiere Pro">
-<meta property="og:description" content="O acervo definitivo de Motion Graphics. Importação em 1 clique, busca instantânea, atualização contínua.">
-<meta property="og:type" content="website">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="MotionPro — 7.906 motion graphics premium dentro do Premiere Pro. Plugin nativo. Importação em 1 clique. 100% editável na timeline." />
+<meta property="og:title" content="MotionPro — O acervo definitivo de motion graphics dentro do Premiere" />
+<meta property="og:description" content="7.906 templates premium. Plugin CEP nativo. Editáveis na timeline. R$199/ano ou R$499 vitalício." />
+<meta property="og:type" content="website" />
+<meta property="og:image" content="/img/og.png" />
+<title>MotionPro — O acervo definitivo de motion graphics dentro do Premiere</title>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/css/system.css">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+<script src="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js" defer></script>
+
+<style>
+/* ════════════════════════════════════════════════════════════════
+   HOME-SPECIFIC STYLES (componentes ricos que só aparecem na home)
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  padding-top: 160px;
+  padding-bottom: 120px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+  text-align: center; isolation: isolate;
+}
+.hero-bg { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.hero-bg .blob {
+  position: absolute; border-radius: 50%; filter: blur(100px);
+  opacity: .55; will-change: transform;
+}
+.hero-bg .blob.b1 { top: -160px; left: -120px; width: 620px; height: 620px;
+  background: radial-gradient(circle, #2563eb 0%, transparent 65%);
+  animation: blobDrift1 22s var(--ease-in-out) infinite; }
+.hero-bg .blob.b2 { top: 5%; right: -180px; width: 560px; height: 560px;
+  background: radial-gradient(circle, #93c5fd 0%, transparent 65%); opacity: .42;
+  animation: blobDrift2 26s var(--ease-in-out) infinite; }
+.hero-bg .blob.b3 { bottom: -200px; left: 30%; width: 700px; height: 700px;
+  background: radial-gradient(circle, #dbeafe 0%, transparent 60%); opacity: .7;
+  animation: blobDrift3 30s var(--ease-in-out) infinite; }
+@keyframes blobDrift1 { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(120px,80px) scale(1.1); } 66% { transform: translate(-40px,140px) scale(.95); } }
+@keyframes blobDrift2 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-140px,100px) scale(1.15); } }
+@keyframes blobDrift3 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(80px,-120px) scale(1.08); } }
+
+.hero-bg::before {
+  content: ""; position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(10,10,10,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10,10,10,.04) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black, transparent 75%);
+}
+
+.hero-glow {
+  position: absolute; top: 0; left: 0;
+  width: 600px; height: 600px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(37,99,235,.18) 0%, transparent 60%);
+  pointer-events: none; transform: translate(-50%, -50%); z-index: -1;
+  opacity: 0; transition: opacity .6s var(--ease-out);
+  mix-blend-mode: multiply; will-change: transform, opacity;
+}
+.hero:hover .hero-glow { opacity: 1; }
+
+.hero-inner { position: relative; z-index: 2; max-width: 980px; margin: 0 auto; width: 100%; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 8px 16px;
+  background: rgba(255,255,255,.7);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .7rem; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--fg-muted);
+  margin-bottom: 40px;
+  box-shadow: 0 8px 24px -8px rgba(37,99,235,.18);
+  position: relative; overflow: hidden;
+}
+.hero-badge::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(37,99,235,.12) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: badgeShine 4s var(--ease-in-out) 2s infinite;
+}
+@keyframes badgeShine { 0% { transform: translateX(-100%); } 60%,100% { transform: translateX(100%); } }
+.hero-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: pulse 2.4s var(--ease-out) infinite; position: relative; z-index: 1; }
+.hero-title { font-size: clamp(2.6rem, 7vw, 6.2rem) !important; margin-bottom: 36px; }
+.hero-title .line { display: block; }
+.hero-title .char { display: inline-block; will-change: transform, opacity; }
+.hero-sub {
+  font-size: clamp(1.05rem, 1.5vw, 1.25rem);
+  max-width: 620px; margin: 0 auto 48px;
+  color: var(--fg-muted); line-height: 1.55;
+}
+.hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-bottom: 36px; }
+.trust-line {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--fg-subtle);
+}
+
+.hero-chips { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.hero-chip {
+  position: absolute;
+  background: rgba(255,255,255,.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 7px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .65rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--fg-muted);
+  display: inline-flex; align-items: center; gap: 8px;
+  box-shadow: 0 6px 18px -6px rgba(10,10,10,.12);
+  white-space: nowrap; will-change: transform;
+  opacity: 0;
+}
+.hero-chip .ico { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.hero-chip.c1 { top: 22%; left: 6%; }
+.hero-chip.c2 { top: 18%; right: 7%; }
+.hero-chip.c3 { top: 58%; left: 4%; }
+.hero-chip.c4 { top: 62%; right: 5%; }
+.hero-chip.c5 { top: 38%; right: 12%; }
+.hero-chip.c6 { top: 42%; left: 10%; }
+@media (max-width: 900px) { .hero-chips { display: none; } }
+
+.hero-marquee {
+  position: relative; width: 100%;
+  margin-top: 70px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 18px 0; overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent 0%, black 12%, black 88%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 12%, black 88%, transparent 100%);
+}
+.hero-marquee-track {
+  display: flex; gap: 56px; width: max-content;
+  animation: marquee 38s linear infinite;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .8rem; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--fg-subtle); align-items: center;
+}
+.hero-marquee-track span { display: inline-flex; align-items: center; gap: 16px; }
+.hero-marquee-track span::after { content: ""; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+.scroll-cue {
+  position: absolute; bottom: 28px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .65rem; letter-spacing: .3em; text-transform: uppercase;
+  color: var(--fg-subtle);
+}
+.scroll-cue .line { width: 1px; height: 40px; background: linear-gradient(180deg, transparent, var(--fg-subtle), transparent); animation: scrollLine 2.2s ease-in-out infinite; }
+@keyframes scrollLine { 0% { transform: scaleY(0); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
+
+/* ── STATS ── */
+.stats { padding: 80px 0; border-top: 1px solid var(--border); position: relative; }
+.stats::before { content: ""; position: absolute; top: -1px; left: 0; height: 1px; background: var(--accent); width: 0; transition: width 1.4s var(--ease-out); }
+.stats.in-view::before { width: 100%; }
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+@media (max-width: 800px) { .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 50px 20px; } }
+.stat-item .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(2.8rem, 6vw, 4.5rem);
+  font-weight: 600; letter-spacing: -.04em;
+  color: var(--accent); line-height: 1; margin-bottom: 14px;
+}
+.stat-item .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .7rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--fg-muted); font-weight: 500;
+}
+
+/* ── SECTION HEADER ── */
+.sec-head { margin-bottom: 80px; max-width: 900px; }
+.sec-head .section-title { margin-bottom: 24px; }
+
+/* ── PROBLEMA ── */
+.problem { background: var(--bg-elevated); }
+.problem-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 100px; max-width: 1100px; margin: 0 auto; align-items: start; }
+@media (max-width: 900px) { .problem-grid { grid-template-columns: 1fr; gap: 50px; } }
+.problem-left p { font-size: clamp(1.1rem, 1.5vw, 1.35rem); color: var(--fg); font-weight: 400; line-height: 1.55; letter-spacing: -.01em; max-width: none; }
+.problem-right { padding-left: 24px; border-left: 1px solid var(--border); }
+@media (max-width: 900px) { .problem-right { padding-left: 0; border-left: none; border-top: 1px solid var(--border); padding-top: 36px; } }
+.problem-num { margin-bottom: 28px; }
+.problem-num .big { font-family: 'JetBrains Mono', monospace; font-size: clamp(2rem, 3.5vw, 2.8rem); font-weight: 600; color: var(--accent); letter-spacing: -.03em; line-height: 1; margin-bottom: 6px; }
+.problem-num .small { font-size: 14px; color: var(--fg-muted); font-family: 'JetBrains Mono', monospace; letter-spacing: .04em; }
+.problem-close { margin-top: 36px; padding-top: 28px; border-top: 1px solid var(--border); font-size: 1rem; color: var(--fg); font-weight: 500; font-style: italic; line-height: 1.5; }
+.problem-cta { margin-top: 60px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: .85rem; letter-spacing: .35em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+
+/* ── PLATAFORMA ── */
+.platform-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+@media (max-width: 900px) { .platform-grid { grid-template-columns: 1fr; } }
+.feat-card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 44px 36px; transition: all .5s var(--ease-out); position: relative; overflow: hidden; }
+.feat-card::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 0% 0%, rgba(37,99,235,.04), transparent 60%); opacity: 0; transition: opacity .5s var(--ease-out); pointer-events: none; }
+.feat-card:hover { transform: translateY(-8px); border-color: var(--border-hover); box-shadow: 0 20px 40px rgba(37,99,235,.08); }
+.feat-card:hover::before { opacity: 1; }
+.feat-num { font-family: 'JetBrains Mono', monospace; font-size: 1rem; font-weight: 500; color: var(--accent); letter-spacing: .15em; margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
+.feat-num::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.feat-card h3 { margin-bottom: 18px; }
+.feat-card .desc { font-size: 15px; margin-bottom: 28px; line-height: 1.6; }
+
+/* ── PERSONALIZAÇÃO ── */
+.custom { background: var(--bg-elevated); position: relative; overflow: hidden; }
+.custom::before { content: ""; position: absolute; top: 10%; left: 50%; width: 800px; height: 800px; transform: translateX(-50%); background: radial-gradient(circle, rgba(37,99,235,.06), transparent 60%); pointer-events: none; }
+.custom .container { position: relative; }
+.custom .sec-head { text-align: center; margin-left: auto; margin-right: auto; }
+.custom .sec-head .lede { margin: 0 auto; }
+.editorial-table { max-width: 1000px; margin: 0 auto; border-top: 1px solid var(--border); }
+.editorial-row { display: grid; grid-template-columns: 220px 1fr; gap: 60px; padding: 32px 0; border-bottom: 1px solid var(--border); align-items: baseline; transition: padding .4s var(--ease-out); }
+.editorial-row:hover { padding-left: 16px; padding-right: 16px; }
+.editorial-row:hover .ed-label { color: var(--accent); }
+.editorial-row .ed-label { font-size: clamp(1.5rem, 2.5vw, 2.2rem); font-weight: 800; letter-spacing: -.03em; color: var(--fg); transition: color .4s var(--ease-out); }
+.editorial-row .ed-desc { font-size: clamp(1rem, 1.3vw, 1.15rem); color: var(--fg-muted); max-width: none; line-height: 1.55; }
+@media (max-width: 700px) { .editorial-row { grid-template-columns: 1fr; gap: 8px; padding: 24px 0; } }
+.custom-close { max-width: 700px; margin: 90px auto 0; text-align: center; }
+.custom-close p { font-size: clamp(1.2rem, 2vw, 1.6rem); font-weight: 500; line-height: 1.35; color: var(--fg); letter-spacing: -.02em; max-width: none; }
+.custom-close .accent { color: var(--accent); font-weight: 700; display: block; margin-top: 4px; }
+
+/* ── FLUXO (DARK) ── */
+.flux { background: var(--bg-dark); color: var(--fg-on-dark); }
+.flux .section-title { color: var(--fg-on-dark); }
+.flux .lede { color: var(--fg-on-dark-muted); }
+.flux-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; position: relative; margin-top: 40px; }
+@media (max-width: 800px) { .flux-grid { grid-template-columns: repeat(2, 1fr); } }
+.flux-line { position: absolute; top: 60px; left: 0; right: 0; height: 1px; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform 1.4s var(--ease-out); z-index: 0; }
+.flux-line.in { transform: scaleX(1); }
+@media (max-width: 800px) { .flux-line { display: none; } }
+.flux-step { position: relative; padding-top: 90px; z-index: 1; }
+.flux-step::before { content: ""; position: absolute; top: 56px; left: 0; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgba(37,99,235,.18); }
+.flux-step .num { font-family: 'JetBrains Mono', monospace; font-size: clamp(3rem, 5vw, 4.5rem); font-weight: 600; color: var(--accent); letter-spacing: -.04em; line-height: 1; margin-bottom: 16px; }
+.flux-step h4 { font-size: 1rem; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; color: var(--fg-on-dark); margin-bottom: 14px; }
+.flux-step p { color: var(--fg-on-dark-muted); font-size: 15px; line-height: 1.55; max-width: none; }
+.flux-close { margin-top: 100px; text-align: center; max-width: 700px; margin-left: auto; margin-right: auto; }
+.flux-close .head { font-size: clamp(1.3rem, 2.2vw, 1.8rem); font-weight: 700; letter-spacing: -.02em; color: var(--fg-on-dark); line-height: 1.3; }
+.flux-close .head .accent { color: var(--accent); }
+.flux-close .sub { margin-top: 14px; color: var(--fg-on-dark-muted); font-size: 15px; }
+
+/* ── COMPARE ── */
+.compare-table { max-width: 1100px; margin: 0 auto; border-top: 1px solid var(--border); }
+.compare-head, .compare-row { display: grid; grid-template-columns: 1.4fr 1fr 1fr; padding: 22px 16px; border-bottom: 1px solid var(--border); align-items: center; gap: 24px; }
+.compare-head { font-family: 'JetBrains Mono', monospace; font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; color: var(--fg-subtle); font-weight: 500; }
+.compare-head .h-pro { color: var(--accent); }
+.compare-row { transition: background .3s var(--ease-out); }
+.compare-row:hover { background: var(--bg-elevated); }
+.compare-row .task { font-size: 15px; font-weight: 500; color: var(--fg); }
+.compare-row .before { font-size: 15px; color: var(--fg-muted); font-style: italic; }
+.compare-row .after { font-size: 15px; color: var(--fg); font-weight: 600; display: flex; align-items: center; gap: 10px; }
+.compare-row .after::before {
+  content: ""; width: 14px; height: 14px; flex-shrink: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M3 8.5L6.5 12L13 4.5' stroke='%232563eb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-size: contain; background-repeat: no-repeat;
+}
+@media (max-width: 700px) {
+  .compare-head { display: none; }
+  .compare-row { grid-template-columns: 1fr; gap: 6px; padding: 18px 0; }
+  .compare-row .task { font-weight: 600; margin-bottom: 4px; }
+  .compare-row .before::before { content: "Hoje: "; font-style: normal; color: var(--fg-subtle); font-family: 'JetBrains Mono', monospace; font-size: .7rem; letter-spacing: .15em; text-transform: uppercase; }
+  .compare-row .after::before { display: none; }
+}
+.compare-close { max-width: 700px; margin: 90px auto 0; text-align: center; }
+.compare-close p { font-size: clamp(1.4rem, 2.5vw, 2rem); font-weight: 600; letter-spacing: -.025em; color: var(--fg); max-width: none; }
+.compare-close .accent { color: var(--accent); font-weight: 800; display: block; }
+
+/* ── PRICING ── */
+.pricing { background: var(--bg-elevated); }
+.price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1100px; margin: 0 auto; align-items: stretch; }
+@media (max-width: 900px) { .price-grid { grid-template-columns: 1fr; } }
+.price-card { background: white; border: 1px solid var(--border); border-radius: 20px; padding: 44px 40px; position: relative; transition: all .5s var(--ease-out); display: flex; flex-direction: column; }
+.price-card.popular { border: 2px solid var(--accent); box-shadow: 0 20px 60px rgba(37,99,235,.15); transform: translateY(-4px); }
+.price-card:not(.popular):hover { transform: translateY(-6px); border-color: var(--border-hover); box-shadow: 0 20px 40px rgba(0,0,0,.04); }
+.price-badge { position: absolute; top: -14px; left: 40px; background: var(--accent); color: white; padding: 6px 14px; border-radius: 100px; font-family: 'JetBrains Mono', monospace; font-size: .65rem; letter-spacing: .2em; text-transform: uppercase; font-weight: 500; }
+.price-tag { font-family: 'JetBrains Mono', monospace; font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; color: var(--accent); margin-bottom: 24px; font-weight: 500; }
+.price-card h3 { font-size: clamp(1.6rem, 2.2vw, 2rem); font-weight: 700; letter-spacing: -.02em; margin-bottom: 24px; }
+.price-amount { display: flex; align-items: baseline; gap: 6px; margin-bottom: 12px; }
+.price-amount .num { font-variant-numeric: tabular-nums; font-size: clamp(3rem, 5vw, 4.2rem); font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+.price-amount .suf { font-size: 15px; color: var(--fg-muted); font-weight: 500; }
+.price-micro { font-size: 13.5px; color: var(--fg-muted); margin-bottom: 32px; line-height: 1.5; }
+.price-features { list-style: none; display: flex; flex-direction: column; gap: 12px; padding: 24px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 28px; flex: 1; }
+.price-features li { font-size: 14.5px; color: var(--fg); display: flex; gap: 12px; align-items: flex-start; line-height: 1.5; }
+.price-features li::before { content: "→"; color: var(--accent); font-family: 'JetBrains Mono', monospace; flex-shrink: 0; font-weight: 500; }
+.price-foot { margin-top: 14px; font-size: 12.5px; color: var(--fg-subtle); text-align: center; font-family: 'JetBrains Mono', monospace; letter-spacing: .05em; }
+.pricing-callout { max-width: 900px; margin: 70px auto 0; background: white; border: 1px solid var(--border); border-radius: 16px; padding: 28px 36px; }
+.pricing-callout p { font-size: 15px; color: var(--fg); line-height: 1.65; max-width: none; }
+.pricing-callout p strong { font-weight: 600; display: block; margin-bottom: 6px; }
+
+/* ── MANIFESTO ── */
+.manifesto { padding: clamp(120px, 18vw, 180px) 0; text-align: center; }
+.manifesto-inner { max-width: 800px; margin: 0 auto; position: relative; }
+.manifesto-inner::before, .manifesto-inner::after { position: absolute; font-family: Georgia, serif; font-size: clamp(6rem, 10vw, 9rem); color: var(--accent); opacity: .25; line-height: 1; }
+.manifesto-inner::before { content: "«"; top: -40px; left: -10px; }
+.manifesto-inner::after  { content: "»"; bottom: -90px; right: -10px; }
+.manifesto-quote { font-weight: 500; font-style: italic; font-size: clamp(1.4rem, 2.5vw, 2rem); line-height: 1.4; letter-spacing: -.02em; color: var(--fg); max-width: none; }
+.manifesto-sig { margin-top: 50px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.manifesto-sig::before { content: ""; width: 60px; height: 1px; background: var(--border); margin-bottom: 18px; }
+.manifesto-sig .name { font-weight: 600; font-size: 16px; color: var(--fg); }
+.manifesto-sig .role { font-family: 'JetBrains Mono', monospace; font-size: .7rem; letter-spacing: .2em; text-transform: uppercase; color: var(--fg-muted); margin-top: 4px; }
+
+/* ── FAQ ── */
+.faq { background: var(--bg-elevated); }
+.faq-list { max-width: 800px; margin: 0 auto; border-top: 1px solid var(--border); }
+.faq-item { border-bottom: 1px solid var(--border); }
+.faq-q { width: 100%; text-align: left; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 28px 0; font-size: clamp(1rem, 1.3vw, 1.13rem); font-weight: 600; color: var(--fg); letter-spacing: -.01em; transition: color .3s; }
+.faq-q:hover { color: var(--accent); }
+.faq-icon { width: 24px; height: 24px; flex-shrink: 0; display: grid; place-items: center; transition: transform .4s var(--ease-out); color: var(--fg-muted); }
+.faq-item.open .faq-icon { transform: rotate(45deg); color: var(--accent); }
+.faq-a { max-height: 0; overflow: hidden; opacity: 0; transition: max-height .5s var(--ease-out), opacity .4s, padding .4s; }
+.faq-item.open .faq-a { max-height: 400px; opacity: 1; padding-bottom: 28px; }
+.faq-a p { font-size: 15.5px; color: var(--fg-muted); line-height: 1.65; max-width: 65ch; padding-right: 50px; }
+
+/* ── CTA FINAL ── */
+.cta-final { background: var(--bg-dark); color: var(--fg-on-dark); padding: clamp(120px, 18vw, 200px) 0; text-align: center; position: relative; overflow: hidden; }
+.cta-final::before { content: ""; position: absolute; top: 50%; left: 50%; width: 900px; height: 900px; transform: translate(-50%, -50%); background: radial-gradient(circle, rgba(37,99,235,.15), transparent 55%); pointer-events: none; }
+.cta-final .container { position: relative; }
+.cta-final h2 { font-size: clamp(1.8rem, 4vw, 3.2rem); font-weight: 800; line-height: 1.1; letter-spacing: -.035em; max-width: 820px; margin: 0 auto 32px; color: var(--fg-on-dark); }
+.cta-final h2 .line { display: block; }
+.cta-final h2 .accent { color: var(--accent); font-style: italic; }
+.cta-final .lede { font-size: clamp(1rem, 1.3vw, 1.2rem); color: var(--fg-on-dark-muted); max-width: 540px; margin: 0 auto 44px; }
+.cta-final .micro { margin: 32px auto 0; font-family: 'JetBrains Mono', monospace; font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; color: var(--fg-on-dark-muted); max-width: none; text-align: center; display: block; }
+</style>
 </head>
 <body>
 
-<header class="nav">
-    <div class="wrap nav__inner">
-        <a href="/" class="brand">Motion<span class="brand-mark">·</span>Pro</a>
-        <nav class="nav__links">
-            <a href="#manifesto">Manifesto</a>
-            <a href="#pilares">Plataforma</a>
-            <a href="#metodo">Método</a>
-            <a href="#pricing">Preços</a>
-        </nav>
-        <div class="nav__actions">
-            <a href="#" class="nav-link" data-action="login">Entrar</a>
-            <a href="#pricing" class="btn btn--primary btn--sm">Assinar</a>
-        </div>
+<div class="scroll-progress" aria-hidden="true"></div>
+
+<!-- ════════════════════════ NAV ════════════════════════ -->
+<header class="nav" id="nav">
+  <div class="container nav-inner">
+    <a href="/" class="logo" aria-label="MotionPro home">
+      <span class="logo-dot"></span>MotionPro
+    </a>
+    <nav aria-label="Principal">
+      <ul class="nav-links">
+        <li><a href="#plataforma">Plataforma</a></li>
+        <li><a href="#fluxo">Fluxo</a></li>
+        <li><a href="#planos">Planos</a></li>
+        <li><a href="#faq">FAQ</a></li>
+        <li><a href="/download.html">Download</a></li>
+      </ul>
+    </nav>
+    <div class="nav-right">
+      <a href="/account.html" class="link-login" data-action="login">Entrar</a>
+      <a href="#planos" class="btn btn-primary">Assinar</a>
+      <button class="menu-toggle" aria-label="Abrir menu"><span></span><span></span><span></span></button>
     </div>
+  </div>
 </header>
 
 <!-- ════════════════════════ HERO ════════════════════════ -->
-<section class="hero" id="manifesto">
-    <div class="wrap">
-        <div class="hero__eyebrow">
-            <span class="dot"></span> v1.0 · Disponível para Premiere Pro
-        </div>
-        <h1 class="hero__title">
-            O <em>ACERVO</em> definitivo de<br>
-            <em>MOTION&nbsp;GRAPHICS</em> para<br>
-            edição profissional<span class="period">.</span>
-        </h1>
-        <p class="hero__lead">
-            7.906 templates premium organizados em um único painel dentro do Premiere Pro. Importação em 1 clique, busca instantânea, atualização contínua &mdash; sem pasta, sem arrasto, sem fricção.
+<section class="hero" id="hero">
+  <div class="hero-bg" aria-hidden="true">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+  </div>
+  <div class="hero-glow" id="heroGlow" aria-hidden="true"></div>
+
+  <div class="hero-chips" aria-hidden="true">
+    <div class="hero-chip c1" data-depth="0.4"><span class="ico"></span>Lower Thirds</div>
+    <div class="hero-chip c2" data-depth="0.6"><span class="ico"></span>Transitions</div>
+    <div class="hero-chip c3" data-depth="0.3"><span class="ico"></span>Reels Pack</div>
+    <div class="hero-chip c4" data-depth="0.5"><span class="ico"></span>Monster FX</div>
+    <div class="hero-chip c5" data-depth="0.7"><span class="ico"></span>SFX Visual</div>
+    <div class="hero-chip c6" data-depth="0.35"><span class="ico"></span>Títulos Ultimate</div>
+  </div>
+
+  <div class="container hero-inner">
+    <span class="hero-badge"><span class="dot"></span>v2.5 · Nativo no Premiere Pro</span>
+    <h1 class="hero-title" id="heroTitle">
+      <span class="line">Procurar template</span>
+      <span class="line">não é <span class="italic-em" data-scramble="editar">editar.</span></span>
+    </h1>
+    <p class="hero-sub">
+      7.906 motion graphics premium dentro do Premiere.
+      1 clique pra importar. Edite fonte, cor, posição e timing direto na timeline.
+      Sem pasta. Sem render. Sem desculpa.
+    </p>
+    <div class="hero-ctas">
+      <a href="#planos" class="btn btn-primary btn-magnetic"><span>Começar agora <span class="arrow">→</span></span></a>
+      <a href="#fluxo" class="btn btn-secondary btn-magnetic">
+        <span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 1.5L10 6L2 10.5V1.5Z" fill="currentColor"/></svg>
+          Ver em 90 segundos
+        </span>
+      </a>
+    </div>
+    <p class="trust-line">14 dias grátis · Sem cartão · Cancele em 1 clique</p>
+
+    <div class="hero-marquee" aria-hidden="true">
+      <div class="hero-marquee-track">
+        <span>Lower Thirds</span><span>Transitions</span><span>Títulos Ultimate</span>
+        <span>Reels Pack</span><span>Instagram Stories</span><span>Monster FX</span>
+        <span>SFX Visual</span><span>Glitch</span><span>Typography</span>
+        <span>Logo Reveal</span><span>Call-to-Action</span><span>Cinematic Titles</span>
+        <span>Lower Thirds</span><span>Transitions</span><span>Títulos Ultimate</span>
+        <span>Reels Pack</span><span>Instagram Stories</span><span>Monster FX</span>
+        <span>SFX Visual</span><span>Glitch</span><span>Typography</span>
+        <span>Logo Reveal</span><span>Call-to-Action</span><span>Cinematic Titles</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-cue" aria-hidden="true">
+    <span>SCROLL</span><span class="line"></span>
+  </div>
+</section>
+
+<!-- ════════════════════════ STATS ════════════════════════ -->
+<section class="stats" id="stats">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-item reveal"><div class="num" data-counter="7906" data-format="thousand">0</div><div class="label">Templates na timeline</div></div>
+      <div class="stat-item reveal"><div class="num" data-counter="1">0</div><div class="label">Clique pra importar</div></div>
+      <div class="stat-item reveal"><div class="num" data-counter="100" data-suffix="%">0%</div><div class="label">Editáveis na hora</div></div>
+      <div class="stat-item reveal"><div class="num" data-counter="0">0</div><div class="label">Pastas pra organizar</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ PROBLEMA ════════════════════════ -->
+<section class="problem">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="tag-mono"><span class="dot"></span>— A VERDADE INCÔMODA</span>
+      <h2 class="section-title">
+        Você não é editor lento.<br>
+        Você só tá usando o <span class="italic-em">método errado.</span>
+      </h2>
+    </div>
+    <div class="problem-grid">
+      <div class="problem-left reveal">
+        <p>
+          8 pastas no HD. Pacotes de 2019 que você nem lembra que baixou. Preview que só funciona depois de importar. Render só pra ver se o lower third combina com a paleta.
         </p>
-        <div class="hero__cta">
-            <a href="#pricing" class="btn btn--primary btn--lg">Começar agora <span class="arrow">→</span></a>
-            <a href="#pilares" class="btn btn--ghost btn--lg">Conhecer a plataforma</a>
-        </div>
-        <div class="hero__stats">
-            <div><strong>7.906</strong><span>Templates premium</span></div>
-            <div><strong>08</strong><span>Packs unificados</span></div>
-            <div><strong>01</strong><span>Painel dentro do Premiere</span></div>
-            <div><strong>14d</strong><span>Trial sem cartão</span></div>
-        </div>
+      </div>
+      <div class="problem-right reveal">
+        <div class="problem-num"><div class="big">3h <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por dia</span></div><div class="small">procurando arquivo</div></div>
+        <div class="problem-num"><div class="big">15h <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por semana</span></div><div class="small">somando os dias úteis</div></div>
+        <div class="problem-num"><div class="big">60h <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por mês</span></div><div class="small">um trabalho inteiro</div></div>
+        <div class="problem-close">É um emprego inteiro de procurar template dentro do seu emprego de editar.</div>
+      </div>
     </div>
+    <div class="problem-cta reveal">Acabou.</div>
+  </div>
 </section>
 
-<!-- ════════════════════════ PILARES (01/02/03) ════════════════════════ -->
-<section class="section" id="pilares">
-    <div class="wrap">
-        <div class="section__head">
-            <span class="section__tag">A plataforma</span>
-            <h2 class="section__title">Três frentes integradas em um único produto<span class="period">.</span></h2>
-        </div>
-
-        <div class="pillars">
-            <article class="pillar">
-                <div class="pillar__num">01</div>
-                <h3 class="pillar__title">CATÁLOGO</h3>
-                <p class="pillar__desc">7.906 templates organizados por categoria, estilo e duração. Todos profissionais, todos prontos para produção comercial.</p>
-                <ul class="pillar__list">
-                    <li>Tipografias e Lower Thirds</li>
-                    <li>Transições e elementos UI</li>
-                    <li>Pacotes Instagram e Reels</li>
-                    <li>Monster FX, Títulos Ultimate</li>
-                </ul>
-            </article>
-
-            <article class="pillar">
-                <div class="pillar__num">02</div>
-                <h3 class="pillar__title">PLUGIN</h3>
-                <p class="pillar__desc">Painel CEP nativo do Premiere. Aparece no menu Janela &rarr; Extensões. Não é Bridge, não é navegador externo &mdash; é parte do seu workspace.</p>
-                <ul class="pillar__list">
-                    <li>Importação 1 clique no CTI</li>
-                    <li>Busca global instantânea</li>
-                    <li>Preview com hover</li>
-                    <li>Atualizações silenciosas</li>
-                </ul>
-            </article>
-
-            <article class="pillar">
-                <div class="pillar__num">03</div>
-                <h3 class="pillar__title">LICENÇA</h3>
-                <p class="pillar__desc">Sistema próprio de licenciamento e gestão de dispositivos. Você controla onde e quem usa a sua assinatura, em tempo real.</p>
-                <ul class="pillar__list">
-                    <li>Até 3 máquinas simultâneas</li>
-                    <li>Revogação em 1 clique</li>
-                    <li>Funciona offline por 7 dias</li>
-                    <li>Auditoria completa</li>
-                </ul>
-            </article>
-        </div>
+<!-- ════════════════════════ PLATAFORMA ════════════════════════ -->
+<section id="plataforma">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="tag-mono"><span class="dot"></span>— A PLATAFORMA</span>
+      <h2 class="section-title">Três frentes.<br>Um <span class="italic-em">produto.</span></h2>
     </div>
+    <div class="platform-grid">
+      <article class="feat-card reveal">
+        <div class="feat-num"><span>01</span><span>CATÁLOGO</span></div>
+        <h3 class="card-title">7.906 templates organizados como editor pensa.</h3>
+        <p class="desc">Categoria. Estilo. Duração. Mood. Filtros que fazem sentido pra quem edita — não pra quem cataloga.</p>
+        <ul class="feat-list">
+          <li>Tipografias e Lower Thirds</li>
+          <li>Transições e elementos de UI</li>
+          <li>Pacotes Instagram e Reels</li>
+          <li>Monster FX · Títulos Ultimate · SFX visual</li>
+        </ul>
+      </article>
+      <article class="feat-card reveal">
+        <div class="feat-num"><span>02</span><span>PLUGIN</span></div>
+        <h3 class="card-title">Painel CEP nativo. Mora dentro do Premiere.</h3>
+        <p class="desc">Janela → Extensões → MotionPro. Não trava. Não pesa. Não te tira do flow.</p>
+        <ul class="feat-list">
+          <li>Importação em 1 clique direto no CTI</li>
+          <li>Busca global instantânea</li>
+          <li>Preview ao hover — sem importar</li>
+          <li>Atualizações silenciosas em background</li>
+        </ul>
+      </article>
+      <article class="feat-card reveal">
+        <div class="feat-num"><span>03</span><span>LICENÇA</span></div>
+        <h3 class="card-title">Sistema próprio. Você no controle.</h3>
+        <p class="desc">2-3 máquinas. Revogação em 1 clique. Offline por 7 dias. Sem DRM agressivo, sem chamada gringa pro suporte.</p>
+        <ul class="feat-list">
+          <li>Auditoria completa em tempo real</li>
+          <li>Troca de dispositivo instantânea</li>
+          <li>Funciona em viagem, avião, no break do café</li>
+        </ul>
+      </article>
+    </div>
+  </div>
 </section>
 
-<!-- ════════════════════════ MÉTODO ════════════════════════ -->
-<section class="section section--dark" id="metodo">
-    <div class="wrap">
-        <div class="section__head">
-            <span class="section__tag section__tag--inv">Como funciona</span>
-            <h2 class="section__title section__title--inv">Quatro passos<span class="period">.</span> Da instalação à entrega<span class="period">.</span></h2>
-        </div>
-
-        <div class="method">
-            <div class="method__step">
-                <div class="method__num">01</div>
-                <h3>INSTALE</h3>
-                <p>Download do plugin em 30 segundos. Setup automático &mdash; nada de mover pastas manualmente.</p>
-            </div>
-            <div class="method__step">
-                <div class="method__num">02</div>
-                <h3>ENTRE</h3>
-                <p>Login com sua conta MotionPro. O catálogo carrega sozinho, organizado por pack e categoria.</p>
-            </div>
-            <div class="method__step">
-                <div class="method__num">03</div>
-                <h3>BUSQUE</h3>
-                <p>Encontre por nome, categoria ou estilo. Preview no hover, sem precisar abrir o arquivo.</p>
-            </div>
-            <div class="method__step">
-                <div class="method__num">04</div>
-                <h3>APLIQUE</h3>
-                <p>Clique duplo &mdash; o template vai pra timeline ativa no CTI. Edite os textos e exporte.</p>
-            </div>
-        </div>
+<!-- ════════════════════════ PERSONALIZAÇÃO ════════════════════════ -->
+<section class="custom">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="tag-mono"><span class="dot"></span>— CONTROLE TOTAL</span>
+      <h2 class="section-title">Template não é prisão.<br>É <span class="italic-em">ponto de partida.</span></h2>
+      <p class="lede">
+        Esquece "baixei um MP4 renderizado e tô preso ao que o cara fez". Todo template do MotionPro é composição viva no Premiere.
+      </p>
     </div>
+    <div class="editorial-table">
+      <div class="editorial-row reveal"><div class="ed-label">Fonte</div><div class="ed-desc">Troque pela fonte do cliente em 2 cliques. Importação direta de TTF, OTF e variable fonts.</div></div>
+      <div class="editorial-row reveal"><div class="ed-label">Cor</div><div class="ed-desc">Paleta da marca, gradientes, controles de exposição. Cada layer, ajustável por slider.</div></div>
+      <div class="editorial-row reveal"><div class="ed-label">Posição</div><div class="ed-desc">Mova, rotacione, escale — keyframes inclusos. Anchor points editáveis.</div></div>
+      <div class="editorial-row reveal"><div class="ed-label">Timing</div><div class="ed-desc">Acelere, desacelere, recorte — tudo no CTI. Time Remap acessível por handle.</div></div>
+      <div class="editorial-row reveal"><div class="ed-label">Áudio</div><div class="ed-desc">SFX embutido, mutável, substituível. Trilhas separadas por trigger.</div></div>
+    </div>
+    <div class="custom-close reveal">
+      <p>Você não compra template.<span class="accent">Você compra base profissional pra customizar em segundos.</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ FLUXO ════════════════════════ -->
+<section class="flux" id="fluxo">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="tag-mono"><span class="dot"></span>— FLUXO</span>
+      <h2 class="section-title">Quatro passos.<br>Sem desculpa pra <span class="italic-em">demorar.</span></h2>
+    </div>
+    <div class="flux-grid">
+      <div class="flux-line" id="fluxLine"></div>
+      <div class="flux-step reveal"><div class="num">01</div><h4>Instale</h4><p>30 segundos. Setup automático. Zero pasta pra mover.</p></div>
+      <div class="flux-step reveal"><div class="num">02</div><h4>Entre</h4><p>Login. Catálogo carrega sozinho. Já organizado por pack e categoria.</p></div>
+      <div class="flux-step reveal"><div class="num">03</div><h4>Busque</h4><p>Nome, categoria, estilo, duração. Preview no hover. Sem abrir arquivo.</p></div>
+      <div class="flux-step reveal"><div class="num">04</div><h4>Aplique</h4><p>Clique único. Vai pra timeline ativa no CTI. Edite. Exporte. Entrega.</p></div>
+    </div>
+    <div class="flux-close reveal">
+      <div class="head">Da intenção à timeline: <span class="accent">11 segundos.</span></div>
+      <div class="sub">O tempo que você levava pra abrir uma pasta.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ COMPARAÇÃO ════════════════════════ -->
+<section>
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="tag-mono"><span class="dot"></span>— O QUE MUDA</span>
+      <h2 class="section-title">Antes do MotionPro.<br>Depois do <span class="italic-em">MotionPro.</span></h2>
+    </div>
+    <div class="compare-table">
+      <div class="compare-head"><div>Tarefa</div><div>Hoje</div><div class="h-pro">MotionPro</div></div>
+      <div class="compare-row reveal"><div class="task">Achar lower third</div><div class="before">4–8 minutos</div><div class="after">11 segundos</div></div>
+      <div class="compare-row reveal"><div class="task">Preview do template</div><div class="before">Importar + render</div><div class="after">Hover do mouse</div></div>
+      <div class="compare-row reveal"><div class="task">Trocar fonte</div><div class="before">Renderizar de novo</div><div class="after">2 cliques</div></div>
+      <div class="compare-row reveal"><div class="task">Trocar cor da marca</div><div class="before">Refazer no After Effects</div><div class="after">Slider no Premiere</div></div>
+      <div class="compare-row reveal"><div class="task">Organizar 8 packs</div><div class="before">Pasta + pasta + pasta…</div><div class="after">Não existe</div></div>
+      <div class="compare-row reveal"><div class="task">Backup do catálogo</div><div class="before">HD + nuvem + reza</div><div class="after">Não é problema seu</div></div>
+      <div class="compare-row reveal"><div class="task">Encontrar template certo</div><div class="before">Memória + sorte</div><div class="after">Busca instantânea</div></div>
+    </div>
+    <div class="compare-close reveal"><p>Não é uma evolução. <span class="accent">É outra categoria.</span></p></div>
+  </div>
 </section>
 
 <!-- ════════════════════════ PRICING ════════════════════════ -->
-<section class="section" id="pricing">
-    <div class="wrap">
-        <div class="section__head section__head--center">
-            <span class="section__tag">Investimento</span>
-            <h2 class="section__title">Dois planos<span class="period">.</span> Sem fidelidade<span class="period">.</span> Sem pegadinha<span class="period">.</span></h2>
-        </div>
-
-        <div class="plans">
-            <article class="plan plan--featured">
-                <div class="plan__ribbon">MAIS POPULAR</div>
-                <div class="plan__head">
-                    <span class="plan__tag">01 · Anual</span>
-                    <h3 class="plan__name">MotionPro <em>Anual</em></h3>
-                </div>
-                <div class="plan__price">
-                    <span class="plan__currency">R$</span>
-                    <strong>199</strong>
-                    <span class="plan__period">/ano</span>
-                </div>
-                <p class="plan__sub">~R$ 16,58/mês · economia de 60% vs vitalício</p>
-                <ul class="plan__list">
-                    <li><span class="check">→</span> 7.906 templates premium</li>
-                    <li><span class="check">→</span> 2 dispositivos simultâneos</li>
-                    <li><span class="check">→</span> Atualizações inclusas</li>
-                    <li><span class="check">→</span> Suporte prioritário</li>
-                    <li><span class="check">→</span> Cancele quando quiser</li>
-                </ul>
-                <button class="btn btn--primary btn--full btn--lg buy" data-plan="yearly">
-                    Assinar Anual <span class="arrow">→</span>
-                </button>
-                <p class="plan__foot">14 dias trial · cancele em 1 clique</p>
-            </article>
-
-            <article class="plan">
-                <div class="plan__head">
-                    <span class="plan__tag">02 · Vitalício</span>
-                    <h3 class="plan__name">MotionPro <em>Vitalício</em></h3>
-                </div>
-                <div class="plan__price">
-                    <span class="plan__currency">R$</span>
-                    <strong>499</strong>
-                    <span class="plan__period">pagamento único</span>
-                </div>
-                <p class="plan__sub">Sem mensalidade. Para sempre. Economiza após 2,5 anos.</p>
-                <ul class="plan__list">
-                    <li><span class="check">→</span> Acesso vitalício</li>
-                    <li><span class="check">→</span> 3 dispositivos simultâneos</li>
-                    <li><span class="check">→</span> Todas atualizações futuras</li>
-                    <li><span class="check">→</span> Suporte vitalício</li>
-                    <li><span class="check">→</span> Pague uma vez, esqueça</li>
-                </ul>
-                <button class="btn btn--dark btn--full btn--lg buy" data-plan="lifetime">
-                    Comprar Vitalício <span class="arrow">→</span>
-                </button>
-                <p class="plan__foot">Reembolso em 14 dias, sem perguntas</p>
-            </article>
-        </div>
+<section class="pricing" id="planos">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="tag-mono"><span class="dot"></span>— INVESTIMENTO</span>
+      <h2 class="section-title">Dois planos.<br>Zero <span class="italic-em">pegadinha.</span></h2>
     </div>
+    <div class="price-grid">
+      <article class="price-card popular reveal">
+        <span class="price-badge">Mais popular</span>
+        <div class="price-tag">01 · Anual</div>
+        <h3>MotionPro Anual</h3>
+        <div class="price-amount"><span class="num">R$ 199</span><span class="suf">/ano</span></div>
+        <p class="price-micro">~R$ 16,58/mês · economia vs vitalício no 1º ano</p>
+        <ul class="price-features">
+          <li>7.906 templates premium</li>
+          <li>2 dispositivos simultâneos</li>
+          <li>Atualizações inclusas</li>
+          <li>Suporte prioritário (resposta em até 4h úteis)</li>
+          <li>Cancele quando quiser, sem multa</li>
+        </ul>
+        <button class="btn btn-primary btn-full" data-buy="yearly">Assinar Anual <span class="arrow">→</span></button>
+        <div class="price-foot">14 dias trial · cancele em 1 clique</div>
+      </article>
+      <article class="price-card reveal">
+        <div class="price-tag" style="color:var(--fg-muted)">02 · Vitalício</div>
+        <h3>MotionPro Vitalício</h3>
+        <div class="price-amount"><span class="num">R$ 499</span><span class="suf">/pagamento único</span></div>
+        <p class="price-micro">Sem mensalidade. Pra sempre. Se paga em 2,5 anos.</p>
+        <ul class="price-features">
+          <li>Acesso vitalício ao catálogo</li>
+          <li>3 dispositivos simultâneos</li>
+          <li>Todas as atualizações futuras inclusas</li>
+          <li>Suporte vitalício</li>
+          <li>Pague uma vez. Esqueça.</li>
+        </ul>
+        <button class="btn btn-dark btn-full" data-buy="lifetime">Comprar Vitalício <span class="arrow">→</span></button>
+        <div class="price-foot">Reembolso em 14 dias. Sem perguntas.</div>
+      </article>
+    </div>
+    <div class="pricing-callout reveal">
+      <p>
+        <strong>💡 Comparação honesta:</strong>
+        Pacote avulso de motion graphics no mercado: R$ 150 a R$ 800.
+        MotionPro Vitalício: R$ 499 uma vez. 7.906 templates. Faz a conta.
+      </p>
+    </div>
+  </div>
 </section>
 
-<!-- ════════════════════════ AUTORIDADE ════════════════════════ -->
-<section class="section section--quote">
-    <div class="wrap">
-        <blockquote class="quote">
-            <p>
-                Eu construí o MotionPro porque editores perdem horas buscando templates espalhados em 8 pastas diferentes. O plugin une o que estava separado &mdash; e devolve o tempo pra <em>edição de verdade</em>.
-            </p>
-            <footer class="quote__author">
-                <div class="quote__line"></div>
-                <div>
-                    <strong>Gabriel Kendy</strong>
-                    <span>Founder · PacotesFX</span>
-                </div>
-            </footer>
-        </blockquote>
+<!-- ════════════════════════ MANIFESTO ════════════════════════ -->
+<section class="manifesto">
+  <div class="container">
+    <div class="manifesto-inner reveal">
+      <p class="manifesto-quote">
+        Construí o MotionPro porque editor não devia perder hora procurando arquivo. Devia perder hora editando. O plugin une o que tava espalhado em 8 pastas e devolve o tempo pra edição de verdade — a parte que paga a conta.
+      </p>
+      <div class="manifesto-sig">
+        <span class="name">Gabriel Kendy</span>
+        <span class="role">Founder · PacotesFX</span>
+      </div>
     </div>
+  </div>
 </section>
 
 <!-- ════════════════════════ FAQ ════════════════════════ -->
-<section class="section" id="faq">
-    <div class="wrap">
-        <div class="section__head">
-            <span class="section__tag">Perguntas frequentes</span>
-            <h2 class="section__title">Dúvidas comuns<span class="period">.</span></h2>
-        </div>
-
-        <div class="faq">
-            <details>
-                <summary>Funciona no Premiere e no After Effects?</summary>
-                <p>Hoje o painel CEP está disponível para Premiere Pro (CC 2019+) com os 7.906 templates `.mogrt` nativos. Suporte oficial a After Effects (`.aep`, `.ffx`) está no roadmap para 2026 Q3.</p>
-            </details>
-            <details>
-                <summary>Posso usar em projetos comerciais?</summary>
-                <p>Sim. Ambos os planos liberam uso comercial sem royalties adicionais &mdash; produções publicitárias, vídeos de cliente, conteúdo monetizado em redes, tudo coberto.</p>
-            </details>
-            <details>
-                <summary>Quantas máquinas posso ativar?</summary>
-                <p>Plano Anual: 2 dispositivos simultâneos. Vitalício: 3. Você pode revogar uma máquina e ativar outra a qualquer momento pelo dashboard da sua conta.</p>
-            </details>
-            <details>
-                <summary>E se eu cancelar a assinatura?</summary>
-                <p>No plano Anual: você mantém o acesso até o fim do ciclo já pago, sem multa. Vitalício não tem cancelamento &mdash; é seu para sempre, com todas as atualizações futuras.</p>
-            </details>
-            <details>
-                <summary>Como funciona o reembolso?</summary>
-                <p>14 dias para qualquer plano, sem perguntas, conforme a legislação brasileira de consumo. Solicitação por e-mail e estorno via Stripe em até 7 dias úteis.</p>
-            </details>
-            <details>
-                <summary>Aceita Pix?</summary>
-                <p>Cartão internacional/nacional já está ativo via Stripe. Pix está em fila para Q2 2026, junto com boleto. Por enquanto, cartão cobre 95% dos casos.</p>
-            </details>
-            <details>
-                <summary>O plugin precisa de internet?</summary>
-                <p>Para login e ativação, sim. Depois disso, funciona offline por até 7 dias seguidos &mdash; o tempo necessário para validar a licença novamente.</p>
-            </details>
-        </div>
+<section class="faq" id="faq">
+  <div class="container">
+    <div class="sec-head reveal" style="text-align:center; margin-left:auto; margin-right:auto;">
+      <span class="tag-mono"><span class="dot"></span>— PERGUNTAS FREQUENTES</span>
+      <h2 class="section-title">Dúvidas comuns.</h2>
     </div>
+    <div class="faq-list">
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Funciona no Premiere e no After Effects?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Hoje, exclusivamente Premiere Pro (2022 em diante). After Effects tá no roadmap pra 2026.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Posso usar em projetos comerciais?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Sim. Licença comercial inclusa nos 2 planos. Vídeo de cliente, YouTube monetizado, social ads, evento pago — tudo liberado.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Quantas máquinas posso ativar?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Anual: 2 simultâneas. Vitalício: 3 simultâneas. Troca de máquina em 1 clique no dashboard.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">E se eu cancelar a assinatura?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Mantém acesso até o fim do período pago. Sem multa. Sem ligação de retenção. Sem chantagem emocional.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Como funciona o reembolso?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>14 dias a partir da compra. Não gostou, pede no suporte, devolve 100%. Sem pergunta, sem formulário de 12 campos.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Aceita Pix?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Aceita. Pix, cartão, boleto via Stripe Checkout. Vitalício no Pix sai com desconto adicional.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">O plugin precisa de internet?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Pra baixar template novo, sim. Pra usar o que já baixou, não. Funciona offline por 7 dias antes de pedir reauth.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Atualizam o catálogo?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Sim. Releases mensais com 50 a 200 templates novos. Vitalício recebe tudo, pra sempre.</p></div></div>
+    </div>
+  </div>
 </section>
 
 <!-- ════════════════════════ CTA FINAL ════════════════════════ -->
-<section class="section section--cta">
-    <div class="wrap">
-        <div class="cta-box">
-            <h2>Pronto para <em>parar de procurar</em> e <em>começar a editar</em>?</h2>
-            <p>14 dias de trial · sem cartão · cancele com 1 clique.</p>
-            <a href="#pricing" class="btn btn--primary btn--lg">Começar agora <span class="arrow">→</span></a>
-        </div>
-    </div>
+<section class="cta-final">
+  <div class="container">
+    <h2 class="reveal">
+      <span class="line">A pergunta não é</span>
+      <span class="line accent">se você precisa.</span>
+      <span class="line">É quanto tempo a mais</span>
+      <span class="line accent">você vai perder pra admitir.</span>
+    </h2>
+    <p class="lede reveal">14 dias grátis. Sem cartão. Cancele com 1 clique.</p>
+    <div class="reveal"><a href="#planos" class="btn btn-primary btn-giant">Começar agora <span class="arrow">→</span></a></div>
+    <p class="micro reveal">Suporte em português · Equipe brasileira · Sem fila gringa</p>
+  </div>
 </section>
 
 <!-- ════════════════════════ FOOTER ════════════════════════ -->
-<footer class="foot">
-    <div class="wrap">
-        <div class="foot__grid">
-            <div class="foot__brand">
-                <div class="brand brand--lg">Motion<span class="brand-mark">·</span>Pro</div>
-                <p>O acervo definitivo de Motion Graphics para edição profissional. Construído por editores, para editores.</p>
-                <p class="foot__byline">© <span id="yr"></span> MotionPro · uma marca PacotesFX</p>
-            </div>
-            <div>
-                <h4>Produto</h4>
-                <a href="#pilares">Plataforma</a>
-                <a href="#metodo">Como funciona</a>
-                <a href="#pricing">Preços</a>
-                <a href="#faq">Perguntas frequentes</a>
-            </div>
-            <div>
-                <h4>Conta</h4>
-                <a href="#" data-action="login">Entrar</a>
-                <a href="#pricing">Assinar</a>
-                <a href="https://motion-pro-admin.vercel.app" target="_blank">Dashboard admin ↗</a>
-            </div>
-            <div>
-                <h4>Legal</h4>
-                <a href="/terms.html">Termos de uso</a>
-                <a href="/privacy.html">Privacidade</a>
-                <a href="mailto:suporte@pacotesfx.com">suporte@pacotesfx.com</a>
-            </div>
-        </div>
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="logo"><span class="logo-dot"></span>MotionPro</div>
+        <p class="footer-tag">O acervo definitivo de motion graphics. Construído por editor, pra editor.</p>
+        <div class="footer-copy">© <span data-yr></span> · PacotesFX</div>
+      </div>
+      <div class="footer-col"><h5>Produto</h5><ul>
+        <li><a href="#plataforma">Plataforma</a></li>
+        <li><a href="#fluxo">Como funciona</a></li>
+        <li><a href="#planos">Preços</a></li>
+        <li><a href="#faq">Perguntas frequentes</a></li>
+        <li><a href="/download.html">Download</a></li>
+      </ul></div>
+      <div class="footer-col"><h5>Conta</h5><ul>
+        <li><a href="/account.html">Entrar</a></li>
+        <li><a href="#planos">Assinar</a></li>
+        <li><a href="/reset-password.html">Esqueci a senha</a></li>
+      </ul></div>
+      <div class="footer-col"><h5>Legal</h5><ul>
+        <li><a href="/terms.html">Termos de uso</a></li>
+        <li><a href="/privacy.html">Privacidade</a></li>
+        <li><a href="/seguranca.html">Segurança</a></li>
+        <li><a href="mailto:suporte@pacotesfx.com">suporte@pacotesfx.com</a></li>
+      </ul></div>
     </div>
+    <div class="footer-bottom">
+      <span>Brasil · Belo Horizonte</span>
+      <span>v2.5 · <span data-yr></span></span>
+    </div>
+  </div>
 </footer>
 
-<!-- ════════════════════════ MODAL AUTH ════════════════════════ -->
-<div id="auth-modal" class="modal" hidden>
-    <div class="modal__overlay"></div>
-    <div class="modal__card">
-        <button class="modal__close" id="modal-close" aria-label="Fechar">×</button>
-        <div class="modal__head">
-            <span class="modal__tag" id="modal-tag">Criar conta</span>
-            <h2 id="modal-title">Comece sua assinatura</h2>
-            <p id="modal-sub">Crie sua conta para continuar pro checkout. 14 dias trial sem cartão.</p>
-        </div>
-        <form id="auth-form" class="modal__form">
-            <label>E-mail
-                <input type="email" id="auth-email" autocomplete="email" required>
-            </label>
-            <label>Senha
-                <input type="password" id="auth-pass" autocomplete="new-password" minlength="8" required>
-                <small>Mínimo 8 caracteres</small>
-            </label>
-            <div id="auth-error" class="modal__error"></div>
-            <button type="submit" class="btn btn--primary btn--full btn--lg" id="auth-submit">
-                Criar conta e continuar <span class="arrow">→</span>
-            </button>
-            <p class="modal__switch">
-                <span data-switch="login">Já tem conta? <strong>Entrar</strong></span>
-                <span data-switch="signup" hidden>Não tem conta? <strong>Criar agora</strong></span>
-            </p>
-            <p class="modal__forgot" id="forgot-link" hidden>
-                <a href="/reset-password.html"><strong>Esqueci minha senha</strong></a>
-            </p>
-        </form>
-    </div>
-</div>
+<!-- ════════════════════════ WHATSAPP FAB ════════════════════════ -->
+<a class="wa-fab"
+   href="https://wa.me/5531997554040?text=Quero%20conhecer%20o%20MotionPro"
+   target="_blank" rel="noopener noreferrer"
+   aria-label="Falar no WhatsApp">
+  <span class="wa-fab-label">
+    <strong>Fala com a gente</strong>
+    <small>31 99755-4040</small>
+  </span>
+  <span class="wa-fab-btn" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.464 3.488"/></svg>
+  </span>
+</a>
 
-<!-- ════════════════════════ TOAST ════════════════════════ -->
-<div id="toast" class="toast" hidden></div>
-
+<script src="/js/system.js"></script>
 <script>
-document.getElementById('yr').textContent = new Date().getFullYear();
+/* ════════════════════════════════════════════════════════════════
+   HOME-SPECIFIC SCRIPT (GSAP/Lenis motion stack)
+   ════════════════════════════════════════════════════════════════ */
+(function () {
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let waited = 0;
+  function ready() {
+    if (typeof window.gsap === 'undefined' || typeof window.ScrollTrigger === 'undefined') {
+      waited += 60;
+      if (waited < 4000) return setTimeout(ready, 60);
+      return fallback();
+    }
+    gsap.registerPlugin(ScrollTrigger);
+    init();
+  }
+  function fallback() {
+    document.querySelectorAll('.reveal').forEach(el => el.classList.add('in'));
+  }
+  function init() {
+    // Lenis smooth scroll
+    let lenis = null;
+    if (!reduced && typeof window.Lenis !== 'undefined') {
+      try {
+        lenis = new Lenis({ lerp: 0.08, smoothWheel: true });
+        function raf(t){ lenis.raf(t); requestAnimationFrame(raf); }
+        requestAnimationFrame(raf);
+        gsap.ticker.add(t => lenis.raf(t * 1000));
+        gsap.ticker.lagSmoothing(0);
+      } catch (e) {}
+    }
 
-// ============================================================
-// CONFIG
-// ============================================================
-window.MV_API = window.MV_API || "https://motionpro.vercel.app";
-const TOKEN_KEY = "mv_session";
-const EMAIL_KEY = "mv_email";
+    // HERO split em chars
+    const titleEl = document.getElementById('heroTitle');
+    if (titleEl) {
+      titleEl.querySelectorAll('.line').forEach(line => {
+        function splitNode(node, parent) {
+          if (node.nodeType === 3) {
+            const frag = document.createDocumentFragment();
+            [...node.textContent].forEach(ch => {
+              const s = document.createElement('span');
+              s.className = 'char';
+              s.textContent = ch === ' ' ? ' ' : ch;
+              frag.appendChild(s);
+            });
+            parent.replaceChild(frag, node);
+          } else if (node.nodeType === 1) {
+            [...node.childNodes].forEach(c => splitNode(c, node));
+          }
+        }
+        [...line.childNodes].forEach(n => splitNode(n, line));
+      });
+    }
 
-// ============================================================
-// MODAL AUTH
-// ============================================================
-const modal      = document.getElementById('auth-modal');
-const modalTitle = document.getElementById('modal-title');
-const modalSub   = document.getElementById('modal-sub');
-const modalTag   = document.getElementById('modal-tag');
-const authForm   = document.getElementById('auth-form');
-const authEmail  = document.getElementById('auth-email');
-const authPass   = document.getElementById('auth-pass');
-const authError  = document.getElementById('auth-error');
-const authSubmit = document.getElementById('auth-submit');
+    // HERO timeline
+    if (!reduced) {
+      const tl = gsap.timeline({ delay: 0.3, defaults: { ease: 'power3.out' } });
+      const badge = document.querySelector('.hero-badge');
+      const chars = document.querySelectorAll('.hero-title .char');
+      const sub   = document.querySelector('.hero-sub');
+      const ctas  = document.querySelectorAll('.hero-ctas > *');
+      const trust = document.querySelector('.trust-line');
+      const marquee = document.querySelector('.hero-marquee');
+      if (badge) tl.from(badge, { opacity: 0, y: 20, duration: .8 });
+      if (chars.length) tl.from(chars, { opacity: 0, y: 80, rotateX: -90, duration: 1, stagger: .03, ease: 'power4.out' }, '-=0.5');
+      if (sub) tl.from(sub, { opacity: 0, y: 30, duration: .8 }, '-=0.6');
+      if (ctas.length) tl.from(ctas, { opacity: 0, y: 40, duration: .7, stagger: .1, ease: 'back.out(1.7)' }, '-=0.4');
+      if (trust) tl.from(trust, { opacity: 0, y: 10, duration: .6 }, '-=0.4');
+      if (marquee) tl.from(marquee, { opacity: 0, y: 30, duration: 1 }, '-=0.5');
+    }
 
-let modalMode = 'signup';        // 'signup' | 'login'
-let pendingPlan = null;          // 'yearly' | 'lifetime' | null
-
-function toast(msg, type = 'success') {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.className = 'toast ' + type;
-    t.hidden = false;
-    setTimeout(() => t.hidden = true, 3500);
-}
-
-function openModal(mode = 'signup', plan = null) {
-    modalMode   = mode;
-    pendingPlan = plan;
-    if (mode === 'signup') {
-        modalTag.textContent   = plan ? 'Criar conta · ' + (plan === 'yearly' ? 'Anual' : 'Vitalício') : 'Criar conta';
-        modalTitle.textContent = plan ? 'Falta pouco pro checkout' : 'Crie sua conta';
-        modalSub.textContent   = plan
-            ? 'Crie sua conta em 10 segundos. Depois você é redirecionado pro pagamento seguro do Stripe.'
-            : '14 dias de trial sem cartão. Cancele a qualquer momento.';
-        authSubmit.innerHTML = (plan ? 'Criar conta e ir pro checkout' : 'Criar conta') + ' <span class="arrow">→</span>';
-        authPass.autocomplete = 'new-password';
-        document.querySelector('[data-switch="login"]').hidden = false;
-        document.querySelector('[data-switch="signup"]').hidden = true;
-        document.getElementById('forgot-link').hidden = true;
+    // Reveal usa system.js (já gerencia .reveal via IntersectionObserver),
+    // mas garantimos via GSAP-batch também
+    if (!reduced) {
+      gsap.set('.reveal', { opacity: 0, y: 40 });
+      ScrollTrigger.batch('.reveal', {
+        start: 'top 88%',
+        onEnter: batch => {
+          batch.forEach(el => el.classList.add('in'));
+          gsap.to(batch, { opacity: 1, y: 0, duration: .9, stagger: .08, ease: 'power3.out' });
+        },
+        once: true
+      });
     } else {
-        modalTag.textContent   = plan ? 'Entrar · ' + (plan === 'yearly' ? 'Anual' : 'Vitalício') : 'Entrar';
-        modalTitle.textContent = 'Entre na sua conta';
-        modalSub.textContent   = plan
-            ? 'Já tem conta? Entre agora e siga pro checkout.'
-            : 'Acesse com seu e-mail e senha.';
-        authSubmit.innerHTML = (plan ? 'Entrar e ir pro checkout' : 'Entrar') + ' <span class="arrow">→</span>';
-        authPass.autocomplete = 'current-password';
-        document.querySelector('[data-switch="login"]').hidden = true;
-        document.querySelector('[data-switch="signup"]').hidden = false;
-        document.getElementById('forgot-link').hidden = false;
+      document.querySelectorAll('.reveal').forEach(el => el.classList.add('in'));
     }
-    authError.textContent = '';
-    const savedEmail = localStorage.getItem(EMAIL_KEY);
-    if (savedEmail && mode === 'login') authEmail.value = savedEmail;
-    modal.hidden = false;
-    setTimeout(() => authEmail.focus(), 50);
-}
 
-function closeModal() { modal.hidden = true; authPass.value = ''; }
-
-document.getElementById('modal-close').addEventListener('click', closeModal);
-modal.querySelector('.modal__overlay').addEventListener('click', closeModal);
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !modal.hidden) closeModal(); });
-
-document.querySelectorAll('[data-switch]').forEach(el => {
-    el.addEventListener('click', () => openModal(el.dataset.switch, pendingPlan));
-});
-
-document.querySelectorAll('[data-action="login"]').forEach(el => {
-    el.addEventListener('click', e => { e.preventDefault(); openModal('login', null); });
-});
-
-// ============================================================
-// AUTH FLOW
-// ============================================================
-async function api(path, body, headers = {}) {
-    const r = await fetch(window.MV_API + path, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...headers },
-        body: body ? JSON.stringify(body) : undefined
-    });
-    const data = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
-    return data;
-}
-
-authForm.addEventListener('submit', async e => {
-    e.preventDefault();
-    const email = authEmail.value.trim().toLowerCase();
-    const pass  = authPass.value;
-    authError.textContent = '';
-    authSubmit.disabled = true;
-    const original = authSubmit.innerHTML;
-    authSubmit.innerHTML = '<span class="spinner"></span> Processando...';
-    try {
-        let session;
-        if (modalMode === 'signup') {
-            session = await api('/v1/auth/signup', { email, password: pass });
-        } else {
-            session = await api('/v1/auth/login', { email, password: pass });
-        }
-        localStorage.setItem(TOKEN_KEY, session.session_token);
-        localStorage.setItem(EMAIL_KEY, email);
-
-        if (pendingPlan) {
-            // ir pro checkout
-            authSubmit.innerHTML = '<span class="spinner"></span> Redirecionando pro pagamento...';
-            const cs = await fetch(window.MV_API + '/v1/billing/checkout?plan=' + pendingPlan, {
-                method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + session.session_token, 'Content-Type': 'application/json' }
-            }).then(r => r.json());
-            if (cs.url) {
-                window.location.href = cs.url;
-            } else {
-                throw new Error(cs.error || 'checkout_failed');
+    // COUNTERS
+    document.querySelectorAll('[data-counter]').forEach(el => {
+      const target = parseFloat(el.dataset.counter);
+      const suffix = el.dataset.suffix || '';
+      const fmt    = el.dataset.format === 'thousand';
+      const obs = new IntersectionObserver((entries) => {
+        entries.forEach(en => {
+          if (en.isIntersecting) {
+            const dur = 2000, start = performance.now();
+            function tick(now) {
+              const p = Math.min((now - start) / dur, 1);
+              const eased = 1 - Math.pow(1 - p, 3);
+              const v = Math.round(target * eased);
+              el.textContent = (fmt ? v.toLocaleString('pt-BR') : v) + suffix;
+              if (p < 1) requestAnimationFrame(tick);
+              else el.textContent = (fmt ? target.toLocaleString('pt-BR') : target) + suffix;
             }
-        } else {
-            toast('Logado com sucesso!');
-            closeModal();
-        }
-    } catch (err) {
-        const msg = {
-            email_taken: 'Esse e-mail já tem conta. Tente entrar.',
-            invalid_credentials: 'E-mail ou senha incorretos.',
-            email_and_password_required: 'Preencha e-mail e senha (mín 8 caracteres).',
-            unknown_plan: 'Plano inválido. Tente recarregar a página.'
-        }[err.message] || ('Erro: ' + err.message);
-        authError.textContent = msg;
-        if (err.message === 'email_taken') {
-            setTimeout(() => openModal('login', pendingPlan), 600);
-        }
-    } finally {
-        authSubmit.disabled = false;
-        if (authSubmit.innerHTML.includes('spinner')) authSubmit.innerHTML = original;
+            requestAnimationFrame(tick);
+            obs.disconnect();
+          }
+        });
+      }, { threshold: .4 });
+      obs.observe(el);
+    });
+
+    // STATS line in
+    const stats = document.getElementById('stats');
+    if (stats) {
+      ScrollTrigger.create({ trigger: stats, start: 'top 80%', onEnter: () => stats.classList.add('in-view') });
     }
-});
 
-// ============================================================
-// BUY BUTTONS — Stripe Checkout direto (sem signup obrigatório)
-// Após pagamento, o webhook cria a conta + manda e-mail com credenciais.
-// ============================================================
-document.querySelectorAll('.buy').forEach(btn => {
-    btn.addEventListener('click', async () => {
-        const plan = btn.dataset.plan;
-        btn.disabled = true;
-        const original = btn.innerHTML;
-        btn.innerHTML = '<span class="spinner"></span> Redirecionando pra Stripe...';
-        try {
-            const token = localStorage.getItem(TOKEN_KEY);
-            const headers = { 'Content-Type': 'application/json' };
-            if (token) headers.Authorization = 'Bearer ' + token;
-            const savedEmail = localStorage.getItem(EMAIL_KEY);
-            const cs = await fetch(window.MV_API + '/v1/billing/checkout?plan=' + plan, {
-                method: 'POST',
-                headers,
-                body: savedEmail ? JSON.stringify({ email: savedEmail }) : undefined
-            }).then(r => r.json());
-            if (cs.url) {
-                window.location.href = cs.url;
-            } else {
-                throw new Error(cs.error || 'checkout_failed');
-            }
-        } catch (e) {
-            toast('Erro ao iniciar checkout: ' + e.message, 'error');
-            btn.disabled = false;
-            btn.innerHTML = original;
+    // FLUX line
+    const fluxLine = document.getElementById('fluxLine');
+    const fluxGrid = document.querySelector('.flux-grid');
+    if (fluxLine && fluxGrid && !reduced) {
+      ScrollTrigger.create({ trigger: fluxGrid, start: 'top 70%', onEnter: () => fluxLine.classList.add('in') });
+    } else if (fluxLine) {
+      fluxLine.classList.add('in');
+    }
+
+    // HERO chips reveal + float + parallax
+    const chips = document.querySelectorAll('.hero-chip');
+    if (chips.length && !reduced) {
+      gsap.to(chips, { opacity: 1, duration: 1, stagger: .1, delay: 1.2, ease: 'power2.out' });
+      chips.forEach((chip, i) => {
+        gsap.to(chip, { y: (i % 2 === 0 ? -14 : 14), duration: 3.5 + (i * .3), repeat: -1, yoyo: true, ease: 'sine.inOut', delay: 1.5 + i * .2 });
+      });
+      gsap.to('.hero-bg .blob.b1', { y: 200, scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
+      gsap.to('.hero-bg .blob.b2', { y: -180, scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
+      gsap.to('.hero-bg .blob.b3', { y: 240, scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
+      chips.forEach(chip => {
+        const depth = parseFloat(chip.dataset.depth) || 0.4;
+        gsap.to(chip, { y: `+=${depth * 220}`, scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: 1 } });
+      });
+      gsap.to('.hero-inner', { opacity: 0.3, y: -60, scrollTrigger: { trigger: '.hero', start: 'center top', end: 'bottom top', scrub: true } });
+    } else if (chips.length) {
+      chips.forEach(c => c.style.opacity = 1);
+    }
+
+    // HERO mouse glow
+    const hero = document.getElementById('hero');
+    const heroGlow = document.getElementById('heroGlow');
+    if (hero && heroGlow && !reduced) {
+      let glowX = 0, glowY = 0, targetX = 0, targetY = 0;
+      hero.addEventListener('mousemove', e => {
+        const r = hero.getBoundingClientRect();
+        targetX = e.clientX - r.left; targetY = e.clientY - r.top;
+        heroGlow.style.opacity = '1';
+      });
+      hero.addEventListener('mouseleave', () => heroGlow.style.opacity = '0');
+      function rafGlow() {
+        glowX += (targetX - glowX) * 0.12;
+        glowY += (targetY - glowY) * 0.12;
+        heroGlow.style.transform = `translate(calc(${glowX}px - 50%), calc(${glowY}px - 50%))`;
+        requestAnimationFrame(rafGlow);
+      }
+      rafGlow();
+    }
+
+    // Magnetic buttons
+    if (!reduced && matchMedia('(pointer:fine)').matches) {
+      document.querySelectorAll('.btn-magnetic').forEach(btn => {
+        const inner = btn.querySelector('span') || btn;
+        btn.addEventListener('mousemove', e => {
+          const r = btn.getBoundingClientRect();
+          const x = e.clientX - r.left - r.width / 2;
+          const y = e.clientY - r.top - r.height / 2;
+          gsap.to(btn,   { x: x * .25, y: y * .35, duration: .5, ease: 'power3.out' });
+          gsap.to(inner, { x: x * .12, y: y * .18, duration: .5, ease: 'power3.out' });
+        });
+        btn.addEventListener('mouseleave', () => {
+          gsap.to(btn,   { x: 0, y: 0, duration: .7, ease: 'elastic.out(1, .5)' });
+          gsap.to(inner, { x: 0, y: 0, duration: .7, ease: 'elastic.out(1, .5)' });
+        });
+      });
+    }
+
+    // Scramble
+    const SCRAMBLE_CHARS = '!<>-_\\/[]{}—=+*^?#________';
+    function scramble(el, finalText, dur = 900) {
+      const len = finalText.length, start = performance.now();
+      function tick(now) {
+        const t = Math.min((now - start) / dur, 1);
+        let out = '';
+        for (let i = 0; i < len; i++) {
+          const reveal = t * len;
+          if (i < reveal - 2) out += finalText[i];
+          else if (i < reveal) out += SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
+          else out += finalText[i] === ' ' ? ' ' : '';
         }
+        el.textContent = out;
+        if (t < 1) requestAnimationFrame(tick);
+        else el.textContent = finalText;
+      }
+      requestAnimationFrame(tick);
+    }
+    if (!reduced) {
+      document.querySelectorAll('[data-scramble]').forEach(el => {
+        const final = el.dataset.scramble + '.';
+        setTimeout(() => scramble(el, final, 1100), 1800);
+        setInterval(() => scramble(el, final, 1000), 7000);
+      });
+    }
+
+    // FAQ accordion
+    document.querySelectorAll('.faq-item').forEach(item => {
+      const btn = item.querySelector('.faq-q');
+      btn.addEventListener('click', () => {
+        const open = item.classList.toggle('open');
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
     });
-});
+
+    // Smooth anchor (com lenis)
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', e => {
+        const id = a.getAttribute('href');
+        if (id.length > 1) {
+          const el = document.querySelector(id);
+          if (el) {
+            e.preventDefault();
+            if (lenis) lenis.scrollTo(el, { offset: -60, duration: 1.2 });
+            else el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      });
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready);
+  else ready();
+})();
 </script>
+
 </body>
 </html>

@@ -1,56 +1,72 @@
 <!DOCTYPE html>
-<html lang="pt-BR"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Política de Privacidade — MotionPro</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css">
-</head><body>
-<header class="nav"><div class="wrap nav__inner">
-<a href="/" class="brand">Motion<span>Pro</span></a>
-<nav><a href="/">← Voltar</a></nav>
-</div></header>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Política de Privacidade · MotionPro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/system.css">
+</head>
+<body>
 
-<section class="section"><div class="wrap" style="max-width:780px">
-<h2 style="text-align:left">Política de Privacidade</h2>
-<p class="muted">Última atualização: <span id="d"></span></p>
-<script>document.getElementById('d').textContent = new Date().toLocaleDateString('pt-BR')</script>
+<div data-include="header"></div>
 
-<h3 style="margin-top:30px">Quem somos</h3>
-<p class="muted">PacotesFX, operadora do produto MotionPro. Contato do encarregado (DPO):
-<a href="mailto:dpo@motionvault.app" style="color:var(--acc)">dpo@motionvault.app</a>.</p>
+<main class="page-shell">
+  <div class="blob b1"></div>
 
-<h3 style="margin-top:24px">Dados que coletamos</h3>
-<ul class="muted" style="padding-left:20px;line-height:2">
-<li><strong>E-mail</strong> — fornecido por você ao criar conta.</li>
-<li><strong>Hash da senha</strong> (bcrypt) — nunca armazenamos sua senha em claro.</li>
-<li><strong>Fingerprint do dispositivo</strong> (hash SHA-256 irreversível de hostname + MAC + RAM) — para limitar instalações por licença.</li>
-<li><strong>Endereço IP e timestamps</strong> — apenas em log de auditoria por 90 dias.</li>
-<li><strong>ID Stripe customer</strong> — usado para processar pagamentos.</li>
-</ul>
-<p class="muted"><strong>Não coletamos:</strong> dados de cartão (passa direto pelo Stripe), localização precisa, contatos, agenda, arquivos de mídia.</p>
+  <div class="container">
+    <div class="page-head">
+      <span class="tag-mono"><span class="dot"></span>— LEGAL · PRIVACIDADE</span>
+      <h1 class="page-title">Política de <span class="italic-em">Privacidade.</span></h1>
+      <p class="lede" style="margin-left:auto;margin-right:auto">Transparência total sobre o que coletamos, por quê, e como você controla.</p>
+    </div>
 
-<h3 style="margin-top:24px">Para que usamos</h3>
-<p class="muted">Operação do serviço, prevenção de fraude e pirataria, suporte técnico, comunicações
-transacionais (recuperação de senha, recibos), e cumprimento de obrigações legais.</p>
+    <div class="prose">
+      <p class="meta">Última atualização: <span id="d"></span></p>
 
-<h3 style="margin-top:24px">Compartilhamento</h3>
-<p class="muted">Compartilhamos apenas com prestadores essenciais: Stripe (pagamento), provedor de hospedagem (Fly.io), e provedor de
-e-mail transacional. Todos com cláusulas contratuais de proteção de dados.</p>
+      <h2>Quem somos</h2>
+      <p>PacotesFX, operadora do produto MotionPro. Contato do encarregado (DPO): <a href="mailto:dpo@pacotesfx.com">dpo@pacotesfx.com</a>.</p>
 
-<h3 style="margin-top:24px">Seus direitos (LGPD/GDPR)</h3>
-<p class="muted">Você pode a qualquer momento solicitar: acesso aos seus dados, correção, exclusão, portabilidade ou revogação de
-consentimento. Envie pedido para <a href="mailto:dpo@motionvault.app" style="color:var(--acc)">dpo@motionvault.app</a>; respondemos em até 15 dias.</p>
+      <h2>Dados que coletamos</h2>
+      <ul>
+        <li><strong>E-mail</strong> — fornecido por você ao criar conta.</li>
+        <li><strong>Nome e telefone</strong> — opcionais no signup, usados pra suporte e comunicação.</li>
+        <li><strong>Hash da senha (bcrypt)</strong> — nunca armazenamos sua senha em claro.</li>
+        <li><strong>Fingerprint do dispositivo</strong> — hash SHA-256 irreversível de hostname + MAC + RAM, usado pra limitar instalações por licença.</li>
+        <li><strong>Endereço IP e timestamps</strong> — apenas em log de auditoria por 90 dias.</li>
+        <li><strong>ID Stripe customer</strong> — usado pra processar pagamentos.</li>
+      </ul>
+      <p><strong>Não coletamos:</strong> dados de cartão (passa direto pelo Stripe), localização precisa, contatos, agenda, arquivos de mídia.</p>
 
-<h3 style="margin-top:24px">Cookies</h3>
-<p class="muted">Usamos apenas cookies essenciais (sessão de login). Não usamos cookies de tracking publicitário.</p>
+      <h2>Para que usamos</h2>
+      <p>Operação do serviço, prevenção de fraude e pirataria, suporte técnico, comunicações transacionais (recuperação de senha, recibos, atualização de plano) e cumprimento de obrigações legais.</p>
 
-<h3 style="margin-top:24px">Retenção</h3>
-<p class="muted">Mantemos sua conta enquanto houver assinatura ativa + 12 meses. Após exclusão, apagamos seus dados em até 30 dias
-(exceto registros que devamos guardar por lei fiscal).</p>
+      <h2>Compartilhamento</h2>
+      <p>Compartilhamos apenas com prestadores essenciais: <strong>Stripe</strong> (pagamento), <strong>Vercel</strong> (hospedagem), <strong>Neon</strong> (banco de dados) e provedor de e-mail transacional. Todos com cláusulas contratuais de proteção de dados.</p>
 
-<h3 style="margin-top:24px">Segurança</h3>
-<p class="muted">Senhas com bcrypt cost 12, TLS em todos os endpoints, segredos em vault, backups diários criptografados.</p>
+      <h2>Seus direitos (LGPD/GDPR)</h2>
+      <p>Você pode a qualquer momento solicitar: acesso, correção, exclusão, portabilidade ou revogação de consentimento dos seus dados. Envie pra <a href="mailto:dpo@pacotesfx.com">dpo@pacotesfx.com</a> — respondemos em até 15 dias.</p>
 
-<p class="muted" style="margin-top:36px">Dúvidas: <a href="mailto:dpo@motionvault.app" style="color:var(--acc)">dpo@motionvault.app</a></p>
-</div></section>
-</body></html>
+      <h2>Cookies</h2>
+      <p>Usamos apenas cookies essenciais (sessão de login). <strong>Não usamos</strong> cookies de tracking publicitário.</p>
+
+      <h2>Retenção</h2>
+      <p>Mantemos sua conta enquanto houver assinatura ativa + 12 meses. Após exclusão, apagamos seus dados em até 30 dias (exceto registros que devemos guardar por lei fiscal).</p>
+
+      <h2>Segurança</h2>
+      <p>Senhas com bcrypt cost 12, TLS em todos os endpoints, segredos em vault, backups diários criptografados. Veja a página de <a href="/seguranca.html">segurança</a> pra detalhes técnicos.</p>
+
+      <hr>
+      <p style="text-align:center; font-size:14px; color:var(--fg-subtle);">Dúvidas? <a href="mailto:dpo@pacotesfx.com">dpo@pacotesfx.com</a></p>
+    </div>
+  </div>
+</main>
+
+<div data-include="footer"></div>
+
+<script src="/js/system.js"></script>
+<script>document.getElementById('d').textContent = new Date().toLocaleDateString('pt-BR');</script>
+</body>
+</html>

@@ -2,129 +2,131 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Segurança e transparência · MotionPro</title>
 <meta name="description" content="Hashes SHA-256, código aberto e VirusTotal do instalador MotionPro. Tudo transparente.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/system.css">
+<style>
+.warn-card { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 14px; padding: 28px; margin: 36px 0; }
+.warn-card h3 { color: #9a3412; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .2em; text-transform: uppercase; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+.warn-card h3::before { content: "⚠️"; font-size: 16px; }
+.warn-card p, .warn-card ol { color: #7c2d12; }
+.warn-card ol { margin-left: 20px; }
+.warn-card ol li { color: #7c2d12; font-size: 15px; line-height: 1.8; }
+.warn-card .micro { font-size: 13px; font-style: italic; margin-top: 14px; color: #9a3412; }
+
+.hash-block { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px; padding: 28px; margin: 24px 0 40px; }
+.hash-block .row { margin-bottom: 18px; }
+.hash-block .row:last-of-type { margin-bottom: 0; }
+.hash-block .row .label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; font-weight: 600; margin-bottom: 6px; }
+.hash-block .row.primary .label { color: var(--accent); }
+.hash-block .row .value { display: block; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; word-break: break-all; background: white; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border); color: var(--fg); }
+.hash-block .row.primary .value { color: var(--accent-hot); }
+.hash-meta { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border); font-size: 13.5px; color: var(--fg-muted); font-family: 'JetBrains Mono', monospace; letter-spacing: .03em; }
+
+.installer-steps { list-style: none; display: flex; flex-direction: column; gap: 14px; margin: 24px 0 40px; padding: 0; }
+.installer-steps li { display: flex; gap: 18px; align-items: flex-start; padding: 18px 22px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 12px; transition: border-color .25s; }
+.installer-steps li:hover { border-color: var(--border-hover); }
+.installer-steps li .num { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--accent); min-width: 30px; font-size: 1.05rem; letter-spacing: .04em; }
+.installer-steps li .desc { font-size: 15px; color: var(--fg); line-height: 1.6; }
+.installer-steps li .desc code { font-size: 12.5px; }
+</style>
 </head>
 <body>
-<header class="nav">
-    <div class="wrap nav__inner">
-        <a href="/" class="brand">Motion<span class="brand-mark">·</span>Pro</a>
-        <div class="nav__actions">
-            <a href="/" class="nav-link">← Voltar ao site</a>
-        </div>
+
+<div data-include="header"></div>
+
+<main class="page-shell">
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+
+  <div class="container">
+    <div class="page-head">
+      <span class="tag-mono"><span class="dot"></span>— TRANSPARÊNCIA TOTAL</span>
+      <h1 class="page-title">É seguro? Sim. <span class="italic-em">E aqui está a prova.</span></h1>
+      <p class="lede" style="margin-left:auto;margin-right:auto">
+        Hashes verificáveis, código no GitHub, escaneamento em 70+ antivírus. Sem segredos.
+      </p>
     </div>
-</header>
 
-<section class="section" style="padding:80px 0">
-    <div class="wrap" style="max-width:780px">
-        <span class="section__tag">Segurança e transparência</span>
-        <h1 class="section__title" style="font-size:44px;margin-bottom:24px">É <em>seguro</em>? Sim<span class="period">.</span> E aqui está como provar<span class="period">.</span></h1>
-        <p style="font-size:17px;color:var(--mut);line-height:1.6;margin-bottom:48px">
-            Toda vez que o Windows mostra <em>"O Windows protegeu o computador"</em>, é porque o aplicativo ainda não tem certificado de assinatura digital (custo R$ 800-2.500/ano). <strong>Isso acontece com 100% dos apps novos</strong>, inclusive Notion, Discord, OBS Studio quando lançaram. Não significa que tem vírus.
-        </p>
+    <div class="prose">
+      <p>
+        Toda vez que o Windows mostra <em>"O Windows protegeu o computador"</em>, é porque o aplicativo ainda não tem certificado de assinatura digital (custo R$ 800-2.500/ano). <strong>Isso acontece com 100% dos apps novos</strong> — inclusive Notion, Discord e OBS Studio quando lançaram. Não significa que tem vírus.
+      </p>
 
-        <!-- AVISO DESTAQUE -->
-        <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:24px;margin-bottom:48px">
-            <h3 style="font:700 14px Inter,sans-serif;color:#9a3412;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px">⚠️ Aviso do Windows SmartScreen</h3>
-            <p style="color:#7c2d12;font-size:15px;line-height:1.65;margin-bottom:16px">
-                Ao abrir o instalador, você vai ver uma tela azul: <em>"O Windows protegeu o computador"</em>.
-            </p>
-            <p style="color:#7c2d12;font-size:15px;line-height:1.65;margin-bottom:0">
-                <strong>Pra continuar:</strong>
-            </p>
-            <ol style="color:#7c2d12;font-size:15px;line-height:1.8;margin:8px 0 0 24px">
-                <li>Click no link azul <strong>"Mais informações"</strong></li>
-                <li>Vai aparecer um botão preto <strong>"Executar assim mesmo"</strong></li>
-                <li>Click → instala normalmente</li>
-            </ol>
-            <p style="color:#7c2d12;font-size:14px;margin-top:14px;font-style:italic">
-                Só precisa fazer isso na primeira vez. Depois o Windows lembra que você confiou.
-            </p>
-        </div>
-
-        <!-- POR QUE ISSO ACONTECE -->
-        <h2 style="font:800 28px Inter,sans-serif;letter-spacing:-.8px;margin-bottom:18px">Por que isso acontece?</h2>
-        <p style="color:var(--mut);font-size:16px;line-height:1.7;margin-bottom:24px">
-            O Microsoft SmartScreen bloqueia qualquer <code>.exe</code> que não foi <strong>assinado</strong> com um <em>certificado digital de code-signing</em>. Esse certificado custa entre <strong>R$ 800/ano</strong> (padrão Sectigo) e <strong>R$ 2.500/ano</strong> (EV DigiCert), e exige verificação de identidade da empresa.
-        </p>
-        <p style="color:var(--mut);font-size:16px;line-height:1.7;margin-bottom:48px">
-            Estamos no processo de adquirir o certificado EV (que <em>elimina o aviso desde o primeiro download</em>). Enquanto isso, garantimos transparência total: o código-fonte do plugin é público, o instalador pode ser escaneado em qualquer antivírus, e os hashes abaixo permitem você verificar que o arquivo baixado é exatamente o que publicamos.
-        </p>
-
-        <!-- HASHES -->
-        <h2 style="font:800 28px Inter,sans-serif;letter-spacing:-.8px;margin-bottom:18px">Hashes do instalador atual</h2>
-        <p style="color:var(--mut);font-size:15px;line-height:1.6;margin-bottom:24px">
-            Compare os valores abaixo com os do arquivo que você baixou pra ter certeza que não foi modificado por terceiros. No PowerShell: <code style="background:var(--bg-soft);padding:3px 8px;border-radius:4px;font-size:13px">Get-FileHash MotionPro-Setup-1.0.2.exe</code>
-        </p>
-        <div style="background:var(--bg-soft);border:1px solid var(--line);border-radius:10px;padding:24px;margin-bottom:48px">
-            <div style="margin-bottom:18px">
-                <div style="font:600 11px Inter,sans-serif;color:var(--acc);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">SHA-256 (recomendado)</div>
-                <code style="display:block;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;word-break:break-all;background:var(--bg);padding:12px;border-radius:6px;color:var(--acc)">4fb15f6f0f76c143bb1b78b7717df3aac8fb16e3c00839915a4c83fa46a95760</code>
-            </div>
-            <div style="margin-bottom:18px">
-                <div style="font:600 11px Inter,sans-serif;color:var(--mut);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">SHA-1</div>
-                <code style="display:block;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;word-break:break-all;background:var(--bg);padding:12px;border-radius:6px;color:var(--txt)">18e8769781db6c84939e1c6cfd29f1337a7e7f9b</code>
-            </div>
-            <div>
-                <div style="font:600 11px Inter,sans-serif;color:var(--mut);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">MD5</div>
-                <code style="display:block;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;word-break:break-all;background:var(--bg);padding:12px;border-radius:6px;color:var(--txt)">063ff662b4cff6c3272911ae95da35cc</code>
-            </div>
-            <div style="margin-top:18px;padding-top:18px;border-top:1px solid var(--line);font-size:13px;color:var(--mut)">
-                <strong>Arquivo:</strong> MotionPro-Setup-1.0.2.exe ·
-                <strong>Tamanho:</strong> 37.6 MB ·
-                <strong>Versão:</strong> 1.0.2
-            </div>
-        </div>
-
-        <!-- VIRUSTOTAL -->
-        <h2 style="font:800 28px Inter,sans-serif;letter-spacing:-.8px;margin-bottom:18px">Escaneie com 70+ antivírus</h2>
-        <p style="color:var(--mut);font-size:15px;line-height:1.6;margin-bottom:24px">
-            O VirusTotal escaneia qualquer arquivo em <strong>mais de 70 motores antivírus</strong> simultaneamente. Submeta o instalador pra ver o resultado em tempo real:
-        </p>
-        <a href="https://www.virustotal.com/gui/file-analysis" target="_blank" style="display:inline-block;background:#3b82f6;color:#fff;padding:14px 24px;border-radius:6px;text-decoration:none;font:600 14px Inter,sans-serif;margin-bottom:48px">
-            Abrir VirusTotal →
-        </a>
-
-        <!-- CÓDIGO ABERTO -->
-        <h2 style="font:800 28px Inter,sans-serif;letter-spacing:-.8px;margin-bottom:18px">Código transparente</h2>
-        <p style="color:var(--mut);font-size:15px;line-height:1.6;margin-bottom:24px">
-            O código completo do plugin, instalador e backend está versionado no GitHub. Qualquer um pode auditar.
-        </p>
-        <a href="https://github.com/gabrielkendy/motion-pro" target="_blank" style="display:inline-block;background:var(--txt);color:#fff;padding:14px 24px;border-radius:6px;text-decoration:none;font:600 14px Inter,sans-serif;margin-bottom:48px">
-            Ver código no GitHub →
-        </a>
-
-        <!-- O QUE O INSTALADOR FAZ -->
-        <h2 style="font:800 28px Inter,sans-serif;letter-spacing:-.8px;margin-bottom:18px">O que o instalador faz no seu PC</h2>
-        <ol style="list-style:none;display:flex;flex-direction:column;gap:14px;margin-bottom:48px">
-            <li style="display:flex;gap:14px;align-items:flex-start;padding:14px 18px;background:var(--bg-soft);border-radius:8px"><span style="font-weight:800;color:var(--acc);min-width:28px">01</span><div><strong>Copia os arquivos do plugin</strong> pra <code style="font-size:12px">%APPDATA%\Adobe\CEP\extensions\com.motionvault.panel\</code></div></li>
-            <li style="display:flex;gap:14px;align-items:flex-start;padding:14px 18px;background:var(--bg-soft);border-radius:8px"><span style="font-weight:800;color:var(--acc);min-width:28px">02</span><div><strong>Habilita o "PlayerDebugMode"</strong> nas chaves do registro <code style="font-size:12px">HKCU\Software\Adobe\CSXS.9</code> até <code style="font-size:12px">CSXS.12</code> (necessário pro Premiere carregar plugins não-assinados pela Adobe)</div></li>
-            <li style="display:flex;gap:14px;align-items:flex-start;padding:14px 18px;background:var(--bg-soft);border-radius:8px"><span style="font-weight:800;color:var(--acc);min-width:28px">03</span><div><strong>Limpa o cache CEP</strong> em <code style="font-size:12px">%LOCALAPPDATA%\Temp\cep_cache</code> pra evitar conflitos com versões antigas</div></li>
-            <li style="display:flex;gap:14px;align-items:flex-start;padding:14px 18px;background:var(--bg-soft);border-radius:8px"><span style="font-weight:800;color:var(--acc);min-width:28px">04</span><div><strong>Cria entrada</strong> em "Adicionar/Remover Programas" do Windows, pra você desinstalar limpo a qualquer momento</div></li>
+      <div class="warn-card">
+        <h3>AVISO DO WINDOWS SMARTSCREEN</h3>
+        <p>Ao abrir o instalador, você vai ver uma tela azul: <em>"O Windows protegeu o computador"</em>.</p>
+        <p><strong>Pra continuar:</strong></p>
+        <ol>
+          <li>Clique no link <strong>"Mais informações"</strong></li>
+          <li>Vai aparecer um botão preto <strong>"Executar assim mesmo"</strong></li>
+          <li>Clique → instala normalmente</li>
         </ol>
-        <p style="color:var(--mut);font-size:14px;font-style:italic;margin-bottom:48px">
-            🚫 NÃO faz: não modifica boot, não abre portas de rede, não instala drivers, não envia telemetria, não roda em segundo plano. É só um plugin pro Premiere.
-        </p>
+        <p class="micro">Só precisa fazer isso na primeira vez. Depois o Windows lembra que você confiou.</p>
+      </div>
 
-        <!-- CONTATO -->
-        <h2 style="font:800 28px Inter,sans-serif;letter-spacing:-.8px;margin-bottom:18px">Suspeita de algo?</h2>
-        <p style="color:var(--mut);font-size:15px;line-height:1.6;margin-bottom:24px">
-            Se algo parecer estranho ou você quiser perguntar antes de instalar, escreva:
-        </p>
-        <a href="mailto:suporte@pacotesfx.com" style="color:var(--acc);font-weight:700;text-decoration:none;font-size:17px">suporte@pacotesfx.com →</a>
-    </div>
-</section>
+      <h2>Por que isso acontece?</h2>
+      <p>
+        O Microsoft SmartScreen bloqueia qualquer <code>.exe</code> que não foi <strong>assinado</strong> com um certificado digital de <em>code-signing</em>. Esse certificado custa entre R$ 800/ano (Sectigo) e R$ 2.500/ano (EV DigiCert), e exige verificação de identidade da empresa.
+      </p>
+      <p>
+        Estamos no processo de adquirir o certificado EV — que <strong>elimina o aviso desde o primeiro download</strong>. Enquanto isso, garantimos transparência total: o código-fonte do plugin é público, o instalador pode ser escaneado em qualquer antivírus, e os hashes abaixo permitem você verificar que o arquivo baixado é exatamente o que publicamos.
+      </p>
 
-<footer class="foot">
-    <div class="wrap" style="text-align:center;padding:32px 0;border-top:1px solid var(--line-dark)">
-        <p style="color:var(--mut-inv);font-size:13px">© <span id="yr"></span> MotionPro · uma marca PacotesFX</p>
+      <h2>Hashes do instalador atual</h2>
+      <p>Compare os valores abaixo com os do arquivo que você baixou. No PowerShell: <code>Get-FileHash MotionPro-Setup-1.0.2.exe</code></p>
+
+      <div class="hash-block">
+        <div class="row primary">
+          <div class="label">SHA-256 (recomendado)</div>
+          <code class="value">4fb15f6f0f76c143bb1b78b7717df3aac8fb16e3c00839915a4c83fa46a95760</code>
+        </div>
+        <div class="row">
+          <div class="label">SHA-1</div>
+          <code class="value">18e8769781db6c84939e1c6cfd29f1337a7e7f9b</code>
+        </div>
+        <div class="row">
+          <div class="label">MD5</div>
+          <code class="value">063ff662b4cff6c3272911ae95da35cc</code>
+        </div>
+        <div class="hash-meta">
+          <strong>Arquivo:</strong> MotionPro-Setup-1.0.2.exe · <strong>Tamanho:</strong> 37.6 MB · <strong>Versão:</strong> 1.0.2
+        </div>
+      </div>
+
+      <h2>Escaneie com 70+ antivírus</h2>
+      <p>O VirusTotal escaneia qualquer arquivo em mais de 70 motores antivírus simultaneamente. Submeta o instalador pra ver o resultado em tempo real:</p>
+      <p><a href="https://www.virustotal.com/gui/home/upload" target="_blank" rel="noopener" class="btn btn-primary" style="display:inline-flex; border-bottom:none;">Abrir VirusTotal <span class="arrow">→</span></a></p>
+
+      <h2>Código transparente</h2>
+      <p>O código completo do plugin, instalador e backend está versionado no GitHub. Qualquer um pode auditar.</p>
+      <p><a href="https://github.com/gabrielkendy/motion-pro" target="_blank" rel="noopener" class="btn btn-dark" style="display:inline-flex; border-bottom:none;">Ver código no GitHub <span class="arrow">→</span></a></p>
+
+      <h2>O que o instalador faz no seu PC</h2>
+      <ol class="installer-steps">
+        <li><span class="num">01</span><span class="desc"><strong>Copia os arquivos do plugin</strong> pra <code>%APPDATA%\Adobe\CEP\extensions\com.motionvault.panel\</code></span></li>
+        <li><span class="num">02</span><span class="desc"><strong>Habilita o "PlayerDebugMode"</strong> nas chaves do registro <code>HKCU\Software\Adobe\CSXS.9</code> até <code>CSXS.12</code> (necessário pro Premiere carregar plugins não-assinados pela Adobe)</span></li>
+        <li><span class="num">03</span><span class="desc"><strong>Limpa o cache CEP</strong> em <code>%LOCALAPPDATA%\Temp\cep_cache</code> pra evitar conflitos com versões antigas</span></li>
+        <li><span class="num">04</span><span class="desc"><strong>Cria entrada</strong> em "Adicionar/Remover Programas" do Windows, pra você desinstalar limpo a qualquer momento</span></li>
+      </ol>
+      <p style="font-size:14px; color:var(--fg-subtle); font-style:italic;">
+        🚫 NÃO faz: não modifica boot, não abre portas de rede, não instala drivers, não envia telemetria, não roda em segundo plano. É só um plugin pro Premiere.
+      </p>
+
+      <hr>
+
+      <h2>Suspeita de algo?</h2>
+      <p>Se algo parecer estranho ou você quiser perguntar antes de instalar, escreva pra <a href="mailto:suporte@pacotesfx.com">suporte@pacotesfx.com</a> — respondemos em até 4h úteis.</p>
     </div>
-</footer>
-<script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+  </div>
+</main>
+
+<div data-include="footer"></div>
+
+<script src="/js/system.js"></script>
 </body>
 </html>

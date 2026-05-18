@@ -2,125 +2,267 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Conta — MotionPro</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minha conta · MotionPro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/system.css">
+<style>
+.account-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1000px; margin: 0 auto; }
+@media (max-width: 800px) { .account-grid { grid-template-columns: 1fr; } }
+.kv { display: grid; grid-template-columns: 130px 1fr; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); align-items: baseline; }
+.kv:last-child { border-bottom: none; }
+.kv .k { font-family: 'JetBrains Mono', monospace; font-size: .68rem; letter-spacing: .2em; text-transform: uppercase; color: var(--fg-muted); }
+.kv .v { font-size: 15px; color: var(--fg); font-weight: 500; }
+.kv .v .badge { display: inline-block; padding: 3px 10px; border-radius: 100px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; }
+.badge.b-active   { background: rgba(34,197,94,.12); color: #15803d; }
+.badge.b-trial    { background: var(--accent-soft); color: var(--accent-hot); }
+.badge.b-expired  { background: var(--danger-soft); color: var(--danger); }
+.machines-list { display: flex; flex-direction: column; gap: 12px; }
+.machine-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border: 1px solid var(--border); border-radius: 12px; gap: 16px; transition: border-color .25s; }
+.machine-row:hover { border-color: var(--border-hover); }
+.machine-row .info { font-size: 14px; }
+.machine-row .info small { color: var(--fg-subtle); display: block; margin-top: 4px; font-size: 12px; }
+.account-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 30px; }
+.login-card { max-width: 460px; margin: 0 auto; }
+.login-card form { display: flex; flex-direction: column; gap: 14px; }
+.login-card .switch-mode { font-size: 13.5px; text-align: center; color: var(--fg-muted); margin-top: 16px; }
+.login-card .switch-mode a { color: var(--accent); cursor: pointer; }
+.login-card .switch-mode a:hover { text-decoration: underline; }
+.error-msg { background: var(--danger-soft); color: var(--danger); padding: 12px 16px; border-radius: 10px; font-size: 13.5px; border: 1px solid rgba(220,38,38,.25); display: none; }
+.error-msg.show { display: block; }
+.loading-skel { color: var(--fg-subtle); font-style: italic; font-size: 14px; }
+</style>
 </head>
 <body>
-<header class="nav"><div class="wrap nav__inner">
-    <a href="/" class="brand">Motion<span>Pro</span></a>
-    <nav><a href="/" class="btn btn--ghost">← Voltar</a></nav>
-</div></header>
 
-<section class="section">
-<div class="wrap" style="max-width:520px">
-    <h2 style="text-align:left;margin-bottom:30px" id="title">Entrar</h2>
+<div data-include="header"></div>
 
-    <div id="login" class="card">
-        <input id="email" placeholder="E-mail" style="width:100%;padding:12px;background:var(--bg);border:1px solid #2c2c33;color:#fff;border-radius:8px;margin-bottom:10px;font-family:inherit;font-size:14px">
-        <input id="password" type="password" placeholder="Senha" style="width:100%;padding:12px;background:var(--bg);border:1px solid #2c2c33;color:#fff;border-radius:8px;margin-bottom:14px;font-family:inherit;font-size:14px">
-        <button id="btn-login" class="btn btn--primary" style="width:100%">Entrar</button>
-        <p style="text-align:center;margin-top:14px;color:var(--mut);font-size:13px">
-            Não tem conta? <a href="#" id="to-signup" style="color:var(--acc)">Criar conta grátis</a>
+<main class="page-shell">
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+
+  <div class="container">
+    <div class="page-head">
+      <span class="tag-mono"><span class="dot"></span>— MINHA CONTA</span>
+      <h1 class="page-title" id="page-title">Acesse sua <span class="italic-em">conta.</span></h1>
+      <p class="lede" id="page-lede" style="margin-left:auto;margin-right:auto">Entre pra gerenciar sua assinatura, dispositivos e dados.</p>
+    </div>
+
+    <!-- LOGIN/SIGNUP -->
+    <div id="login-view" class="login-card">
+      <div class="panel">
+        <form id="auth-form">
+          <div class="form-row">
+            <label for="email">E-mail</label>
+            <input type="email" id="email" autocomplete="email" required>
+          </div>
+          <div class="form-row">
+            <label for="password">Senha</label>
+            <input type="password" id="password" autocomplete="current-password" minlength="8" required>
+            <small>Mínimo 8 caracteres</small>
+          </div>
+          <div class="error-msg" id="auth-error"></div>
+          <button type="submit" id="btn-auth" class="btn btn-primary btn-full btn-lg">Entrar <span class="arrow">→</span></button>
+        </form>
+        <p class="switch-mode">
+          <span id="mode-text">Não tem conta?</span>
+          <a id="mode-toggle">Criar conta grátis</a>
         </p>
-        <div id="msg" style="text-align:center;color:#ff5566;font-size:13px;margin-top:10px"></div>
+        <p class="switch-mode" id="forgot-row">
+          <a href="/reset-password.html">Esqueci minha senha</a>
+        </p>
+      </div>
     </div>
 
-    <div id="account" style="display:none">
-        <div class="card">
-            <h3 style="font-size:18px;margin-bottom:14px;color:var(--acc)">Bem-vindo</h3>
-            <p style="color:var(--mut);font-size:13px;margin-bottom:4px">E-mail</p>
-            <p id="acc-email" style="font-weight:600;margin-bottom:14px">-</p>
-            <p style="color:var(--mut);font-size:13px;margin-bottom:4px">Plano</p>
-            <p id="acc-plan" style="font-weight:600;margin-bottom:14px">-</p>
-            <p style="color:var(--mut);font-size:13px;margin-bottom:4px">Renova em</p>
-            <p id="acc-renew" style="font-weight:600;margin-bottom:20px">-</p>
-            <button id="btn-portal" class="btn btn--primary" style="width:100%;margin-bottom:8px">Gerenciar assinatura (Stripe)</button>
-            <button id="btn-logout" class="btn btn--ghost" style="width:100%">Sair</button>
+    <!-- ACCOUNT VIEW -->
+    <div id="account-view" hidden>
+      <div class="account-grid">
+        <div class="panel reveal">
+          <div class="panel-head">
+            <h2>Assinatura</h2>
+            <span class="tag-mono" style="margin-bottom:0;"><span class="dot"></span>— ATIVA</span>
+          </div>
+          <div class="kv"><div class="k">E-mail</div><div class="v" id="acc-email">—</div></div>
+          <div class="kv"><div class="k">Plano</div><div class="v" id="acc-plan">—</div></div>
+          <div class="kv"><div class="k">Status</div><div class="v" id="acc-status">—</div></div>
+          <div class="kv"><div class="k">Renova em</div><div class="v" id="acc-renew">—</div></div>
+          <div class="kv"><div class="k">Dispositivos</div><div class="v" id="acc-devices">—</div></div>
+          <div class="account-actions">
+            <button class="btn btn-primary btn-full" id="btn-portal">Gerenciar assinatura no Stripe <span class="arrow">→</span></button>
+            <button class="btn btn-ghost btn-full" id="btn-logout">Sair desta conta</button>
+          </div>
         </div>
-        <div class="card" style="margin-top:18px">
-            <h3 style="font-size:16px;margin-bottom:10px">Suas máquinas</h3>
-            <div id="machines" style="color:var(--mut);font-size:13px">Carregando...</div>
-        </div>
-    </div>
-</div>
-</section>
 
+        <div class="panel reveal">
+          <div class="panel-head">
+            <h2>Dispositivos ativos</h2>
+            <span class="tag-mono" style="margin-bottom:0;"><span class="dot"></span>— SUAS MÁQUINAS</span>
+          </div>
+          <div id="machines" class="machines-list">
+            <p class="loading-skel">Carregando…</p>
+          </div>
+          <p style="font-size:12.5px; color:var(--fg-subtle); margin-top:24px; font-family:'JetBrains Mono', monospace; letter-spacing:.05em;">
+            Pode revogar qualquer dispositivo. A licença libera vaga na hora.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div data-include="footer"></div>
+
+<script src="/js/system.js"></script>
 <script>
-window.MV_API = window.MV_API || "https://api.motionvault.app";
+(function () {
+  const $ = id => document.getElementById(id);
+  let mode = 'login';
 
-const $ = id => document.getElementById(id);
-function token() { return localStorage.getItem('mv_session'); }
-async function api(path, opts) {
+  function setMode(m) {
+    mode = m;
+    if (mode === 'login') {
+      $('btn-auth').innerHTML = 'Entrar <span class="arrow">→</span>';
+      $('mode-text').textContent = 'Não tem conta?';
+      $('mode-toggle').textContent = 'Criar conta grátis';
+      $('password').autocomplete = 'current-password';
+      $('forgot-row').style.display = '';
+    } else {
+      $('btn-auth').innerHTML = 'Criar conta <span class="arrow">→</span>';
+      $('mode-text').textContent = 'Já tem conta?';
+      $('mode-toggle').textContent = 'Entrar';
+      $('password').autocomplete = 'new-password';
+      $('forgot-row').style.display = 'none';
+    }
+  }
+  $('mode-toggle').addEventListener('click', e => { e.preventDefault(); setMode(mode === 'login' ? 'signup' : 'login'); });
+
+  $('auth-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const err = $('auth-error'); err.className = 'error-msg'; err.textContent = '';
+    const btn = $('btn-auth'); const orig = btn.innerHTML;
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Processando...';
+    try {
+      const session = await window.MV.api('/v1/auth/' + mode, {
+        email: $('email').value.trim().toLowerCase(),
+        password: $('password').value
+      });
+      localStorage.setItem('mv_session', session.session_token);
+      localStorage.setItem('mv_email', session.user.email);
+      await loadAccount();
+    } catch (e2) {
+      const msgs = {
+        invalid_credentials: 'E-mail ou senha incorretos.',
+        email_taken: 'Esse e-mail já tem conta. Tente entrar.',
+        email_and_password_required: 'Preencha e-mail e senha (mín 8).'
+      };
+      err.textContent = msgs[e2.message] || ('Erro: ' + e2.message);
+      err.className = 'error-msg show';
+    } finally {
+      btn.disabled = false; btn.innerHTML = orig;
+    }
+  });
+
+  async function authedApi(path, opts) {
     opts = opts || {};
-    opts.headers = Object.assign({ 'Content-Type':'application/json' }, opts.headers||{});
-    if (token()) opts.headers['Authorization'] = 'Bearer ' + token();
-    if (opts.body) opts.body = JSON.stringify(opts.body);
+    opts.headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+    const t = window.MV.token();
+    if (t) opts.headers.Authorization = 'Bearer ' + t;
+    if (opts.body && typeof opts.body !== 'string') opts.body = JSON.stringify(opts.body);
     const r = await fetch(window.MV_API + path, opts);
-    const d = await r.json().catch(()=>({}));
+    const d = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(d.error || ('http_' + r.status));
     return d;
-}
+  }
 
-let mode = 'login';
-$('to-signup').addEventListener('click', e => {
-    e.preventDefault();
-    mode = (mode === 'login') ? 'signup' : 'login';
-    $('title').textContent = (mode === 'login') ? 'Entrar' : 'Criar conta';
-    $('btn-login').textContent = (mode === 'login') ? 'Entrar' : 'Criar conta';
-    $('to-signup').textContent = (mode === 'login') ? 'Criar conta grátis' : 'Já tenho conta';
-});
+  function planLabel(plan) {
+    const map = { trial: 'Trial 14 dias', yearly: 'Anual', lifetime: 'Vitalício', free: 'Free', expired: 'Expirado' };
+    return map[plan] || plan;
+  }
+  function statusBadge(status, plan) {
+    if (plan === 'lifetime') return '<span class="badge b-active">Vitalício</span>';
+    if (status === 'trialing') return '<span class="badge b-trial">Trial ativo</span>';
+    if (status === 'active') return '<span class="badge b-active">Ativa</span>';
+    if (status === 'past_due') return '<span class="badge b-expired">Pagamento pendente</span>';
+    if (status === 'canceled' || status === 'expired' || status === 'revoked') return '<span class="badge b-expired">Inativa</span>';
+    return '<span class="badge b-expired">' + (status || 'Sem assinatura') + '</span>';
+  }
 
-$('btn-login').addEventListener('click', async () => {
-    $('msg').textContent = '';
+  async function loadAccount() {
+    if (!window.MV.token()) return;
     try {
-        const d = await api('/v1/auth/' + mode, {
-            method:'POST',
-            body: { email: $('email').value.trim(), password: $('password').value }
-        });
-        localStorage.setItem('mv_session', d.session_token);
-        localStorage.setItem('mv_email', d.user.email);
-        await loadAccount();
-    } catch (e) { $('msg').textContent = 'Erro: ' + e.message; }
-});
+      const m = await authedApi('/v1/me');
+      $('login-view').hidden = true;
+      $('account-view').hidden = false;
+      $('page-title').innerHTML = 'Bem-vindo, <span class="italic-em">' + (m.user.name || m.user.email.split('@')[0]) + '.</span>';
+      $('page-lede').textContent = 'Gerencie sua assinatura, dispositivos e dados de conta.';
 
-async function loadAccount() {
-    if (!token()) return;
-    try {
-        const m = await api('/v1/me');
-        $('login').style.display = 'none';
-        $('account').style.display = 'block';
-        $('title').textContent = 'Minha conta';
-        $('acc-email').textContent = m.user.email;
-        $('acc-plan').textContent = (m.subscription && m.subscription.plan) || 'sem plano';
-        $('acc-renew').textContent = (m.subscription && m.subscription.current_period_end)
-            ? new Date(m.subscription.current_period_end).toLocaleDateString('pt-BR') : '-';
-        const mm = await api('/v1/me/machines');
-        $('machines').innerHTML = mm.devices.map(d => `
-            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #25252b">
-                <span>${d.label || d.fingerprint.slice(0,12) + '...'}<br><small style="color:var(--mut)">Visto ${new Date(d.last_seen).toLocaleString('pt-BR')}</small></span>
-                <button class="btn btn--ghost" style="padding:4px 10px;font-size:11px" data-id="${d.id}">Revogar</button>
-            </div>`).join('') || '<em>Nenhuma máquina ativada ainda</em>';
-        $('machines').querySelectorAll('button').forEach(b => b.onclick = async () => {
-            await api('/v1/me/machines/' + b.dataset.id, { method:'DELETE' });
-            loadAccount();
+      $('acc-email').textContent = m.user.email;
+      const plan   = (m.subscription && m.subscription.plan)   || 'free';
+      const status = (m.subscription && m.subscription.status) || '';
+      $('acc-plan').textContent = planLabel(plan);
+      $('acc-status').innerHTML = statusBadge(status, plan);
+      $('acc-renew').textContent = (m.subscription && m.subscription.current_period_end)
+        ? new Date(m.subscription.current_period_end).toLocaleDateString('pt-BR') : '—';
+
+      const mm = await authedApi('/v1/me/machines');
+      $('acc-devices').textContent = (mm.devices.length || 0) + ' ativos';
+      const list = $('machines');
+      if (!mm.devices.length) {
+        list.innerHTML = '<p class="loading-skel">Nenhum dispositivo ativado ainda.</p>';
+      } else {
+        list.innerHTML = mm.devices.map(d => `
+          <div class="machine-row">
+            <div class="info">
+              <strong>${d.label || d.fingerprint.slice(0, 14) + '...'}</strong>
+              <small>Visto em ${new Date(d.last_seen).toLocaleString('pt-BR')}</small>
+            </div>
+            <button class="btn btn-ghost" data-id="${d.id}" style="padding:8px 14px; font-size:13px;">Revogar</button>
+          </div>
+        `).join('');
+        list.querySelectorAll('button').forEach(b => {
+          b.onclick = async () => {
+            b.disabled = true; b.innerHTML = '<span class="spinner"></span>';
+            try {
+              await authedApi('/v1/me/machines/' + b.dataset.id, { method: 'DELETE' });
+              window.MV.toast('Dispositivo revogado.', 'success');
+              loadAccount();
+            } catch (e) {
+              window.MV.toast('Erro: ' + e.message, 'error');
+              b.disabled = false; b.innerHTML = 'Revogar';
+            }
+          };
         });
+      }
     } catch (e) {
-        localStorage.removeItem('mv_session');
+      // Token inválido: limpa e mostra login
+      localStorage.removeItem('mv_session');
+      $('login-view').hidden = false;
+      $('account-view').hidden = true;
     }
-}
+  }
 
-$('btn-logout').addEventListener('click', () => {
+  $('btn-logout').addEventListener('click', () => {
     localStorage.removeItem('mv_session');
+    localStorage.removeItem('mv_email');
     location.reload();
-});
-$('btn-portal').addEventListener('click', async () => {
-    try { const r = await api('/v1/billing/portal', { method:'POST' }); location.href = r.url; }
-    catch (e) { alert('Erro: ' + e.message); }
-});
+  });
+  $('btn-portal').addEventListener('click', async () => {
+    const btn = $('btn-portal'); const orig = btn.innerHTML;
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Indo pra Stripe...';
+    try {
+      const r = await authedApi('/v1/billing/portal', { method: 'POST' });
+      if (r.url) location.href = r.url;
+      else throw new Error('Sem URL');
+    } catch (e) {
+      window.MV.toast('Erro: ' + e.message, 'error');
+      btn.disabled = false; btn.innerHTML = orig;
+    }
+  });
 
-loadAccount();
+  loadAccount();
+})();
 </script>
 </body>
 </html>
