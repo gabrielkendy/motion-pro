@@ -11,7 +11,7 @@
 (function () {
 "use strict";
 
-var BUILD = "4.1.0-path-fix";
+var BUILD = "4.3.0-auto-reload-bridge+progress";
 
 var nodePath = typeof require === "function" ? require("path") : null;
 var nodeFs   = typeof require === "function" ? require("fs") : null;
@@ -80,6 +80,18 @@ function jsx(funcCall, cb) {
     });
 }
 
+// Força reload do host.jsx sem reiniciar Premiere (cache do ExtendScript engine)
+function reloadHostJsx(done) {
+    if (!cs) { done && done(); return; }
+    var hostFile = (EXT_PATH + "/jsx/host.jsx").replace(/\\/g, "/");
+    var script = '(function(){try{$.evalFile(new File("' + hostFile + '"));return "reloaded:"+($.global._MPL_VERSION||"?");}catch(e){return "err:"+e.message;}})();';
+    log("Recarregando host.jsx…", "info");
+    cs.evalScript(script, function (r) {
+        log("host.jsx → " + String(r), "info");
+        if (done) done();
+    });
+}
+
 // ────────────────────────────────────────────────  CATALOG
 function loadCatalog() {
     if (!nodeFs || !nodePath) { log("Node FS indisponível", "err"); openLog(); return; }
@@ -129,8 +141,17 @@ function flatten(catalog) {
 }
 
 function deriveWordCount(name, cat) {
+    // 1) "1 Palavra", "2 Palavras" na categoria
     var m = /(\d+)\s*palavra/i.exec(cat || "");
     if (m) return Number(m[1]);
+    // 2) "Texto 01" → derivar por mapeamento (similar ao EP onde o nome dita)
+    var n = /(?:Texto|Kinetic|Title|Lower)\s*(\d+)/i.exec(name || "");
+    if (n) {
+        var idx = Number(n[1]);
+        // Heurística: ordena por número, usa o resto / 3 (estimativa)
+        // — não é precisa mas dá uma sensação de variação por wc
+        return Math.max(1, Math.min(7, ((idx - 1) % 7) + 1));
+    }
     return null;
 }
 
@@ -318,10 +339,19 @@ function applySingle() {
     if (!SELECTED.mogrt) { toast("Template sem .mogrt", "err"); return; }
     var abs = nodePath.join(EXT_PATH, "packs", SELECTED.mogrt);
     log("Aplicando: " + SELECTED.name);
+    log("  path: " + abs);
     var withSfx = $("tpl-with-sfx") && $("tpl-with-sfx").checked && SFX_SELECTED;
     var audioTrack = withSfx ? ($("tpl-sfx-track-select") && $("tpl-sfx-track-select").value) : null;
 
-    jsx("$.global.EP_hybridInsertMogrt(" + JSON.stringify(abs) + ",null,null,null);", function (d) {
+    // Tenta as DUAS APIs do bridge — EP_hybrid e legacy importMogrt (fallback)
+    var call = "(function(){" +
+        "if (typeof EP_hybridInsertMogrt === 'function') return EP_hybridInsertMogrt(" + JSON.stringify(abs) + ",null,null,null);" +
+        "if (typeof MotionProLegendas !== 'undefined' && MotionProLegendas.EP_hybridInsertMogrt) return MotionProLegendas.EP_hybridInsertMogrt(" + JSON.stringify(abs) + ",null,null,null);" +
+        "if (typeof MotionProLegendas !== 'undefined' && MotionProLegendas.importMogrt) return MotionProLegendas.importMogrt(" + JSON.stringify(abs) + ");" +
+        "return JSON.stringify({error: 'host.jsx não carregado — clique 🩺 e tente Recarregar host'});" +
+    "})();";
+    cs.evalScript(call, function (raw) {
+        var d; try { d = JSON.parse(raw || "{}"); } catch (e) { d = { error: "parse: " + String(raw||"").slice(0,120) }; }
         if (d.error) {
             log("✗ " + d.error, "err"); openLog();
             toast("Erro: " + d.error, "err", 4500);
@@ -329,10 +359,7 @@ function applySingle() {
         }
         log("✓ Inserido em V" + (d.track + 1), "info");
         toast("✓ " + SELECTED.name + " · V" + (d.track + 1), "ok");
-
-        if (withSfx && audioTrack) {
-            placeSfxAt(d.startTicks, audioTrack);
-        }
+        if (withSfx && audioTrack) placeSfxAt(d.startTicks, audioTrack);
     });
 }
 
@@ -503,12 +530,13 @@ function loadCaptions() {
 }
 
 // ────────────────────────────────────────────────  AUTO SRT — APLICAR
+var APPLY_CANCELED = false;
+
 function applySrtBatch() {
     if (!SRT_GROUPS.length) { toast("Sem grupos pra aplicar", "warn"); return; }
     var groups = SRT_GROUPS.filter(function (g) { return g.tplName && g.text; });
     if (!groups.length) { toast("Nenhum grupo tem template. Use 'Aplicar template...'", "warn"); return; }
 
-    // resolve mogrt path por groupo
     var payload = groups.map(function (g) {
         var tpl = ALL_TEMPLATES.find(function (t) { return t.name === g.tplName; });
         if (!tpl || !tpl.mogrt) return null;
@@ -522,33 +550,111 @@ function applySrtBatch() {
 
     var trackMode = ($("auto-srt-track") && $("auto-srt-track").value) || "-1";
     var policy = (document.querySelector('input[name="postApplyPolicy"]:checked') || {}).value || "keep";
-    var opts = { trackMode: trackMode, disableOriginals: policy === "disable" };
 
-    var btn = $("btn-auto-srt-apply");
-    if (btn) { btn.disabled = true; btn.textContent = "Aplicando " + payload.length + "…"; }
+    APPLY_CANCELED = false;
+    openLog();
     log("► Batch APLY: " + payload.length + " grupos · track=" + trackMode);
 
-    jsx("$.global.EP_hybridApplyTextsAndTiming(" +
-        JSON.stringify(JSON.stringify(payload)) + "," +
-        JSON.stringify(JSON.stringify(opts)) + ");",
-    function (d) {
-        if (btn) { btn.disabled = false; btn.textContent = "⚡ APLICAR NA TIMELINE"; }
-        if (d.error) {
-            log("BATCH FAIL: " + d.error, "err"); openLog();
-            toast("Erro: " + d.error, "err", 5000);
+    var btn = $("btn-auto-srt-apply");
+    var orig = btn.textContent;
+    btn.disabled = false;
+    btn.textContent = "⏸ CANCELAR (0/" + payload.length + ")";
+    btn.onclick = function () { APPLY_CANCELED = true; log("Cancelando…", "warn"); };
+
+    var applied = 0, failed = 0, idx = 0;
+    var startedAt = Date.now();
+
+    function next() {
+        if (APPLY_CANCELED) {
+            finish();
             return;
         }
-        log("✓ " + d.applied + " aplicados · " + d.failed + " falhas", "info");
-        if (d.errors && d.errors.length) d.errors.forEach(function (er) { log("  " + er, "warn"); });
-        toast("✓ " + d.applied + " títulos criados", "ok", 3500);
+        if (idx >= payload.length) { finish(); return; }
+        var g = payload[idx];
+        idx++;
 
-        // SFX (se sel)
-        var sfxTrack = $("auto-srt-sfx-track") && $("auto-srt-sfx-track").value;
-        if (sfxTrack && SFX_SELECTED) {
-            var positions = payload.map(function (g) { return String(Math.round(g.start * TICKS)); });
-            placeSfxBatch(positions, sfxTrack);
+        btn.textContent = "⏸ CANCELAR (" + idx + "/" + payload.length + ")";
+        var statusEl = $("auto-srt-status");
+        if (statusEl) {
+            var elapsed = (Date.now() - startedAt) / 1000;
+            var rate = idx / elapsed;
+            var eta = Math.round((payload.length - idx) / rate);
+            statusEl.textContent = idx + "/" + payload.length + " · " + applied + " OK · " + failed + " erros · ETA " + eta + "s";
         }
-    });
+
+        var ticks = String(Math.round(g.start * TICKS));
+        // chama EP_hybridInsertMogrt por item e setMogrtText via JS
+        var script = "(function(){" +
+            "var r = MotionProLegendas.EP_hybridInsertMogrt(" + JSON.stringify(g.mogrtPath) + "," + JSON.stringify(ticks) + "," + JSON.stringify(trackMode) + ",null);" +
+            "var d; try { d = JSON.parse(r); } catch (e) { return r; }" +
+            "if (d.error) return r;" +
+            // Tenta achar a clip recém-criado e setar texto
+            "try {" +
+            "  var seq = app.project.activeSequence;" +
+            "  var tn = d.track;" +
+            "  var vt = seq.videoTracks[tn];" +
+            "  var newClip = null;" +
+            "  for (var i = 0; i < vt.clips.numItems; i++) {" +
+            "    if (String(vt.clips[i].start.ticks) === " + JSON.stringify(ticks) + ") { newClip = vt.clips[i]; break; }" +
+            "  }" +
+            "  if (newClip) {" +
+            "    var txt = " + JSON.stringify(g.text) + ";" +
+            "    var durSec = " + (Math.max(0.4, g.end - g.start)) + ";" +
+            "    try { newClip.end = { ticks: String(Math.round((" + g.start + " + durSec) * 254016000000)) }; } catch(e){}" +
+            // troca texto
+            "    try {" +
+            "      var mc = newClip.getMGTComponent && newClip.getMGTComponent();" +
+            "      if (mc && mc.properties) {" +
+            "        for (var pi = 0; pi < mc.properties.numItems; pi++) {" +
+            "          var p = mc.properties[pi];" +
+            "          var dn = (p.displayName||'').toLowerCase();" +
+            "          if (dn.indexOf('text') >= 0 || dn.indexOf('texto') >= 0 || dn.indexOf('title') >= 0) {" +
+            "            try { p.setValue(txt, true); break; } catch(e){}" +
+            "          }" +
+            "        }" +
+            "      }" +
+            "    } catch(e){}" +
+            "  }" +
+            "} catch(e) { return JSON.stringify({error: 'post:' + e.message}); }" +
+            "return r;" +
+        "})();";
+
+        cs.evalScript(script, function (raw) {
+            var d; try { d = JSON.parse(raw || "{}"); } catch (e) { d = { error: "parse:" + String(raw||"").slice(0,80) }; }
+            if (d.error) {
+                failed++;
+                if (failed <= 5) log("  ✗ #" + idx + ": " + d.error, "err");
+            } else {
+                applied++;
+            }
+            setTimeout(next, 30);
+        });
+    }
+
+    function finish() {
+        btn.disabled = false;
+        btn.textContent = orig;
+        btn.onclick = applySrtBatch;
+        log("✓ Batch DONE · " + applied + " aplicados · " + failed + " falhas", "info");
+        toast("✓ " + applied + " títulos criados" + (failed ? " (" + failed + " falhas)" : ""), failed ? "warn" : "ok", 4000);
+
+        if (!APPLY_CANCELED) {
+            // policy: disable originals
+            if (policy === "disable") {
+                jsx("(function(){try{var s=app.project.activeSequence;var n=s.videoTracks.numTracks;var t=" + (trackMode === "-1" ? "n-1" : trackMode) + ";if(t>0){var b=s.videoTracks[t-1];for(var i=0;i<b.clips.numItems;i++){try{b.clips[i].disabled=true;}catch(e){}}}}catch(e){}return JSON.stringify({ok:true});})();", function () {
+                    log("✓ Originais desativados", "info");
+                });
+            }
+            // SFX
+            var sfxTrack = $("auto-srt-sfx-track") && $("auto-srt-sfx-track").value;
+            if (sfxTrack && SFX_SELECTED) {
+                var positions = payload.map(function (g) { return String(Math.round(g.start * TICKS)); });
+                placeSfxBatch(positions, sfxTrack);
+            }
+        }
+    }
+
+    next();
 }
 
 // ────────────────────────────────────────────────  SFX (synth → WAV → tmp → import)
@@ -886,7 +992,10 @@ window.MPL_onAuthReady = function () {
     log("BUILD " + BUILD, "info");
     setStatus("Carregando catálogo…");
     loadCatalog();
-    setStatus("Pronto.");
+    // Força reload do host.jsx em todo boot (evita ExtendScript cache antigo)
+    reloadHostJsx(function () {
+        setStatus("Pronto.");
+    });
 };
 
 if (document.readyState === "loading") {
