@@ -344,10 +344,12 @@ function buildCard(pack, item) {
     thumb.className = "card__thumb";
     thumb.style.background = "linear-gradient(135deg, " + colorFromName(item.name) + ", #15151a 80%)";
 
-    // play overlay (visible on hover)
+    // play overlay (visible on hover, click = import)
     var play = document.createElement("div");
     play.className = "playicon";
+    play.title = "Clique para importar na timeline";
     play.innerHTML = '<svg viewBox="0 0 24 24" width="42" height="42" fill="rgba(255,255,255,0.95)"><path d="M8 5v14l11-7z"/></svg>';
+    play.onclick = function (e) { e.stopPropagation(); importMogrt(item); };
     thumb.appendChild(play);
 
     // top-left badge
@@ -379,7 +381,11 @@ function buildCard(pack, item) {
 
     c.addEventListener("mouseenter", function () { onHover(c, item); });
     c.addEventListener("mouseleave", function () { offHover(c); });
-    c.addEventListener("dblclick", function () { importMogrt(item); });
+    // Single click no card importa. O play icon e a estrela têm seus próprios handlers e param a propagação.
+    c.addEventListener("click", function (e) {
+        if (e.target.closest && (e.target.closest(".card__fav") || e.target.closest(".playicon"))) return;
+        importMogrt(item);
+    });
 
     observer.observe(c);
     return c;
@@ -462,14 +468,111 @@ function offHover(card) {
 }
 
 // ============================================================ import
+function logLine(msg, kind) {
+    try {
+        var body = document.getElementById("log-body");
+        if (!body) return;
+        var d = document.createElement("div");
+        d.className = "log__line" + (kind ? " log__line--" + kind : "");
+        var time = new Date().toTimeString().slice(0, 8);
+        d.textContent = "[" + time + "] " + msg;
+        body.appendChild(d);
+        body.scrollTop = body.scrollHeight;
+    } catch (e) {}
+}
+
 function importMogrt(item) {
-    var p = String(item.mogrt).replace(/\\/g, "\\\\");
-    $("status").textContent = "Importando " + item.name + "...";
-    cs.evalScript('MotionVault.importMogrt("' + p + '")', function (res) {
-        var ok = false, err = "";
-        try { var j = JSON.parse(res); ok = j && j.ok; if (!ok && j) err = j.error || ""; } catch (e) {}
-        if (ok) { toast("✓ " + item.name, "ok"); $("status").textContent = "Importado: " + item.name; }
-        else { toast(err || "Abra uma sequência primeiro", "err", 3000); $("status").textContent = "Erro"; }
+    if (!item || (!item.mogrt && !item.cdn_key)) {
+        toast("Item sem caminho .mogrt", "err", 3000);
+        logLine("ABORT: item sem .mogrt/cdn_key: " + JSON.stringify(item), "err");
+        return;
+    }
+
+    $("status").textContent = "Preparando " + item.name + "...";
+    logLine("→ importMogrt: " + item.name);
+
+    // Resolve path: legacy local path OR CDN-cached download
+    var resolvePath;
+    if (window.AssetLoader && (item.cdn_key || !fs.existsSync(item.mogrt || ""))) {
+        // CDN path (also fallback when local file is missing)
+        resolvePath = window.AssetLoader.get(item).catch(function (err) {
+            var msg = String(err && err.message || err);
+            if (msg === "auth_expired")           toast("Sessão expirou — entre de novo", "err", 4000);
+            else if (msg === "subscription_inactive") toast("Plano vencido — renove pra baixar", "err", 4000);
+            else if (msg === "device_not_authorized") toast("Dispositivo não autorizado", "err", 4000);
+            else if (msg === "asset_not_found")   toast("Template indisponível", "err", 4000);
+            else                                  toast("Falha no download: " + msg, "err", 4000);
+            logLine("ASSET LOAD FAIL: " + msg, "err");
+            throw err;
+        });
+    } else if (item.mogrt) {
+        // Legacy path (Gabriel's dev machine, or already cached)
+        resolvePath = Promise.resolve(item.mogrt);
+    } else {
+        toast("Item sem caminho local", "err", 3000);
+        return;
+    }
+
+    resolvePath.then(function (absPath) {
+        if (!absPath) return;
+        try {
+            if (!fs.existsSync(absPath)) {
+                toast(".mogrt não encontrado no cache", "err", 4000);
+                logLine("MISSING FILE: " + absPath, "err");
+                return;
+            }
+        } catch (e) {}
+
+        var p = String(absPath).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+        $("status").textContent = "Importando " + item.name + "...";
+        logLine("  path: " + absPath);
+
+        cs.evalScript('MotionVault.importMogrt("' + p + '")', function (res) {
+        logLine("← host res: " + (res || "(vazio)"));
+        if (!res || res === "undefined") {
+            toast("Sem resposta do Premiere. O host.jsx carregou?", "err", 4000);
+            $("status").textContent = "Sem resposta do host";
+            return;
+        }
+        if (res === "EvalScript error.") {
+            toast("ExtendScript falhou. Veja o console (Ctrl+`).", "err", 4000);
+            logLine("EvalScript error retornado pelo Premiere", "err");
+            $("status").textContent = "ExtendScript error";
+            return;
+        }
+        var ok = false, errMsg = "";
+        try {
+            var j = JSON.parse(res);
+            ok = j && j.ok;
+            if (!ok && j) errMsg = j.error || "";
+        } catch (e) { errMsg = "Resposta inválida: " + res; }
+
+        if (ok) {
+            toast("✓ " + item.name, "ok");
+            $("status").textContent = "Importado: " + item.name;
+        } else {
+            toast(errMsg || "Falha ao importar", "err", 4500);
+            logLine("FAIL: " + (errMsg || "(sem msg)"), "err");
+            $("status").textContent = "Erro: " + (errMsg || "desconhecido");
+        }
+        }); // close cs.evalScript
+    }, function () { /* resolvePath rejected — toast já mostrado */ }); // close resolvePath.then
+}
+
+/* Pinga o host.jsx no boot pra confirmar que carregou. Mostra toast se falhar. */
+function hostPing() {
+    cs.evalScript("(typeof $.global.MotionVault === 'object') ? MotionVault.ping() : 'undefined'", function (res) {
+        logLine("ping host: " + (res || "(vazio)"));
+        if (!res || res === "undefined" || res === "EvalScript error.") {
+            toast("⚠ host.jsx não carregou. Reabra o painel.", "err", 6000);
+            logLine("HOST AUSENTE — verifique manifest e jsx/host.jsx", "err");
+            return;
+        }
+        try {
+            var j = JSON.parse(res);
+            if (j && j.error) logLine("ping error: " + j.error, "err");
+            else logLine("host ok: " + j.host + " " + j.version + " seq=" + j.hasSequence);
+        } catch (e) {}
     });
 }
 
@@ -718,7 +821,7 @@ function bindGate() {
             }
             msg.textContent = "✓ " + (mode === "signup" ? "Conta criada! Verifique seu e-mail. Trial de 14 dias ativo." : "Bem-vindo!");
             msg.className = "gate__msg ok";
-            setTimeout(function () { hideGate(); updateTrialUI(); updateVerifyBar(); }, 500);
+            setTimeout(function () { hideGate(); hideReauthBar(); updateTrialUI(); updateVerifyBar(); }, 500);
         } catch (e) {
             msg.textContent = "Erro: " + (typeof e === "string" ? e : (e.message || "falha"));
             msg.className = "gate__msg";
@@ -851,6 +954,20 @@ function bindTrialUI() {
             localStorage.setItem("mv_verify_dismissed_until", Date.now() + 24*60*60*1000);
         };
     }
+
+    // Banner de reconexão: abre o gate sem destruir nada (cara reentra e continua)
+    var reauthBtn = document.getElementById("btn-reauth");
+    if (reauthBtn) {
+        reauthBtn.onclick = function () {
+            var email = localStorage.getItem("mv_email") || "";
+            showGate("login");
+            // Pré-preenche o email pra fluxo mais rápido
+            setTimeout(function () {
+                var input = document.getElementById("g-email");
+                if (input && email) input.value = email;
+            }, 50);
+        };
+    }
 }
 
 // Verifica status de email_verified e mostra banner se necessário
@@ -879,21 +996,27 @@ function updateVerifyBar() {
 }
 
 /* Periodic heartbeat: every 5 min refresh license.
- * FILOSOFIA: NUNCA deslogar usuário automaticamente. Se assinatura cair → mostra paywall.
- * Logout só acontece em 2 casos: (1) token JWT inválido/expirado, (2) cliente clica "Sair".
- * Device revogado também NÃO desloga (só bloqueia uso). */
+ * FILOSOFIA: NUNCA deslogar usuário automaticamente. Logout só acontece quando o cliente
+ *   clica explicitamente em "Sair" no paywall. Casos automáticos:
+ *     - Assinatura revogada/cancelada/expirada → mostra PAYWALL (mantém logado)
+ *     - Device revogado                        → mostra PAYWALL (mantém logado)
+ *     - Token JWT inválido/expirado            → mostra banner de RECONEXÃO
+ *       (sessão expirou no backend, mas o plugin não apaga cache; cara reconecta sem perder estado)
+ *     - Offline / 500 / timeout                → mantém license cached e continua funcionando
+ */
 function startHeartbeat() {
     if (DEV_BYPASS) return;
     var fp = computeFingerprint();
     var tick = async function () {
         try {
             var r = await gateApi("/v1/license/heartbeat", { fingerprint: fp });
+            // Heartbeat OK → esconde banner de reconexão se estava aparecendo
+            hideReauthBar();
             if (r.revoked || r.subscription_inactive) {
-                // Sub revogada/cancelada/expirada → PAYWALL (não desloga)
                 localStorage.setItem("mv_plan", r.plan || "free");
                 localStorage.setItem("mv_status", r.status || "revoked");
                 if (r.expires_at) localStorage.setItem("mv_expires", r.expires_at);
-                updateTrialUI();   // updateTrialUI vai mostrar paywall pra status revoked/canceled/expired
+                updateTrialUI();
                 return;
             }
             if (r.license) {
@@ -904,24 +1027,31 @@ function startHeartbeat() {
                 updateTrialUI();
             }
         } catch (e) {
-            // Erro de rede ou token expirado.
-            // Só desloga se backend retornar invalid_token EXPLICITAMENTE.
-            // Erros de rede mantém estado offline.
             var msg = (typeof e === "string" ? e : (e && e.message)) || "";
             if (msg === "invalid_token" || msg === "missing_token") {
-                // Token JWT realmente inválido — precisa relogar
-                localStorage.removeItem("mv_session");
-                localStorage.removeItem("mv_license");
-                localStorage.removeItem("mv_plan");
-                localStorage.removeItem("mv_status");
-                localStorage.removeItem("mv_expires");
-                showGate("login");
+                // Sessão expirou no servidor. NÃO apaga nada do localStorage.
+                // Mostra banner pedindo pra reconectar; cara segue usando offline com license cached.
+                showReauthBar();
             }
             // Outros erros (offline, 500, timeout): mantém license cached, continua usando
         }
     };
-    tick();                              // primeira chamada já
-    setInterval(tick, 5 * 60 * 1000);    // depois a cada 5 min
+    tick();
+    setInterval(tick, 5 * 60 * 1000);
+}
+
+/* Banner não-destrutivo: aparece quando o JWT expirou e mostra botão "Reconectar".
+ * Clicar reconectar abre o gate POR CIMA, mas mv_session/mv_license/etc seguem intactos.
+ * Se o cara fechar o plugin sem reconectar, na próxima abertura ele continua logado
+ * (o gate só aparece quando mv_session realmente não existe). */
+function showReauthBar() {
+    var bar = document.getElementById("reauth-bar");
+    if (!bar) return;
+    bar.classList.remove("hidden");
+}
+function hideReauthBar() {
+    var bar = document.getElementById("reauth-bar");
+    if (bar) bar.classList.add("hidden");
 }
 
 /* Restaura sessão do cache. Plugin NUNCA pede pra logar de novo se já tem token.
@@ -941,7 +1071,7 @@ function tryRestoreSession() {
 }
 
 // ============================================================ boot
-var BUILD = "2.4.0-profile-verify";
+var BUILD = "2.5.1-keep-session";
 
 /* Diagnostic dump: alert details about the first card's computed styles.
  * Triggered by Ctrl+Shift+D. Tells us exactly what the browser sees. */
@@ -988,6 +1118,7 @@ if (loadCatalog()) {
     updateVerifyBar();
     checkEmailVerified();
     startHeartbeat();
+    hostPing();   // confirma que host.jsx carregou e logga status
 }
 
 })();

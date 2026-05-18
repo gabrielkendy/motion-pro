@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>MotionPro</title>
-<link rel="stylesheet" href="css/app.css?v=240">
+<link rel="stylesheet" href="css/app.css?v=251">
 </head>
 <body>
 
@@ -54,6 +54,12 @@
     <span class="verifybar__info">📧 Confirme seu e-mail pra garantir comunicados importantes</span>
     <button id="btn-resend-verify" class="verifybar__cta">Reenviar e-mail</button>
     <button id="btn-dismiss-verify" class="verifybar__dismiss" title="Fechar">×</button>
+</div>
+
+<!-- ============ REAUTH BANNER (sessão expirou no servidor — não desloga, só reconecta) ============ -->
+<div id="reauth-bar" class="reauthbar hidden">
+    <span class="reauthbar__info">🔒 Sua sessão expirou. Reconecte pra atualizar sua assinatura — seu cache continua intacto.</span>
+    <button id="btn-reauth" class="reauthbar__cta">Reconectar</button>
 </div>
 
 <!-- ============ PAYWALL (mostra se trial expirou) ============ -->
@@ -141,8 +147,9 @@
     <div id="log-body" class="log__body"></div>
 </div>
 
-<script src="js/lib/CSInterface.js?v=240"></script>
-<script src="js/config.js?v=240"></script>
-<script src="js/app.js?v=240"></script>
+<script src="js/lib/CSInterface.js?v=251"></script>
+<script src="js/config.js?v=251"></script>
+<script src="js/asset-loader.js?v=251"></script>
+<script src="js/app.js?v=251"></script>
 </body>
 </html>

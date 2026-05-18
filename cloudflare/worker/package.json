@@ -1,0 +1,14 @@
+{
+  "name": "motionpro-cdn-worker",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "secret:set": "wrangler secret put CDN_SIGN_SECRET"
+  },
+  "devDependencies": {
+    "wrangler": "^3.78.0"
+  }
+}

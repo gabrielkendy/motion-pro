@@ -1,0 +1,27 @@
+name = "motionpro-cdn"
+main = "src/index.js"
+compatibility_date = "2026-04-01"
+
+# Custom domain — bind via Cloudflare dashboard:
+# kendyproducoes.com → DNS → add CNAME `cdn` pointing to `motionpro-cdn.<sub>.workers.dev`
+# Then Workers → motionpro-cdn → Settings → Triggers → Custom Domain → cdn.kendyproducoes.com
+#
+# Or use routes in this file (replace <ZONE_ID> with your zone id):
+# routes = [
+#   { pattern = "cdn.kendyproducoes.com/*", zone_name = "kendyproducoes.com" }
+# ]
+
+[[r2_buckets]]
+binding = "ASSETS"
+bucket_name = "motionpro-assets"
+preview_bucket_name = "motionpro-assets-preview"
+
+# Set via: wrangler secret put CDN_SIGN_SECRET
+# Must MATCH backend env `CDN_SIGN_SECRET` exactly.
+# Generate with: openssl rand -hex 32
+
+[observability]
+enabled = true
+
+[vars]
+# non-secret env vars (none for now)

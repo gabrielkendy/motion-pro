@@ -1,9 +1,15 @@
+param(
+    [string]$ObfuscateProfile = "balanced",  # "balanced" | "aggressive" | "off"
+    [switch]$SkipObfuscate
+)
+
 $ErrorActionPreference = "Stop"
 
-$Version    = "1.1.0"
+$Version    = "1.1.1"
 $ScriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot   = Resolve-Path (Join-Path $ScriptDir "..\..")
 $PluginSrc  = Join-Path $RepoRoot "plugin-legendas"
+$ToolsDir   = Join-Path $RepoRoot "tools"
 $BuildDir   = Join-Path $ScriptDir "build"
 $StageDir   = Join-Path $BuildDir "MotionPro-Legendas-$Version"
 $OutZip     = Join-Path $ScriptDir "output\MotionPro-Legendas-$Version.zip"
@@ -63,18 +69,33 @@ foreach ($b in $bkpDirs) {
 $pluginSize = (Get-ChildItem -Recurse $PluginDest | Measure-Object -Sum Length).Sum
 Write-Host "      $('{0:N1}' -f ($pluginSize/1MB)) MB"
 
-Write-Host "[2/4] Copiando scripts e leia-me..." -ForegroundColor Yellow
+Write-Host "[2/5] Obfuscando JS (profile=$ObfuscateProfile)..." -ForegroundColor Yellow
+if ($SkipObfuscate -or $ObfuscateProfile -eq "off") {
+    Write-Host "      PULADO (DEV build sem obfuscação)" -ForegroundColor DarkYellow
+} else {
+    $JsStage = Join-Path $PluginDest "js"
+    if (-not (Test-Path (Join-Path $ToolsDir "node_modules\javascript-obfuscator"))) {
+        Write-Host "      Instalando deps em tools/ ..." -ForegroundColor DarkGray
+        Push-Location $ToolsDir
+        npm install --no-audit --no-fund --silent 2>&1 | Out-Null
+        Pop-Location
+    }
+    node "$ToolsDir\obfuscate.js" --src "$JsStage" --profile "$ObfuscateProfile"
+    if ($LASTEXITCODE -ne 0) { throw "Obfuscation failed (exit $LASTEXITCODE)" }
+}
+
+Write-Host "[3/5] Copiando scripts e leia-me..." -ForegroundColor Yellow
 Copy-Item -Path "$ScriptDir\INSTALAR.bat"    -Destination $StageDir -Force
 Copy-Item -Path "$ScriptDir\DESINSTALAR.bat" -Destination $StageDir -Force
 Copy-Item -Path "$ScriptDir\LEIA-ME.html"    -Destination $StageDir -Force
 Write-Host "      OK"
 
-Write-Host "[3/4] Compactando ZIP (pode demorar 1-2 min com 855MB)..." -ForegroundColor Yellow
+Write-Host "[4/5] Compactando ZIP..." -ForegroundColor Yellow
 Compress-Archive -Path "$StageDir\*" -DestinationPath $OutZip -CompressionLevel Optimal -Force
 $zipSize = (Get-Item $OutZip).Length
 Write-Host "      ZIP: $('{0:N1}' -f ($zipSize/1MB)) MB"
 
-Write-Host "[4/4] Hashes..." -ForegroundColor Yellow
+Write-Host "[5/5] Hashes..." -ForegroundColor Yellow
 $sha256 = (Get-FileHash -Path $OutZip -Algorithm SHA256).Hash.ToLower()
 
 Write-Host ""

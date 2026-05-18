@@ -4,12 +4,17 @@
   "description": "",
   "main": "catalog-builder.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "obfuscate": "node obfuscate.js",
+    "upload-r2": "node upload-to-r2.js",
+    "migrate-catalog": "node migrate-catalog.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1049.0",
+    "javascript-obfuscator": "^4.2.2",
     "pg": "^8.20.0",
     "stripe": "^22.1.1"
   }
