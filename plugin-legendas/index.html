@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src *; img-src * data: blob: file: filesystem:; style-src 'self' 'unsafe-inline'; media-src * data: blob: file: filesystem:;">
 <title>MotionPro Legendas — Premiere</title>
-<link rel="stylesheet" href="css/ep.css?v=480">
+<link rel="stylesheet" href="css/ep.css?v=490">
 </head>
 <body>
 
@@ -50,10 +50,28 @@
 
 <!-- ════════════ TAB BAR ════════════ -->
 <div id="tab-bar">
-    <button class="tab-btn active" data-tab="tab-templates">Templates</button>
-    <button class="tab-btn" data-tab="tab-create">✍️ Criar</button>
-    <button class="tab-btn" data-tab="tab-auto-srt">SRT · Config</button>
-    <button class="tab-btn" data-tab="tab-srt-editor">SRT · Editar</button>
+    <button class="tab-btn active" data-tab="tab-templates" title="Biblioteca de templates EP">
+        <span class="tab-ico">📚</span><span class="tab-lbl">Templates</span>
+    </button>
+    <button class="tab-btn" data-tab="tab-create" title="Crie legendas do zero a partir do roteiro">
+        <span class="tab-ico">✍️</span><span class="tab-lbl">Criar</span>
+    </button>
+    <button class="tab-btn" data-tab="tab-auto-srt" title="Importe SRT ou transcrição do Premiere">
+        <span class="tab-ico">📥</span><span class="tab-lbl">Importar</span>
+    </button>
+    <button class="tab-btn" data-tab="tab-srt-editor" title="Revise e ajuste cada legenda">
+        <span class="tab-ico">📝</span><span class="tab-lbl">Editar</span>
+        <span class="tab-badge hidden" id="tab-editor-badge"></span>
+    </button>
+</div>
+
+<!-- Wizard breadcrumb (aparece nas tabs de legenda) -->
+<div id="wizard-bar" class="hidden">
+    <div class="wiz-step" data-step="create">1. Crie ou importe</div>
+    <span class="wiz-arrow">→</span>
+    <div class="wiz-step" data-step="editor">2. Revise</div>
+    <span class="wiz-arrow">→</span>
+    <div class="wiz-step" data-step="apply">3. Aplique</div>
 </div>
 
 <!-- ════════════ TAB: TEMPLATES ════════════ -->
@@ -230,9 +248,7 @@
         </div>
 
         <div id="auto-srt-summary"></div>
-
-        <button id="btn-auto-srt-apply" class="btn-primary btn-apply-srt" disabled>⚡ APLICAR NA TIMELINE</button>
-        <div id="auto-srt-status"></div>
+        <div id="auto-srt-status-config" class="auto-srt-status-inline"></div>
     </div>
 </div>
 
@@ -260,6 +276,15 @@
             <span class="dim">— ou clique 🎙️ Captions Premiere se já tem transcrição nativa</span>
         </div>
     </div>
+</div>
+
+<!-- ════════════ STICKY APPLY FOOTER (só visível em tabs de legenda) ════════════ -->
+<div id="apply-footer" class="hidden">
+    <div class="apply-footer-info">
+        <span id="apply-footer-summary">—</span>
+        <span id="apply-footer-status"></span>
+    </div>
+    <button id="btn-auto-srt-apply" class="btn-primary btn-apply-srt" disabled>⚡ APLICAR NA TIMELINE</button>
 </div>
 
 <!-- ════════════ LOG ════════════ -->
@@ -394,9 +419,9 @@
     <div id="side"></div>
 </div>
 
-<script src="js/lib/CSInterface.js?v=480"></script>
-<script src="js/config.js?v=480"></script>
-<script src="js/auth.js?v=480"></script>
-<script src="js/main.js?v=480"></script>
+<script src="js/lib/CSInterface.js?v=490"></script>
+<script src="js/config.js?v=490"></script>
+<script src="js/auth.js?v=490"></script>
+<script src="js/main.js?v=490"></script>
 </body>
 </html>

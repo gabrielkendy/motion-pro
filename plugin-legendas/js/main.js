@@ -11,7 +11,7 @@
 (function () {
 "use strict";
 
-var BUILD = "4.8.0-criar-legendas-do-zero+fontes-premium";
+var BUILD = "4.9.0-wizard-ui-sticky-footer";
 
 var nodePath = typeof require === "function" ? require("path") : null;
 var nodeFs   = typeof require === "function" ? require("fs") : null;
@@ -597,13 +597,12 @@ function maxWcOf(arr) { return arr.length ? arr[arr.length - 1] : 5; }
 function applySmartDistribution() {
     if (!SRT_DATA.length) { toast("Carregue um SRT primeiro", "warn"); return; }
     SRT_GROUPS = smartDistribute(SRT_DATA);
-    // re-atribui templates por wc
     SRT_GROUPS.forEach(function (g) { g.tplName = defaultTplForWc(g.wc); g.selected = false; });
     renderSrtEditor(); updateSrtSummary();
-    var ap = $("btn-auto-srt-apply"); if (ap) ap.disabled = SRT_GROUPS.length === 0;
     var withTpl = SRT_GROUPS.filter(function (g) { return g.tplName; }).length;
     log("⚡ Distribuição Inteligente: " + SRT_GROUPS.length + " grupos · " + withTpl + " com template", "info");
-    toast("⚡ " + SRT_GROUPS.length + " grupos distribuídos", "ok");
+    toast("⚡ " + SRT_GROUPS.length + " grupos distribuídos · revise →", "ok");
+    switchTab("tab-srt-editor");
 }
 
 // ────────────────────────────────────────────────  CRIAR LEGENDAS DO ZERO
@@ -811,11 +810,22 @@ function fmtTime(s) {
 }
 
 function updateSrtSummary() {
-    var sm = $("auto-srt-summary"); if (!sm) return;
-    if (SRT_GROUPS.length === 0) { sm.classList.remove("show"); return; }
-    sm.classList.add("show");
-    var withTpl = SRT_GROUPS.filter(function (g) { return g.tplName; }).length;
-    sm.innerHTML = "<b>" + SRT_GROUPS.length + "</b> grupos · <b>" + withTpl + "</b> com template · <b>" + (SRT_GROUPS.length - withTpl) + "</b> sem";
+    var sm = $("auto-srt-summary");
+    if (sm) {
+        if (SRT_GROUPS.length === 0) { sm.classList.remove("show"); }
+        else {
+            sm.classList.add("show");
+            var withTpl = SRT_GROUPS.filter(function (g) { return g.tplName; }).length;
+            sm.innerHTML = "<b>" + SRT_GROUPS.length + "</b> grupos · <b>" + withTpl + "</b> com template · <b>" + (SRT_GROUPS.length - withTpl) + "</b> sem";
+        }
+    }
+    // Atualiza footer + badge sempre
+    updateApplyFooter();
+    var badge = document.getElementById("tab-editor-badge");
+    if (badge) {
+        if (SRT_GROUPS && SRT_GROUPS.length) { badge.classList.remove("hidden"); badge.textContent = SRT_GROUPS.length; }
+        else { badge.classList.add("hidden"); }
+    }
 }
 
 function updateBulkActions() {
@@ -931,7 +941,7 @@ function applySrtBatch() {
         idx++;
 
         btn.textContent = "⏸ CANCELAR (" + idx + "/" + payload.length + ")";
-        var statusEl = $("auto-srt-status");
+        var statusEl = $("apply-footer-status");
         if (statusEl) {
             var elapsed = (Date.now() - startedAt) / 1000;
             var rate = idx / elapsed;
@@ -1214,6 +1224,62 @@ function switchTab(id) {
     document.querySelectorAll(".tab-panel").forEach(function (p) {
         p.classList.toggle("active", p.id === id);
     });
+    updateWizardAndFooter(id);
+}
+
+function updateWizardAndFooter(tabId) {
+    var isLegenda = tabId === "tab-create" || tabId === "tab-auto-srt" || tabId === "tab-srt-editor";
+    var wiz = document.getElementById("wizard-bar");
+    var footer = document.getElementById("apply-footer");
+
+    if (wiz) {
+        if (isLegenda) {
+            wiz.classList.remove("hidden");
+            // Marca etapas: 1=create/importar / 2=editor / 3=apply
+            var has = SRT_GROUPS && SRT_GROUPS.length > 0;
+            var withTpl = has ? SRT_GROUPS.filter(function (g) { return g.tplName; }).length : 0;
+            wiz.querySelectorAll(".wiz-step").forEach(function (s) { s.classList.remove("active","done"); });
+            var s1 = wiz.querySelector('[data-step="create"]');
+            var s2 = wiz.querySelector('[data-step="editor"]');
+            var s3 = wiz.querySelector('[data-step="apply"]');
+            if (s1) s1.classList.add(has ? "done" : "active");
+            if (s2) s2.classList.add(has ? (tabId === "tab-srt-editor" ? "active" : "done") : "");
+            if (s3) s3.classList.add((withTpl > 0 && has) ? "active" : "");
+        } else { wiz.classList.add("hidden"); }
+    }
+
+    if (footer) {
+        if (isLegenda) {
+            footer.classList.remove("hidden");
+            updateApplyFooter();
+        } else { footer.classList.add("hidden"); }
+    }
+
+    // Badge na aba Editar com count de grupos
+    var badge = document.getElementById("tab-editor-badge");
+    if (badge) {
+        if (SRT_GROUPS && SRT_GROUPS.length) {
+            badge.classList.remove("hidden");
+            badge.textContent = SRT_GROUPS.length;
+        } else { badge.classList.add("hidden"); }
+    }
+}
+
+function updateApplyFooter() {
+    var summary = document.getElementById("apply-footer-summary");
+    var status = document.getElementById("apply-footer-status");
+    var btn = document.getElementById("btn-auto-srt-apply");
+    if (!summary) return;
+    if (!SRT_GROUPS || !SRT_GROUPS.length) {
+        summary.innerHTML = "<span style='color:var(--text-3)'>Carregue ou crie legendas pra aplicar</span>";
+        if (status) status.textContent = "";
+        if (btn) btn.disabled = true;
+        return;
+    }
+    var withTpl = SRT_GROUPS.filter(function (g) { return g.tplName; }).length;
+    summary.innerHTML = "<b>" + SRT_GROUPS.length + "</b> grupos · <b>" + withTpl + "</b> com template";
+    if (status) status.textContent = withTpl < SRT_GROUPS.length ? "(" + (SRT_GROUPS.length - withTpl) + " sem template — vai pular)" : "✓ pronto";
+    if (btn) btn.disabled = withTpl === 0;
 }
 
 // ────────────────────────────────────────────────  DIAG
@@ -1374,10 +1440,10 @@ window.MPL_onAuthReady = function () {
     log("BUILD " + BUILD, "info");
     setStatus("Carregando catálogo…");
     loadCatalog();
-    // Força reload do host.jsx em todo boot (evita ExtendScript cache antigo)
     reloadHostJsx(function () {
         setStatus("Pronto.");
     });
+    updateApplyFooter();   // estado inicial
 };
 
 if (document.readyState === "loading") {

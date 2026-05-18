@@ -131,14 +131,69 @@ body {
     flex-shrink: 0;
 }
 .tab-btn {
-    flex: 1; padding: 11px;
-    font: 700 11.5px Inter; letter-spacing: 1.2px;
-    color: var(--text-3); text-transform: uppercase;
+    flex: 1; padding: 9px 4px;
+    font: 700 11px Inter; letter-spacing: .5px;
+    color: var(--text-3);
     border-bottom: 2px solid transparent;
-    transition: color .12s, border-color .12s;
+    transition: color .12s, border-color .12s, background .12s;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    position: relative;
 }
-.tab-btn:hover { color: var(--text-dim) }
-.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent) }
+.tab-btn:hover { color: var(--text-dim); background: var(--panel-alt) }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--panel-alt) }
+.tab-ico { font-size: 15px; line-height: 1 }
+.tab-lbl { font: 700 10px Inter; letter-spacing: .8px; text-transform: uppercase }
+.tab-badge {
+    position: absolute; top: 4px; right: 4px;
+    background: var(--accent); color: #000;
+    font: 800 8.5px Inter;
+    padding: 1px 5px; border-radius: 99px;
+    min-width: 14px; text-align: center;
+}
+
+/* === WIZARD BREADCRUMB === */
+#wizard-bar {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 6px 14px;
+    background: var(--panel-alt); border-bottom: 1px solid var(--border);
+    font: 600 10px Inter;
+    flex-shrink: 0;
+}
+.wiz-step {
+    color: var(--text-3);
+    padding: 3px 9px; border-radius: 99px;
+    background: var(--panel); border: 1px solid var(--border);
+    transition: all .12s;
+}
+.wiz-step.active {
+    color: var(--accent);
+    background: rgba(56, 226, 135, .12);
+    border-color: var(--accent);
+}
+.wiz-step.done {
+    color: var(--text-dim);
+    background: transparent;
+}
+.wiz-step.done::before { content: "✓ "; color: var(--accent); font-weight: 700 }
+.wiz-arrow { color: var(--text-3); font-size: 11px }
+
+/* === STICKY APPLY FOOTER === */
+#apply-footer {
+    background: linear-gradient(180deg, var(--panel-alt), var(--panel));
+    border-top: 1px solid var(--border);
+    padding: 8px 14px;
+    display: flex; flex-direction: column; gap: 6px;
+    flex-shrink: 0;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, .25);
+}
+.apply-footer-info {
+    display: flex; justify-content: space-between; align-items: center;
+    font: 500 11px Inter; color: var(--text-dim);
+}
+#apply-footer-summary { color: var(--text); font-weight: 600 }
+#apply-footer-summary b { color: var(--accent) }
+#apply-footer-status { color: var(--text-3); font-size: 10.5px }
+.auto-srt-status-inline { font: 500 10px Inter; color: var(--text-dim); text-align: center; min-height: 14px }
 
 /* ════════════ TAB PANEL ════════════ */
 .tab-panel { display: none; flex: 1; overflow: hidden; min-height: 0 }
