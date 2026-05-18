@@ -1,29 +1,39 @@
-/* host.jsx — MotionPro Legendas v3.3
+/* ════════════════════════════════════════════════════════════════
+ * MotionPro Legendas · host.jsx v4.0
  * ExtendScript do Premiere Pro
- * Funções:
- *   - importMogrt(path)                          → aplica 1 template no CTI
- *   - applySrtBatch(mogrtPath, blocks, opts)     → percorre SRT e cria todos os títulos
- *   - readActiveCaptions()                       → lê captions/transcript do Premiere e devolve como SRT
- *   - importAudioFile(path, ticks, audioTrack)   → coloca SFX/áudio na timeline
- *   - getActiveSequenceInfo / ping
- */
-$.global.MotionProLegendas = (function () {
+ *
+ * Replica o protocolo do EP Legendas (EP_*) e mantém aliases
+ * MotionProLegendas.* pra compatibilidade.
+ * ════════════════════════════════════════════════════════════════ */
+$.global._MPL_VERSION = "4.0.0";
+
+(function () {
 
     function ok(o)  { return JSON.stringify(o == null ? { ok: true } : o); }
     function err(m) { return JSON.stringify({ error: String(m) }); }
-    function trim(s){ return String(s||"").replace(/^\s+|\s+$/g,""); }
+    var TICKS_PER_SECOND = 254016000000;
 
-    var TICKS_PER_SECOND = 254016000000; // Premiere ticks/sec (constante oficial)
+    function trim(s) { return String(s||"").replace(/^\s+|\s+$/g, ""); }
 
-    function ping() {
-        return ok({ ok: true, host: app.name, version: app.version });
+    // ──────────────────────────────────────────────── BASIC
+    function EP_ping() {
+        return ok({ ok: true, host: app.name, version: app.version, mpl: $.global._MPL_VERSION });
+    }
+    function EP_isReady() { return ok({ ok: true, loaded: true }); }
+
+    function EP_getCTI() {
+        try {
+            var seq = app.project && app.project.activeSequence;
+            if (!seq) return ok({ ok: false, reason: "no_sequence" });
+            return ok({ ok: true, ticks: String(seq.getPlayerPosition().ticks), seconds: seq.getPlayerPosition().seconds });
+        } catch (e) { return err(e.message); }
     }
 
-    function getActiveSequenceInfo() {
+    function EP_getActiveSequenceInfo() {
         try {
-            if (!app || !app.project) return ok({ hasSequence: false });
+            if (!app || !app.project) return ok({ hasSequence: false, reason: "no_project" });
             var seq = app.project.activeSequence;
-            if (!seq) return ok({ hasSequence: false });
+            if (!seq) return ok({ hasSequence: false, reason: "no_sequence" });
             var info = {
                 hasSequence: true,
                 name: seq.name,
@@ -36,141 +46,80 @@ $.global.MotionProLegendas = (function () {
         } catch (e) { return err(e.message); }
     }
 
-    function isOccupiedAt(track, ticks) {
+    function EP_getAudioTracksInfo() {
         try {
-            var t = Number(ticks);
-            for (var i = 0; i < track.clips.numItems; i++) {
-                var c = track.clips[i];
-                if (t >= Number(c.start.ticks) && t < Number(c.end.ticks)) return true;
+            var seq = app.project && app.project.activeSequence;
+            if (!seq) return ok({ ok: false, tracks: [] });
+            var t = [];
+            for (var i = 0; i < seq.audioTracks.numTracks; i++) {
+                t.push({ name: "A" + (i + 1), index: i, clips: seq.audioTracks[i].clips.numItems });
             }
-            return false;
-        } catch (e) { return true; }
+            return ok({ ok: true, tracks: t });
+        } catch (e) { return err(e.message); }
     }
 
-    // Escolhe track de vídeo destino
-    function pickTargetTrack(seq, mode, ticks) {
+    // ──────────────────────────────────────────────── TRACK PICKING
+    function pickTargetTrack(seq, mode, ticksStr) {
         var n = seq.videoTracks.numTracks;
-        if (mode === "new") return n; // forçará createNewTrack (não suportado direto; fallback last)
-        if (mode === "last") return n - 1;
-        if (/^V(\d+)$/.test(mode)) {
-            var idx = Number(mode.replace("V", "")) - 1;
+        if (mode === "last" || mode === "-1" || mode == null) return n - 1;
+        var idx = parseInt(mode, 10);
+        if (!isNaN(idx)) {
             if (idx >= 0 && idx < n) return idx;
+            if (idx === -1) return n - 1;
         }
-        // fallback: primeira vazia a partir de V2
-        for (var i = 1; i < n; i++) {
-            if (!isOccupiedAt(seq.videoTracks[i], ticks)) return i;
+        if (/^V(\d+)$/.test(String(mode))) {
+            var v = Number(String(mode).replace("V", "")) - 1;
+            if (v >= 0 && v < n) return v;
         }
         return n - 1;
     }
 
-    // Importa 1 mogrt no CTI da sequência ativa
-    function importMogrt(mogrtPath) {
+    // ──────────────────────────────────────────────── INSERT MOGRT
+    function EP_hybridInsertMogrt(mogrtPath, ticksStr, trackMode, optsJson) {
         try {
             if (!app || !app.project) return err("Projeto não disponível");
             var seq = app.project.activeSequence;
             if (!seq) return err("Abra uma sequência primeiro");
 
             var f = new File(mogrtPath);
-            if (!f.exists) return err("Arquivo não encontrado: " + mogrtPath);
+            if (!f.exists) return err("MOGRT não existe: " + mogrtPath);
 
-            var cti = seq.getPlayerPosition();
-            var ticks = String(cti.ticks);
-            var targetTrack = pickTargetTrack(seq, "auto", ticks);
+            var ticks = ticksStr ? String(ticksStr) : String(seq.getPlayerPosition().ticks);
+            var target = pickTargetTrack(seq, trackMode, ticks);
 
-            var clip = seq.importMGT(f.fsName, ticks, targetTrack, 0);
-            if (!clip) return err("Premiere recusou importar o MOGRT");
+            var clip = seq.importMGT(f.fsName, ticks, target, 0);
+            if (!clip) return err("Premiere recusou importar (verifique versão do MOGRT vs Premiere)");
 
+            // avança CTI até o fim do clip
             try {
-                var endTicks = String(Number(ticks) + (Number(clip.end.ticks) - Number(clip.start.ticks)));
-                seq.setPlayerPosition(endTicks);
+                var dur = Number(clip.end.ticks) - Number(clip.start.ticks);
+                seq.setPlayerPosition(String(Number(ticks) + dur));
             } catch (e) {}
 
-            return ok({ ok: true, track: targetTrack, name: clip.name });
+            return ok({ ok: true, track: target, name: clip.name, startTicks: ticks });
         } catch (e) { return err(e.message); }
     }
 
-    /**
-     * applySrtBatch — percorre SRT, cria 1 título por bloco no MOGRT escolhido,
-     * substitui texto pelo conteúdo do bloco. Tudo numa undo group.
-     *
-     * params:
-     *   mogrtPath: string
-     *   blocksJson: JSON string com [{start: seconds, end: seconds, text: "..."}]
-     *   optsJson: JSON string com { trackMode: "V2"|"last"|..., disableOriginals: bool }
-     */
-    function applySrtBatch(mogrtPath, blocksJson, optsJson) {
-        try {
-            if (!app || !app.project) return err("Projeto não disponível");
-            var seq = app.project.activeSequence;
-            if (!seq) return err("Abra uma sequência primeiro");
+    // alias legado
+    function importMogrt(path) { return EP_hybridInsertMogrt(path, null, null, null); }
 
-            var f = new File(mogrtPath);
-            if (!f.exists) return err("MOGRT não encontrado: " + mogrtPath);
-
-            var blocks; try { blocks = JSON.parse(blocksJson); } catch (e) { return err("blocks inválido"); }
-            var opts;   try { opts = JSON.parse(optsJson||"{}"); } catch (e) { opts = {}; }
-            if (!blocks || !blocks.length) return err("Nenhum bloco SRT");
-
-            var trackMode = opts.trackMode || "last";
-            var firstTicks = String(Math.round(Number(blocks[0].start) * TICKS_PER_SECOND));
-            var targetTrack = pickTargetTrack(seq, trackMode, firstTicks);
-            var vt = seq.videoTracks[targetTrack];
-
-            app.enableQE && app.enableQE();
-            // undo group
-            try { app.beginUndoGroup && app.beginUndoGroup("MotionPro Legendas · SRT batch"); } catch (e) {}
-
-            var applied = 0, skipped = 0, errors = [];
-            for (var i = 0; i < blocks.length; i++) {
-                var b = blocks[i];
-                var startTicks = String(Math.round(Number(b.start) * TICKS_PER_SECOND));
-                try {
-                    var clip = seq.importMGT(f.fsName, startTicks, targetTrack, 0);
-                    if (!clip) { skipped++; continue; }
-
-                    // trim end conforme duração do bloco SRT
-                    try {
-                        var durSec = Math.max(0.4, Number(b.end) - Number(b.start));
-                        var endTicks = String(Math.round((Number(b.start) + durSec) * TICKS_PER_SECOND));
-                        clip.end = { ticks: endTicks };
-                    } catch (e2) {}
-
-                    // troca texto do MOGRT via componentParams
-                    try { setMogrtText(clip, b.text); } catch (e3) { errors.push(String(e3)); }
-
-                    applied++;
-                } catch (eClip) {
-                    errors.push("bloco " + (i+1) + ": " + eClip.message);
-                    skipped++;
-                }
-            }
-
-            try { app.endUndoGroup && app.endUndoGroup(); } catch (e) {}
-
-            return ok({ ok: true, applied: applied, skipped: skipped, track: targetTrack, errors: errors.slice(0, 5) });
-        } catch (e) { return err(e.message); }
-    }
-
-    /**
-     * Troca o texto editável dentro de um MOGRT já importado.
-     * Procura o primeiro componente "AE.ADBE Text" ou propriedade "Source Text".
-     */
+    // ──────────────────────────────────────────────── SET TEXT IN MOGRT
     function setMogrtText(clip, newText) {
         var t = String(newText || "");
-        // 1) tenta a API moderna do MOGRT (Premiere 2022+)
+        // 1) API moderna
         try {
             var mc = clip.getMGTComponent && clip.getMGTComponent();
             if (mc && mc.properties) {
                 for (var i = 0; i < mc.properties.numItems; i++) {
                     var p = mc.properties[i];
                     var dn = (p.displayName || "").toLowerCase();
-                    if (dn.indexOf("text") >= 0 || dn.indexOf("texto") >= 0) {
+                    if (dn.indexOf("text") >= 0 || dn.indexOf("texto") >= 0 || dn.indexOf("title") >= 0) {
                         try { p.setValue(t, true); return true; } catch (e) {}
                     }
                 }
             }
         } catch (e) {}
-        // 2) fallback: percorre todos os components procurando text properties
+        // 2) varredura components
         try {
             var comps = clip.components;
             if (!comps) return false;
@@ -189,17 +138,99 @@ $.global.MotionProLegendas = (function () {
         return false;
     }
 
+    // ──────────────────────────────────────────────── BATCH APPLY
     /**
-     * Lê captions da sequência ativa (se Premiere já transcreveu) e devolve
-     * como array no formato SRT_DATA do plugin: [{start, end, text}, ...].
+     * groups: array de { mogrtPath, start (seconds), end (seconds), text, sfxPath?, audioTrack? }
+     * opts: { trackMode, disableOriginals }
      */
-    function readActiveCaptions() {
+    function EP_hybridApplyTextsAndTiming(groupsJson, optsJson) {
         try {
             if (!app || !app.project) return err("Projeto não disponível");
             var seq = app.project.activeSequence;
             if (!seq) return err("Abra uma sequência primeiro");
+
+            var groups; try { groups = JSON.parse(groupsJson); } catch (e) { return err("groups inválido: " + e); }
+            var opts;   try { opts = JSON.parse(optsJson || "{}"); } catch (e) { opts = {}; }
+            if (!groups || !groups.length) return err("Nenhum grupo");
+
+            try { app.beginUndoGroup && app.beginUndoGroup("MotionPro Legendas · SRT batch"); } catch (e) {}
+
+            var applied = 0, failed = 0, errors = [];
+
+            for (var i = 0; i < groups.length; i++) {
+                var g = groups[i];
+                if (!g || !g.mogrtPath || !g.text) { failed++; continue; }
+
+                var f = new File(g.mogrtPath);
+                if (!f.exists) { errors.push("MOGRT não encontrado: " + g.mogrtPath); failed++; continue; }
+
+                var startTicks = String(Math.round(Number(g.start) * TICKS_PER_SECOND));
+                var target = pickTargetTrack(seq, opts.trackMode || "last", startTicks);
+
+                try {
+                    var clip = seq.importMGT(f.fsName, startTicks, target, 0);
+                    if (!clip) { failed++; continue; }
+
+                    // ajusta fim conforme duração do SRT
+                    try {
+                        var durSec = Math.max(0.4, Number(g.end) - Number(g.start));
+                        clip.end = { ticks: String(Math.round((Number(g.start) + durSec) * TICKS_PER_SECOND)) };
+                    } catch (eDur) {}
+
+                    setMogrtText(clip, g.text);
+
+                    // SFX opcional por grupo
+                    if (g.sfxPath && g.audioTrack) {
+                        try { placeSfxAt(seq, g.sfxPath, startTicks, g.audioTrack); } catch (eSfx) {}
+                    }
+
+                    applied++;
+                } catch (eClip) {
+                    failed++;
+                    if (errors.length < 5) errors.push("g" + (i+1) + ": " + eClip.message);
+                }
+            }
+
+            // desativar originais (track ABAIXO da nossa target)
+            if (opts.disableOriginals) {
+                try { disableTrackBelow(seq, opts.trackMode || "last"); } catch (e) {}
+            }
+
+            try { app.endUndoGroup && app.endUndoGroup(); } catch (e) {}
+            return ok({ ok: true, applied: applied, failed: failed, errors: errors });
+        } catch (e) { return err(e.message); }
+    }
+
+    function placeSfxAt(seq, sfxPath, ticks, audioTrackName) {
+        var f = new File(sfxPath); if (!f.exists) return false;
+        // importa pro bin
+        var before = app.project.rootItem.children.numItems;
+        app.project.importFiles([f.fsName], false, app.project.rootItem, false);
+        var item = app.project.rootItem.children[app.project.rootItem.children.numItems - 1];
+        if (!item) return false;
+        var idx = 1;
+        if (/^A(\d+)$/.test(String(audioTrackName))) idx = Number(String(audioTrackName).replace("A","")) - 1;
+        if (idx < 0 || idx >= seq.audioTracks.numTracks) return false;
+        try { seq.audioTracks[idx].insertClip(item, String(ticks)); return true; } catch (e) { return false; }
+    }
+
+    function disableTrackBelow(seq, trackMode) {
+        var target = pickTargetTrack(seq, trackMode, "0");
+        if (target <= 0) return;
+        var below = seq.videoTracks[target - 1];
+        if (!below) return;
+        for (var i = 0; i < below.clips.numItems; i++) {
+            try { below.clips[i].disabled = true; } catch (e) {}
+        }
+    }
+
+    // ──────────────────────────────────────────────── CAPTIONS (transcribe nativa Premiere)
+    function EP_readCaptions() {
+        try {
+            var seq = app.project && app.project.activeSequence;
+            if (!seq) return err("Abra uma sequência primeiro");
             if (!seq.captionTracks || seq.captionTracks.numTracks === 0) {
-                return err("Esta sequência não tem captions. No Premiere: Window → Text → Transcript → Create transcription, depois Caption.");
+                return err("Sem captions. No Premiere: Window → Text → Transcript → Create transcription");
             }
             var out = [];
             for (var t = 0; t < seq.captionTracks.numTracks; t++) {
@@ -207,11 +238,11 @@ $.global.MotionProLegendas = (function () {
                 if (!ct || !ct.captions) continue;
                 for (var i = 0; i < ct.captions.length; i++) {
                     var c = ct.captions[i];
-                    var startSec, endSec, txt;
-                    try { startSec = Number(c.start.seconds); } catch (e) { startSec = 0; }
-                    try { endSec   = Number(c.end.seconds); }   catch (e) { endSec   = startSec + 1; }
-                    try { txt = String(c.text || ""); } catch (e) { txt = ""; }
-                    if (txt) out.push({ start: startSec, end: endSec, text: txt });
+                    var s, e, x;
+                    try { s = Number(c.start.seconds); } catch (er1) { s = 0; }
+                    try { e = Number(c.end.seconds); } catch (er2) { e = s + 1; }
+                    try { x = String(c.text || ""); } catch (er3) { x = ""; }
+                    if (x) out.push({ start: s, end: e, text: x });
                 }
             }
             if (!out.length) return err("Captions vazias");
@@ -219,56 +250,124 @@ $.global.MotionProLegendas = (function () {
         } catch (e) { return err(e.message); }
     }
 
-    /**
-     * Importa um arquivo de áudio (SFX) na timeline na audio track escolhida,
-     * em N posições (ticks). Útil pra colar SFX nos starts de cada bloco SRT.
-     */
-    function importAudioFile(audioPath, positionsJson, audioTrackName) {
+    // ──────────────────────────────────────────────── HYBRID CAPTURE SELECTION
+    function EP_hybridCaptureSelection() {
         try {
-            if (!app || !app.project) return err("Projeto não disponível");
-            var seq = app.project.activeSequence;
+            var seq = app.project && app.project.activeSequence;
             if (!seq) return err("Abra uma sequência primeiro");
-            var f = new File(audioPath);
-            if (!f.exists) return err("Áudio não encontrado: " + audioPath);
-
-            var positions; try { positions = JSON.parse(positionsJson); } catch (e) { return err("positions inválido"); }
-            if (!positions || !positions.length) positions = [seq.getPlayerPosition().ticks];
-
-            var trackIdx = 1; // A2 default
-            if (/^A(\d+)$/.test(audioTrackName)) {
-                trackIdx = Number(audioTrackName.replace("A", "")) - 1;
+            var sel = [];
+            for (var i = 0; i < seq.videoTracks.numTracks; i++) {
+                var tr = seq.videoTracks[i];
+                for (var j = 0; j < tr.clips.numItems; j++) {
+                    var c = tr.clips[j];
+                    if (c.isSelected && c.isSelected()) {
+                        sel.push({
+                            name: c.name,
+                            start: c.start.seconds,
+                            end: c.end.seconds,
+                            track: i + 1,
+                            ticks: String(c.start.ticks)
+                        });
+                    }
+                }
             }
-            if (trackIdx < 0 || trackIdx >= seq.audioTracks.numTracks) trackIdx = Math.min(1, seq.audioTracks.numTracks - 1);
-            var at = seq.audioTracks[trackIdx];
-
-            // importa no project bin (se ainda não estiver)
-            var item = null;
-            try {
-                app.project.importFiles([f.fsName], false, app.project.rootItem, false);
-                item = app.project.rootItem.children[app.project.rootItem.children.numItems - 1];
-            } catch (e) {}
-            if (!item) return err("Falha ao importar SFX");
-
-            var placed = 0;
-            for (var i = 0; i < positions.length; i++) {
-                try {
-                    at.insertClip(item, String(positions[i]));
-                    placed++;
-                } catch (e2) {}
-            }
-            return ok({ ok: true, placed: placed, track: "A" + (trackIdx + 1) });
+            return ok({ ok: true, clips: sel });
         } catch (e) { return err(e.message); }
     }
 
-    function importAtom(atomPath) { return importMogrt(atomPath); }
+    // ──────────────────────────────────────────────── FILE DIALOGS
+    function EP_selectSRTFile() {
+        try {
+            var f = File.openDialog("Selecione arquivo SRT", "SRT/VTT:*.srt;*.vtt");
+            if (!f) return ok({ ok: false, canceled: true });
+            return ok({ ok: true, path: f.fsName, name: f.name });
+        } catch (e) { return err(e.message); }
+    }
 
-    return {
-        ping: ping,
+    function EP_selectMogrtFile() {
+        try {
+            var f = File.openDialog("Selecione .MOGRT", "MOGRT:*.mogrt");
+            if (!f) return ok({ ok: false, canceled: true });
+            return ok({ ok: true, path: f.fsName, name: f.name });
+        } catch (e) { return err(e.message); }
+    }
+
+    function EP_selectImageFile() {
+        try {
+            var f = File.openDialog("Selecione imagem", "Imagens:*.png;*.jpg;*.jpeg;*.gif;*.webp");
+            if (!f) return ok({ ok: false, canceled: true });
+            return ok({ ok: true, path: f.fsName, name: f.name });
+        } catch (e) { return err(e.message); }
+    }
+
+    // ──────────────────────────────────────────────── DATA FOLDER
+    function EP_getDataFolderPath() {
+        try {
+            var base = Folder.userData.fsName + "/MotionProLegendas";
+            var f = new Folder(base);
+            if (!f.exists) f.create();
+            return ok({ ok: true, path: base });
+        } catch (e) { return err(e.message); }
+    }
+
+    function EP_openDataFolder() {
+        try {
+            var r = JSON.parse(EP_getDataFolderPath());
+            if (r.ok) { var f = new Folder(r.path); f.execute(); return ok({ ok: true }); }
+            return err(r.error || "no_path");
+        } catch (e) { return err(e.message); }
+    }
+
+    // ──────────────────────────────────────────────── EXPORT
+    $.global.MotionProLegendas = {
+        // novos nomes (EP-compat)
+        EP_ping: EP_ping,
+        EP_isReady: EP_isReady,
+        EP_getCTI: EP_getCTI,
+        EP_getActiveSequenceInfo: EP_getActiveSequenceInfo,
+        EP_getAudioTracksInfo: EP_getAudioTracksInfo,
+        EP_hybridInsertMogrt: EP_hybridInsertMogrt,
+        EP_hybridApplyTextsAndTiming: EP_hybridApplyTextsAndTiming,
+        EP_hybridCaptureSelection: EP_hybridCaptureSelection,
+        EP_readCaptions: EP_readCaptions,
+        EP_selectSRTFile: EP_selectSRTFile,
+        EP_selectMogrtFile: EP_selectMogrtFile,
+        EP_selectImageFile: EP_selectImageFile,
+        EP_getDataFolderPath: EP_getDataFolderPath,
+        EP_openDataFolder: EP_openDataFolder,
+        // aliases legados
+        ping: EP_ping,
         importMogrt: importMogrt,
-        importAtom: importAtom,
-        applySrtBatch: applySrtBatch,
-        readActiveCaptions: readActiveCaptions,
-        importAudioFile: importAudioFile,
-        getActiveSequenceInfo: getActiveSequenceInfo
+        importAtom: importMogrt,
+        applySrtBatch: function (mogrtPath, blocksJson, optsJson) {
+            // converte pra format groups
+            var blocks; try { blocks = JSON.parse(blocksJson); } catch (e) { return err("blocks inválido"); }
+            var groups = blocks.map(function (b) { return { mogrtPath: mogrtPath, start: b.start, end: b.end, text: b.text }; });
+            return EP_hybridApplyTextsAndTiming(JSON.stringify(groups), optsJson);
+        },
+        readActiveCaptions: EP_readCaptions,
+        importAudioFile: function (audioPath, positionsJson, audioTrack) {
+            try {
+                var seq = app.project && app.project.activeSequence;
+                if (!seq) return err("Abra uma sequência primeiro");
+                var positions; try { positions = JSON.parse(positionsJson); } catch (e) { return err("positions inválido"); }
+                var placed = 0;
+                for (var i = 0; i < positions.length; i++) {
+                    if (placeSfxAt(seq, audioPath, positions[i], audioTrack)) placed++;
+                }
+                return ok({ ok: true, placed: placed, track: audioTrack });
+            } catch (e) { return err(e.message); }
+        },
+        getActiveSequenceInfo: EP_getActiveSequenceInfo
     };
+
 })();
+
+// expõe direto no global pra compatibilidade total com chamadas EP_*
+for (var k in $.global.MotionProLegendas) {
+    if (k.indexOf("EP_") === 0) {
+        try { $.global[k] = $.global.MotionProLegendas[k]; } catch (e) {}
+    }
+}
+
+"MPL host loaded v" + $.global._MPL_VERSION;
