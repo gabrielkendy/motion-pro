@@ -11,7 +11,7 @@
 (function () {
 "use strict";
 
-var BUILD = "4.6.0-atomic-apply-fix-clip-handle";
+var BUILD = "4.7.0-distribuicao-inteligente+3abas";
 
 var nodePath = typeof require === "function" ? require("path") : null;
 var nodeFs   = typeof require === "function" ? require("fs") : null;
@@ -109,7 +109,9 @@ function loadCatalog() {
         var raw = nodeFs.readFileSync(path, "utf8");
         CATALOG = JSON.parse(raw);
         ALL_TEMPLATES = flatten(CATALOG);
-        log("✓ Catalog: " + ALL_TEMPLATES.length + " templates carregados", "info");
+        buildTplIndex();
+        var wcDist = Object.keys(TPLS_BY_WC).sort().map(function (k) { return k + "p:" + TPLS_BY_WC[k].length; }).join(" · ");
+        log("✓ Catalog: " + ALL_TEMPLATES.length + " templates · " + wcDist, "info");
         renderCategories();
         renderGrid();
         renderTplPickerOptions();
@@ -409,14 +411,154 @@ function chunkByWords(blocks, perChunk) {
     return groups;
 }
 
+// === DISTRIBUIÇÃO INTELIGENTE ===
+// Quebra o SRT respeitando pontuação, conectores e usando word counts que
+// CASAM com os templates disponíveis. Resultado: zero ajuste manual.
+var CONNECTORS = ["a","o","e","ou","de","do","da","dos","das","em","no","na","nos","nas",
+    "ao","aos","à","às","com","para","pra","por","pelo","pela","pelos","pelas","que","se",
+    "um","uma","uns","umas","é","mas","como","já","só","seu","sua","seus","suas","meu","minha","te","me","lhe","nos","vos"];
+
+function smartDistribute(blocks) {
+    if (!TPLS_BY_WC) buildTplIndex();
+    var availableWcs = Object.keys(TPLS_BY_WC).map(Number).filter(function (k) { return k > 0; }).sort(function (a, b) { return a - b; });
+    if (!availableWcs.length) return chunkByWords(blocks, 3);
+    var minWc = availableWcs[0];
+    var maxWc = availableWcs[availableWcs.length - 1];
+
+    // Conector mode da UI
+    var connMode = ($("auto-srt-connector-mode") && $("auto-srt-connector-mode").value) || "smart";
+
+    var groups = [];
+
+    blocks.forEach(function (b) {
+        var words = (b.text || "").trim().split(/\s+/).filter(Boolean);
+        if (!words.length) return;
+        var totalDur = Math.max(.4, b.end - b.start);
+        var totalWords = words.length;
+
+        // Encontra quebras naturais (pontuação no meio do bloco)
+        var hardBreaks = [];   // índices onde HÁ que quebrar (depois de . ! ?)
+        for (var i = 0; i < words.length - 1; i++) {
+            if (/[\.!?]$/.test(words[i])) hardBreaks.push(i + 1);
+        }
+
+        // Particiona em segmentos baseado em hardBreaks
+        var segs = [];
+        var last = 0;
+        hardBreaks.forEach(function (idx) {
+            segs.push(words.slice(last, idx));
+            last = idx;
+        });
+        if (last < words.length) segs.push(words.slice(last));
+
+        // Pra cada segmento, decide melhor wc
+        segs.forEach(function (seg) {
+            chunkSegment(seg);
+        });
+
+        function chunkSegment(seg) {
+            if (!seg.length) return;
+            // Se cabe num wc disponível, vai inteiro
+            if (seg.length <= maxWc && availableWcs.indexOf(seg.length) >= 0) {
+                emit(seg);
+                return;
+            }
+            if (seg.length <= maxWc) {
+                // Não tem template exato — usa mais próximo
+                emit(seg);
+                return;
+            }
+            // Precisa dividir: prefere chunks 3-4p (sweet spot)
+            var target = (availableWcs.indexOf(3) >= 0) ? 3 : (availableWcs.indexOf(4) >= 0 ? 4 : Math.min(maxWc, 3));
+            var cursor = 0;
+            while (cursor < seg.length) {
+                var chunkSize = Math.min(target, seg.length - cursor);
+                // smart connector: se a próxima word é conector, agrega ao chunk anterior
+                if (connMode === "smart" && cursor + chunkSize < seg.length) {
+                    var nextWord = (seg[cursor + chunkSize] || "").toLowerCase().replace(/[^\wÀ-ú]/g, "");
+                    if (CONNECTORS.indexOf(nextWord) >= 0 && chunkSize < maxWc) chunkSize++;
+                }
+                if (connMode === "always_isolate" && chunkSize >= 2) {
+                    // isola conectores no início do chunk como grupo separado
+                    var firstWord = (seg[cursor] || "").toLowerCase().replace(/[^\wÀ-ú]/g, "");
+                    if (CONNECTORS.indexOf(firstWord) >= 0) {
+                        emit([seg[cursor]]); cursor++; continue;
+                    }
+                }
+                emit(seg.slice(cursor, cursor + chunkSize));
+                cursor += chunkSize;
+            }
+        }
+
+        function emit(slice) {
+            var startRatio = wordsBeforeOffset(slice) / totalWords;
+            var endRatio = (wordsBeforeOffset(slice) + slice.length) / totalWords;
+            groups.push({
+                start: b.start + startRatio * totalDur,
+                end:   b.start + endRatio * totalDur,
+                text:  slice.join(" "),
+                wc:    slice.length,
+                tplName: null,
+                selected: false
+            });
+        }
+
+        function wordsBeforeOffset(slice) {
+            var s = slice.join(" ");
+            var idx = words.join(" ").indexOf(s);
+            if (idx < 0) return 0;
+            return words.join(" ").substring(0, idx).split(/\s+/).filter(Boolean).length;
+        }
+    });
+
+    return groups;
+}
+
+function applySmartDistribution() {
+    if (!SRT_DATA.length) { toast("Carregue um SRT primeiro", "warn"); return; }
+    SRT_GROUPS = smartDistribute(SRT_DATA);
+    // re-atribui templates por wc
+    SRT_GROUPS.forEach(function (g) { g.tplName = defaultTplForWc(g.wc); g.selected = false; });
+    renderSrtEditor(); updateSrtSummary();
+    var ap = $("btn-auto-srt-apply"); if (ap) ap.disabled = SRT_GROUPS.length === 0;
+    var withTpl = SRT_GROUPS.filter(function (g) { return g.tplName; }).length;
+    log("⚡ Distribuição Inteligente: " + SRT_GROUPS.length + " grupos · " + withTpl + " com template", "info");
+    toast("⚡ " + SRT_GROUPS.length + " grupos distribuídos", "ok");
+}
+
+// Cache de templates agrupados por wc pra picking eficiente
+var TPLS_BY_WC = null;
+function buildTplIndex() {
+    TPLS_BY_WC = {};
+    ALL_TEMPLATES.forEach(function (t) {
+        var w = t.wc != null ? t.wc : 0;
+        if (!TPLS_BY_WC[w]) TPLS_BY_WC[w] = [];
+        TPLS_BY_WC[w].push(t);
+    });
+}
+
+// Escolhe template AUTO por wc (rotaciona entre disponíveis pra variar visual)
+var AUTO_PICK_IDX = {};
 function defaultTplForWc(wc) {
     var tplSel = $("auto-srt-default-tpl");
     var defName = tplSel && tplSel.value;
-    // prefere template do dropdown se for compatível com wc; senão acha por wc
-    if (defName) return defName;
-    var byWc = ALL_TEMPLATES.find(function (t) { return t.wc === wc; });
-    if (byWc) return byWc.name;
-    return ALL_TEMPLATES[0] ? ALL_TEMPLATES[0].name : null;
+    if (defName) return defName;  // user escolheu fixo no dropdown — usa ele
+
+    if (!TPLS_BY_WC) buildTplIndex();
+    var pool = TPLS_BY_WC[wc];
+    if (!pool || !pool.length) {
+        // fallback: wc mais próximo
+        var keys = Object.keys(TPLS_BY_WC).map(Number).filter(function (k) { return k > 0; }).sort(function (a, b) {
+            return Math.abs(a - wc) - Math.abs(b - wc);
+        });
+        if (!keys.length) return ALL_TEMPLATES[0] ? ALL_TEMPLATES[0].name : null;
+        pool = TPLS_BY_WC[keys[0]];
+    }
+    // rotação por wc pra variar visualmente entre grupos do mesmo wc
+    var key = "wc" + wc;
+    var idx = AUTO_PICK_IDX[key] || 0;
+    AUTO_PICK_IDX[key] = (idx + 1) % pool.length;
+    return pool[idx].name;
 }
 
 function rebuildGroups() {
@@ -498,14 +640,22 @@ function loadSRT(file) {
                 bar.querySelector(".ep-srt-status-action").textContent = "Editar →";
             }
             $("auto-srt-bulk-bar").classList.add("show");
+            // habilita smart-dist
+            var bs = $("btn-srt-smart-dist"); if (bs) bs.disabled = false;
+            // RECOMENDA usar Distribuição Inteligente — mostra hint
+            log("💡 Use o botão ⚡ Distribuição Inteligente pra auto-otimizar templates", "info");
             rebuildGroups();
-            switchTab("tab-auto-srt");
+            hideEditorEmpty();
         } catch (err) {
             log("SRT ERROR: " + err.message, "err"); openLog();
             toast("Erro lendo SRT: " + err.message, "err", 4500);
         }
     };
     reader.readAsText(file, "utf-8");
+}
+
+function hideEditorEmpty() {
+    var em = $("editor-no-srt"); if (em) em.style.display = "none";
 }
 
 function loadCaptions() {
@@ -525,8 +675,9 @@ function loadCaptions() {
             bar.querySelector(".ep-srt-status-action").textContent = "Editar →";
         }
         $("auto-srt-bulk-bar").classList.add("show");
+        var bs = $("btn-srt-smart-dist"); if (bs) bs.disabled = false;
         rebuildGroups();
-        switchTab("tab-auto-srt");
+        hideEditorEmpty();
         toast("✓ " + SRT_DATA.length + " linhas importadas", "ok");
     });
 }
@@ -925,7 +1076,11 @@ function bind() {
     document.querySelectorAll(".tab-btn").forEach(function (b) {
         b.onclick = function () { switchTab(b.getAttribute("data-tab")); };
     });
-    var srtBanner = $("ep-srt-status-banner"); if (srtBanner) srtBanner.onclick = function () { switchTab("tab-auto-srt"); };
+    var srtBanner = $("ep-srt-status-banner"); if (srtBanner) srtBanner.onclick = function () {
+        // se tem SRT carregado vai pro editor; senão pro config
+        if (SRT_DATA && SRT_DATA.length) switchTab("tab-srt-editor");
+        else switchTab("tab-auto-srt");
+    };
 
     // search
     var q = $("search-input");
@@ -950,7 +1105,6 @@ function bind() {
 
     // SRT swap (carregar arquivo)
     var btnSwap = $("btn-auto-srt-swap"); if (btnSwap) btnSwap.onclick = function () {
-        // usa input file invisível
         var inp = document.createElement("input");
         inp.type = "file"; inp.accept = ".srt,.vtt"; inp.style.display = "none";
         document.body.appendChild(inp);
@@ -964,6 +1118,9 @@ function bind() {
 
     // captions Premiere
     var btnCap = $("btn-auto-srt-captions"); if (btnCap) btnCap.onclick = loadCaptions;
+
+    // ⚡ Distribuição Inteligente
+    var btnSmart = $("btn-srt-smart-dist"); if (btnSmart) btnSmart.onclick = applySmartDistribution;
 
     // re-chunk on words change
     var ws = $("auto-srt-groupsize"); if (ws) ws.onchange = function () { if (SRT_DATA.length) rebuildGroups(); };

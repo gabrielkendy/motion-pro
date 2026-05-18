@@ -440,6 +440,80 @@ body {
     min-height: 14px; text-align: center;
 }
 
+/* === DISTRIBUIÇÃO INTELIGENTE === */
+.btn-smart-dist {
+    width: 100%;
+    background: linear-gradient(135deg, #6d28d9, #4c1d95);
+    color: #fff;
+    padding: 14px 12px;
+    border-radius: 8px;
+    font: 800 13px Inter;
+    letter-spacing: .3px;
+    box-shadow: 0 4px 14px rgba(109, 40, 217, .25);
+    transition: transform .12s, box-shadow .15s, opacity .12s;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    position: relative;
+}
+.btn-smart-dist::before {
+    content: "AI"; position: absolute; top: 6px; right: 8px;
+    background: #fff; color: #6d28d9;
+    font: 800 8px Inter; padding: 2px 6px; border-radius: 99px;
+    letter-spacing: .5px;
+}
+.btn-smart-dist:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(109, 40, 217, .4);
+}
+.btn-smart-dist:disabled {
+    background: var(--panel-3); color: var(--text-3);
+    cursor: not-allowed; box-shadow: none; transform: none; opacity: .6;
+}
+.btn-smart-dist:disabled::before { display: none; }
+.smart-sub {
+    font: 500 10px Inter; opacity: .85; letter-spacing: 0;
+    text-transform: none; font-weight: 400;
+}
+
+/* === HELP ROW === */
+.help-row {
+    background: rgba(56, 226, 135, .04);
+    border: 1px solid rgba(56, 226, 135, .15);
+    border-radius: 6px;
+    padding: 8px 10px !important;
+    gap: 8px !important;
+    align-items: flex-start !important;
+}
+.help-icon { font-size: 13px; flex-shrink: 0 }
+.help-text {
+    font: 500 10.5px/1.4 Inter; color: var(--text-dim);
+    flex: 1;
+}
+.help-text b { color: var(--accent); font-weight: 700 }
+
+/* === SRT EDITOR TAB === */
+#srt-editor-body {
+    flex: 1; padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 8px;
+    overflow-y: auto;
+    min-height: 0;
+}
+.editor-empty {
+    padding: 60px 24px; text-align: center;
+    color: var(--text-3); font: 500 12px/1.6 Inter;
+    background: var(--panel-alt);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+}
+.editor-empty .dim { font-size: 10.5px; color: var(--text-3); opacity: .7 }
+
+/* SRT editor full height in dedicated tab */
+#tab-srt-editor #auto-srt-editor {
+    flex: 1; max-height: none;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px;
+    overflow-y: auto;
+}
+
 /* ════════════ MODALS ════════════ */
 #login-overlay,
 #paywall,

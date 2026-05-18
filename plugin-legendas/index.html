@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src *; img-src * data: blob: file: filesystem:; style-src 'self' 'unsafe-inline'; media-src * data: blob: file: filesystem:;">
 <title>MotionPro Legendas — Premiere</title>
-<link rel="stylesheet" href="css/ep.css?v=460">
+<link rel="stylesheet" href="css/ep.css?v=470">
 </head>
 <body>
 
@@ -44,7 +44,8 @@
 <!-- ════════════ TAB BAR ════════════ -->
 <div id="tab-bar">
     <button class="tab-btn active" data-tab="tab-templates">Templates</button>
-    <button class="tab-btn" data-tab="tab-auto-srt">Automação SRT</button>
+    <button class="tab-btn" data-tab="tab-auto-srt">SRT · Config</button>
+    <button class="tab-btn" data-tab="tab-srt-editor">SRT · Editar</button>
 </div>
 
 <!-- ════════════ TAB: TEMPLATES ════════════ -->
@@ -99,46 +100,77 @@
     </div>
 </div>
 
-<!-- ════════════ TAB: AUTO SRT ════════════ -->
+<!-- ════════════ TAB: AUTO SRT - CONFIG ════════════ -->
 <div id="tab-auto-srt" class="tab-panel">
     <div id="auto-srt-body">
         <div class="auto-row">
             <button id="btn-auto-srt-swap" class="btn-util" style="flex:1">🔄 Trocar arquivo SRT</button>
             <button id="btn-auto-srt-captions" class="btn-util" style="flex:1" title="Importar transcrição nativa do Premiere">🎙️ Captions Premiere</button>
         </div>
+
+        <button id="btn-srt-smart-dist" class="btn-smart-dist" disabled>
+            ⚡ Distribuição Inteligente
+            <span class="smart-sub">analisa o SRT e escolhe templates+quebras sozinho</span>
+        </button>
+
         <div class="auto-row">
-            <label>Palavras:</label>
+            <label title="Quantas palavras por legenda. Recomendado: 3">Palavras:</label>
             <input type="number" id="auto-srt-groupsize" value="3" min="1" max="10">
-            <label>Template:</label>
-            <select id="auto-srt-default-tpl"><option value="">Carregando...</option></select>
+            <label title="Template padrão quando não usa Distribuição Inteligente">Template:</label>
+            <select id="auto-srt-default-tpl"><option value="">Auto por palavras</option></select>
         </div>
+
+        <div class="auto-row help-row">
+            <span class="help-icon">ℹ️</span>
+            <span class="help-text">
+                <b>Auto por palavras</b>: escolhe o template do mesmo n° de palavras do grupo.
+            </span>
+        </div>
+
         <div class="auto-row">
-            <label>Conectores:</label>
+            <label title="Como tratar palavras curtas como 'a', 'e', 'de'">Conectores:</label>
             <select id="auto-srt-connector-mode">
-                <option value="smart" selected>Inteligente</option>
-                <option value="always_isolate">Sempre isolar</option>
-                <option value="never_isolate">Nunca isolar</option>
+                <option value="smart" selected>Inteligente (junta com palavra ao lado)</option>
+                <option value="always_isolate">Sempre isolar (cada conector vira grupo)</option>
+                <option value="never_isolate">Nunca isolar (sempre agrupa)</option>
             </select>
         </div>
+
         <div class="auto-row">
-            <label>Track:</label>
+            <label title="Em qual faixa de vídeo as legendas vão">Track de vídeo:</label>
             <select id="auto-srt-track">
-                <option value="-1">Última track</option>
+                <option value="-1">Última track (auto V3+)</option>
                 <option value="1">V2</option>
                 <option value="2">V3</option>
                 <option value="3">V4</option>
                 <option value="4">V5</option>
             </select>
         </div>
+
         <div class="auto-row">
-            <label>SFX Track:</label>
+            <label title="Faixa de áudio pros efeitos sonoros">SFX Track:</label>
             <select id="auto-srt-sfx-track">
                 <option value="">Sem SFX</option>
             </select>
         </div>
 
+        <div class="auto-row help-row">
+            <span class="help-icon">💡</span>
+            <span class="help-text">
+                Aba <b>SRT · Editar</b> mostra cada legenda em detalhe — clique pra editar texto/template individualmente.
+            </span>
+        </div>
+
         <div id="auto-srt-summary"></div>
 
+        <button id="btn-auto-srt-apply" class="btn-primary btn-apply-srt" disabled>⚡ APLICAR NA TIMELINE</button>
+        <div id="auto-srt-status"></div>
+    </div>
+</div>
+
+<!-- ════════════ TAB: SRT EDITOR ════════════ -->
+<div id="tab-srt-editor" class="tab-panel">
+    <div id="srt-editor-body">
         <div id="auto-srt-bulk-bar">
             <div class="bulk-line">
                 <span>Selecionar por palavras:</span>
@@ -154,8 +186,11 @@
 
         <div id="auto-srt-editor"></div>
 
-        <button id="btn-auto-srt-apply" class="btn-primary btn-apply-srt" disabled>⚡ APLICAR NA TIMELINE</button>
-        <div id="auto-srt-status"></div>
+        <div id="editor-no-srt" class="editor-empty">
+            📋<br>
+            Carregue um SRT na aba <b>SRT · Config</b><br>
+            <span class="dim">— ou clique 🎙️ Captions Premiere se já tem transcrição nativa</span>
+        </div>
     </div>
 </div>
 
@@ -291,9 +326,9 @@
     <div id="side"></div>
 </div>
 
-<script src="js/lib/CSInterface.js?v=460"></script>
-<script src="js/config.js?v=460"></script>
-<script src="js/auth.js?v=460"></script>
-<script src="js/main.js?v=460"></script>
+<script src="js/lib/CSInterface.js?v=470"></script>
+<script src="js/config.js?v=470"></script>
+<script src="js/auth.js?v=470"></script>
+<script src="js/main.js?v=470"></script>
 </body>
 </html>
