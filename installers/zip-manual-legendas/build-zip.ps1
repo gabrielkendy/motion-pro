@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-$Version    = "1.0.0"
+$Version    = "1.1.0"
 $ScriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot   = Resolve-Path (Join-Path $ScriptDir "..\..")
 $PluginSrc  = Join-Path $RepoRoot "plugin-legendas"
@@ -21,7 +21,45 @@ $PluginDest = Join-Path $StageDir "MotionPro"
 New-Item -ItemType Directory -Path $PluginDest | Out-Null
 
 Write-Host "[1/4] Copiando arquivos do plugin..." -ForegroundColor Yellow
-Copy-Item -Path "$PluginSrc\*" -Destination $PluginDest -Recurse -Force
+
+# Pastas e arquivos que entram no ZIP. NÃO copia toda a pasta packs/ porque tem
+# packs gigantes (titles_lower_thirds, legendas-noticias, etc) que NÃO são usados
+# pelo catálogo do plugin Legendas — só ep-texto/ é referenciado.
+$IncludeDirs = @('CSXS','css','fonts','img','js','jsx','locales')
+$IncludeFiles = @('index.html','CHANGELOG.md','README.md')
+
+foreach ($d in $IncludeDirs) {
+    $srcD = Join-Path $PluginSrc $d
+    if (Test-Path $srcD) {
+        Copy-Item -Path $srcD -Destination $PluginDest -Recurse -Force
+    }
+}
+foreach ($f in $IncludeFiles) {
+    $srcF = Join-Path $PluginSrc $f
+    if (Test-Path $srcF) {
+        Copy-Item -Path $srcF -Destination $PluginDest -Force
+    }
+}
+
+# Pasta packs — copia SÓ ep-texto e sfx + JSONs de metadata
+$packsDest = Join-Path $PluginDest "packs"
+New-Item -ItemType Directory -Path $packsDest | Out-Null
+Copy-Item -Path (Join-Path $PluginSrc "packs\ep-texto") -Destination $packsDest -Recurse -Force
+Copy-Item -Path (Join-Path $PluginSrc "packs\sfx")      -Destination $packsDest -Recurse -Force -ErrorAction SilentlyContinue
+Copy-Item -Path (Join-Path $PluginSrc "packs\catalog.json")           -Destination $packsDest -Force
+Copy-Item -Path (Join-Path $PluginSrc "packs\font-requirements.json") -Destination $packsDest -Force -ErrorAction SilentlyContinue
+Copy-Item -Path (Join-Path $PluginSrc "packs\slot-info.json")         -Destination $packsDest -Force -ErrorAction SilentlyContinue
+
+# Remove backups internos do pack ep-texto (snapshots de edição de fontes)
+$bkpDirs = @('_backup_pre_font_fix','_backup_pre_all_helvetica_bold')
+foreach ($b in $bkpDirs) {
+    $bp = Join-Path $packsDest "ep-texto\$b"
+    if (Test-Path $bp) {
+        Remove-Item -Recurse -Force $bp
+        Write-Host "      removido: ep-texto/$b"
+    }
+}
+
 $pluginSize = (Get-ChildItem -Recurse $PluginDest | Measure-Object -Sum Length).Sum
 Write-Host "      $('{0:N1}' -f ($pluginSize/1MB)) MB"
 

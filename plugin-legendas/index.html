@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src *; img-src * data: blob: file: filesystem:; style-src 'self' 'unsafe-inline'; media-src * data: blob: file: filesystem:;">
 <title>MotionPro Legendas — Premiere</title>
-<link rel="stylesheet" href="css/ep.css?v=410a">
+<link rel="stylesheet" href="css/ep.css?v=423a">
 </head>
 <body>
 
@@ -63,6 +63,9 @@
         <span class="tab-ico">📝</span><span class="tab-lbl">Editar</span>
         <span class="tab-badge hidden" id="tab-editor-badge"></span>
     </button>
+    <button class="tab-btn" data-tab="tab-sfx" title="Biblioteca de efeitos sonoros">
+        <span class="tab-ico">🔊</span><span class="tab-lbl">SFX</span>
+    </button>
 </div>
 
 <!-- Wizard breadcrumb (aparece nas tabs de legenda) -->
@@ -84,23 +87,19 @@
             </div>
         </div>
 
-        <div id="cat-preview-row">
-            <div id="categories-col">
-                <div class="col-heading">Categorias</div>
-                <div id="cat-list">
-                    <button class="cat-item active" data-cat="all">Todos</button>
-                </div>
+        <!-- Pílulas de categoria horizontais (compacto, não rouba espaço) -->
+        <div id="cat-pills">
+            <button class="cat-pill active" data-cat="all">Todos</button>
+        </div>
+
+        <!-- Preview compacto inline (aparece SÓ quando seleciona um template) -->
+        <div id="preview-inline" class="hidden">
+            <img id="preview-img" src="" alt="">
+            <div id="preview-info">
+                <div id="preview-name">---</div>
+                <div id="preview-meta"></div>
             </div>
-            <div id="preview-col">
-                <div id="preview-wrap">
-                    <img id="preview-img" src="" alt="" style="display:none">
-                    <div id="preview-placeholder"><span>Selecione um template</span></div>
-                </div>
-                <div id="preview-info">
-                    <div id="preview-name">---</div>
-                    <div id="preview-meta"></div>
-                </div>
-            </div>
+            <button id="preview-close" title="Fechar preview">✕</button>
         </div>
 
         <div id="grid-wrap">
@@ -115,7 +114,10 @@
                 <label><input type="radio" name="postApplyPolicy" value="keep" checked> <span>Manter originais</span></label>
                 <label><input type="radio" name="postApplyPolicy" value="disable"> <span>Desativar originais</span></label>
             </div>
-            <button id="btn-hybrid-apply-all" class="btn-primary" disabled>⚡ APLICAR</button>
+            <div class="apply-row">
+                <button id="btn-hybrid-apply-all" class="btn-primary" disabled style="flex:1">⚡ APLICAR</button>
+                <button id="btn-tpl-diagnose" class="btn-util" disabled title="Importa o template e mostra quantos slots de texto ele tem (debug)">🔍</button>
+            </div>
             <div id="tpl-sfx-toggle-row">
                 <label><input type="checkbox" id="tpl-with-sfx"> <span>🔉 Com SFX</span></label>
                 <select id="tpl-sfx-track-select" title="Audio track destino"></select>
@@ -194,22 +196,76 @@
             <button id="btn-auto-srt-captions" class="btn-util" style="flex:1" title="Importar transcrição nativa do Premiere">🎙️ Captions Premiere</button>
         </div>
 
+        <!-- ── Modo 1-palavra (padrão recomendado — evita problemas de slot múltiplo) ── -->
+        <div id="oneword-mode-row" class="oneword-mode-row">
+            <label class="oneword-toggle">
+                <input type="checkbox" id="cut-oneword" checked>
+                <span class="oneword-icon">🎯</span>
+                <span class="oneword-text">
+                    <b>1 palavra por legenda</b>
+                    <span class="oneword-sub">usa só templates de 1p · sem duplicação · recomendado</span>
+                </span>
+            </label>
+        </div>
+
+        <!-- ── Configuração de corte (estilo "Criar legendas" do Premiere) ── -->
+        <details id="cut-config" class="cut-config">
+            <summary>
+                <span class="cut-summary-text">⚙️ Configuração de corte</span>
+                <span class="cut-summary-hint">duração · gap · avançado</span>
+            </summary>
+
+            <!-- Controles SÓ pro modo multi-palavra (escondidos quando 1-palavra está ON) -->
+            <div class="auto-row cut-multi-only">
+                <label title="Linha única OU dupla — controla o máximo total de caracteres por legenda">Layout:</label>
+                <select id="cut-layout">
+                    <option value="single">Linha única</option>
+                    <option value="double" selected>Linha dupla</option>
+                </select>
+            </div>
+
+            <div class="auto-row cut-multi-only">
+                <label title="Máximo de caracteres por linha. Dupla = 2× esse valor por legenda. Default Premiere: 19">Máx caracteres/linha:</label>
+                <input type="number" id="cut-max-chars" value="19" min="6" max="80">
+            </div>
+
+            <!-- Sempre visíveis (fazem sentido nos dois modos) -->
+            <div class="auto-row">
+                <label title="Cada legenda dura pelo menos isso. No modo 1-palavra, palavras muito curtas são estendidas. Default Premiere: 1.4s">Duração mínima (seg):</label>
+                <input type="number" id="cut-min-dur" value="0.4" min="0.1" max="10" step="0.1">
+            </div>
+
+            <div class="auto-row">
+                <label title="Folga entre o fim de uma legenda e o início da próxima. Em quadros. Default Premiere: 0">Espaço entre legendas (quadros):</label>
+                <input type="number" id="cut-gap-frames" value="0" min="0" max="120">
+                <span class="cut-fps-note">@ <span id="cut-fps">30</span>fps</span>
+            </div>
+
+            <div class="auto-row help-row">
+                <span class="help-icon">📐</span>
+                <span class="help-text">
+                    <b>Modo 1-palavra</b> (recomendado): cada palavra vira uma legenda própria, sempre com template de 1p — sem duplicação.
+                    Desligue só se quiser templates de 2p+ (modo avançado com controle de caracteres).
+                </span>
+            </div>
+        </details>
+
         <button id="btn-srt-smart-dist" class="btn-smart-dist" disabled>
             ⚡ Distribuição Inteligente
             <span class="smart-sub">analisa o SRT e escolhe templates+quebras sozinho</span>
         </button>
 
-        <div class="auto-row">
+        <div class="auto-row cut-multi-only">
             <label title="Quantas palavras por legenda quando NÃO usa Distribuição Inteligente. Default: 3">Palavras por grupo:</label>
             <input type="number" id="auto-srt-groupsize" value="3" min="1" max="10">
         </div>
 
-        <div class="auto-row">
+        <div class="auto-row cut-multi-only">
             <label title="(Opcional) Forçar todos os grupos do mesmo wc usarem este template">Override template:</label>
             <select id="auto-srt-default-tpl"><option value="">Auto inteligente (recomendado)</option></select>
         </div>
 
-        <div class="auto-row help-row">
+        <div class="auto-row help-row cut-multi-only">
             <span class="help-icon">🧠</span>
             <span class="help-text">
                 <b>Auto inteligente</b>: grupo de 3 palavras → template de 3p. Grupo de 1 palavra → template de 1p. <b>Sempre acerta</b>.
@@ -217,7 +273,7 @@
             </span>
         </div>
 
-        <div class="auto-row">
+        <div class="auto-row cut-multi-only">
             <label title="Como tratar palavras curtas como 'a', 'e', 'de'">Conectores:</label>
             <select id="auto-srt-connector-mode">
                 <option value="smart" selected>Inteligente (junta com palavra ao lado)</option>
@@ -282,6 +338,44 @@
     </div>
 </div>
 
+<!-- ════════════ TAB: SFX (biblioteca de efeitos sonoros) ════════════ -->
+<div id="tab-sfx" class="tab-panel">
+    <div id="sfx-body">
+        <div id="sfx-search-bar">
+            <div class="search-wrap" id="search-wrap-sfx">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="sfx-search-input" placeholder="Buscar SFX..." autocomplete="off">
+            </div>
+        </div>
+
+        <div id="sfx-cat-pills">
+            <button class="cat-pill active" data-cat="all">Todos</button>
+        </div>
+
+        <div id="sfx-grid-wrap">
+            <div id="sfx-grid"></div>
+            <div id="sfx-empty" class="hidden">Nenhum SFX encontrado.</div>
+        </div>
+
+        <div id="sfx-actions">
+            <div class="auto-row">
+                <label title="Track de áudio onde os SFX vão">Track de áudio:</label>
+                <select id="sfx-apply-track"><option value="">Auto (primeira vazia)</option></select>
+            </div>
+            <div class="apply-row">
+                <button id="btn-sfx-apply-cti" class="btn-primary" disabled style="flex:1" title="Aplica 1 SFX no playhead (CTI) atual">⚡ APLICAR NO CTI</button>
+                <button id="btn-sfx-apply-all" class="btn-util" disabled title="Aplica o SFX em cada clip da última track de vídeo (legendas)">🎬 Em todas legendas</button>
+            </div>
+            <div class="auto-row help-row">
+                <span class="help-icon">💡</span>
+                <span class="help-text">
+                    Clique 1× em um SFX pra <b>selecionar</b>. ▶ pra <b>ouvir</b>. Use os botões abaixo pra <b>aplicar</b>.
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ════════════ STICKY APPLY FOOTER (só visível em tabs de legenda) ════════════ -->
 <div id="apply-footer" class="hidden">
     <div class="apply-footer-info">
@@ -289,6 +383,27 @@
         <span id="apply-footer-status"></span>
     </div>
     <button id="btn-auto-srt-apply" class="btn-primary btn-apply-srt" disabled>⚡ APLICAR NA TIMELINE</button>
+</div>
+
+<!-- ════════════ POST-APPLY HELPER (aparece após batch — alivia render) ════════════ -->
+<div id="post-apply-panel" class="hidden">
+    <div class="post-apply-head">
+        <span class="post-apply-icon">⚠️</span>
+        <span class="post-apply-title">Volume alto detectado</span>
+        <button id="post-apply-close" title="Fechar">✕</button>
+    </div>
+    <div class="post-apply-body">
+        <p id="post-apply-msg">
+            <b id="post-apply-count">0</b> legendas aplicadas. Pra evitar travar o Premiere no <b>render/export</b>, faça pre-render do trecho antes:
+        </p>
+        <div class="post-apply-actions">
+            <button id="btn-render-preview" class="btn-modal-primary">🎬 Renderizar preview</button>
+            <button id="btn-nest-clips" class="btn-modal-secondary" title="Agrupa as legendas em uma sequência aninhada — alivia muito a timeline">📦 Agrupar em Nest</button>
+        </div>
+        <div class="post-apply-tips">
+            💡 Salve o projeto antes · Feche outros painéis pesados · Render preview cria cache verde
+        </div>
+    </div>
 </div>
 
 <!-- ════════════ LOG ════════════ -->
@@ -473,9 +588,9 @@
     <div id="side"></div>
 </div>
 
-<script src="js/lib/CSInterface.js?v=410a"></script>
-<script src="js/config.js?v=410a"></script>
-<script src="js/auth.js?v=410a"></script>
-<script src="js/main.js?v=410a"></script>
+<script src="js/lib/CSInterface.js?v=423a"></script>
+<script src="js/config.js?v=423a"></script>
+<script src="js/auth.js?v=423a"></script>
+<script src="js/main.js?v=423a"></script>
 </body>
 </html>

@@ -11,12 +11,16 @@
 (function () {
 "use strict";
 
-var BUILD = "4.10.0-wc-correct+captions-multi-api+helpModal";
+var BUILD = "4.23.0-sfx-tab+layout-pills+renumber";
 
 var nodePath = typeof require === "function" ? require("path") : null;
 var nodeFs   = typeof require === "function" ? require("fs") : null;
 var nodeOs   = typeof require === "function" ? require("os") : null;
+var nodeCp   = typeof require === "function" ? require("child_process") : null;
 var TICKS = 254016000000;
+
+// FPS detectado da sequência ativa (cacheado, default 30)
+var SEQ_FPS = 30;
 
 var $ = function (id) { return document.getElementById(id); };
 
@@ -43,6 +47,9 @@ var SELECTED = null;           // template selecionado
 var SRT_DATA = [];             // [{ start, end, text }]
 var SRT_GROUPS = [];           // [{ start, end, text, wc, tplName, selected }]
 var SFX_SELECTED = localStorage.getItem("mpl_sfx") || null;
+// Mapa { "Texto 47": { slotCount: 3, slotIndices: [8,15,24], slotNames: [...] } }
+// Pré-computado em build-time a partir do clientControls type=6 (TEXT_FONT) dos definition.json
+var SLOT_INFO = {};
 
 // ────────────────────────────────────────────────  LOG / TOAST
 function log(msg, kind) {
@@ -93,6 +100,26 @@ function reloadHostJsx(done) {
 }
 
 // ────────────────────────────────────────────────  CATALOG
+function loadSlotInfo() {
+    if (!nodeFs || !nodePath) return;
+    var p = nodePath.join(EXT_PATH, "packs", "slot-info.json");
+    try {
+        if (!nodeFs.existsSync(p)) { log("⚠️ slot-info.json não encontrado em " + p, "warn"); return; }
+        var raw = nodeFs.readFileSync(p, "utf8");
+        var d = JSON.parse(raw);
+        SLOT_INFO = d.templates || {};
+        log("📐 Slot-info: " + Object.keys(SLOT_INFO).length + " templates indexados", "info");
+    } catch (e) {
+        log("⚠️ slot-info.json: " + e.message, "warn");
+    }
+}
+
+function getSlotIndicesFor(tplName) {
+    var info = SLOT_INFO[tplName];
+    if (!info) return null;
+    return info.slotIndices || null;
+}
+
 function loadCatalog() {
     if (!nodeFs || !nodePath) { log("Node FS indisponível", "err"); openLog(); return; }
     log("EXT_PATH = " + EXT_PATH, "info");
@@ -140,6 +167,30 @@ function flatten(catalog) {
             });
         });
     });
+
+    // Renumera displayName sequencialmente DENTRO de cada categoria/wc
+    // Ex: 2 Palavras → Estilo 01, Estilo 02, ... (mantém .name como id interno)
+    var byCat = {};
+    out.forEach(function (t) {
+        var key = t.cat + "|" + t.wc;
+        byCat[key] = byCat[key] || [];
+        byCat[key].push(t);
+    });
+    Object.keys(byCat).forEach(function (key) {
+        var list = byCat[key];
+        // Ordena natural por nome original (Texto 03, Texto 10, Texto 29...)
+        list.sort(function (a, b) {
+            var nA = parseInt((a.name.match(/\d+/) || ["0"])[0], 10);
+            var nB = parseInt((b.name.match(/\d+/) || ["0"])[0], 10);
+            return nA - nB;
+        });
+        list.forEach(function (t, idx) {
+            var n = (idx + 1).toString().padStart(2, "0");
+            t.displayName = "Estilo " + n;
+            t.idxInCat = idx + 1;
+        });
+    });
+
     return out;
 }
 
@@ -160,19 +211,19 @@ function deriveWordCount(name, cat) {
 
 // ────────────────────────────────────────────────  RENDER
 function renderCategories() {
-    var el = $("cat-list"); if (!el) return;
+    var el = $("cat-pills"); if (!el) return;
     var cats = {};
     ALL_TEMPLATES.forEach(function (t) { cats[t.cat] = (cats[t.cat] || 0) + 1; });
-    el.innerHTML = '<button class="cat-item active" data-cat="all">Todos (' + ALL_TEMPLATES.length + ')</button>';
+    el.innerHTML = '<button class="cat-pill active" data-cat="all">Todos (' + ALL_TEMPLATES.length + ')</button>';
     Object.keys(cats).sort().forEach(function (c) {
         var b = document.createElement("button");
-        b.className = "cat-item"; b.setAttribute("data-cat", c);
+        b.className = "cat-pill"; b.setAttribute("data-cat", c);
         b.textContent = c + " (" + cats[c] + ")";
         el.appendChild(b);
     });
-    el.querySelectorAll(".cat-item").forEach(function (b) {
+    el.querySelectorAll(".cat-pill").forEach(function (b) {
         b.onclick = function () {
-            el.querySelectorAll(".cat-item").forEach(function (x) { x.classList.remove("active"); });
+            el.querySelectorAll(".cat-pill").forEach(function (x) { x.classList.remove("active"); });
             b.classList.add("active");
             FILTER.cat = b.getAttribute("data-cat");
             renderGrid();
@@ -215,12 +266,24 @@ function renderGrid() {
 function makeTplCard(t, idx) {
     var card = document.createElement("div");
     card.className = "tpl-card";
+    card.setAttribute("data-tpl", t.name);
     if (SELECTED && SELECTED.name === t.name) card.classList.add("selected");
 
+    // Verifica fontes faltantes
+    var missingFonts = getMissingFontsForTemplate(t.name);
+    var fontBadge = "";
+    if (missingFonts.length) {
+        card.classList.add("tpl-card--missing-font");
+        card.title = "⚠️ Precisa de " + missingFonts.join(", ") + " (fonte não instalada)";
+        fontBadge = '<span class="tpl-card__font-warn" title="Fonte faltando">⚠</span>';
+    }
+
+    var dispName = t.displayName || t.name;
     var thumbHtml = '<div class="tpl-card__thumb">' + thumbFor(t) +
                     (t.wc ? '<span class="tpl-card__wc">' + t.wc + 'p</span>' : '') +
+                    fontBadge +
                     '</div>' +
-                    '<div class="tpl-card__name" title="' + esc(t.name) + '">' + esc(t.name) + '</div>';
+                    '<div class="tpl-card__name" title="' + esc(dispName) + ' · id: ' + esc(t.name) + '">' + esc(dispName) + '</div>';
     card.innerHTML = thumbHtml;
 
     card.onclick = function () {
@@ -229,6 +292,7 @@ function makeTplCard(t, idx) {
         card.classList.add("selected");
         showPreview(t);
         var btn = $("btn-hybrid-apply-all"); if (btn) { btn.disabled = false; btn.textContent = "⚡ APLICAR · " + t.name; }
+        var dg = $("btn-tpl-diagnose"); if (dg) dg.disabled = false;
     };
     card.ondblclick = function () { applySingle(); };
     return card;
@@ -262,22 +326,28 @@ function styleFor(cat) {
 }
 
 function showPreview(t) {
-    var img = $("preview-img"); var ph = $("preview-placeholder");
+    var box = $("preview-inline"); if (box) box.classList.remove("hidden");
+    var img = $("preview-img");
     if (t.preview && nodeFs && nodePath) {
         var p = nodePath.join(EXT_PATH, "packs", t.preview);
         if (nodeFs.existsSync(p)) {
             img.src = "file:///" + p.replace(/\\/g, "/");
-            img.style.display = ""; ph.style.display = "none";
+            img.style.display = "";
         } else {
-            img.style.display = "none"; ph.style.display = "";
-            ph.innerHTML = mockupSvg(t.name, t.cat);
+            img.style.display = "none";
         }
     } else {
-        img.style.display = "none"; ph.style.display = "";
-        ph.innerHTML = mockupSvg(t.name, t.cat);
+        img.style.display = "none";
     }
-    var nm = $("preview-name"); if (nm) nm.textContent = t.name;
-    var mt = $("preview-meta"); if (mt) mt.textContent = t.cat + (t.wc ? " · " + t.wc + " palavra" + (t.wc === 1 ? "" : "s") : "");
+    var dispName = t.displayName || t.name;
+    var nm = $("preview-name");
+    if (nm) nm.innerHTML = esc(dispName) + ' <span style="color:var(--text-3);font-weight:500;font-size:10px">(id: ' + esc(t.name) + ')</span>';
+    var mt = $("preview-meta");
+    if (mt) mt.textContent = t.cat + (t.wc ? " · " + t.wc + " palavra" + (t.wc === 1 ? "" : "s") : "");
+}
+
+function hidePreview() {
+    var box = $("preview-inline"); if (box) box.classList.add("hidden");
 }
 
 function esc(s) { return String(s||"").replace(/[<>&"']/g, function (c) { return { "<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;","'":"&#39;" }[c]; }); }
@@ -346,13 +416,18 @@ function applySingle() {
     var withSfx = $("tpl-with-sfx") && $("tpl-with-sfx").checked && SFX_SELECTED;
     var audioTrack = withSfx ? ($("tpl-sfx-track-select") && $("tpl-sfx-track-select").value) : null;
 
+    // Pega slot indices pré-computados (override determinístico)
+    var slotIndices = getSlotIndicesFor(SELECTED.name);
+    var slotIdxJson = slotIndices ? JSON.stringify(slotIndices) : "null";
+
     // Pega CTI primeiro pra mandar ticks certos
     jsx("$.global.EP_getCTI();", function (cti) {
         var ticks = (cti && cti.ticks) ? cti.ticks : "0";
         var call = "$.global.EP_applyOneGroup(" +
             JSON.stringify(abs) + "," +
             JSON.stringify(ticks) + ",\"last\"," +
-            JSON.stringify(SELECTED.name) + ",2.0);";
+            JSON.stringify(SELECTED.name) + ",2.0," +
+            JSON.stringify(slotIdxJson) + ");";
         cs.evalScript(call, function (raw) {
             var d; try { d = JSON.parse(raw || "{}"); } catch (e) { d = { error: "parse: " + String(raw||"").slice(0,120) }; }
             if (d.error) {
@@ -360,7 +435,10 @@ function applySingle() {
                 toast("Erro: " + d.error, "err", 4500);
                 return;
             }
-            log("✓ V" + (d.track + 1) + " · textChanged=" + d.textChanged + " (de " + d.textAttempts + " tentativas)", d.textChanged ? "info" : "warn");
+            log("✓ V" + (d.track + 1) + " · slots=" + d.textSlots + " mode=" + d.textMode + " changed=" + d.textChanged + "/" + d.textAttempts, d.textChanged ? "info" : "warn");
+            if (d.textAssignment && d.textAssignment.length) {
+                log("  " + d.textAssignment.join("  ·  "), "info");
+            }
             toast("✓ " + SELECTED.name + " · V" + (d.track + 1), "ok");
             if (withSfx && audioTrack) placeSfxAt(ticks, audioTrack);
         });
@@ -386,6 +464,251 @@ function parseSRT(text) {
         if (txt) out.push({ start: s, end: e, text: txt });
     });
     return out;
+}
+
+// ──────────────────────────────────────────────── CUT CONFIG (estilo "Criar legendas")
+// Limites de corte aplicados na distribuição (smart + create). Persistido em localStorage.
+var CUT_OPTS_KEY = "mpl_cut_opts_v1";
+var CUT_DEFAULTS = { oneWord: true, layout: "double", maxChars: 19, minDur: 0.4, gapFrames: 0 };
+
+function isOneWordMode() {
+    var el = $("cut-oneword");
+    return el ? !!el.checked : CUT_DEFAULTS.oneWord;
+}
+
+function getCutOpts() {
+    var oneWord = isOneWordMode();
+    var layout   = ($("cut-layout")     && $("cut-layout").value)     || CUT_DEFAULTS.layout;
+    var maxChars = parseInt($("cut-max-chars")  && $("cut-max-chars").value,  10);
+    var minDur   = parseFloat($("cut-min-dur")    && $("cut-min-dur").value);
+    var gapFrm   = parseInt($("cut-gap-frames") && $("cut-gap-frames").value, 10);
+    if (!isFinite(maxChars) || maxChars < 6)  maxChars = CUT_DEFAULTS.maxChars;
+    if (!isFinite(minDur)   || minDur   < 0)  minDur   = CUT_DEFAULTS.minDur;
+    if (!isFinite(gapFrm)   || gapFrm   < 0)  gapFrm   = CUT_DEFAULTS.gapFrames;
+    // Linha dupla = 2× caracteres por legenda (cabe em 2 linhas)
+    var maxCharsTotal = layout === "double" ? maxChars * 2 : maxChars;
+    // No modo 1-palavra, max chars = comprimento da maior palavra (não limita)
+    if (oneWord) maxCharsTotal = 999;
+    return {
+        oneWord: oneWord,
+        layout: layout,
+        maxCharsLine: maxChars,
+        maxCharsTotal: maxCharsTotal,
+        minDur: minDur,
+        gapFrames: gapFrm,
+        gapSec: gapFrm / (SEQ_FPS || 30)
+    };
+}
+
+function saveCutOpts() {
+    try {
+        var c = {
+            oneWord: $("cut-oneword") && $("cut-oneword").checked,
+            layout: $("cut-layout") && $("cut-layout").value,
+            maxChars: $("cut-max-chars") && $("cut-max-chars").value,
+            minDur: $("cut-min-dur") && $("cut-min-dur").value,
+            gapFrames: $("cut-gap-frames") && $("cut-gap-frames").value
+        };
+        localStorage.setItem(CUT_OPTS_KEY, JSON.stringify(c));
+    } catch (e) {}
+}
+
+function loadCutOpts() {
+    try {
+        var raw = localStorage.getItem(CUT_OPTS_KEY);
+        if (raw) {
+            var c = JSON.parse(raw);
+            if (c.oneWord   != null && $("cut-oneword"))    $("cut-oneword").checked = !!c.oneWord;
+            if (c.layout    != null && $("cut-layout"))     $("cut-layout").value = c.layout;
+            if (c.maxChars  != null && $("cut-max-chars"))  $("cut-max-chars").value = c.maxChars;
+            if (c.minDur    != null && $("cut-min-dur"))    $("cut-min-dur").value = c.minDur;
+            if (c.gapFrames != null && $("cut-gap-frames")) $("cut-gap-frames").value = c.gapFrames;
+        }
+    } catch (e) {}
+    applyModeUI();   // sincroniza visibilidade dos controles
+}
+
+// Aplica/remove class no body conforme modo, escondendo controles irrelevantes
+function applyModeUI() {
+    if (isOneWordMode()) {
+        document.body.classList.add("mode-oneword");
+        // expande o details "Configuração de corte" só se houver mudança útil
+    } else {
+        document.body.classList.remove("mode-oneword");
+        // abre o details automaticamente pra usuário ver os controles
+        var d = $("cut-config"); if (d) d.open = true;
+    }
+}
+
+function bindCutOpts() {
+    ["cut-oneword","cut-layout","cut-max-chars","cut-min-dur","cut-gap-frames"].forEach(function (id) {
+        var el = $(id); if (!el) return;
+        el.addEventListener("change", saveCutOpts);
+        el.addEventListener("input", saveCutOpts);
+    });
+    var sw = $("cut-oneword");
+    if (sw) sw.addEventListener("change", applyModeUI);
+}
+
+// ──────────────────────────────────────────────── MODO 1 PALAVRA POR LEGENDA
+// Para cada bloco SRT, cria 1 grupo POR PALAVRA com timing proporcional.
+// Sempre usa template de 1p — evita 100% do problema de slot múltiplo.
+function oneWordPerCaption(blocks) {
+    var groups = [];
+    if (!blocks || !blocks.length) return groups;
+
+    blocks.forEach(function (b) {
+        var words = String(b.text || "").trim().split(/\s+/).filter(Boolean);
+        if (!words.length) return;
+        var totalDur = Math.max(0.2, Number(b.end) - Number(b.start));
+        var per = totalDur / words.length;
+        for (var i = 0; i < words.length; i++) {
+            groups.push({
+                start: Number(b.start) + i * per,
+                end:   Number(b.start) + (i + 1) * per,
+                text:  words[i],
+                wc:    1,
+                tplName: null,
+                selected: false
+            });
+        }
+    });
+
+    return groups;
+}
+
+// Detecta fps da sequência ativa (cacheado em SEQ_FPS, atualiza UI)
+function detectSeqFps() {
+    if (!cs) return;
+    // ExtendScript inline pra pegar timebase da sequência ativa
+    var script =
+        "(function(){try{" +
+            "var s=app.project&&app.project.activeSequence;" +
+            "if(!s)return JSON.stringify({fps:null});" +
+            "var tb=Number(s.timebase);" +    // ticks por frame
+            "var fps=tb>0?(254016000000/tb):null;" +
+            "return JSON.stringify({fps:fps});" +
+        "}catch(e){return JSON.stringify({fps:null,err:String(e)});}})();";
+    try {
+        cs.evalScript(script, function (raw) {
+            try {
+                var d = JSON.parse(raw || "{}");
+                if (d.fps && isFinite(d.fps) && d.fps > 0) {
+                    // arredonda pra valor "humano" (23.976, 24, 29.97, 30, 50, 59.94, 60)
+                    var f = Math.round(d.fps * 1000) / 1000;
+                    SEQ_FPS = f;
+                    var lbl = $("cut-fps");
+                    if (lbl) lbl.textContent = (f % 1 === 0) ? String(f) : f.toFixed(2);
+                }
+            } catch (e) {}
+        });
+    } catch (e) {}
+}
+
+// ──────────────────────────────────────────────── CUT POST-PROCESS
+// Aplica máx caracteres, duração mínima e gap entre clips ao array de grupos.
+// Recebe grupos {start,end,text,wc,...} já cortados — re-quebra/mescla conforme limites.
+function enforceCutOpts(groups, opts) {
+    if (!groups || !groups.length) return groups;
+    opts = opts || getCutOpts();
+    var maxCharsTotal = opts.maxCharsTotal;
+    var minDur = opts.minDur;
+    var gapSec = opts.gapSec;
+
+    // PASS 1: re-quebra grupos que excedem maxCharsTotal
+    var split = [];
+    for (var i = 0; i < groups.length; i++) {
+        var g = groups[i];
+        var txt = String(g.text || "").trim();
+        if (txt.length <= maxCharsTotal) { split.push(g); continue; }
+        var words = txt.split(/\s+/).filter(Boolean);
+        // Agrupa palavras ate atingir maxCharsTotal
+        var chunks = [];
+        var cur = [], curLen = 0;
+        for (var w = 0; w < words.length; w++) {
+            var word = words[w];
+            var addLen = (cur.length ? 1 : 0) + word.length;
+            if (cur.length && curLen + addLen > maxCharsTotal) {
+                chunks.push(cur); cur = [word]; curLen = word.length;
+            } else {
+                cur.push(word); curLen += addLen;
+            }
+        }
+        if (cur.length) chunks.push(cur);
+        // Distribui timing proporcional ao número de palavras
+        var totalWords = words.length;
+        var startSec = Number(g.start), endSec = Number(g.end);
+        var totalDur = Math.max(0.1, endSec - startSec);
+        var off = 0;
+        for (var k = 0; k < chunks.length; k++) {
+            var chunkWords = chunks[k];
+            var s = startSec + (off / totalWords) * totalDur;
+            var e = startSec + ((off + chunkWords.length) / totalWords) * totalDur;
+            split.push({
+                start: s,
+                end: e,
+                text: chunkWords.join(" "),
+                wc: chunkWords.length,
+                tplName: g.tplName || null,
+                selected: false
+            });
+            off += chunkWords.length;
+        }
+    }
+
+    // PASS 2: aplica duração mínima — mescla grupos curtos consecutivos quando possível
+    // EXCEÇÃO: no modo 1-palavra, NUNCA mescla (cada palavra fica como grupo próprio)
+    var oneWord = !!opts.oneWord;
+    var merged = [];
+    for (var j = 0; j < split.length; j++) {
+        var cg = split[j];
+        var dur = cg.end - cg.start;
+        if (dur >= minDur || !merged.length) {
+            merged.push(cg);
+            continue;
+        }
+        // No modo 1-palavra: NUNCA mescla — só pusha (extend é tratado depois)
+        if (oneWord) {
+            merged.push(cg);
+            continue;
+        }
+        // grupo atual é curto demais — tenta mesclar com o anterior SE o texto combinado couber
+        var prev = merged[merged.length - 1];
+        var combined = (prev.text + " " + cg.text).trim();
+        if (combined.length <= maxCharsTotal) {
+            prev.end = cg.end;
+            prev.text = combined;
+            prev.wc = combined.split(/\s+/).filter(Boolean).length;
+        } else {
+            // não cabe — só estende a duração até atingir minDur (ou até próximo grupo)
+            var nextStart = (split[j + 1] && Number(split[j + 1].start)) || (cg.end + minDur);
+            cg.end = Math.min(cg.start + minDur, nextStart - 0.01);
+            if (cg.end <= cg.start) cg.end = cg.start + minDur;
+            merged.push(cg);
+        }
+    }
+    // Última passada: se ainda há algum grupo abaixo do mínimo, estende (sem mesclar)
+    for (var m = 0; m < merged.length; m++) {
+        var mg = merged[m];
+        if (mg.end - mg.start < minDur) {
+            var next = merged[m + 1];
+            var hardLimit = next ? Number(next.start) - 0.01 : (mg.start + minDur);
+            mg.end = Math.max(mg.end, Math.min(mg.start + minDur, hardLimit));
+        }
+    }
+
+    // PASS 3: aplica gap entre clips (se necessário, encurta o fim do anterior)
+    if (gapSec > 0) {
+        for (var n = 0; n < merged.length - 1; n++) {
+            var a = merged[n], b = merged[n + 1];
+            var requiredEnd = b.start - gapSec;
+            if (a.end > requiredEnd) {
+                a.end = Math.max(a.start + 0.1, requiredEnd);
+            }
+        }
+    }
+
+    return merged;
 }
 
 function chunkByWords(blocks, perChunk) {
@@ -421,12 +744,14 @@ var CONNECTORS = ["a","o","e","ou","de","do","da","dos","das","em","no","na","no
 function smartDistribute(blocks) {
     if (!TPLS_BY_WC) buildTplIndex();
     var availableWcs = Object.keys(TPLS_BY_WC).map(Number).filter(function (k) { return k > 0; }).sort(function (a, b) { return a - b; });
-    if (!availableWcs.length) return chunkByWords(blocks, 3);
+    if (!availableWcs.length) return enforceCutOpts(chunkByWords(blocks, 3));
     var minWc = availableWcs[0];
     var maxWc = availableWcs[availableWcs.length - 1];
 
     // Conector mode da UI
     var connMode = ($("auto-srt-connector-mode") && $("auto-srt-connector-mode").value) || "smart";
+    var cutOpts = getCutOpts();
+    var maxCharsTotal = cutOpts.maxCharsTotal;
 
     var groups = [];
 
@@ -456,19 +781,29 @@ function smartDistribute(blocks) {
             chunkSegment(seg);
         });
 
+        // Helpers de caracteres
+        function charsOf(slice) {
+            if (!slice || !slice.length) return 0;
+            var s = slice.join(" ");
+            return s.length;
+        }
+        function fitsCharLimit(slice) {
+            return charsOf(slice) <= maxCharsTotal;
+        }
+
         function chunkSegment(seg) {
             if (!seg.length) return;
-            // Se cabe num wc disponível, vai inteiro
-            if (seg.length <= maxWc && availableWcs.indexOf(seg.length) >= 0) {
+            // Se cabe num wc disponível E respeita maxChars, vai inteiro
+            if (seg.length <= maxWc && availableWcs.indexOf(seg.length) >= 0 && fitsCharLimit(seg)) {
                 emit(seg);
                 return;
             }
-            if (seg.length <= maxWc) {
+            if (seg.length <= maxWc && fitsCharLimit(seg)) {
                 // Não tem template exato — usa mais próximo
                 emit(seg);
                 return;
             }
-            // Precisa dividir: prefere chunks 3-4p (sweet spot)
+            // Precisa dividir: prefere chunks 3-4p (sweet spot) MAS respeita maxChars
             var target = (availableWcs.indexOf(3) >= 0) ? 3 : (availableWcs.indexOf(4) >= 0 ? 4 : Math.min(maxWc, 3));
             var cursor = 0;
             while (cursor < seg.length) {
@@ -484,6 +819,10 @@ function smartDistribute(blocks) {
                     if (CONNECTORS.indexOf(firstWord) >= 0) {
                         emit([seg[cursor]]); cursor++; continue;
                     }
+                }
+                // Encolhe chunk se estourar maxChars
+                while (chunkSize > 1 && !fitsCharLimit(seg.slice(cursor, cursor + chunkSize))) {
+                    chunkSize--;
                 }
                 emit(seg.slice(cursor, cursor + chunkSize));
                 cursor += chunkSize;
@@ -511,7 +850,8 @@ function smartDistribute(blocks) {
         }
     });
 
-    return groups;
+    // Aplica constraints de corte (maxChars/minDur/gap)
+    return enforceCutOpts(groups, cutOpts);
 }
 
 // === GERA SRT DO ZERO A PARTIR DE SCRIPT ===
@@ -528,6 +868,9 @@ function scriptToSrt(text, opts) {
     var availableWcs = Object.keys(TPLS_BY_WC).map(Number).filter(function (k) { return k > 0; }).sort(function (a, b) { return a - b; });
     var maxWc = availableWcs[availableWcs.length - 1] || 4;
 
+    var cutOpts = getCutOpts();
+    var maxCharsTotal = cutOpts.maxCharsTotal;
+
     // Tokeniza preservando pontuação
     var sentences = text.replace(/\s+/g, " ").trim().split(/(?<=[\.!?])\s+/).filter(Boolean);
 
@@ -538,8 +881,8 @@ function scriptToSrt(text, opts) {
         var words = sentence.split(/\s+/).filter(Boolean);
         if (!words.length) return;
 
-        // Divide a frase em chunks que casam com templates
-        var chunks = greedyChunkForTemplates(words, availableWcs);
+        // Divide a frase em chunks que casam com templates E com maxChars
+        var chunks = greedyChunkForTemplates(words, availableWcs, maxCharsTotal);
 
         // Distribui timing proporcional à contagem de palavras
         chunks.forEach(function (chunk) {
@@ -558,12 +901,14 @@ function scriptToSrt(text, opts) {
         cursor += gap;                     // pausa após pontuação final
     });
 
-    return groups;
+    // Aplica constraints (maxChars/minDur/gap entre clips)
+    return enforceCutOpts(groups, cutOpts);
 }
 
 // Greedy: a partir das word counts disponíveis, distribui as palavras
 // preferindo chunks que existem como template, e quando possível 3-4 palavras
-function greedyChunkForTemplates(words, availableWcs) {
+// Respeita maxCharsTotal se passado.
+function greedyChunkForTemplates(words, availableWcs, maxCharsTotal) {
     var out = [];
     var i = 0;
     while (i < words.length) {
@@ -586,6 +931,13 @@ function greedyChunkForTemplates(words, availableWcs) {
             picked = Math.min(picked + 1, remaining);
         }
 
+        // Respeita maxCharsTotal — encolhe chunk se estourar
+        if (maxCharsTotal && maxCharsTotal > 0) {
+            while (picked > 1 && words.slice(i, i + picked).join(" ").length > maxCharsTotal) {
+                picked--;
+            }
+        }
+
         out.push(words.slice(i, i + picked));
         i += picked;
     }
@@ -597,7 +949,15 @@ function maxWcOf(arr) { return arr.length ? arr[arr.length - 1] : 5; }
 function applySmartDistribution() {
     if (!SRT_DATA.length) { toast("Carregue um SRT primeiro", "warn"); return; }
     resetAutoPickRotation();
-    SRT_GROUPS = smartDistribute(SRT_DATA);
+
+    var oneWord = isOneWordMode();
+    if (oneWord) {
+        // Modo 1 palavra por legenda: cada palavra vira grupo próprio, template 1p
+        var raw = oneWordPerCaption(SRT_DATA);
+        SRT_GROUPS = enforceCutOpts(raw, getCutOpts());
+    } else {
+        SRT_GROUPS = smartDistribute(SRT_DATA);
+    }
     SRT_GROUPS.forEach(function (g) { g.tplName = defaultTplForWc(g.wc); g.selected = false; });
     renderSrtEditor(); updateSrtSummary();
 
@@ -605,7 +965,8 @@ function applySmartDistribution() {
     var byWc = {};
     SRT_GROUPS.forEach(function (g) { byWc[g.wc] = (byWc[g.wc] || 0) + 1; });
     var stats = Object.keys(byWc).sort().map(function (k) { return k + "p:" + byWc[k]; }).join(" · ");
-    log("⚡ Distribuição: " + SRT_GROUPS.length + " grupos · " + stats, "info");
+    var modeLbl = oneWord ? " [modo 1-palavra]" : "";
+    log("⚡ Distribuição: " + SRT_GROUPS.length + " grupos · " + stats + modeLbl, "info");
     // Mostra exemplos
     SRT_GROUPS.slice(0, 5).forEach(function (g, i) {
         log("   #" + (i+1) + " '" + g.text + "' (" + g.wc + "p) → " + g.tplName, "info");
@@ -637,7 +998,30 @@ function generateLegendasFromScript() {
     var wpm = parseInt($("create-wpm").value, 10) || 150;
     var gap = parseFloat($("create-gap").value) || 0;
 
-    var groups = scriptToSrt(text, { startSec: startSec, wpm: wpm, gap: gap });
+    var groups;
+    if (isOneWordMode()) {
+        // 1 palavra por legenda: usa WPM pra calcular duração de cada palavra
+        var secPerWord = 60 / wpm;
+        var words = text.replace(/\s+/g, " ").trim().split(/\s+/).filter(Boolean);
+        var cursor = startSec;
+        groups = [];
+        for (var i = 0; i < words.length; i++) {
+            var dur = Math.max(0.2, secPerWord);
+            groups.push({
+                start: cursor,
+                end: cursor + dur,
+                text: words[i],
+                wc: 1,
+                tplName: null,
+                selected: false
+            });
+            cursor += dur + 0.02;
+            if (/[\.!?]$/.test(words[i])) cursor += gap;
+        }
+        groups = enforceCutOpts(groups, getCutOpts());
+    } else {
+        groups = scriptToSrt(text, { startSec: startSec, wpm: wpm, gap: gap });
+    }
     if (!groups.length) { toast("Não consegui gerar grupos do texto", "err"); return; }
 
     // Atribui templates por wc
@@ -699,7 +1083,102 @@ function applyCreatedLegendas() {
 
 // ────────────────────────────────────────────────  FONTES
 
+// Cache global: { "HelveticaNeue-Bold": ["Texto 13", "Texto 24"], ... }
+var FONT_REQUIREMENTS = null;
+// Set de fontes que SABEMOS estar faltando (PostScript name)
+var MISSING_FONTS = [];
+
+// Checa fontes instaladas no sistema via PowerShell (do lado Node, não JSX).
+// Retorna lista de PostScript names instalados e ausentes.
+function checkSystemFontsNode(postScriptNames, cb) {
+    if (!nodeCp || !nodeFs || !nodeOs || !nodePath) { cb("Node APIs indisponíveis"); return; }
+    if (!postScriptNames || !postScriptNames.length) { cb(null, { installed: [], missing: [] }); return; }
+    var tmpDir = nodePath.join(nodeOs.tmpdir(), "_mpl_fonts");
+    try { if (!nodeFs.existsSync(tmpDir)) nodeFs.mkdirSync(tmpDir, { recursive: true }); }
+    catch (e) { cb("mkdir falhou: " + e.message); return; }
+    var dumpFile = nodePath.join(tmpDir, "fonts_dump.txt");
+    try {
+        nodeCp.execFileSync("powershell", [
+            "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
+            "$paths=@('HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Fonts','HKCU:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Fonts');" +
+            "$out=@(); foreach($p in $paths){ try{ (Get-ItemProperty $p).PSObject.Properties | ?{ $_.Name -notmatch '^PS' } | %{ $out += $_.Name + '|' + $_.Value } }catch{} };" +
+            "$out -join \"`n\" | Out-File -FilePath '" + dumpFile.replace(/\\/g, "\\\\") + "' -Encoding utf8"
+        ], { timeout: 15000, windowsHide: true });
+    } catch (e) {
+        // Ignora — usa dump parcial se conseguiu
+    }
+    var dump = "";
+    try { dump = nodeFs.readFileSync(dumpFile, "utf8"); } catch (e) { cb("read dump falhou"); return; }
+
+    function normalize(s) { return String(s||"").toLowerCase().replace(/[^a-z0-9]/g, ""); }
+    var registryNorm = dump.split(/\r?\n/).map(function (l) {
+        return normalize(l.split("|")[0].replace(/\(.*?\)/g, ""));
+    }).filter(Boolean);
+
+    var installed = [], missing = [];
+    postScriptNames.forEach(function (n) {
+        var k = normalize(n);
+        var found = false;
+        for (var i = 0; i < registryNorm.length; i++) {
+            var r = registryNorm[i];
+            if (!r) continue;
+            if (r === k || r.indexOf(k) >= 0 || (k.indexOf(r) >= 0 && r.length >= 6)) {
+                found = true; break;
+            }
+        }
+        if (found) installed.push(n); else missing.push(n);
+    });
+    cb(null, { installed: installed, missing: missing });
+}
+
+// Carrega font-requirements.json (pré-computado em build) e cruza com fontes do sistema
 function checkFontsBanner() {
+    if (!cs || !nodePath || !nodeFs) return;
+    var reqPath = nodePath.join(EXT_PATH, "packs", "font-requirements.json");
+    var raw;
+    try { raw = nodeFs.readFileSync(reqPath, "utf8"); }
+    catch (e) {
+        // fallback: usa o método antigo (checa arquivos shipped)
+        checkFontsLegacy(); return;
+    }
+    var req; try { req = JSON.parse(raw); } catch (e) { checkFontsLegacy(); return; }
+    FONT_REQUIREMENTS = req;
+
+    var allFonts = Object.keys(req.font_usage || {});
+    if (!allFonts.length) return;
+
+    log("🔤 Checando " + allFonts.length + " fontes únicas usadas nos templates…", "info");
+    checkSystemFontsNode(allFonts, function (errF, d) {
+        if (errF) { log("✗ checkFonts: " + errF, "warn"); return; }
+        MISSING_FONTS = d.missing || [];
+        var instCount = (d.installed || []).length;
+        log("🔤 Fontes: " + instCount + " OK · " + MISSING_FONTS.length + " faltando", instCount === allFonts.length ? "info" : "warn");
+
+        if (MISSING_FONTS.length > 0) {
+            // Quantos templates ficam afetados
+            var affectedSet = {};
+            MISSING_FONTS.forEach(function (fn) {
+                (req.font_usage[fn] || []).forEach(function (tpl) { affectedSet[tpl] = true; });
+            });
+            var affected = Object.keys(affectedSet).length;
+
+            // Log detalhado
+            MISSING_FONTS.forEach(function (fn) {
+                var users = req.font_usage[fn] || [];
+                log("   ❌ " + fn + " → " + users.length + " template(s) afetado(s)", "warn");
+            });
+
+            showFontWarningBanner(MISSING_FONTS, affected, req.total_templates);
+            markTemplatesWithMissingFonts();
+        } else {
+            // Tudo OK — esconde banner se aberto
+            var b = $("font-banner"); if (b) b.classList.add("hidden");
+        }
+    });
+}
+
+// Fallback se font-requirements.json não existir (modo antigo)
+function checkFontsLegacy() {
     if (localStorage.getItem("mpl_fonts_dismiss")) return;
     if (!cs || !nodePath) return;
     var fontsDir = nodePath.join(EXT_PATH, "fonts");
@@ -716,26 +1195,102 @@ function checkFontsBanner() {
     });
 }
 
+function showFontWarningBanner(missingFonts, affectedCount, totalTpls) {
+    var banner = $("font-banner");
+    if (!banner) return;
+    banner.classList.remove("hidden");
+    var txt = $("font-banner-text");
+    if (txt) {
+        var examples = missingFonts.slice(0, 3).join(", ") + (missingFonts.length > 3 ? "…" : "");
+        txt.innerHTML = "🔤 <b>" + missingFonts.length + " fontes faltando</b> " +
+                        "(" + examples + ") · afeta <b>" + affectedCount + "/" + totalTpls + "</b> templates — render fica diferente do preview";
+    }
+}
+
+// Marca cards de templates que dependem de fontes faltantes
+function markTemplatesWithMissingFonts() {
+    if (!FONT_REQUIREMENTS || !MISSING_FONTS.length) return;
+    var missingSet = {}; MISSING_FONTS.forEach(function (f) { missingSet[f] = true; });
+    var affected = {};
+    Object.keys(FONT_REQUIREMENTS.template_fonts || {}).forEach(function (tpl) {
+        var fonts = FONT_REQUIREMENTS.template_fonts[tpl];
+        if (!fonts) return;
+        if (typeof fonts === "string") fonts = [fonts];
+        if (!Array.isArray(fonts)) return;
+        for (var i = 0; i < fonts.length; i++) {
+            if (missingSet[fonts[i]]) { affected[tpl] = fonts[i]; break; }
+        }
+    });
+    // Aplica no DOM (se grid já está renderizado)
+    Object.keys(affected).forEach(function (tpl) {
+        var cards = document.querySelectorAll('.tpl-card[data-tpl="' + cssEscape(tpl) + '"]');
+        cards.forEach(function (c) {
+            c.classList.add("tpl-card--missing-font");
+            c.title = "⚠️ Precisa de " + affected[tpl] + " (fonte não instalada)";
+        });
+    });
+}
+
+function cssEscape(s) {
+    return String(s).replace(/"/g, '\\"');
+}
+
+// Retorna fontes faltantes pra um template específico (ou [] se OK)
+function getMissingFontsForTemplate(tplName) {
+    if (!FONT_REQUIREMENTS || !MISSING_FONTS.length) return [];
+    var fonts = (FONT_REQUIREMENTS.template_fonts || {})[tplName];
+    if (!fonts) return [];
+    // Defensivo: aceita string OU array (PowerShell ConvertTo-Json às vezes desempacota arrays de 1 elemento)
+    if (typeof fonts === "string") fonts = [fonts];
+    if (!Array.isArray(fonts)) return [];
+    var missingSet = {}; MISSING_FONTS.forEach(function (f) { missingSet[f] = true; });
+    return fonts.filter(function (f) { return missingSet[f]; });
+}
+
 function installFonts() {
-    if (!cs || !nodePath) { toast("Node FS indisponível", "err"); return; }
+    if (!nodePath || !nodeFs || !nodeOs || !nodeCp) { toast("Node APIs indisponíveis", "err"); return; }
     var fontsDir = nodePath.join(EXT_PATH, "fonts");
     var btn = $("btn-install-fonts");
     if (btn) { btn.textContent = "Instalando…"; btn.disabled = true; }
     log("Instalando fontes de " + fontsDir, "info");
-    jsx("$.global.EP_installFonts(" + JSON.stringify(fontsDir) + ");", function (d) {
-        if (btn) { btn.disabled = false; }
-        if (d.error) {
-            log("✗ Fontes: " + d.error, "err"); openLog();
-            toast("Erro: " + d.error, "err", 5000);
-            if (btn) btn.textContent = "Tentar novamente";
-            return;
+
+    // Pasta user-space pra fontes (não precisa admin)
+    var userFontDir = nodePath.join(nodeOs.homedir(), "AppData", "Local", "Microsoft", "Windows", "Fonts");
+    try { if (!nodeFs.existsSync(userFontDir)) nodeFs.mkdirSync(userFontDir, { recursive: true }); } catch (e) {}
+
+    var installed = 0, skipped = 0;
+    var errors = [];
+    var files;
+    try { files = nodeFs.readdirSync(fontsDir).filter(function (f) { return /\.(ttf|otf)$/i.test(f); }); }
+    catch (e) { log("✗ Lendo pasta fonts: " + e.message, "err"); if (btn) btn.textContent = "Tentar novamente"; return; }
+
+    files.forEach(function (name) {
+        var srcF = nodePath.join(fontsDir, name);
+        var dstF = nodePath.join(userFontDir, name);
+        try {
+            if (nodeFs.existsSync(dstF)) { skipped++; return; }
+            nodeFs.copyFileSync(srcF, dstF);
+            installed++;
+            // Registra no registry HKCU pra Windows reconhecer
+            try {
+                var fontType = /\.ttf$/i.test(name) ? "TrueType" : "OpenType";
+                var regName = name.replace(/\.(ttf|otf)$/i, "") + " (" + fontType + ")";
+                nodeCp.execFileSync("reg", [
+                    "add", "HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts",
+                    "/v", regName, "/t", "REG_SZ", "/d", dstF, "/f"
+                ], { timeout: 5000, windowsHide: true });
+            } catch (eReg) { /* registry write pode falhar mas o arquivo já tá lá */ }
+        } catch (eCp) {
+            errors.push(name + ": " + eCp.message);
         }
-        log("✓ Fontes: " + d.installed + " instaladas · " + d.skipped + " já existiam", "info");
-        log("  pasta: " + d.fontDir, "info");
-        toast("✓ " + d.installed + " fontes instaladas! Reinicie o Premiere pra elas aparecerem.", "ok", 6000);
-        $("font-banner").classList.add("hidden");
-        localStorage.setItem("mpl_fonts_dismiss", "1");
     });
+
+    if (btn) btn.disabled = false;
+    log("✓ Fontes: " + installed + " instaladas · " + skipped + " já existiam" + (errors.length ? " · " + errors.length + " erros" : ""), "info");
+    log("  pasta: " + userFontDir, "info");
+    toast("✓ " + installed + " fontes instaladas! Reinicie o Premiere pra elas aparecerem.", "ok", 6000);
+    $("font-banner").classList.add("hidden");
+    localStorage.setItem("mpl_fonts_dismiss", "1");
 }
 
 // Cache de templates agrupados por wc pra picking eficiente
@@ -756,11 +1311,16 @@ var AUTO_PICK_IDX = {};
 function defaultTplForWc(wc) {
     var tplSel = $("auto-srt-default-tpl");
     var fixedName = tplSel && tplSel.value;
+    var oneWord = isOneWordMode();
 
     if (!TPLS_BY_WC) buildTplIndex();
 
+    // No modo 1-palavra: FORÇA wc=1 (ignora overrides, ignora qualquer wc != 1)
+    if (oneWord) wc = 1;
+
     // 1) Se user escolheu template fixo no dropdown E ele bate com o wc do grupo, usa
-    if (fixedName) {
+    //    (no modo 1-palavra, só aceita se o template fixo também for 1p)
+    if (fixedName && !oneWord) {
         var fixedTpl = ALL_TEMPLATES.find(function (t) { return t.name === fixedName; });
         if (fixedTpl && fixedTpl.wc === wc) return fixedName;
         // Se não bate, IGNORA o dropdown e escolhe certo pelo wc
@@ -931,17 +1491,163 @@ function loadCaptions() {
 // ────────────────────────────────────────────────  AUTO SRT — APLICAR
 var APPLY_CANCELED = false;
 
+// ──────────────────────────────────────────────── INJECT MODE (Node.js side)
+// Gera MOGRTs customizados em batch via PowerShell — rodando do CEP/Node,
+// não do ExtendScript (que não tem `system.callSystem` no Premiere CC moderno).
+// jobs: [{id, srcMogrt, dstMogrt, words}]
+function prepareInjectMogrtsNode(jobs, cb) {
+    if (!nodeCp || !nodeFs || !nodeOs || !nodePath) {
+        cb("Node.js APIs indisponíveis"); return;
+    }
+    var tmpDir = nodePath.join(nodeOs.tmpdir(), "_mpl_inject");
+    try { if (!nodeFs.existsSync(tmpDir)) nodeFs.mkdirSync(tmpDir, { recursive: true }); }
+    catch (e) { cb("mkdir falhou: " + e.message); return; }
+
+    var jobsFile   = nodePath.join(tmpDir, "jobs.json");
+    var resultFile = nodePath.join(tmpDir, "result.json");
+    var ps1File    = nodePath.join(tmpDir, "process.ps1");
+
+    // Escreve jobs
+    try { nodeFs.writeFileSync(jobsFile, JSON.stringify(jobs), "utf8"); }
+    catch (e) { cb("write jobs falhou: " + e.message); return; }
+
+    // Limpa result anterior
+    try { if (nodeFs.existsSync(resultFile)) nodeFs.unlinkSync(resultFile); } catch (e) {}
+
+    // Escreve script PowerShell (idempotente)
+    try { nodeFs.writeFileSync(ps1File, POWERSHELL_INJECT_SCRIPT, "utf8"); }
+    catch (e) { cb("write ps1 falhou: " + e.message); return; }
+
+    // Roda PowerShell sincronamente (bloqueia UI ~5-15s pra 100+ jobs)
+    var psStdout = "", psStderr = "", psExit = 0;
+    try {
+        psStdout = nodeCp.execFileSync("powershell", [
+            "-NoProfile",
+            "-ExecutionPolicy", "Bypass",
+            "-File", ps1File,
+            "-JobsFile", jobsFile,
+            "-ResultFile", resultFile
+        ], { timeout: 120000, windowsHide: true, encoding: "utf8" });
+    } catch (e) {
+        psExit = e.status || -1;
+        psStderr = String(e.stderr || e.message || "");
+        log("⚠️ PowerShell exit=" + psExit + " stderr: " + psStderr.substring(0, 300), "warn");
+    }
+
+    // Lê resultado
+    try {
+        if (!nodeFs.existsSync(resultFile)) {
+            cb("result.json não foi gerado. PS exit=" + psExit + " stderr=" + psStderr.substring(0,200));
+            return;
+        }
+        var raw = nodeFs.readFileSync(resultFile, "utf8");
+        // Remove BOM se houver
+        if (raw.charCodeAt(0) === 0xFEFF) raw = raw.substring(1);
+        raw = raw.trim();
+        if (!raw) {
+            cb("result.json vazio. PS exit=" + psExit + " stderr=" + psStderr.substring(0,200));
+            return;
+        }
+        var d = JSON.parse(raw);
+        cb(null, d);
+    } catch (e) {
+        log("✗ Result.json content (primeiros 200 chars): " + (raw||"").substring(0, 200), "err");
+        cb("read result falhou: " + e.message + " · PS stderr: " + psStderr.substring(0,200));
+    }
+}
+
+// Script PowerShell — gera mogrt customizado por job (mesma lógica do host.jsx,
+// mas aqui usado direto via child_process do Node).
+var POWERSHELL_INJECT_SCRIPT =
+    "param([string]$JobsFile, [string]$ResultFile)\n" +
+    "Add-Type -AssemblyName System.IO.Compression.FileSystem\n" +
+    "Add-Type -AssemblyName System.IO.Compression\n" +
+    "$ErrorActionPreference = 'Continue'\n" +
+    "$jobs = (Get-Content $JobsFile -Raw -Encoding UTF8) | ConvertFrom-Json\n" +
+    "$results = @()\n" +
+    "\n" +
+    "function Replace-OrderedTextFields {\n" +
+    "  param([string]$json, [string]$pattern, [string]$replaceTemplate, [string[]]$words)\n" +
+    "  $matches = [regex]::Matches($json, $pattern)\n" +
+    "  if ($matches.Count -eq 0) { return $json }\n" +
+    "  $lf = [string][char]10; $cr = [string][char]13; $tab = [string][char]9\n" +
+    "  $sb = New-Object System.Text.StringBuilder\n" +
+    "  $lastIdx = 0; $i = 0\n" +
+    "  foreach ($m in $matches) {\n" +
+    "    $null = $sb.Append($json.Substring($lastIdx, $m.Index - $lastIdx))\n" +
+    "    $w = if ($i -lt $words.Count) { [string]$words[$i] } else { '' }\n" +
+    "    $wEsc = $w.Replace('\\','\\\\').Replace('\"','\\\"').Replace($lf,'\\n').Replace($cr,'\\r').Replace($tab,'\\t')\n" +
+    "    $null = $sb.Append($replaceTemplate.Replace('{TEXT}', $wEsc))\n" +
+    "    $lastIdx = $m.Index + $m.Length\n" +
+    "    $i++\n" +
+    "  }\n" +
+    "  $null = $sb.Append($json.Substring($lastIdx))\n" +
+    "  return $sb.ToString()\n" +
+    "}\n" +
+    "\n" +
+    "foreach ($j in $jobs) {\n" +
+    "  $r = @{ id=$j.id; success=$false; error=$null; outPath=$null }\n" +
+    "  try {\n" +
+    "    if (-not (Test-Path $j.srcMogrt)) { throw 'src nao existe' }\n" +
+    "    Copy-Item -Path $j.srcMogrt -Destination $j.dstMogrt -Force\n" +
+    "    $zipBytes = [System.IO.File]::ReadAllBytes($j.dstMogrt)\n" +
+    "    $ms = New-Object System.IO.MemoryStream\n" +
+    "    $ms.Write($zipBytes, 0, $zipBytes.Length)\n" +
+    "    $zip = New-Object System.IO.Compression.ZipArchive($ms, [System.IO.Compression.ZipArchiveMode]::Update)\n" +
+    "    $entry = $zip.Entries | Where-Object { $_.Name -eq 'definition.json' } | Select-Object -First 1\n" +
+    "    if (-not $entry) { throw 'definition.json nao encontrado no zip' }\n" +
+    "    $reader = New-Object System.IO.StreamReader($entry.Open())\n" +
+    "    $json = $reader.ReadToEnd(); $reader.Close()\n" +
+    "    $words = @($j.words)\n" +
+    "    $json = Replace-OrderedTextFields -json $json -pattern '\"textEditValue\"\\s*:\\s*\"([^\"]*)\"' -replaceTemplate '\"textEditValue\":\"{TEXT}\"' -words $words\n" +
+    "    $json = Replace-OrderedTextFields -json $json -pattern '\"capPropDefault\"\\s*:\\s*\"([^\"]*)\"\\s*,\\s*\"capPropFontEdit\"\\s*:\\s*true' -replaceTemplate '\"capPropDefault\":\"{TEXT}\",\"capPropFontEdit\":true' -words $words\n" +
+    "    $entry.Delete()\n" +
+    "    $newEntry = $zip.CreateEntry('definition.json')\n" +
+    "    $writer = New-Object System.IO.StreamWriter($newEntry.Open())\n" +
+    "    $writer.Write($json); $writer.Close()\n" +
+    "    $zip.Dispose()\n" +
+    "    [System.IO.File]::WriteAllBytes($j.dstMogrt, $ms.ToArray())\n" +
+    "    $ms.Dispose()\n" +
+    "    $r.success = $true\n" +
+    "    $r.outPath = $j.dstMogrt\n" +
+    "    $r.wordsUsed = $words.Count\n" +
+    "  } catch {\n" +
+    "    $r.error = $_.Exception.Message\n" +
+    "  }\n" +
+    "  $results += $r\n" +
+    "}\n" +
+    "$out = @{ ok=$true; jobs=$results }\n" +
+    "$out | ConvertTo-Json -Depth 5 -Compress | Out-File -FilePath $ResultFile -Encoding UTF8 -NoNewline\n";
+
+// Limpa mogrts temporários gerados
+function cleanInjectTmpNode() {
+    if (!nodeFs || !nodeOs || !nodePath) return 0;
+    var tmpDir = nodePath.join(nodeOs.tmpdir(), "_mpl_inject");
+    var cleaned = 0;
+    try {
+        if (!nodeFs.existsSync(tmpDir)) return 0;
+        var files = nodeFs.readdirSync(tmpDir);
+        files.forEach(function (f) {
+            if (/^inject_.*\.mogrt$/i.test(f)) {
+                try { nodeFs.unlinkSync(nodePath.join(tmpDir, f)); cleaned++; } catch (e) {}
+            }
+        });
+    } catch (e) {}
+    return cleaned;
+}
+
 function applySrtBatch() {
     if (!SRT_GROUPS.length) { toast("Sem grupos pra aplicar", "warn"); return; }
     var groups = SRT_GROUPS.filter(function (g) { return g.tplName && g.text; });
     if (!groups.length) { toast("Nenhum grupo tem template. Use 'Aplicar template...'", "warn"); return; }
 
-    var payload = groups.map(function (g) {
+    var payload = groups.map(function (g, gi) {
         var tpl = ALL_TEMPLATES.find(function (t) { return t.name === g.tplName; });
         if (!tpl || !tpl.mogrt) return null;
         return {
+            id: "g" + gi,
             mogrtPath: nodePath.join(EXT_PATH, "packs", tpl.mogrt),
-            start: g.start, end: g.end, text: g.text
+            start: g.start, end: g.end, text: g.text, tplName: g.tplName
         };
     }).filter(Boolean);
 
@@ -957,55 +1663,104 @@ function applySrtBatch() {
     var btn = $("btn-auto-srt-apply");
     var orig = btn.textContent;
     btn.disabled = false;
-    btn.textContent = "⏸ CANCELAR (0/" + payload.length + ")";
-    btn.onclick = function () { APPLY_CANCELED = true; log("Cancelando…", "warn"); };
+    btn.textContent = "⏳ Preparando mogrts…";
 
-    var applied = 0, failed = 0, idx = 0;
-    var startedAt = Date.now();
+    // Vars compartilhadas entre as fases (finish() acessa essas)
+    var applied = 0, failed = 0;
 
-    function next() {
-        if (APPLY_CANCELED) {
-            finish();
+    // ── FASE 1: gera custom mogrts via PowerShell (todos em batch)
+    var tmpDir = (nodeOs ? nodeOs.tmpdir() : "C:/Windows/Temp").replace(/\\/g, "/") + "/_mpl_inject";
+    var jobs = payload.map(function (g, i) {
+        var words = String(g.text).split(/\s+/).filter(Boolean);
+        return {
+            id: g.id,
+            srcMogrt: g.mogrtPath,
+            dstMogrt: tmpDir + "/inject_" + i + "_" + Date.now() + ".mogrt",
+            words: words
+        };
+    });
+    // Marca dstMogrt no payload pra usar depois
+    jobs.forEach(function (j, i) { payload[i].customMogrt = j.dstMogrt; });
+
+    log("⚙️ Preparando " + jobs.length + " mogrts customizados via Node/PowerShell…", "info");
+    // Yield 1 frame pra UI atualizar antes do PowerShell bloquear
+    setTimeout(function () {
+    prepareInjectMogrtsNode(jobs, function (errPrep, prepRes) {
+        if (errPrep) {
+            log("✗ Prepare failed: " + errPrep, "err");
+            log("→ Fallback pro modo legacy (setValue)", "warn");
+            applySrtBatchLegacy(payload, trackMode, policy, btn, orig);
             return;
         }
-        if (idx >= payload.length) { finish(); return; }
-        var g = payload[idx];
-        idx++;
 
-        btn.textContent = "⏸ CANCELAR (" + idx + "/" + payload.length + ")";
-        var statusEl = $("apply-footer-status");
-        if (statusEl) {
-            var elapsed = (Date.now() - startedAt) / 1000;
-            var rate = idx / elapsed;
-            var eta = Math.round((payload.length - idx) / rate);
-            statusEl.textContent = idx + "/" + payload.length + " · " + applied + " OK · " + failed + " erros · ETA " + eta + "s";
+        // Conta sucesso/falha da fase prep
+        var prepJobs = prepRes.jobs || [];
+        var prepOk = prepJobs.filter(function (j) { return j.success; }).length;
+        var prepFail = prepJobs.length - prepOk;
+        log("⚙️ Preparados: " + prepOk + " OK · " + prepFail + " falhas", prepFail ? "warn" : "info");
+        if (prepFail > 0 && prepFail <= 3) {
+            prepJobs.filter(function (j) { return !j.success; }).slice(0, 3).forEach(function (j) {
+                log("  ✗ " + j.id + ": " + j.error, "err");
+            });
         }
 
-        var ticks = String(Math.round(g.start * TICKS));
-        var durSec = Math.max(0.4, g.end - g.start);
-        // 1 chamada atomica: importa + ajusta duração + troca texto usando handle direto
-        var script = "$.global.EP_applyOneGroup(" +
-            JSON.stringify(g.mogrtPath) + "," +
-            JSON.stringify(ticks) + "," +
-            JSON.stringify(trackMode) + "," +
-            JSON.stringify(g.text) + "," +
-            durSec + ");";
+        // Mapa id → outPath
+        var byId = {};
+        prepJobs.forEach(function (j) { byId[j.id] = j; });
 
-        cs.evalScript(script, function (raw) {
-            var d; try { d = JSON.parse(raw || "{}"); } catch (e) { d = { error: "parse:" + String(raw||"").slice(0,80) }; }
-            if (d.error) {
-                failed++;
-                if (failed <= 5) log("  ✗ #" + idx + ": " + d.error, "err");
-            } else {
-                applied++;
-                // Loga primeira ocorrência do estado do setText pra diagnosticar
-                if (idx === 1) {
-                    log("  diag #1 textChanged=" + d.textChanged + " attempts=" + d.textAttempts + (d.textError ? " err=" + d.textError : ""), d.textChanged ? "info" : "warn");
-                }
+        // ── FASE 2: importa os custom mogrts em loop (sem setValue)
+        var idx = 0;
+        var startedAt = Date.now();
+        btn.onclick = function () { APPLY_CANCELED = true; log("Cancelando…", "warn"); };
+
+        function next() {
+            if (APPLY_CANCELED || idx >= payload.length) { finish(); return; }
+            var g = payload[idx];
+            idx++;
+
+            btn.textContent = "⏸ CANCELAR (" + idx + "/" + payload.length + ")";
+            var statusEl = $("apply-footer-status");
+            if (statusEl) {
+                var elapsed = (Date.now() - startedAt) / 1000;
+                var rate = idx / elapsed;
+                var eta = Math.round((payload.length - idx) / rate);
+                statusEl.textContent = idx + "/" + payload.length + " · " + applied + " OK · " + failed + " erros · ETA " + eta + "s";
             }
-            setTimeout(next, 30);
-        });
-    }
+
+            var prepJob = byId[g.id];
+            if (!prepJob || !prepJob.success || !prepJob.outPath) {
+                failed++;
+                if (failed <= 5) log("  ✗ #" + idx + " sem custom mogrt (" + (prepJob && prepJob.error || "?") + ")", "err");
+                setTimeout(next, 10);
+                return;
+            }
+
+            var ticks = String(Math.round(g.start * TICKS));
+            var durSec = Math.max(0.4, g.end - g.start);
+            var script = "$.global.EP_importPreparedMogrt(" +
+                JSON.stringify(prepJob.outPath) + "," +
+                JSON.stringify(ticks) + "," +
+                JSON.stringify(trackMode) + "," +
+                durSec + ");";
+
+            cs.evalScript(script, function (raw) {
+                var d; try { d = JSON.parse(raw || "{}"); } catch (e) { d = { error: "parse:" + String(raw||"").slice(0,80) }; }
+                if (d.error) {
+                    failed++;
+                    if (failed <= 5) log("  ✗ #" + idx + " import: " + d.error, "err");
+                } else {
+                    applied++;
+                    if (idx === 1) {
+                        log("  ✓ #1 V" + (d.track + 1) + " · '" + g.text + "' (inject mode)", "info");
+                    }
+                }
+                setTimeout(next, 30);
+            });
+        }
+
+        next();
+    });
+    }, 50);   // ← fecha o setTimeout wrapper do prepareInjectMogrtsNode
 
     function finish() {
         btn.disabled = false;
@@ -1027,25 +1782,350 @@ function applySrtBatch() {
                 var positions = payload.map(function (g) { return String(Math.round(g.start * TICKS)); });
                 placeSfxBatch(positions, sfxTrack);
             }
+            // Volume alto → mostra painel pós-aplicar com dicas de render
+            if (applied >= 50) {
+                showPostApplyPanel(applied, trackMode);
+            }
         }
-    }
 
+        // Limpa custom mogrts temporários (no Node, mais rápido)
+        var cleaned = cleanInjectTmpNode();
+        if (cleaned) log("🧹 " + cleaned + " mogrts temp removidos", "info");
+    }
+}
+
+// ── Fallback legacy: se a fase de prepare falhar, usa o setValue antigo
+function applySrtBatchLegacy(payload, trackMode, policy, btn, orig) {
+    log("[legacy mode] aplicando via setValue…", "warn");
+    var idx = 0;
+    var applied = 0, failed = 0;
+    var startedAt = Date.now();
+    btn.onclick = function () { APPLY_CANCELED = true; log("Cancelando…", "warn"); };
+
+    function next() {
+        if (APPLY_CANCELED || idx >= payload.length) { finish(); return; }
+        var g = payload[idx];
+        idx++;
+        btn.textContent = "⏸ CANCELAR (" + idx + "/" + payload.length + ")";
+        var ticks = String(Math.round(g.start * TICKS));
+        var durSec = Math.max(0.4, g.end - g.start);
+        var slotIdx = getSlotIndicesFor(g.tplName);
+        var slotIdxJson = slotIdx ? JSON.stringify(JSON.stringify(slotIdx)) : "null";
+        var script = "$.global.EP_applyOneGroup(" +
+            JSON.stringify(g.mogrtPath) + "," +
+            JSON.stringify(ticks) + "," +
+            JSON.stringify(trackMode) + "," +
+            JSON.stringify(g.text) + "," +
+            durSec + "," +
+            slotIdxJson + ");";
+        cs.evalScript(script, function (raw) {
+            var d; try { d = JSON.parse(raw || "{}"); } catch (e) { d = { error: "parse" }; }
+            if (d.error) { failed++; if (failed <= 5) log("  ✗ #" + idx + " " + d.error, "err"); }
+            else { applied++; }
+            setTimeout(next, 30);
+        });
+    }
+    function finish() {
+        btn.disabled = false;
+        btn.textContent = orig;
+        btn.onclick = applySrtBatch;
+        log("✓ Legacy DONE · " + applied + " aplicados · " + failed + " falhas", "info");
+        toast("✓ " + applied + " títulos (modo legacy)", failed ? "warn" : "ok", 4000);
+    }
     next();
+}
+
+// ────────────────────────────────────────────────  POST-APPLY HELPER (render safety)
+// Mostra um banner com botões pra renderizar preview (cache verde) e
+// agrupar legendas em nest — evita Premiere travar no export com muitos MOGRTs.
+function showPostApplyPanel(count, trackMode) {
+    var p = $("post-apply-panel"); if (!p) return;
+    p.classList.remove("hidden");
+    var c = $("post-apply-count"); if (c) c.textContent = count;
+    log("⚠️ " + count + " legendas é volume alto. Faça RENDER PREVIEW antes de exportar pra evitar crash.", "warn");
+    log("   • Sequence > Render Effects In to Out (ou ENTER na timeline)", "info");
+    log("   • Ou Clip > Nest pra agrupar em sequência aninhada (muito mais leve)", "info");
+
+    // Wire dos botões (idempotente)
+    var rp = $("btn-render-preview");
+    if (rp) rp.onclick = function () {
+        log("🎬 Disparando Render Effects In to Out…", "info");
+        rp.disabled = true; rp.textContent = "Renderizando…";
+        jsx("$.global.EP_renderInToOut();", function (d) {
+            rp.disabled = false; rp.textContent = "🎬 Renderizar preview";
+            if (d && d.manual) {
+                toast("⚠️ " + d.msg, "warn", 5000);
+                log("→ " + d.msg, "warn");
+            } else if (d && d.started) {
+                toast("🎬 Render preview iniciado — aguarde a barra verde", "ok", 4000);
+            } else if (d && d.error) {
+                toast("Erro: " + d.error, "err");
+                log("✗ Render: " + d.error, "err");
+            }
+        });
+    };
+
+    var ne = $("btn-nest-clips");
+    if (ne) ne.onclick = function () {
+        var trackIdx = (trackMode === "-1") ? -1 : parseInt(trackMode, 10);
+        log("📦 Agrupando legendas em Nest…", "info");
+        ne.disabled = true; ne.textContent = "Aninhando…";
+        jsx("$.global.EP_nestVideoTrack(" + trackIdx + ");", function (d) {
+            ne.disabled = false; ne.textContent = "📦 Agrupar em Nest";
+            if (d && d.manual) {
+                toast("⚠️ " + d.msg, "warn", 5000);
+            } else if (d && d.nestedCount) {
+                toast("✓ " + d.nestedCount + " legendas agrupadas em Nest na V" + d.track, "ok", 4000);
+                hidePostApplyPanel();
+            } else if (d && d.error) {
+                toast("Erro: " + d.error, "err");
+            }
+        });
+    };
+
+    var x = $("post-apply-close");
+    if (x) x.onclick = hidePostApplyPanel;
+}
+
+function hidePostApplyPanel() {
+    var p = $("post-apply-panel"); if (p) p.classList.add("hidden");
 }
 
 // ────────────────────────────────────────────────  SFX (synth → WAV → tmp → import)
 var SFX_LIBRARY = {
-    "click":   { cat: "click", name: "Click",   play: function () { sfxClick(1000, .08); } },
-    "pop":     { cat: "click", name: "Pop",     play: function () { sfxPop(.10); } },
-    "tick":    { cat: "click", name: "Tick",    play: function () { sfxClick(3000, .03); } },
-    "shutter": { cat: "camera", name: "Camera Shutter", play: function () { sfxShutter(.04, .10); } },
-    "snap":    { cat: "camera", name: "Camera Snap",    play: function () { sfxClick(3200, .04); } },
-    "whoosh-light": { cat: "whoosh", name: "Whoosh Light", play: function () { sfxWhoosh(800, 200, .30); } },
-    "whoosh-heavy": { cat: "whoosh", name: "Whoosh Heavy", play: function () { sfxWhoosh(1200, 100, .50); } },
-    "impact":  { cat: "impact", name: "Impact",  play: function () { sfxKick(80, .20); } },
-    "boom":    { cat: "impact", name: "Boom",    play: function () { sfxKick(45, .40); } },
-    "typing":  { cat: "typing", name: "Typing",  play: function () { sfxTypingBurst(); } }
+    "click":   { cat: "click", name: "Click",   source: "synth", play: function () { sfxClick(1000, .08); } },
+    "pop":     { cat: "click", name: "Pop",     source: "synth", play: function () { sfxPop(.10); } },
+    "tick":    { cat: "click", name: "Tick",    source: "synth", play: function () { sfxClick(3000, .03); } },
+    "shutter": { cat: "camera", name: "Camera Shutter", source: "synth", play: function () { sfxShutter(.04, .10); } },
+    "snap":    { cat: "camera", name: "Camera Snap",    source: "synth", play: function () { sfxClick(3200, .04); } },
+    "whoosh-light": { cat: "whoosh", name: "Whoosh Light", source: "synth", play: function () { sfxWhoosh(800, 200, .30); } },
+    "whoosh-heavy": { cat: "whoosh", name: "Whoosh Heavy", source: "synth", play: function () { sfxWhoosh(1200, 100, .50); } },
+    "impact":  { cat: "impact", name: "Impact",  source: "synth", play: function () { sfxKick(80, .20); } },
+    "boom":    { cat: "impact", name: "Boom",    source: "synth", play: function () { sfxKick(45, .40); } },
+    "typing":  { cat: "typing", name: "Typing",  source: "synth", play: function () { sfxTypingBurst(); } }
 };
+
+// ────────────────────────────────────────────────  SFX REAIS (packs/sfx/)
+// Scanner automático: lê packs/sfx/<categoria>/*.{mp3,wav,ogg,m4a}
+// Cada arquivo vira um SFX clicável. Nome do arquivo = nome do SFX, subpasta = categoria.
+function scanRealSfx() {
+    if (!nodeFs || !nodePath) return;
+    var sfxRoot = nodePath.join(EXT_PATH, "packs", "sfx");
+    try {
+        if (!nodeFs.existsSync(sfxRoot)) { return; }
+        var cats = nodeFs.readdirSync(sfxRoot);
+        var added = 0;
+        cats.forEach(function (catDir) {
+            var catPath = nodePath.join(sfxRoot, catDir);
+            var stat; try { stat = nodeFs.statSync(catPath); } catch (e) { return; }
+            if (!stat.isDirectory()) return;
+            var files = nodeFs.readdirSync(catPath);
+            files.forEach(function (fn) {
+                if (!/\.(mp3|wav|ogg|m4a)$/i.test(fn)) return;
+                var key = "real:" + catDir + "/" + fn;
+                var displayName = fn.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ");
+                // Capitaliza
+                displayName = displayName.replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+                SFX_LIBRARY[key] = {
+                    cat: catDir.toLowerCase(),
+                    name: displayName,
+                    source: "real",
+                    filePath: nodePath.join(catPath, fn)
+                };
+                added++;
+            });
+        });
+        if (added) log("🔊 SFX reais escaneados: " + added + " arquivos em " + sfxRoot, "info");
+    } catch (e) {
+        log("⚠️ scanRealSfx: " + e.message, "warn");
+    }
+}
+
+// Renderiza o grid da aba SFX
+function renderSfxGrid() {
+    var grid = $("sfx-grid"); if (!grid) return;
+    var empty = $("sfx-empty");
+    var q = ($("sfx-search-input") && $("sfx-search-input").value || "").toLowerCase().trim();
+    var catSel = SFX_CAT_FILTER || "all";
+
+    var keys = Object.keys(SFX_LIBRARY).filter(function (k) {
+        var s = SFX_LIBRARY[k];
+        if (catSel !== "all" && s.cat !== catSel) return false;
+        if (q && s.name.toLowerCase().indexOf(q) < 0) return false;
+        return true;
+    });
+
+    grid.innerHTML = "";
+    if (!keys.length) {
+        if (empty) empty.classList.remove("hidden");
+        return;
+    }
+    if (empty) empty.classList.add("hidden");
+
+    keys.forEach(function (k) {
+        var s = SFX_LIBRARY[k];
+        var card = document.createElement("div");
+        card.className = "sfx-card" + (SFX_SELECTED === k ? " selected" : "");
+        card.setAttribute("data-sfx", k);
+        var sourceLabel = s.source === "real" ? '<span class="sfx-card__source real" title="Arquivo real">FILE</span>'
+                                              : '<span class="sfx-card__source" title="Som sintético">SYN</span>';
+        card.innerHTML =
+            '<div class="sfx-card__wave">' +
+                '<svg viewBox="0 0 130 56" preserveAspectRatio="none">' +
+                    sfxWaveformPath(k) +
+                '</svg>' +
+                '<span class="sfx-card__cat">' + esc(s.cat) + '</span>' +
+                sourceLabel +
+            '</div>' +
+            '<div class="sfx-card__name" title="' + esc(s.name) + '">' + esc(s.name) + '</div>' +
+            '<div class="sfx-card__actions">' +
+                '<button class="sfx-card__btn sfx-card__play" title="Tocar preview">▶</button>' +
+                '<button class="sfx-card__btn sfx-card__select" title="Selecionar">✓</button>' +
+            '</div>';
+
+        // Clique no card = seleciona
+        card.onclick = function (e) {
+            if (e.target.closest(".sfx-card__btn")) return;
+            selectSfx(k);
+        };
+        // ▶ Play preview
+        card.querySelector(".sfx-card__play").onclick = function (e) {
+            e.stopPropagation();
+            playSfxPreview(k, e.currentTarget);
+        };
+        // ✓ Selecionar
+        card.querySelector(".sfx-card__select").onclick = function (e) {
+            e.stopPropagation();
+            selectSfx(k);
+        };
+        grid.appendChild(card);
+    });
+}
+
+// Gera um path SVG random-ish "waveform-like" pro card (visual)
+function sfxWaveformPath(seed) {
+    // Hash simples do seed pra ter forma estável
+    var h = 0; for (var i = 0; i < seed.length; i++) h = ((h << 5) - h + seed.charCodeAt(i)) | 0;
+    function rnd() { h = (h * 9301 + 49297) % 233280; return h / 233280; }
+    var bars = 28, w = 130 / bars, parts = [];
+    for (var i2 = 0; i2 < bars; i2++) {
+        var t = i2 / bars;
+        // envelope: ataque rápido, decai
+        var env = Math.max(0.1, Math.pow(1 - t, 0.6) * (0.4 + rnd() * 0.6));
+        var bh = env * 48;
+        var x = i2 * w + w * 0.15;
+        var y = 28 - bh / 2;
+        parts.push('<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + (w * 0.65).toFixed(1) + '" height="' + bh.toFixed(1) + '" fill="currentColor" opacity="' + (0.5 + rnd()*0.5).toFixed(2) + '" rx="1"/>');
+    }
+    return parts.join("");
+}
+
+// Renderiza pílulas de categoria do SFX
+var SFX_CAT_FILTER = "all";
+function renderSfxCategories() {
+    var el = $("sfx-cat-pills"); if (!el) return;
+    var cats = {};
+    Object.keys(SFX_LIBRARY).forEach(function (k) {
+        var s = SFX_LIBRARY[k];
+        cats[s.cat] = (cats[s.cat] || 0) + 1;
+    });
+    var total = Object.keys(SFX_LIBRARY).length;
+    el.innerHTML = '<button class="cat-pill active" data-cat="all">Todos (' + total + ')</button>';
+    Object.keys(cats).sort().forEach(function (c) {
+        var b = document.createElement("button");
+        b.className = "cat-pill"; b.setAttribute("data-cat", c);
+        b.textContent = c.charAt(0).toUpperCase() + c.slice(1) + " (" + cats[c] + ")";
+        el.appendChild(b);
+    });
+    el.querySelectorAll(".cat-pill").forEach(function (b) {
+        b.onclick = function () {
+            el.querySelectorAll(".cat-pill").forEach(function (x) { x.classList.remove("active"); });
+            b.classList.add("active");
+            SFX_CAT_FILTER = b.getAttribute("data-cat");
+            renderSfxGrid();
+        };
+    });
+}
+
+// Preview do SFX (toca uma vez no contexto do user)
+function playSfxPreview(key, btnEl) {
+    var s = SFX_LIBRARY[key]; if (!s) return;
+    if (btnEl) { btnEl.classList.add("playing"); setTimeout(function () { btnEl.classList.remove("playing"); }, 600); }
+    try {
+        if (s.source === "synth" && s.play) { s.play(); }
+        else if (s.source === "real" && s.filePath) {
+            // Toca via <audio> nativo do browser
+            var url = "file:///" + s.filePath.replace(/\\/g, "/");
+            var a = new Audio(url); a.volume = 0.85;
+            a.play().catch(function (e) { log("✗ play preview: " + e.message, "warn"); });
+        }
+    } catch (e) { log("✗ playSfxPreview: " + e.message, "warn"); }
+}
+
+function selectSfx(key) {
+    SFX_SELECTED = key;
+    try { localStorage.setItem("mpl_sfx", key); } catch (e) {}
+    document.querySelectorAll(".sfx-card.selected").forEach(function (c) { c.classList.remove("selected"); });
+    var sel = document.querySelector('.sfx-card[data-sfx="' + key.replace(/"/g, '\\"') + '"]');
+    if (sel) sel.classList.add("selected");
+    // Habilita botões de aplicar
+    var c1 = $("btn-sfx-apply-cti"); if (c1) c1.disabled = false;
+    var c2 = $("btn-sfx-apply-all"); if (c2) c2.disabled = false;
+    // Mostra nome no botão SFX da aba templates pra reaproveitar seleção
+    updateSfxButton();
+    var s = SFX_LIBRARY[key];
+    log("🔊 SFX selecionado: " + (s ? s.name : key), "info");
+}
+
+// Popula track selector da aba SFX com as tracks de áudio da sequência
+function populateSfxApplyTracks() {
+    var sel = $("sfx-apply-track"); if (!sel) return;
+    jsx("$.global.EP_getAudioTracksInfo();", function (d) {
+        if (!d || !d.tracks) return;
+        var current = sel.value;
+        sel.innerHTML = '<option value="">Auto (primeira vazia)</option>';
+        d.tracks.forEach(function (t) {
+            var opt = document.createElement("option");
+            opt.value = String(t.index);
+            opt.textContent = t.name + (t.clips > 0 ? " (" + t.clips + " clips)" : " (vazia)");
+            sel.appendChild(opt);
+        });
+        if (current) sel.value = current;
+    });
+}
+
+// Aplicar SFX no CTI atual
+function applySfxAtCti() {
+    if (!SFX_SELECTED) { toast("Selecione um SFX primeiro", "warn"); return; }
+    jsx("$.global.EP_getCTI();", function (cti) {
+        if (!cti || !cti.ticks) { toast("Sem CTI ativo", "warn"); return; }
+        var track = $("sfx-apply-track") && $("sfx-apply-track").value;
+        if (!track) track = "auto";
+        log("🔊 Aplicando SFX no CTI · track=" + track, "info");
+        placeSfxBatch([cti.ticks], track);
+    });
+}
+
+// Aplicar SFX em todos os clips da última track de vídeo (legendas)
+function applySfxAtAllLegendas() {
+    if (!SFX_SELECTED) { toast("Selecione um SFX primeiro", "warn"); return; }
+    var track = $("sfx-apply-track") && $("sfx-apply-track").value;
+    if (!track) track = "auto";
+    // Pega ticks dos clips na última track de vídeo via JSX
+    var sniffScript =
+        "(function(){try{var s=app.project.activeSequence;if(!s)return JSON.stringify({error:'no_seq'});" +
+        "var n=s.videoTracks.numTracks;var last=null;" +
+        "for(var i=n-1;i>=0;i--){if(s.videoTracks[i].clips.numItems>0){last=s.videoTracks[i];break;}}" +
+        "if(!last)return JSON.stringify({error:'sem_clips_de_legenda'});" +
+        "var out=[]; for(var c=0;c<last.clips.numItems;c++){out.push(String(last.clips[c].start.ticks));}" +
+        "return JSON.stringify({ok:true,ticks:out,trackIndex:n-1});}catch(e){return JSON.stringify({error:e.message});}})();";
+    jsx(sniffScript, function (d) {
+        if (d.error) { toast("Erro: " + d.error, "err"); return; }
+        if (!d.ticks || !d.ticks.length) { toast("Sem clips de legenda na timeline", "warn"); return; }
+        log("🔊 Aplicando SFX em " + d.ticks.length + " legendas · track=" + track, "info");
+        placeSfxBatch(d.ticks, track);
+    });
+}
 
 var ACtx = window.AudioContext || window.webkitAudioContext;
 var audioCtx = null;
@@ -1141,25 +2221,42 @@ function placeSfxAt(ticks, audioTrack) { placeSfxBatch([ticks], audioTrack); }
 function placeSfxBatch(positions, audioTrack) {
     if (!SFX_SELECTED) { log("SFX: nenhum SFX selecionado", "warn"); return; }
     if (!nodeFs || !nodeOs) { log("Node FS indisponível pra SFX", "warn"); return; }
-    log("SFX: renderizando " + SFX_SELECTED + " offline…");
+
+    var sfx = SFX_LIBRARY[SFX_SELECTED];
+    if (!sfx) { log("SFX inválido: " + SFX_SELECTED, "err"); return; }
+
+    function importNow(filePath) {
+        jsx("$.global.MotionProLegendas.importAudioFile(" +
+            JSON.stringify(filePath) + "," +
+            JSON.stringify(JSON.stringify(positions)) + "," +
+            JSON.stringify(audioTrack) + ");",
+        function (d) {
+            if (d.error) { log("✗ SFX: " + d.error, "err"); openLog(); toast("Erro SFX: " + d.error, "err", 4000); }
+            else {
+                log("✓ SFX " + sfx.name + " em " + d.track + " (" + d.placed + "/" + positions.length + ")", "info");
+                toast("✓ SFX aplicado em " + d.placed + " pontos", "ok", 3000);
+            }
+        });
+    }
+
+    // ── SFX REAL: arquivo direto do disco
+    if (sfx.source === "real" && sfx.filePath) {
+        log("🔊 SFX (arquivo real): " + sfx.filePath, "info");
+        importNow(sfx.filePath);
+        return;
+    }
+
+    // ── SFX SINTÉTICO: renderiza WAV via Web Audio offline + salva em tmp
+    log("🔊 SFX (sintético): renderizando " + SFX_SELECTED + " offline…");
     var p = offlineRenderSfx(SFX_SELECTED);
     if (!p) { log("OfflineAudioContext indisponível", "warn"); return; }
     p.then(function (blob) {
-        log("SFX: WAV blob " + blob.size + " bytes");
         var fr = new FileReader();
         fr.onload = function () {
             var buf = new Uint8Array(fr.result);
             var tmp = nodeOs.tmpdir() + nodePath.sep + "mpl_sfx_" + SFX_SELECTED.replace(/[^a-z0-9]/gi,"_") + ".wav";
             try { nodeFs.writeFileSync(tmp, Buffer.from(buf)); } catch (e) { log("✗ write SFX: " + e.message, "err"); return; }
-            try { var st = nodeFs.statSync(tmp); log("SFX: tmp file " + tmp + " · " + st.size + " bytes"); } catch (e) {}
-            jsx("$.global.MotionProLegendas.importAudioFile(" +
-                JSON.stringify(tmp) + "," +
-                JSON.stringify(JSON.stringify(positions)) + "," +
-                JSON.stringify(audioTrack) + ");",
-            function (d) {
-                if (d.error) { log("✗ SFX: " + d.error, "err"); openLog(); }
-                else { log("✓ SFX " + SFX_LIBRARY[SFX_SELECTED].name + " em " + d.track + " (" + d.placed + "/" + positions.length + ")", "info"); }
-            });
+            importNow(tmp);
         };
         fr.readAsArrayBuffer(blob);
     }).catch(function (e) { log("✗ SFX render: " + e.message, "err"); });
@@ -1391,6 +2488,58 @@ function bind() {
     // APLICAR template selecionado
     var apl = $("btn-hybrid-apply-all"); if (apl) apl.onclick = applySingle;
 
+    // Fechar preview inline
+    var pc = $("preview-close"); if (pc) pc.onclick = hidePreview;
+
+    // ── ABA SFX ──
+    var sfxSearch = $("sfx-search-input");
+    if (sfxSearch) sfxSearch.oninput = renderSfxGrid;
+    var sfxAplyCti = $("btn-sfx-apply-cti");
+    if (sfxAplyCti) sfxAplyCti.onclick = applySfxAtCti;
+    var sfxAplyAll = $("btn-sfx-apply-all");
+    if (sfxAplyAll) sfxAplyAll.onclick = applySfxAtAllLegendas;
+    // popula tracks ao trocar pra aba SFX
+    var sfxTabBtn = document.querySelector('.tab-btn[data-tab="tab-sfx"]');
+    if (sfxTabBtn) sfxTabBtn.addEventListener("click", function () {
+        populateSfxApplyTracks();
+        if (!Object.keys(SFX_LIBRARY).filter(function (k) { return SFX_LIBRARY[k].source === "real"; }).length) {
+            // Faz scan na 1ª vez que abrir a aba (caso user tenha dropado arquivos depois)
+            scanRealSfx();
+            renderSfxCategories();
+            renderSfxGrid();
+        }
+    });
+
+    // 🔍 DIAGNOSE template selecionado (importa, lista slots detectados, remove)
+    var diag = $("btn-tpl-diagnose");
+    if (diag) diag.onclick = function () {
+        if (!SELECTED || !SELECTED.mogrt) { toast("Selecione um template", "warn"); return; }
+        var abs = nodePath.join(EXT_PATH, "packs", SELECTED.mogrt);
+        openLog();
+        log("🔍 Diagnosticando template: " + SELECTED.name, "info");
+        diag.disabled = true;
+        jsx("$.global.EP_diagnoseTemplateSlots(" + JSON.stringify(abs) + ");", function (d) {
+            diag.disabled = false;
+            if (d.error) { log("✗ " + d.error, "err"); toast("Erro: " + d.error, "err"); return; }
+            log("  📊 slots detectados: " + d.slotsDetected, "info");
+            log("  📊 mode: " + d.mode, "info");
+            if (d.slotNames && d.slotNames.length) {
+                d.slotNames.forEach(function (s, i) {
+                    log("    P" + (i+1) + " · " + s, "info");
+                });
+            }
+            if (d.allMasterProps && d.allMasterProps.length) {
+                log("  📋 todas as props master (" + d.allMasterProps.length + "):", "info");
+                d.allMasterProps.forEach(function (p) {
+                    var val = p.value || "";
+                    if (val.length > 50) val = val.substring(0, 50) + "…";
+                    log("    [" + p.idx + "] " + p.displayName + " = " + val, "info");
+                });
+            }
+            toast("✓ " + d.slotsDetected + " slots detectados — veja LOG", "ok", 4000);
+        });
+    };
+
     // SFX picker
     var pick = $("tpl-sfx-pick-btn"); if (pick) pick.onclick = function () {
         $("sfx-picker-overlay").classList.remove("hidden"); renderSfxPicker();
@@ -1445,6 +2594,20 @@ function bind() {
     // re-chunk on words change
     var ws = $("auto-srt-groupsize"); if (ws) ws.onchange = function () { if (SRT_DATA.length) rebuildGroups(); };
 
+    // ── CUT CONFIG (estilo Premiere) — load/save/listen
+    loadCutOpts();
+    bindCutOpts();
+    // Re-cortar automaticamente quando user muda os limites E já tem SRT carregado
+    ["cut-oneword","cut-layout","cut-max-chars","cut-min-dur","cut-gap-frames"].forEach(function (id) {
+        var el = $(id); if (!el) return;
+        el.addEventListener("change", function () {
+            if (SRT_DATA && SRT_DATA.length) {
+                // re-aplica distribuição inteligente com novos limites
+                applySmartDistribution();
+            }
+        });
+    });
+
     // bulk
     var selAll = $("btn-srt-select-all"); if (selAll) selAll.onclick = function () {
         SRT_GROUPS.forEach(function (g) { g.selected = true; }); renderSrtEditor(); updateBulkActions();
@@ -1475,8 +2638,14 @@ window.MPL_onAuthReady = function () {
     log("BUILD " + BUILD, "info");
     setStatus("Carregando catálogo…");
     loadCatalog();
+    loadSlotInfo();
+    scanRealSfx();
+    renderSfxCategories();
+    renderSfxGrid();
     reloadHostJsx(function () {
         setStatus("Pronto.");
+        // depois do JSX carregar, descobre fps da sequência ativa
+        detectSeqFps();
     });
     updateApplyFooter();   // estado inicial
 };
