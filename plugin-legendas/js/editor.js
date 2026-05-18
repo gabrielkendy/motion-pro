@@ -309,44 +309,205 @@ function updateAutomationUI(name) {
     }
 }
 
-// =============================== TRANSCRIBE FROM SELECTED CLIP (NOVO)
-// Chama ExtendScript pra pegar o clipe selecionado e (futuramente) manda
-// pra API de transcrição. Por enquanto registra no log + toast informativo.
+// =============================== TRANSCRIBE — usa Speech-to-Text NATIVO do Premiere
+// Premiere 2024+ tem transcrição AI nativa em Window → Text → Transcript.
+// Quando ela cria captions na sequência, lemos via ExtendScript e populamos SRT_DATA.
 function transcribeSelectedClip() {
     var cs = (typeof CSInterface !== "undefined") ? new CSInterface() : null;
-    if (!cs) {
-        toast("CSInterface indisponível", "err");
-        return;
-    }
-    logLine("[TRANSCRIBE] Pedindo clipe selecionado ao Premiere…");
-    var script = "" +
-        "(function(){ try {" +
-        "  if (!app || !app.project || !app.project.activeSequence) return JSON.stringify({err:'Nenhuma sequência ativa'});" +
-        "  var seq = app.project.activeSequence;" +
-        "  var sel = [];" +
-        "  for (var i=0; i<seq.audioTracks.numTracks; i++) {" +
-        "    var tr = seq.audioTracks[i];" +
-        "    for (var j=0; j<tr.clips.numItems; j++) {" +
-        "      var c = tr.clips[j];" +
-        "      if (c.isSelected()) sel.push({name:c.name, start:c.start.seconds, end:c.end.seconds, track:i+1});" +
-        "    }" +
-        "  }" +
-        "  if (!sel.length) return JSON.stringify({err:'Nenhum clipe de áudio selecionado'});" +
-        "  return JSON.stringify({ok:true, clips:sel});" +
-        "} catch(e) { return JSON.stringify({err:String(e)}); } })();";
-    cs.evalScript(script, function (res) {
-        var data; try { data = JSON.parse(res || "{}"); } catch (e) { data = { err: "parse: " + res }; }
-        if (data.err) {
-            logLine("[TRANSCRIBE] " + data.err);
-            toast(data.err, "warn", 4000);
+    if (!cs) { toast("CSInterface indisponível", "err"); return; }
+    logLine("[TRANSCRIBE] Lendo captions da sequência ativa…");
+    cs.evalScript("MotionProLegendas.readActiveCaptions();", function (res) {
+        var data; try { data = JSON.parse(res || "{}"); } catch (e) { data = { error: "parse: " + res }; }
+        if (data.error) {
+            logLine("[TRANSCRIBE] " + data.error);
+            // Mostra instrução clara ao invés de só falhar
+            var msg = "Sem captions ainda. No Premiere: Window → Text → Transcript → Create transcription (PT-BR). Depois clique aqui de novo.";
+            toast(msg, "warn", 6500);
             return;
         }
-        var clip = data.clips[0];
-        logLine("[TRANSCRIBE] Clipe: " + clip.name + " · " + (clip.end - clip.start).toFixed(1) + "s · track A" + clip.track);
-        toast("Transcrição AI em breve — clipe identificado: " + clip.name, "ok", 4500);
-        // TODO fase 2: enviar áudio extraído pra endpoint /v1/ai/transcribe
-        // que retorna SRT-compatible JSON; popular SRT_DATA com isso e chamar updateAutomationUI.
+        SRT_DATA = data.blocks;
+        var bar = document.querySelector(".srtbar"); if (bar) bar.classList.add("loaded");
+        var t = $("srt-title"); if (t) t.textContent = "✓ Transcrição Premiere · " + SRT_DATA.length + " blocos";
+        updateAutomationUI("Transcrição do Premiere");
+        logLine("[TRANSCRIBE] " + SRT_DATA.length + " linhas importadas via captions nativas");
+        toast("✓ " + SRT_DATA.length + " linhas importadas do Premiere", "ok", 3500);
     });
+}
+
+// =============================== APLICAR template selecionado (footer)
+function applySelectedTemplate() {
+    var sel = (typeof window.LegendasGetSelected === "function") ? window.LegendasGetSelected() : null;
+    if (!sel || !sel.item) {
+        toast("Selecione um template primeiro", "warn"); return;
+    }
+    if (!sel.item.mogrt) {
+        toast("Template sem .mogrt — não dá pra aplicar", "err"); return;
+    }
+    if (typeof window.LegendasInsertItem === "function") {
+        logLine("[APPLY] " + sel.item.name);
+        window.LegendasInsertItem(sel.item);
+        // SFX opcional no momento do apply
+        if ($("opt-with-sfx") && $("opt-with-sfx").checked && SFX_SELECTED && SFX_LIBRARY[SFX_SELECTED]) {
+            try { SFX_LIBRARY[SFX_SELECTED].play(); } catch (e) {}
+        }
+    }
+}
+
+// =============================== APLICAR NA TIMELINE (batch SRT real)
+// Agrupa palavras de N em N respeitando a duração proporcional do bloco original.
+function chunkSrtByWords(blocks, wordsPerChunk, connectors) {
+    var out = [];
+    blocks.forEach(function (b) {
+        var words = (b.text || "").trim().split(/\s+/).filter(Boolean);
+        if (!words.length) return;
+        var totalDur = Math.max(.4, b.end - b.start);
+        var nChunks = Math.ceil(words.length / wordsPerChunk);
+        for (var i = 0; i < nChunks; i++) {
+            var slice = words.slice(i * wordsPerChunk, (i + 1) * wordsPerChunk);
+            var sep = connectors === "none" ? "" : (connectors === "space" ? " " : " ");
+            var txt = slice.join(sep);
+            var start = b.start + (i / nChunks) * totalDur;
+            var end   = b.start + ((i + 1) / nChunks) * totalDur;
+            out.push({ start: start, end: end, text: txt });
+        }
+    });
+    return out;
+}
+
+function applySrtBatchReal() {
+    if (!SRT_DATA || !SRT_DATA.length) { toast("Carregue um SRT primeiro", "warn"); return; }
+    var cs = (typeof CSInterface !== "undefined") ? new CSInterface() : null;
+    if (!cs) { toast("CSInterface indisponível", "err"); return; }
+
+    // Acha mogrt do template selecionado no dropdown
+    var sel = $("auto-template");
+    var tplName = sel && sel.value;
+    if (!tplName || tplName === "Carregar SRT primeiro" || tplName === "Catálogo vazio") {
+        toast("Selecione um template no dropdown", "warn"); return;
+    }
+    var item = findCatalogItemByName(tplName);
+    if (!item || !item.mogrt) { toast("Template não encontrado no catálogo", "err"); return; }
+
+    // Monta blocos finais aplicando "palavras por bloco" + conectores
+    var n = parseInt($("auto-words").value, 10) || 3;
+    var conn = ($("auto-connectors") && $("auto-connectors").value) || "smart";
+    var blocks = chunkSrtByWords(SRT_DATA, n, conn);
+    var trackMode = ($("auto-track") && $("auto-track").value) || "last";
+
+    var mogrtAbs = window.LegendasResolveMogrtPath ? window.LegendasResolveMogrtPath(item.mogrt) : null;
+    if (!mogrtAbs) { toast("Não consegui resolver path do .mogrt", "err"); return; }
+
+    var btn = $("btn-apply-all");
+    if (btn) { btn.disabled = true; btn.textContent = "Aplicando " + blocks.length + " títulos…"; }
+    logLine("[BATCH] " + blocks.length + " blocos · template " + tplName + " · track " + trackMode);
+
+    var jsx = "MotionProLegendas.applySrtBatch(" +
+              JSON.stringify(mogrtAbs) + "," +
+              JSON.stringify(JSON.stringify(blocks)) + "," +
+              JSON.stringify(JSON.stringify({ trackMode: trackMode })) + ");";
+    cs.evalScript(jsx, function (res) {
+        if (btn) { btn.disabled = false; btn.textContent = "⚡ APLICAR NA TIMELINE"; }
+        var data; try { data = JSON.parse(res || "{}"); } catch (e) { data = { error: "parse: " + res }; }
+        if (data.error) {
+            logLine("[BATCH] ERRO: " + data.error);
+            toast("Erro: " + data.error, "err", 5000);
+            return;
+        }
+        logLine("[BATCH] OK · " + data.applied + " aplicados · " + data.skipped + " pulados");
+        toast("✓ " + data.applied + " títulos criados na track V" + (data.track + 1), "ok", 4500);
+
+        // SFX: se ligado e SFX selecionado, renderiza WAV e importa nas posições
+        if ($("opt-with-sfx") && $("opt-with-sfx").checked && SFX_SELECTED) {
+            var audioTrack = ($("opt-audio-track") && $("opt-audio-track").value) || "A2";
+            if (audioTrack) placeSfxOnTimeline(blocks, audioTrack);
+        }
+    });
+}
+
+function findCatalogItemByName(name) {
+    var cat = window.CATALOG_LEGENDAS;
+    if (!cat || !cat.packs) return null;
+    for (var p = 0; p < cat.packs.length; p++) {
+        var cats = cat.packs[p].categories || [];
+        for (var c = 0; c < cats.length; c++) {
+            var items = cats[c].items || [];
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].name === name) return items[i];
+            }
+        }
+    }
+    return null;
+}
+
+// =============================== SFX na timeline (renderiza WAV → importa)
+function renderSfxToWav(sfxKey) {
+    var def = SFX_LIBRARY[sfxKey]; if (!def) return null;
+    var sampleRate = 44100;
+    var seconds = 1.0; // duração max por SFX
+    var OfflineCtx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OfflineCtx) return null;
+    var off = new OfflineCtx(1, sampleRate * seconds, sampleRate);
+    // monkey-patch ctx() temporário pra rodar o synth no offline
+    var prev = audioCtx; audioCtx = off;
+    try { def.play(); } catch (e) {}
+    audioCtx = prev;
+    return off.startRendering().then(function (buf) { return audioBufferToWavBlob(buf); });
+}
+
+function audioBufferToWavBlob(buffer) {
+    var numCh = buffer.numberOfChannels;
+    var sr = buffer.sampleRate;
+    var samples = buffer.length;
+    var dataSize = samples * numCh * 2;
+    var ab = new ArrayBuffer(44 + dataSize);
+    var view = new DataView(ab);
+    function w(o, s) { for (var i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); }
+    w(0, "RIFF"); view.setUint32(4, 36 + dataSize, true);
+    w(8, "WAVE"); w(12, "fmt "); view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true); view.setUint16(22, numCh, true);
+    view.setUint32(24, sr, true); view.setUint32(28, sr * numCh * 2, true);
+    view.setUint16(32, numCh * 2, true); view.setUint16(34, 16, true);
+    w(36, "data"); view.setUint32(40, dataSize, true);
+    var ch = buffer.getChannelData(0); var off = 44;
+    for (var i = 0; i < samples; i++, off += 2) {
+        var s = Math.max(-1, Math.min(1, ch[i]));
+        view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    }
+    return new Blob([ab], { type: "audio/wav" });
+}
+
+function placeSfxOnTimeline(blocks, audioTrack) {
+    if (!SFX_SELECTED) return;
+    var sfxKey = SFX_SELECTED;
+    var fs = window.require ? window.require("fs") : null;
+    var os = window.require ? window.require("os") : null;
+    if (!fs || !os) { logLine("[SFX] node fs indisponível"); return; }
+
+    var wavPromise = renderSfxToWav(sfxKey);
+    if (!wavPromise) { logLine("[SFX] OfflineAudioContext indisponível"); return; }
+
+    wavPromise.then(function (blob) {
+        var reader = new FileReader();
+        reader.onload = function () {
+            var buf = new Uint8Array(reader.result);
+            var tmpPath = os.tmpdir() + "/mpl_sfx_" + sfxKey.replace(/[^a-z0-9]/gi, "_") + ".wav";
+            try { fs.writeFileSync(tmpPath, Buffer.from(buf)); } catch (e) { logLine("[SFX] write fail: " + e.message); return; }
+            // Calcula ticks pra cada start de bloco
+            var TICKS = 254016000000;
+            var positions = blocks.map(function (b) { return String(Math.round(b.start * TICKS)); });
+            var cs = new CSInterface();
+            var jsx = "MotionProLegendas.importAudioFile(" +
+                      JSON.stringify(tmpPath) + "," +
+                      JSON.stringify(JSON.stringify(positions)) + "," +
+                      JSON.stringify(audioTrack) + ");";
+            cs.evalScript(jsx, function (res) {
+                var d; try { d = JSON.parse(res || "{}"); } catch (e) { d = {}; }
+                if (d.error) { logLine("[SFX] " + d.error); toast("SFX: " + d.error, "warn", 4000); }
+                else { logLine("[SFX] " + d.placed + " SFX em " + d.track); toast("✓ SFX em " + d.track, "ok"); }
+            });
+        };
+        reader.readAsArrayBuffer(blob);
+    }).catch(function (e) { logLine("[SFX] render fail: " + e.message); });
 }
 
 function getAllWords() {
@@ -466,17 +627,15 @@ function bindEditor() {
         logLine("[SFX] Removido");
     };
 
-    // Automation config
+    // Automation config + APLICAR NA TIMELINE (real)
     var aw = $("auto-words");
     if (aw) aw.onchange = renderAutomationOptions;
     var apply = $("btn-apply-all");
-    if (apply) apply.onclick = function () {
-        if (!SRT_DATA) { alert("Carregue um SRT primeiro"); return; }
-        var withSfx = $("opt-with-sfx") && $("opt-with-sfx").checked && SFX_SELECTED;
-        var mode = (document.querySelector('input[name="apply-mode"]:checked') || {}).value || "keep";
-        logLine("[APPLY] " + SRT_DATA.length + " blocos · SFX: " + (withSfx ? SFX_LIBRARY[SFX_SELECTED].name : "não") + " · modo: " + mode);
-        toast("Automação iniciada · " + SRT_DATA.length + " blocos (preview — integração com Premiere na fase 2)", "ok", 4500);
-    };
+    if (apply) apply.onclick = applySrtBatchReal;
+
+    // Footer APLICAR (template selecionado vai no CTI)
+    var aplicarBtn = document.getElementById("btn-aplicar");
+    if (aplicarBtn) aplicarBtn.onclick = applySelectedTemplate;
 
     // Log close
     var logClose = $("log-close");
@@ -499,16 +658,12 @@ function bindEditor() {
         };
     });
 
-    // APLICAR (footer)
-    var aplicar = $("btn-aplicar");
-    if (aplicar) aplicar.onclick = function () {
-        toast("Selecione um template e dê duplo-clique pra inserir na timeline", "warn");
-    };
+    // (APLICAR já bindado acima — applySelectedTemplate)
 
     // Init UI
     updateTopStatus();
     updateSfxStatus();
-    logLine("[BOOT] Editor Premium · build 2.1");
+    logLine("[BOOT] Editor Premium · build 3.3 · Premiere integration LIVE");
 }
 
 // Toca pra app.js poder atualizar status quando logar

@@ -358,7 +358,13 @@ function escapeXml(s) {
 }
 
 var SELECTED_ITEM_KEY = null;
+var SELECTED_ITEM = null;  // {item, cat} — usado pelo botão APLICAR do footer
 window.LegendasRenderGrid = function () { renderGrid(); };
+window.LegendasGetSelected = function () { return SELECTED_ITEM; };
+window.LegendasInsertItem = function (item) { return insertItem(item); };
+window.LegendasResolveMogrtPath = function (rel) {
+    return rel ? nodePath.join(EXT_PATH, "packs", rel) : null;
+};
 function renderGrid() {
     var el = $("grid"); if (!el) return;
     el.innerHTML = "";
@@ -386,11 +392,22 @@ function renderGrid() {
                 '<button class="card__fav ' + fav + '" title="Favoritar">★</button>' +
             '</div>' +
             '<div class="card__title" title="' + esc(e.item.name) + '">' + label + '</div>';
-        // Click = seleciona (mostra no preview-slot). Duplo-clique = insere.
+        // Click = seleciona (preview + habilita APLICAR). Duplo-clique = insere já.
         card.onclick = function () {
             SELECTED_ITEM_KEY = favKey(e.item);
+            SELECTED_ITEM = { item: e.item, cat: e.cat };
             renderGrid();
             updatePreviewSlot(e.item, e.cat);
+            // habilita APLICAR no footer
+            var btn = document.getElementById("btn-aplicar");
+            if (btn) { btn.disabled = false; btn.textContent = "APLICAR · " + (e.item.name || "template"); }
+            // atualiza select da automação pra refletir o item selecionado
+            var auto = document.getElementById("auto-template");
+            if (auto) {
+                for (var i = 0; i < auto.options.length; i++) {
+                    if (auto.options[i].value === e.item.name) { auto.selectedIndex = i; break; }
+                }
+            }
         };
         card.ondblclick = function () { insertItem(e.item); };
         card.querySelector(".card__fav").onclick = function (ev) {
@@ -723,7 +740,7 @@ function tryRestoreSession() {
 }
 
 // ============================================================ boot
-var BUILD = "3.2.0-identidade-unificada-pacotesfx";
+var BUILD = "3.3.0-premiere-integration-real";
 
 function boot() {
     loadCatalog();
