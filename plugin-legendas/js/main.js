@@ -11,7 +11,7 @@
 (function () {
 "use strict";
 
-var BUILD = "4.3.0-auto-reload-bridge+progress";
+var BUILD = "4.4.0-EP-61-templates-com-GIF-preview";
 
 var nodePath = typeof require === "function" ? require("path") : null;
 var nodeFs   = typeof require === "function" ? require("fs") : null;
@@ -130,9 +130,10 @@ function flatten(catalog) {
                     name: it.name,
                     mogrt: it.mogrt,
                     preview: it.preview || null,
-                    wc: deriveWordCount(it.name, c.name),
+                    wc: (it.wc != null) ? it.wc : deriveWordCount(it.name, c.name),
                     cat: c.name || p.name || "Geral",
-                    pack: p.id || p.name
+                    pack: p.id || p.name,
+                    ep: !!it.ep_id   // marcador "template estilo EP"
                 });
             });
         });
@@ -235,7 +236,8 @@ function thumbFor(t) {
     if (t.preview && nodeFs && nodePath) {
         var p = nodePath.join(EXT_PATH, "packs", t.preview);
         if (nodeFs.existsSync(p)) {
-            return '<img src="file:///' + p.replace(/\\/g, "/") + '">';
+            var url = "file:///" + p.replace(/\\/g, "/").replace(/ /g, "%20");
+            return '<img src="' + url + '" loading="lazy" style="width:100%;height:100%;object-fit:cover">';
         }
     }
     return mockupSvg(t.name, t.cat);
