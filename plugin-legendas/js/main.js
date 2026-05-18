@@ -11,7 +11,7 @@
 (function () {
 "use strict";
 
-var BUILD = "4.4.0-EP-61-templates-com-GIF-preview";
+var BUILD = "4.5.0-text-replace-fix+SFX-loud+inspect";
 
 var nodePath = typeof require === "function" ? require("path") : null;
 var nodeFs   = typeof require === "function" ? require("fs") : null;
@@ -585,12 +585,11 @@ function applySrtBatch() {
         }
 
         var ticks = String(Math.round(g.start * TICKS));
-        // chama EP_hybridInsertMogrt por item e setMogrtText via JS
+        // Importa + acha clip recém-criado + ajusta duração + troca texto via helper
         var script = "(function(){" +
-            "var r = MotionProLegendas.EP_hybridInsertMogrt(" + JSON.stringify(g.mogrtPath) + "," + JSON.stringify(ticks) + "," + JSON.stringify(trackMode) + ",null);" +
+            "var r = $.global.EP_hybridInsertMogrt(" + JSON.stringify(g.mogrtPath) + "," + JSON.stringify(ticks) + "," + JSON.stringify(trackMode) + ",null);" +
             "var d; try { d = JSON.parse(r); } catch (e) { return r; }" +
             "if (d.error) return r;" +
-            // Tenta achar a clip recém-criado e setar texto
             "try {" +
             "  var seq = app.project.activeSequence;" +
             "  var tn = d.track;" +
@@ -599,26 +598,13 @@ function applySrtBatch() {
             "  for (var i = 0; i < vt.clips.numItems; i++) {" +
             "    if (String(vt.clips[i].start.ticks) === " + JSON.stringify(ticks) + ") { newClip = vt.clips[i]; break; }" +
             "  }" +
-            "  if (newClip) {" +
-            "    var txt = " + JSON.stringify(g.text) + ";" +
-            "    var durSec = " + (Math.max(0.4, g.end - g.start)) + ";" +
-            "    try { newClip.end = { ticks: String(Math.round((" + g.start + " + durSec) * 254016000000)) }; } catch(e){}" +
-            // troca texto
-            "    try {" +
-            "      var mc = newClip.getMGTComponent && newClip.getMGTComponent();" +
-            "      if (mc && mc.properties) {" +
-            "        for (var pi = 0; pi < mc.properties.numItems; pi++) {" +
-            "          var p = mc.properties[pi];" +
-            "          var dn = (p.displayName||'').toLowerCase();" +
-            "          if (dn.indexOf('text') >= 0 || dn.indexOf('texto') >= 0 || dn.indexOf('title') >= 0) {" +
-            "            try { p.setValue(txt, true); break; } catch(e){}" +
-            "          }" +
-            "        }" +
-            "      }" +
-            "    } catch(e){}" +
-            "  }" +
+            "  if (!newClip) return JSON.stringify({error: 'clip não achado após import', track: d.track, ticks: " + JSON.stringify(ticks) + "});" +
+            "  var durSec = " + (Math.max(0.4, g.end - g.start)) + ";" +
+            "  try { newClip.end = { ticks: String(Math.round((" + g.start + " + durSec) * 254016000000)) }; } catch(e){}" +
+            "  var setRes = $.global._setMogrtTextOnClip(newClip, " + JSON.stringify(g.text) + ");" +
+            "  d.textChanged = setRes.changed; d.textAttempts = setRes.attempts; d.textError = setRes.error;" +
+            "  return JSON.stringify(d);" +
             "} catch(e) { return JSON.stringify({error: 'post:' + e.message}); }" +
-            "return r;" +
         "})();";
 
         cs.evalScript(script, function (raw) {
@@ -628,6 +614,10 @@ function applySrtBatch() {
                 if (failed <= 5) log("  ✗ #" + idx + ": " + d.error, "err");
             } else {
                 applied++;
+                // Loga primeira ocorrência do estado do setText pra diagnosticar
+                if (idx === 1) {
+                    log("  diag #1 textChanged=" + d.textChanged + " attempts=" + d.textAttempts + (d.textError ? " err=" + d.textError : ""), d.textChanged ? "info" : "warn");
+                }
             }
             setTimeout(next, 30);
         });
@@ -677,10 +667,11 @@ var ACtx = window.AudioContext || window.webkitAudioContext;
 var audioCtx = null;
 function ctx() { if (!audioCtx) audioCtx = new ACtx(); return audioCtx; }
 
+// SFX synths — volumes aumentados 3x pra exportar audível em WAV
 function sfxClick(f, d, v) {
     var c = ctx(); var o = c.createOscillator(); var g = c.createGain();
     o.frequency.value = f; o.type = "square";
-    g.gain.setValueAtTime(v||.18, c.currentTime);
+    g.gain.setValueAtTime(v||.6, c.currentTime);
     g.gain.exponentialRampToValueAtTime(.001, c.currentTime + d);
     o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime + d);
 }
@@ -689,7 +680,7 @@ function sfxPop(d) {
     o.frequency.setValueAtTime(180, c.currentTime);
     o.frequency.exponentialRampToValueAtTime(900, c.currentTime + d);
     o.type = "sine";
-    g.gain.setValueAtTime(.25, c.currentTime);
+    g.gain.setValueAtTime(.7, c.currentTime);
     g.gain.exponentialRampToValueAtTime(.001, c.currentTime + d);
     o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime + d);
 }
@@ -698,17 +689,17 @@ function sfxShutter(d1, d2) {
     var n = c.createBufferSource();
     var buf = c.createBuffer(1, c.sampleRate * (d1 + d2), c.sampleRate);
     var dat = buf.getChannelData(0);
-    for (var i = 0; i < dat.length; i++) dat[i] = (Math.random()*2 - 1) * (1 - i/dat.length);
+    for (var i = 0; i < dat.length; i++) dat[i] = (Math.random()*2 - 1) * (1 - i/dat.length) * 0.85;
     n.buffer = buf;
-    var g = c.createGain(); g.gain.value = .18;
+    var g = c.createGain(); g.gain.value = .6;
     n.connect(g).connect(c.destination); n.start();
-    setTimeout(function(){ sfxClick(900, d2 * .5, .10); }, d1*1000);
+    setTimeout(function(){ sfxClick(900, d2 * .5, .4); }, d1*1000);
 }
 function sfxKick(f, d) {
     var c = ctx(); var o = c.createOscillator(); var g = c.createGain();
     o.frequency.setValueAtTime(f*2.5, c.currentTime);
     o.frequency.exponentialRampToValueAtTime(f, c.currentTime + d * .5);
-    g.gain.setValueAtTime(.4, c.currentTime);
+    g.gain.setValueAtTime(.9, c.currentTime);
     g.gain.exponentialRampToValueAtTime(.001, c.currentTime + d);
     o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime + d);
 }
@@ -719,16 +710,17 @@ function sfxWhoosh(fHi, fLo, d) {
     var dat = buf.getChannelData(0);
     for (var i = 0; i < dat.length; i++) {
         var t = i / dat.length;
-        dat[i] = (Math.random()*2 - 1) * (1 - Math.abs(t - .5) * 2) * .35;
+        dat[i] = (Math.random()*2 - 1) * (1 - Math.abs(t - .5) * 2) * .9;
     }
     b.buffer = buf;
     var bp = c.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 6;
     bp.frequency.setValueAtTime(fHi, c.currentTime);
     bp.frequency.exponentialRampToValueAtTime(Math.max(80, fLo), c.currentTime + d);
-    b.connect(bp).connect(c.destination); b.start();
+    var amp = c.createGain(); amp.gain.value = 2.2;
+    b.connect(bp).connect(amp).connect(c.destination); b.start();
 }
 function sfxTypingBurst() {
-    for (var i = 0; i < 6; i++) setTimeout(function () { sfxClick(2000 + Math.random()*600, .03, .12); }, i * 55);
+    for (var i = 0; i < 6; i++) setTimeout(function () { sfxClick(2000 + Math.random()*600, .03, .4); }, i * 55);
 }
 
 function offlineRenderSfx(key) {
@@ -763,27 +755,30 @@ function bufferToWav(buf) {
 
 function placeSfxAt(ticks, audioTrack) { placeSfxBatch([ticks], audioTrack); }
 function placeSfxBatch(positions, audioTrack) {
-    if (!SFX_SELECTED) return;
+    if (!SFX_SELECTED) { log("SFX: nenhum SFX selecionado", "warn"); return; }
     if (!nodeFs || !nodeOs) { log("Node FS indisponível pra SFX", "warn"); return; }
+    log("SFX: renderizando " + SFX_SELECTED + " offline…");
     var p = offlineRenderSfx(SFX_SELECTED);
     if (!p) { log("OfflineAudioContext indisponível", "warn"); return; }
     p.then(function (blob) {
+        log("SFX: WAV blob " + blob.size + " bytes");
         var fr = new FileReader();
         fr.onload = function () {
             var buf = new Uint8Array(fr.result);
-            var tmp = nodeOs.tmpdir() + "/mpl_sfx_" + SFX_SELECTED + ".wav";
-            try { nodeFs.writeFileSync(tmp, Buffer.from(buf)); } catch (e) { log("write SFX fail: " + e.message, "err"); return; }
+            var tmp = nodeOs.tmpdir() + nodePath.sep + "mpl_sfx_" + SFX_SELECTED.replace(/[^a-z0-9]/gi,"_") + ".wav";
+            try { nodeFs.writeFileSync(tmp, Buffer.from(buf)); } catch (e) { log("✗ write SFX: " + e.message, "err"); return; }
+            try { var st = nodeFs.statSync(tmp); log("SFX: tmp file " + tmp + " · " + st.size + " bytes"); } catch (e) {}
             jsx("$.global.MotionProLegendas.importAudioFile(" +
                 JSON.stringify(tmp) + "," +
                 JSON.stringify(JSON.stringify(positions)) + "," +
                 JSON.stringify(audioTrack) + ");",
             function (d) {
-                if (d.error) { log("SFX " + d.error, "err"); }
-                else { log("✓ SFX em " + d.track + " (" + d.placed + ")", "info"); }
+                if (d.error) { log("✗ SFX: " + d.error, "err"); openLog(); }
+                else { log("✓ SFX " + SFX_LIBRARY[SFX_SELECTED].name + " em " + d.track + " (" + d.placed + "/" + positions.length + ")", "info"); }
             });
         };
         fr.readAsArrayBuffer(blob);
-    });
+    }).catch(function (e) { log("✗ SFX render: " + e.message, "err"); });
 }
 
 function renderSfxPicker() {
@@ -892,7 +887,7 @@ function runDiag() {
     cs.evalScript("typeof $.global.EP_ping", function (r) {
         log("[3] EP_ping disponível: " + r);
         if (String(r).indexOf("function") < 0) {
-            log("✗ host.jsx NÃO foi carregado pelo Premiere. Reinicie o Premiere!", "err");
+            log("✗ host.jsx NÃO foi carregado. Click no botão recarregar host.jsx no boot — recarregue o painel.", "err");
             if (btn) { btn.className = "btn-diag err"; btn.textContent = "✗ host OFF"; }
             return;
         }
@@ -905,8 +900,30 @@ function runDiag() {
                     if (btn) { btn.className = "btn-diag err"; btn.textContent = "⚠ Sem seq"; }
                     return;
                 }
-                if (btn) { btn.className = "btn-diag ok"; btn.textContent = "✓"; }
-                log("════════ TUDO OK ════════", "info");
+
+                // [6] Se um template está selecionado, INSPECIONA pra ver props
+                if (SELECTED && SELECTED.mogrt) {
+                    var abs = nodePath.join(EXT_PATH, "packs", SELECTED.mogrt);
+                    log("[6] Inspecionando MOGRT: " + SELECTED.name);
+                    jsx("$.global.EP_inspectMogrt(" + JSON.stringify(abs) + ");", function (r2) {
+                        if (r2.error) { log("✗ inspect: " + r2.error, "err"); }
+                        else {
+                            log("  clip: " + r2.clipName);
+                            (r2.components || []).forEach(function (c) {
+                                log("  ▸ " + c.name + " (" + c.count + " props)");
+                                (c.props || []).slice(0, 10).forEach(function (p) {
+                                    log("      [" + p.idx + "] " + p.displayName + " = " + p.value);
+                                });
+                            });
+                        }
+                        if (btn) { btn.className = "btn-diag ok"; btn.textContent = "✓"; }
+                        log("════════ DIAG DONE ════════", "info");
+                    });
+                } else {
+                    log("[6] Pra inspecionar MOGRT, selecione um template e clique 🩺 de novo");
+                    if (btn) { btn.className = "btn-diag ok"; btn.textContent = "✓"; }
+                    log("════════ DIAG OK ════════", "info");
+                }
             });
         });
     });

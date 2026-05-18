@@ -104,38 +104,149 @@ $.global._MPL_VERSION = "4.0.0";
     function importMogrt(path) { return EP_hybridInsertMogrt(path, null, null, null); }
 
     // ──────────────────────────────────────────────── SET TEXT IN MOGRT
+    // MOGRTs do EP usam Master Property "Source Text" exposta. Em ExtendScript,
+    // o valor pode ser STRING simples OU JSON com o text document do AE.
+    // Estratégia: tenta cada componente, cada property, com 3 formatos diferentes
+    // até um deles aceitar. Devolve quantos params trocou (>0 = sucesso).
     function setMogrtText(clip, newText) {
         var t = String(newText || "");
-        // 1) API moderna
+        var changed = 0;
+        var attempts = 0;
+        var lastError = "";
+
+        // valores a tentar:
+        //   1) string simples
+        //   2) JSON do AE TextDocument: { textEditValue: "..." }
+        //   3) JSON com mTextDocument: { mTextDocument: { mString: "..." } }
+        var values = [
+            t,
+            '{"textEditValue":' + JSON.stringify(t) + '}',
+            '{"mTextDocument":{"mString":' + JSON.stringify(t) + '}}'
+        ];
+
+        function trySet(prop) {
+            for (var v = 0; v < values.length; v++) {
+                try {
+                    prop.setValue(values[v], 1);   // true → updateUI
+                    return true;
+                } catch (e1) {
+                    lastError = String(e1);
+                    try { prop.setValue(values[v]); return true; } catch (e2) { lastError = String(e2); }
+                }
+            }
+            return false;
+        }
+
+        function isTextProp(p) {
+            var n = String(p.displayName || p.name || "").toLowerCase();
+            if (n.indexOf("source text") >= 0) return true;
+            if (n === "text" || n === "texto") return true;
+            if (n.indexOf("text") >= 0 && n.indexOf("color") < 0 && n.indexOf("size") < 0 && n.indexOf("font") < 0) return true;
+            // [EP] prefix do EP Legendas
+            if (n.indexOf("[ep]") >= 0) return true;
+            return false;
+        }
+
+        // 1) getMGTComponent (master properties expostas no MOGRT)
         try {
             var mc = clip.getMGTComponent && clip.getMGTComponent();
             if (mc && mc.properties) {
                 for (var i = 0; i < mc.properties.numItems; i++) {
                     var p = mc.properties[i];
-                    var dn = (p.displayName || "").toLowerCase();
-                    if (dn.indexOf("text") >= 0 || dn.indexOf("texto") >= 0 || dn.indexOf("title") >= 0) {
-                        try { p.setValue(t, true); return true; } catch (e) {}
-                    }
+                    if (isTextProp(p)) { attempts++; if (trySet(p)) changed++; }
                 }
             }
-        } catch (e) {}
-        // 2) varredura components
+        } catch (e) { lastError = "mc:" + e.message; }
+
+        // 2) Varre TODOS os components (fallback para MOGRTs estruturados diferente)
         try {
             var comps = clip.components;
-            if (!comps) return false;
-            for (var c = 0; c < comps.numItems; c++) {
-                var comp = comps[c];
-                if (!comp.properties) continue;
-                for (var pi = 0; pi < comp.properties.numItems; pi++) {
-                    var pp = comp.properties[pi];
-                    var nm = (pp.displayName || pp.name || "").toLowerCase();
-                    if (nm.indexOf("source text") >= 0 || nm === "text" || nm === "texto") {
-                        try { pp.setValue(t, true); return true; } catch (e2) {}
+            if (comps) {
+                for (var c = 0; c < comps.numItems; c++) {
+                    var comp = comps[c];
+                    if (!comp.properties) continue;
+                    for (var pi = 0; pi < comp.properties.numItems; pi++) {
+                        var pp = comp.properties[pi];
+                        if (isTextProp(pp)) { attempts++; if (trySet(pp)) changed++; }
                     }
                 }
             }
-        } catch (e3) {}
-        return false;
+        } catch (e3) { lastError = "comp:" + e3.message; }
+
+        return { changed: changed, attempts: attempts, error: changed === 0 ? lastError : null };
+    }
+
+    // ──────────────────────────────────────────────── INSPECT MOGRT (DEBUG)
+    // Importa o MOGRT, lista TODAS as propriedades de cada componente,
+    // e retorna no JSON pra ver no log do plugin.
+    function EP_inspectMogrt(mogrtPath) {
+        try {
+            if (!app || !app.project) return err("Projeto não disponível");
+            var seq = app.project.activeSequence;
+            if (!seq) return err("Abra uma sequência");
+            var f = new File(mogrtPath);
+            if (!f.exists) return err("MOGRT não existe: " + mogrtPath);
+
+            var ticks = String(seq.getPlayerPosition().ticks);
+            var target = seq.videoTracks.numTracks - 1;
+            var clip = seq.importMGT(f.fsName, ticks, target, 0);
+            if (!clip) return err("Premiere recusou importar");
+
+            var report = { ok: true, clipName: clip.name, components: [] };
+
+            // master MGT component
+            try {
+                var mc = clip.getMGTComponent && clip.getMGTComponent();
+                if (mc && mc.properties) {
+                    var mcInfo = { name: "MGTComponent", count: mc.properties.numItems, props: [] };
+                    for (var i = 0; i < mc.properties.numItems; i++) {
+                        var p = mc.properties[i];
+                        var info = {
+                            idx: i,
+                            displayName: String(p.displayName || ""),
+                            name: String(p.name || ""),
+                            value: "?"
+                        };
+                        try { info.value = String(p.getValue ? p.getValue() : ""); } catch (e) { info.value = "[err]"; }
+                        if (info.value && info.value.length > 80) info.value = info.value.substring(0, 80) + "…";
+                        mcInfo.props.push(info);
+                    }
+                    report.components.push(mcInfo);
+                }
+            } catch (e1) { report.components.push({ name: "MGTComponent", error: e1.message }); }
+
+            // outros components
+            try {
+                var comps = clip.components;
+                if (comps) {
+                    for (var c = 0; c < comps.numItems; c++) {
+                        var comp = comps[c];
+                        var ci = { name: String(comp.displayName || comp.name || ("comp[" + c + "]")), count: 0, props: [] };
+                        if (comp.properties) {
+                            ci.count = comp.properties.numItems;
+                            for (var pi = 0; pi < comp.properties.numItems; pi++) {
+                                var pp = comp.properties[pi];
+                                var info = {
+                                    idx: pi,
+                                    displayName: String(pp.displayName || ""),
+                                    name: String(pp.name || ""),
+                                    value: "?"
+                                };
+                                try { info.value = String(pp.getValue ? pp.getValue() : ""); } catch (e) { info.value = "[err]"; }
+                                if (info.value && info.value.length > 80) info.value = info.value.substring(0, 80) + "…";
+                                ci.props.push(info);
+                            }
+                        }
+                        report.components.push(ci);
+                    }
+                }
+            } catch (e2) { report.componentsErr = e2.message; }
+
+            // Remove o clip de teste
+            try { clip.remove(false, true); } catch (e3) {}
+
+            return ok(report);
+        } catch (e) { return err(e.message); }
     }
 
     // ──────────────────────────────────────────────── BATCH APPLY
@@ -335,6 +446,9 @@ $.global._MPL_VERSION = "4.0.0";
         EP_selectImageFile: EP_selectImageFile,
         EP_getDataFolderPath: EP_getDataFolderPath,
         EP_openDataFolder: EP_openDataFolder,
+        EP_inspectMogrt: EP_inspectMogrt,
+        // helper texto utilizável pelo main.js via $.global.setMogrtTextOnClip
+        _setMogrtText: setMogrtText,
         // aliases legados
         ping: EP_ping,
         importMogrt: importMogrt,
@@ -351,11 +465,41 @@ $.global._MPL_VERSION = "4.0.0";
                 var seq = app.project && app.project.activeSequence;
                 if (!seq) return err("Abra uma sequência primeiro");
                 var positions; try { positions = JSON.parse(positionsJson); } catch (e) { return err("positions inválido"); }
-                var placed = 0;
-                for (var i = 0; i < positions.length; i++) {
-                    if (placeSfxAt(seq, audioPath, positions[i], audioTrack)) placed++;
+                var f = new File(audioPath); if (!f.exists) return err("Áudio não existe: " + audioPath);
+
+                // resolve track index
+                var trackIdx = 1;
+                if (/^A(\d+)$/.test(String(audioTrack))) trackIdx = Number(String(audioTrack).replace("A","")) - 1;
+                if (trackIdx < 0 || trackIdx >= seq.audioTracks.numTracks) {
+                    return err("Audio track " + audioTrack + " não existe (sequência tem " + seq.audioTracks.numTracks + " tracks)");
                 }
-                return ok({ ok: true, placed: placed, track: audioTrack });
+                var at = seq.audioTracks[trackIdx];
+                if (at.isLocked && at.isLocked()) return err("Track " + audioTrack + " está travada");
+
+                // importa o arquivo UMA vez no projeto
+                var before = app.project.rootItem.children.numItems;
+                var imported = app.project.importFiles([f.fsName], false, app.project.rootItem, false);
+                var item = null;
+                // procura o item recém-importado pelo nome
+                for (var x = app.project.rootItem.children.numItems - 1; x >= 0; x--) {
+                    var ch = app.project.rootItem.children[x];
+                    if (ch && ch.name && ch.name.indexOf(f.displayName.replace(/\.[^.]+$/,"")) >= 0) { item = ch; break; }
+                }
+                if (!item && app.project.rootItem.children.numItems > before) {
+                    item = app.project.rootItem.children[app.project.rootItem.children.numItems - 1];
+                }
+                if (!item) return err("Falha ao importar SFX (project item não encontrado)");
+
+                var placed = 0; var errors = [];
+                for (var i = 0; i < positions.length; i++) {
+                    try {
+                        at.insertClip(item, String(positions[i]));
+                        placed++;
+                    } catch (eIns) {
+                        if (errors.length < 3) errors.push("pos " + i + ": " + eIns.message);
+                    }
+                }
+                return ok({ ok: true, placed: placed, total: positions.length, track: audioTrack, errors: errors });
             } catch (e) { return err(e.message); }
         },
         getActiveSequenceInfo: EP_getActiveSequenceInfo
@@ -369,5 +513,6 @@ for (var k in $.global.MotionProLegendas) {
         try { $.global[k] = $.global.MotionProLegendas[k]; } catch (e) {}
     }
 }
+$.global._setMogrtTextOnClip = $.global.MotionProLegendas._setMogrtText;
 
 "MPL host loaded v" + $.global._MPL_VERSION;
