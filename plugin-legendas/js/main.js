@@ -11,7 +11,7 @@
 (function () {
 "use strict";
 
-var BUILD = "4.5.0-text-replace-fix+SFX-loud+inspect";
+var BUILD = "4.6.0-atomic-apply-fix-clip-handle";
 
 var nodePath = typeof require === "function" ? require("path") : null;
 var nodeFs   = typeof require === "function" ? require("fs") : null;
@@ -341,27 +341,27 @@ function applySingle() {
     if (!SELECTED.mogrt) { toast("Template sem .mogrt", "err"); return; }
     var abs = nodePath.join(EXT_PATH, "packs", SELECTED.mogrt);
     log("Aplicando: " + SELECTED.name);
-    log("  path: " + abs);
     var withSfx = $("tpl-with-sfx") && $("tpl-with-sfx").checked && SFX_SELECTED;
     var audioTrack = withSfx ? ($("tpl-sfx-track-select") && $("tpl-sfx-track-select").value) : null;
 
-    // Tenta as DUAS APIs do bridge — EP_hybrid e legacy importMogrt (fallback)
-    var call = "(function(){" +
-        "if (typeof EP_hybridInsertMogrt === 'function') return EP_hybridInsertMogrt(" + JSON.stringify(abs) + ",null,null,null);" +
-        "if (typeof MotionProLegendas !== 'undefined' && MotionProLegendas.EP_hybridInsertMogrt) return MotionProLegendas.EP_hybridInsertMogrt(" + JSON.stringify(abs) + ",null,null,null);" +
-        "if (typeof MotionProLegendas !== 'undefined' && MotionProLegendas.importMogrt) return MotionProLegendas.importMogrt(" + JSON.stringify(abs) + ");" +
-        "return JSON.stringify({error: 'host.jsx não carregado — clique 🩺 e tente Recarregar host'});" +
-    "})();";
-    cs.evalScript(call, function (raw) {
-        var d; try { d = JSON.parse(raw || "{}"); } catch (e) { d = { error: "parse: " + String(raw||"").slice(0,120) }; }
-        if (d.error) {
-            log("✗ " + d.error, "err"); openLog();
-            toast("Erro: " + d.error, "err", 4500);
-            return;
-        }
-        log("✓ Inserido em V" + (d.track + 1), "info");
-        toast("✓ " + SELECTED.name + " · V" + (d.track + 1), "ok");
-        if (withSfx && audioTrack) placeSfxAt(d.startTicks, audioTrack);
+    // Pega CTI primeiro pra mandar ticks certos
+    jsx("$.global.EP_getCTI();", function (cti) {
+        var ticks = (cti && cti.ticks) ? cti.ticks : "0";
+        var call = "$.global.EP_applyOneGroup(" +
+            JSON.stringify(abs) + "," +
+            JSON.stringify(ticks) + ",\"last\"," +
+            JSON.stringify(SELECTED.name) + ",2.0);";
+        cs.evalScript(call, function (raw) {
+            var d; try { d = JSON.parse(raw || "{}"); } catch (e) { d = { error: "parse: " + String(raw||"").slice(0,120) }; }
+            if (d.error) {
+                log("✗ " + d.error, "err"); openLog();
+                toast("Erro: " + d.error, "err", 4500);
+                return;
+            }
+            log("✓ V" + (d.track + 1) + " · textChanged=" + d.textChanged + " (de " + d.textAttempts + " tentativas)", d.textChanged ? "info" : "warn");
+            toast("✓ " + SELECTED.name + " · V" + (d.track + 1), "ok");
+            if (withSfx && audioTrack) placeSfxAt(ticks, audioTrack);
+        });
     });
 }
 
@@ -585,27 +585,14 @@ function applySrtBatch() {
         }
 
         var ticks = String(Math.round(g.start * TICKS));
-        // Importa + acha clip recém-criado + ajusta duração + troca texto via helper
-        var script = "(function(){" +
-            "var r = $.global.EP_hybridInsertMogrt(" + JSON.stringify(g.mogrtPath) + "," + JSON.stringify(ticks) + "," + JSON.stringify(trackMode) + ",null);" +
-            "var d; try { d = JSON.parse(r); } catch (e) { return r; }" +
-            "if (d.error) return r;" +
-            "try {" +
-            "  var seq = app.project.activeSequence;" +
-            "  var tn = d.track;" +
-            "  var vt = seq.videoTracks[tn];" +
-            "  var newClip = null;" +
-            "  for (var i = 0; i < vt.clips.numItems; i++) {" +
-            "    if (String(vt.clips[i].start.ticks) === " + JSON.stringify(ticks) + ") { newClip = vt.clips[i]; break; }" +
-            "  }" +
-            "  if (!newClip) return JSON.stringify({error: 'clip não achado após import', track: d.track, ticks: " + JSON.stringify(ticks) + "});" +
-            "  var durSec = " + (Math.max(0.4, g.end - g.start)) + ";" +
-            "  try { newClip.end = { ticks: String(Math.round((" + g.start + " + durSec) * 254016000000)) }; } catch(e){}" +
-            "  var setRes = $.global._setMogrtTextOnClip(newClip, " + JSON.stringify(g.text) + ");" +
-            "  d.textChanged = setRes.changed; d.textAttempts = setRes.attempts; d.textError = setRes.error;" +
-            "  return JSON.stringify(d);" +
-            "} catch(e) { return JSON.stringify({error: 'post:' + e.message}); }" +
-        "})();";
+        var durSec = Math.max(0.4, g.end - g.start);
+        // 1 chamada atomica: importa + ajusta duração + troca texto usando handle direto
+        var script = "$.global.EP_applyOneGroup(" +
+            JSON.stringify(g.mogrtPath) + "," +
+            JSON.stringify(ticks) + "," +
+            JSON.stringify(trackMode) + "," +
+            JSON.stringify(g.text) + "," +
+            durSec + ");";
 
         cs.evalScript(script, function (raw) {
             var d; try { d = JSON.parse(raw || "{}"); } catch (e) { d = { error: "parse:" + String(raw||"").slice(0,80) }; }

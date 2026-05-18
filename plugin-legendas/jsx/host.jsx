@@ -103,6 +103,45 @@ $.global._MPL_VERSION = "4.0.0";
     // alias legado
     function importMogrt(path) { return EP_hybridInsertMogrt(path, null, null, null); }
 
+    // ──────────────────────────────────────────────── APPLY ONE GROUP (atomic)
+    // Importa MOGRT + ajusta duração + troca texto NUMA SÓ CHAMADA, usando o
+    // handle retornado por importMGT direto (sem precisar reachar o clip).
+    function EP_applyOneGroup(mogrtPath, ticksStr, trackMode, text, durSec) {
+        try {
+            if (!app || !app.project) return err("Sem projeto");
+            var seq = app.project.activeSequence;
+            if (!seq) return err("Sem sequência");
+            var f = new File(mogrtPath);
+            if (!f.exists) return err("MOGRT não existe: " + mogrtPath);
+
+            var ticks = String(ticksStr);
+            var target = pickTargetTrack(seq, trackMode, ticks);
+
+            var clip = seq.importMGT(f.fsName, ticks, target, 0);
+            if (!clip) return err("Premiere recusou importar");
+
+            // ajusta duração pelo SRT
+            try {
+                var dur = Number(durSec) || 1.0;
+                var startSec = Number(ticks) / TICKS_PER_SECOND;
+                var endTicks = String(Math.round((startSec + dur) * TICKS_PER_SECOND));
+                clip.end = { ticks: endTicks };
+            } catch (eDur) {}
+
+            // troca texto usando o handle DIRETO (não precisa achar de novo)
+            var setRes = setMogrtText(clip, text);
+
+            return ok({
+                ok: true,
+                track: target,
+                name: clip.name,
+                textChanged: setRes.changed,
+                textAttempts: setRes.attempts,
+                textError: setRes.error
+            });
+        } catch (e) { return err(e.message); }
+    }
+
     // ──────────────────────────────────────────────── SET TEXT IN MOGRT
     // MOGRTs do EP usam Master Property "Source Text" exposta. Em ExtendScript,
     // o valor pode ser STRING simples OU JSON com o text document do AE.
@@ -147,31 +186,51 @@ $.global._MPL_VERSION = "4.0.0";
             return false;
         }
 
-        // 1) getMGTComponent (master properties expostas no MOGRT)
+        // Coleta todas as properties acessíveis
+        var props = [];
         try {
             var mc = clip.getMGTComponent && clip.getMGTComponent();
             if (mc && mc.properties) {
-                for (var i = 0; i < mc.properties.numItems; i++) {
-                    var p = mc.properties[i];
-                    if (isTextProp(p)) { attempts++; if (trySet(p)) changed++; }
-                }
+                for (var i = 0; i < mc.properties.numItems; i++) props.push({ p: mc.properties[i], src: "mgt" });
             }
         } catch (e) { lastError = "mc:" + e.message; }
-
-        // 2) Varre TODOS os components (fallback para MOGRTs estruturados diferente)
         try {
             var comps = clip.components;
             if (comps) {
                 for (var c = 0; c < comps.numItems; c++) {
                     var comp = comps[c];
                     if (!comp.properties) continue;
-                    for (var pi = 0; pi < comp.properties.numItems; pi++) {
-                        var pp = comp.properties[pi];
-                        if (isTextProp(pp)) { attempts++; if (trySet(pp)) changed++; }
-                    }
+                    for (var pi = 0; pi < comp.properties.numItems; pi++) props.push({ p: comp.properties[pi], src: "comp" + c });
                 }
             }
         } catch (e3) { lastError = "comp:" + e3.message; }
+
+        // Passo 1: tenta SÓ as text-named props primeiro (mais rápido + correto)
+        for (var x = 0; x < props.length; x++) {
+            var item = props[x];
+            if (isTextProp(item.p)) {
+                attempts++;
+                if (trySet(item.p)) changed++;
+            }
+        }
+
+        // Passo 2: SE nada mudou, tenta TODAS as props (algumas MOGRTs têm
+        // texto exposto com nome custom tipo "Headline", "Title 1", "[EP] frase")
+        if (changed === 0) {
+            for (var y = 0; y < props.length; y++) {
+                var p2 = props[y].p;
+                // pula props que já tentamos
+                if (isTextProp(p2)) continue;
+                // pula visualmente coisas que NÃO são texto
+                var n2 = String(p2.displayName || p2.name || "").toLowerCase();
+                if (n2.indexOf("color") >= 0 || n2.indexOf("opacity") >= 0 || n2.indexOf("scale") >= 0 ||
+                    n2.indexOf("position") >= 0 || n2.indexOf("rotation") >= 0 || n2.indexOf("size") >= 0 ||
+                    n2.indexOf("font") >= 0 || n2.indexOf("anchor") >= 0 || n2.indexOf("track") >= 0) continue;
+                attempts++;
+                if (trySet(p2)) changed++;
+                if (changed > 0) break;  // achou — para
+            }
+        }
 
         return { changed: changed, attempts: attempts, error: changed === 0 ? lastError : null };
     }
@@ -439,6 +498,7 @@ $.global._MPL_VERSION = "4.0.0";
         EP_getAudioTracksInfo: EP_getAudioTracksInfo,
         EP_hybridInsertMogrt: EP_hybridInsertMogrt,
         EP_hybridApplyTextsAndTiming: EP_hybridApplyTextsAndTiming,
+        EP_applyOneGroup: EP_applyOneGroup,
         EP_hybridCaptureSelection: EP_hybridCaptureSelection,
         EP_readCaptions: EP_readCaptions,
         EP_selectSRTFile: EP_selectSRTFile,
