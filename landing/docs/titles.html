@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual · Motion Titles</title>
+<meta name="description" content="Manual de instalação e uso do Motion Titles — biblioteca de 7.906 templates motion graphics no Adobe Premiere.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/system.css">
+<link rel="stylesheet" href="/docs/manual.css">
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <div class="container nav-inner">
+    <a href="/" class="logo"><span class="logo-dot"></span>Motion Titles</a>
+    <nav><ul class="nav-links">
+      <li><a href="/#plataforma">Plataforma</a></li>
+      <li><a href="/#planos">Planos</a></li>
+      <li><a href="/docs/" class="active">Docs</a></li>
+      <li><a href="/download.html">Download</a></li>
+    </ul></nav>
+  </div>
+</header>
+
+<div class="doc-layout">
+
+<aside class="doc-toc">
+  <div class="doc-toc-brand">
+    <div class="logo">MT</div>
+    <div>
+      <div class="name">Motion Titles</div>
+      <div class="sub">Manual</div>
+    </div>
+  </div>
+  <h5>Conteúdo</h5>
+  <ol>
+    <li><a href="#instalacao">1. Instalação</a></li>
+    <li><a href="#primeiro-acesso">2. Primeiro acesso</a></li>
+    <li><a href="#interface">3. Interface</a></li>
+    <li><a href="#templates">4. Navegando templates</a></li>
+    <li><a href="#aplicar">5. Aplicar no Premiere</a></li>
+    <li><a href="#favoritos">6. Favoritos e busca</a></li>
+    <li><a href="#editar">7. Editando o template</a></li>
+    <li><a href="#assinatura">8. Assinatura</a></li>
+    <li><a href="#problemas">9. Problemas</a></li>
+    <li><a href="#suporte">10. Suporte</a></li>
+  </ol>
+  <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border);">
+    <a href="/docs/" style="color: var(--accent); text-decoration: none; font: 500 13px Inter;">← Voltar pros manuais</a>
+  </div>
+</aside>
+
+<main class="doc-main">
+
+<div class="doc-hero">
+  <h1>Manual <em>Motion Titles</em></h1>
+  <p>Biblioteca de 7.906 templates motion graphics no Adobe Premiere Pro. O acervo definitivo, construído por editor, pra editor.</p>
+</div>
+
+<!-- 1. INSTALAÇÃO -->
+<h2 id="instalacao"><span class="num">1</span>Instalação</h2>
+
+<h3>Pré-requisitos</h3>
+<ul>
+  <li>Windows 10 ou 11</li>
+  <li>Adobe Premiere Pro <strong>CC 2019 ou superior</strong></li>
+  <li>~7 GB livres em disco (templates são pesados)</li>
+  <li>Conexão com internet pra login</li>
+</ul>
+
+<h3>Passo a passo</h3>
+<ol class="doc-steps">
+  <li>
+    <strong>Baixe o instalador</strong>
+    <span>No email de boas-vindas ou em <code>motionpro-lp.vercel.app/download</code>. Arquivo: <code>MotionPro-Plugin-X.Y.Z.zip</code> (~6 GB)</span>
+  </li>
+  <li>
+    <strong>Extraia o ZIP</strong>
+    <span>Botão direito → Extrair tudo → Área de Trabalho. Demora alguns minutos (são 7.906 arquivos)</span>
+  </li>
+  <li>
+    <strong>Feche o Adobe Premiere Pro</strong>
+    <span>Tudo precisa estar fechado antes</span>
+  </li>
+  <li>
+    <strong>Duplo-clique em <code>INSTALAR.bat</code></strong>
+    <span>Janela preta de terminal por ~2 minutos. Copia todos os templates pra pasta do plugin</span>
+  </li>
+  <li>
+    <strong>Aguarde "✅ INSTALADO"</strong>
+    <span>O script libera plugins não-assinados no registro do Windows</span>
+  </li>
+  <li>
+    <strong>No Premiere: Janela → Extensões → Motion Titles</strong>
+    <span>Painel abre à direita</span>
+  </li>
+</ol>
+
+<div class="doc-callout">
+  <strong>💡 Sobre os 7 GB</strong>
+  Os templates ficam armazenados localmente. Plugin não precisa de internet pra navegar nem aplicar — só pra login + validação periódica da assinatura.
+</div>
+
+<!-- 2. PRIMEIRO ACESSO -->
+<h2 id="primeiro-acesso"><span class="num">2</span>Primeiro acesso</h2>
+
+<h3>Tela de login</h3>
+<p>Mesma da família Motion: login com email + senha, ou criar conta com <strong>7 dias grátis</strong> sem cartão.</p>
+
+<div class="doc-callout ok">
+  <strong>🔒 Sessão sticky</strong>
+  Login lembrado entre sessões do Premiere. Você só precisa logar uma vez por máquina.
+</div>
+
+<h3>Confirmação de email (recomendado)</h3>
+<p>Após o signup, recebe email de boas-vindas com link de confirmação. Não é obrigatório, mas confirma sua conta caso precise recuperar senha depois.</p>
+
+<!-- 3. INTERFACE -->
+<h2 id="interface"><span class="num">3</span>Interface</h2>
+
+<pre><code>┌─ HEADER ────────────────────────────────────────────┐
+│ 🅼 Motion Titles    [📁 Todos] [⊞ Grid] [⭐ Favs]    │
+│ 🔍 Buscar em 7.906 templates...    [□] [&gt;_]         │
+└─────────────────────────────────────────────────────┘
+┌─ TABS POR PACK ─────────────────────────────────────┐
+│ [Create Pack] [Atomic] [Premium] [Sport] [Wedding]…│
+└─────────────────────────────────────────────────────┘
+┌─ BREADCRUMB ────────────────────────────────────────┐
+│ Create Pack › 01. Typography › Big Typo            │
+└─────────────────────────────────────────────────────┘
+┌─ SIDEBAR ──────────┬─ GRID ──────────────────────────┐
+│ 01. Typography (50)│ [📺]  [📺]  [📺]  [📺]          │
+│ 02. Lower Thirds…  │ [📺]  [📺]  [📺]  [📺]          │
+│ 03. Transitions…   │                                 │
+│ ...                │ ⬇ Carregar mais (60 / 1125)     │
+└────────────────────┴─────────────────────────────────┘
+┌─ STATUS BAR ────────────────────────────────────────┐
+│ 7.906 templates · 8 packs · build 2.4.0             │
+└─────────────────────────────────────────────────────┘</code></pre>
+
+<h3>Tools no header</h3>
+<table>
+  <thead><tr><th>Botão</th><th>Função</th></tr></thead>
+  <tbody>
+    <tr><td>📁 <strong>Todos</strong></td><td>Lista todos os packs sem filtro</td></tr>
+    <tr><td>⊞ <strong>Grid</strong></td><td>Visualização padrão (cards)</td></tr>
+    <tr><td>⭐ <strong>Favoritos</strong></td><td>Só seus favoritos marcados</td></tr>
+    <tr><td>🔍 <strong>Buscar</strong></td><td>Busca em todos os 7.906 templates (nome + categoria)</td></tr>
+    <tr><td>□ <strong>Densidade</strong></td><td>Alterna entre compacto / normal / grande</td></tr>
+    <tr><td>&gt;_ <strong>Console</strong></td><td>Atalho <code>Ctrl+`</code> · log de debug (ver erros)</td></tr>
+  </tbody>
+</table>
+
+<!-- 4. NAVEGANDO -->
+<h2 id="templates"><span class="num">4</span>Navegando templates</h2>
+
+<h3>Por pack</h3>
+<p>Cada pack agrupa templates por estilo. Clica no nome do pack na barra superior pra abrir só ele.</p>
+
+<h3>Por categoria</h3>
+<p>Dentro de um pack, a sidebar mostra as categorias. Clica numa categoria pra filtrar mais. Categorias têm hierarquia (ex: <code>01. Typography › Big Typo</code>).</p>
+
+<h3>Preview de cada template</h3>
+<p>Os cards mostram thumbnails estáticos. Passe o mouse sobre um card pra ver o vídeo preview animado.</p>
+
+<div class="doc-callout">
+  <strong>💡 Por que preview lento na primeira vez</strong>
+  Os thumbnails são gerados sob demanda na primeira vez que você passa o mouse — Premiere precisa extrair frames do MOGRT. Depois fica em cache, ficando instantâneo.
+</div>
+
+<h3>Paginação</h3>
+<p>Cada vez carrega 60 templates. Botão <strong>Carregar mais</strong> aparece no final pra continuar.</p>
+
+<!-- 5. APLICAR -->
+<h2 id="aplicar"><span class="num">5</span>Aplicar no Premiere</h2>
+
+<h3>Método 1 — Duplo-clique (recomendado)</h3>
+<ol class="doc-steps">
+  <li><strong>Posicione o playhead</strong> <span>Na timeline do Premiere, onde quer que o template apareça</span></li>
+  <li><strong>Selecione a track de vídeo</strong> <span>Clica no header da track desejada (ex: V2)</span></li>
+  <li><strong>Duplo-clique no card do template</strong> <span>Plugin importa o MOGRT no projeto + insere no playhead</span></li>
+  <li><strong>Aguarde ~2-3 segundos</strong> <span>Premiere processa e mostra o clip animado</span></li>
+</ol>
+
+<h3>Método 2 — Drag & drop</h3>
+<p>Arraste o card direto pra timeline. Algumas versões do Premiere não suportam isso, daí use o duplo-clique.</p>
+
+<h3>Onde o MOGRT fica no projeto</h3>
+<p>Plugin importa pra uma bin chamada <code>Motion Titles</code> (cria automaticamente). Você pode mover/renomear depois sem quebrar nada.</p>
+
+<!-- 6. FAVORITOS + BUSCA -->
+<h2 id="favoritos"><span class="num">6</span>Favoritos e busca</h2>
+
+<h3>Marcar favorito</h3>
+<p>Clica na estrelinha ⭐ no canto do card. Fica salvo no localStorage (por máquina, não por conta).</p>
+
+<h3>Ver só favoritos</h3>
+<p>Clica em <strong>⭐ Favoritos</strong> no header. Mostra todos os marcados de todos os packs.</p>
+
+<h3>Busca global</h3>
+<p>Digite na barra de busca. Procura em:</p>
+<ul>
+  <li>Nome do template (ex: "neon")</li>
+  <li>Nome da categoria (ex: "lower third")</li>
+  <li>Nome do pack (ex: "wedding")</li>
+</ul>
+<p>Resultado aparece em qualquer pack. Limpa busca clicando no ✕ ou apagando o texto.</p>
+
+<!-- 7. EDITANDO -->
+<h2 id="editar"><span class="num">7</span>Editando o template aplicado</h2>
+
+<p>Depois de aplicar um MOGRT, você edita texto/cores/timing direto no Premiere via <strong>Essential Graphics Panel</strong>:</p>
+<ol class="doc-steps">
+  <li><strong>Selecione o clip MOGRT na timeline</strong> <span>Clica no clip que o plugin criou</span></li>
+  <li><strong>Abra Essential Graphics</strong> <span>Janela → Essential Graphics (ou tecla padrão)</span></li>
+  <li><strong>Edite texto, cor, tamanho</strong> <span>Cada template expõe seus campos editáveis</span></li>
+  <li><strong>Ajuste duração arrastando borda do clip</strong> <span>Como qualquer clip Premiere</span></li>
+</ol>
+
+<div class="doc-callout warn">
+  <strong>⚠️ Templates com texto longo</strong>
+  Se você colocar texto muito grande num template feito pra 1-2 palavras, vai estourar fora da tela. Templates de Big Typo aceitam até 15 chars; Lower Thirds aceitam frases.
+</div>
+
+<!-- 8. ASSINATURA -->
+<h2 id="assinatura"><span class="num">8</span>Assinatura</h2>
+
+<h3>Trial gratuito</h3>
+<p><strong>7 dias automáticos</strong>, sem cartão. Após expirar:</p>
+<ul>
+  <li>Você ainda loga e navega templates</li>
+  <li><strong>Não consegue aplicar</strong> templates novos até renovar</li>
+  <li>Banner azul "Renovar plano" aparece</li>
+</ul>
+
+<h3>Planos</h3>
+<table>
+  <thead><tr><th>Plano</th><th>Valor</th><th>Inclui</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Anual</strong></td><td>R$ 199/ano</td><td>7.906 templates · 2 dispositivos · atualizações</td></tr>
+    <tr><td><strong>Vitalício</strong></td><td>R$ 499 uma vez</td><td>7.906 templates · 3 dispositivos · atualizações vitalícias</td></tr>
+  </tbody>
+</table>
+
+<h3>Dispositivos</h3>
+<p>Anual permite 2 dispositivos, Vitalício 3. Pra trocar de máquina, revoga o antigo no dashboard online (<code>motionpro.vercel.app/account/devices</code>).</p>
+
+<!-- 9. PROBLEMAS -->
+<h2 id="problemas"><span class="num">9</span>Resolução de problemas</h2>
+
+<h3>"Templates não aparecem na grid"</h3>
+<p><strong>Causa:</strong> pasta dos templates não foi copiada na instalação ou catálogo corrompido.<br>
+<strong>Solução:</strong> rode <code>INSTALAR.bat</code> de novo. Se persistir, baixe o ZIP atualizado.</p>
+
+<h3>"Erro ao aplicar template"</h3>
+<p><strong>Causa:</strong> nenhuma sequência ativa, ou track de vídeo bloqueada.<br>
+<strong>Solução:</strong> abra uma sequência, desbloqueie a track (ícone 🔒), clica no header da track, tenta de novo.</p>
+
+<h3>"Plugin trava ao carregar"</h3>
+<p><strong>Causa:</strong> catálogo de 7.906 itens é pesado pra primeira renderização.<br>
+<strong>Solução:</strong> aguarde 5-10 segundos no primeiro load. Próximas vezes ficam rápidas (cache).</p>
+
+<h3>"Tela preta no plugin"</h3>
+<p><strong>Causa:</strong> cache antigo do CEP.<br>
+<strong>Solução:</strong> feche Premiere, apaga <code>%LOCALAPPDATA%\Temp\cep_cache</code>, reabra.</p>
+
+<h3>"device_limit_reached"</h3>
+<p>Atingiu o limite de dispositivos do seu plano.<br>
+<strong>Solução:</strong> revoga um dispositivo antigo em <code>motionpro.vercel.app/account/devices</code>.</p>
+
+<h3>"Preview do template não anima"</h3>
+<p><strong>Causa:</strong> primeira vez gerando preview, ou arquivo MOGRT corrompido.<br>
+<strong>Solução:</strong> aguarde 5 segundos sobre o card. Se permanecer estático, abra o console (<code>Ctrl+`</code>) e veja erros.</p>
+
+<!-- 10. SUPORTE -->
+<h2 id="suporte"><span class="num">10</span>Suporte</h2>
+
+<ul>
+  <li><strong>Email</strong>: suporte@pacotesfx.com</li>
+  <li><strong>Tempo de resposta</strong>: 24h em dias úteis</li>
+  <li><strong>Site</strong>: <a href="https://motionpro-lp.vercel.app">motionpro-lp.vercel.app</a></li>
+</ul>
+
+<p>Ao entrar em contato, mande junto:</p>
+<ul>
+  <li>Seu email cadastrado</li>
+  <li>Print do erro (se aparecer)</li>
+  <li>Saída do console (<code>Ctrl+`</code>) se relevante</li>
+</ul>
+
+<div class="doc-footer">
+  <strong>Versão do manual:</strong> 1.0 · 2026-05-19<br>
+  <strong>Compatível com:</strong> Motion Titles 1.0.5 ou superior · MotionPro Plugin v1.1+<br>
+  © PacotesFX · Família MotionPro
+</div>
+
+</main>
+</div>
+
+</body>
+</html>

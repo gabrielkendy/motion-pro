@@ -66,3 +66,6 @@ installers/zip-manual-legendas/build/
 
 # Fontes premium do EP Legendas (4.6MB de OTF/TTF)
 plugin-legendas/fonts/
+
+# Exceção: ZIPs da landing precisam ir pro deploy Vercel (downloads pro cliente)
+!landing/installers/*.zip

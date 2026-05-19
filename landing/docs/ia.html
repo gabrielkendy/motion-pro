@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual · Motion IA</title>
+<meta name="description" content="Manual do Motion IA — agente Claude que edita a timeline real do Premiere Pro com comandos em português.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/system.css">
+<link rel="stylesheet" href="/docs/manual.css">
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <div class="container nav-inner">
+    <a href="/" class="logo"><span class="logo-dot"></span>Motion Titles</a>
+    <nav><ul class="nav-links">
+      <li><a href="/#plataforma">Plataforma</a></li>
+      <li><a href="/#planos">Planos</a></li>
+      <li><a href="/docs/" class="active">Docs</a></li>
+      <li><a href="/download.html">Download</a></li>
+    </ul></nav>
+  </div>
+</header>
+
+<div class="doc-layout">
+
+<aside class="doc-toc">
+  <div class="doc-toc-brand">
+    <div class="logo">IA</div>
+    <div>
+      <div class="name">Motion IA</div>
+      <div class="sub">Manual</div>
+    </div>
+  </div>
+  <h5>Conteúdo</h5>
+  <ol>
+    <li><a href="#instalacao">1. Instalação</a></li>
+    <li><a href="#primeiro-acesso">2. Primeiro acesso</a></li>
+    <li><a href="#como-funciona">3. Como funciona</a></li>
+    <li><a href="#interface">4. Interface</a></li>
+    <li><a href="#capacidades">5. O que a IA faz</a>
+      <ol>
+        <li><a href="#cortes" class="sub">5.1 Cortes</a></li>
+        <li><a href="#audio" class="sub">5.2 Áudio</a></li>
+        <li><a href="#cor" class="sub">5.3 Cor (LUT)</a></li>
+        <li><a href="#legendas" class="sub">5.4 Legendas</a></li>
+        <li><a href="#export" class="sub">5.5 Export</a></li>
+      </ol>
+    </li>
+    <li><a href="#comandos">6. Comandos prontos</a></li>
+    <li><a href="#assinatura">7. Assinatura</a></li>
+    <li><a href="#problemas">8. Problemas</a></li>
+    <li><a href="#suporte">9. Suporte</a></li>
+  </ol>
+  <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border);">
+    <a href="/docs/" style="color: var(--accent); text-decoration: none; font: 500 13px Inter;">← Voltar pros manuais</a>
+  </div>
+</aside>
+
+<main class="doc-main">
+
+<div class="doc-hero">
+  <h1>Manual <em>Motion IA</em></h1>
+  <p>Agente Claude que edita a timeline real do Adobe Premiere. Você fala em português, ele executa.</p>
+</div>
+
+<!-- 1. INSTALAÇÃO -->
+<h2 id="instalacao"><span class="num">1</span>Instalação</h2>
+
+<h3>Pré-requisitos</h3>
+<ul>
+  <li>Windows 10 ou 11</li>
+  <li>Adobe Premiere Pro <strong>2024 ou superior</strong> (24.0+)</li>
+  <li>~4 GB livres em disco (motor IA + dependências)</li>
+  <li>Conexão com internet (chat com Claude + validação de licença)</li>
+</ul>
+
+<h3>Passo a passo</h3>
+<ol class="doc-steps">
+  <li>
+    <strong>Baixe o instalador</strong>
+    <span>No email de boas-vindas ou em <code>motionpro-lp.vercel.app/download</code>. Arquivo: <code>MotionPro-IA-X.Y.Z.zip</code> (~250 MB)</span>
+  </li>
+  <li>
+    <strong>Extraia o ZIP</strong>
+    <span>Botão direito → Extrair tudo → Área de Trabalho</span>
+  </li>
+  <li>
+    <strong>Feche o Adobe Premiere Pro</strong>
+    <span>Tudo precisa estar fechado antes</span>
+  </li>
+  <li>
+    <strong>Duplo-clique em <code>INSTALAR.bat</code></strong>
+    <span>Instala 2 plugins (CEP + UXP) + sobe motor IA local. Pode demorar 3-5 minutos na primeira vez</span>
+  </li>
+  <li>
+    <strong>Aguarde "✅ INSTALADO"</strong>
+    <span>Script libera plugins não-assinados, sobe Node.js do motor IA, registra UXP no Premiere</span>
+  </li>
+  <li>
+    <strong>No Premiere: Janela → Extensões → Motion IA</strong>
+    <span>Painel abre à direita. Faz login</span>
+  </li>
+</ol>
+
+<div class="doc-callout">
+  <strong>💡 Por que 2 plugins?</strong>
+  Motion IA usa CEP (interface visual) + UXP (acesso direto à timeline). O instalador configura ambos automaticamente.
+</div>
+
+<!-- 2. PRIMEIRO ACESSO -->
+<h2 id="primeiro-acesso"><span class="num">2</span>Primeiro acesso</h2>
+
+<h3>Tela de login</h3>
+<p>Login com email + senha, ou criar conta com <strong>7 dias grátis</strong>.</p>
+
+<h3>Conexão dos serviços (automática)</h3>
+<p>Depois de logar, o plugin verifica 3 serviços e mostra status no header:</p>
+
+<table>
+  <thead><tr><th>Indicador</th><th>O que é</th><th>Status esperado</th></tr></thead>
+  <tbody>
+    <tr><td><strong>PR</strong></td><td>Premiere Pro detectado</td><td>🟢 sempre verde quando o plugin abre dentro do Pr</td></tr>
+    <tr><td><strong>Motor</strong></td><td>Motor IA local (Whisper + FFmpeg)</td><td>🟢 verde após ~30s (subido pelo instalador)</td></tr>
+    <tr><td><strong>MCP</strong></td><td>Proxy de comunicação Pr ↔ Motor</td><td>🟢 verde após ~5s</td></tr>
+    <tr><td><strong>UXP</strong></td><td>Plugin UXP que executa comandos no Pr</td><td>🟢 verde se o UXP estiver aberto</td></tr>
+  </tbody>
+</table>
+
+<div class="doc-callout">
+  <strong>💡 Demora ~30s no primeiro boot</strong>
+  Motor IA precisa subir Node + carregar dependências. Próximos boots são instantâneos (motor fica rodando em background).
+</div>
+
+<!-- 3. COMO FUNCIONA -->
+<h2 id="como-funciona"><span class="num">3</span>Como funciona</h2>
+
+<p>Motion IA é diferente dos outros plugins: você <strong>conversa</strong> com ele em linguagem natural, e ele executa as ações no Premiere.</p>
+
+<pre><code>VOCÊ (chat)         →   "corta os silêncios maiores que 0.5s"
+                              │
+                              ▼
+CLAUDE (LLM)        →   interpreta o pedido + escolhe ferramentas
+                              │
+                              ▼
+MOTOR IA (local)    →   Whisper transcreve · FFmpeg processa
+                              │
+                              ▼
+UXP PLUGIN (Pr)     →   aplica os cortes na timeline real
+                              │
+                              ▼
+TIMELINE PR         →   ✅ silêncios cortados</code></pre>
+
+<h3>O que é "real" vs "imitação"</h3>
+<p>Motion IA edita a <strong>timeline real</strong> do Premiere — não simula. Os cortes, ajustes de cor e LUTs aparecem direto no projeto, prontos pra exportar. Você desfaz com <code>Ctrl+Z</code> normal.</p>
+
+<!-- 4. INTERFACE -->
+<h2 id="interface"><span class="num">4</span>Interface</h2>
+
+<pre><code>┌─ HEADER ────────────────────────────────────────┐
+│ 🅸 Motion IA      [🟢 PR][🟢 Motor][🟢 MCP][🟢 UXP]│
+└─────────────────────────────────────────────────┘
+┌─ SEQ BAR ───────────────────────────────────────┐
+│ 🎬 Minha Sequência · 2V/4A · 5:32     [↻]      │
+└─────────────────────────────────────────────────┘
+┌─ MODE TABS ─────────────────────────────────────┐
+│ [💬 CHAT] [⚡ AÇÕES] [📼 TIMELINE]              │
+└─────────────────────────────────────────────────┘
+┌─ CHAT ──────────────────────────────────────────┐
+│ IA: Pronto. Conectado ao motor.                │
+│                                                 │
+│ Você: corta os silêncios maiores que 0.5s     │
+│                                                 │
+│ IA: Analisando áudio... cortei 23 silêncios   │
+│     (-1m 14s no total). Quer revisar?         │
+│                                                 │
+│ [Descreve a edição...]                  [▶]   │
+└─────────────────────────────────────────────────┘</code></pre>
+
+<h3>3 modos de uso</h3>
+<table>
+  <thead><tr><th>Modo</th><th>Quando usar</th></tr></thead>
+  <tbody>
+    <tr><td>💬 <strong>Chat</strong></td><td>Conversar em linguagem natural. Mais flexível, ideal pra ações complexas</td></tr>
+    <tr><td>⚡ <strong>Ações</strong></td><td>Atalhos pra fluxos prontos (cortar silêncios, color grade, legendas viral). 1 clique</td></tr>
+    <tr><td>📼 <strong>Timeline</strong></td><td>Lista visual dos clips. Útil pra ver o que tá lá antes de pedir alterações</td></tr>
+  </tbody>
+</table>
+
+<!-- 5. CAPACIDADES -->
+<h2 id="capacidades"><span class="num">5</span>O que a IA faz</h2>
+
+<p>A IA tem <strong>30+ ferramentas</strong> integradas. Os principais grupos:</p>
+
+<h3 id="cortes">5.1 ✂️ Cortes</h3>
+<ul>
+  <li><strong>Silence cut</strong>: detecta silêncios via Whisper + corta automaticamente</li>
+  <li><strong>Filler words</strong>: remove "éé", "uhm", "tipo", "né" automaticamente</li>
+  <li><strong>Scene detection</strong>: detecta mudanças de cena e marca pontos de corte</li>
+  <li><strong>Hook detection</strong>: identifica os 3 trechos mais virais pra TikTok/Reels/Shorts/LinkedIn</li>
+</ul>
+
+<p><strong>Comandos exemplo:</strong></p>
+<pre><code>"corta silêncios > 0.5s"
+"remove éé, uhm e né"
+"detecta cenas e cria markers"
+"acha os 3 trechos mais virais pra Reels"</code></pre>
+
+<h3 id="audio">5.2 🎙️ Áudio</h3>
+<ul>
+  <li><strong>DeNoise</strong>: remove ruído ambiente, hiss, ar condicionado</li>
+  <li><strong>Voice Enhancer</strong>: clareza vocal automática</li>
+  <li><strong>EQ Paramétrico</strong>: equalização inteligente por voz</li>
+  <li><strong>Música BG + ducking</strong>: adiciona música e abaixa volume sob a fala automaticamente</li>
+  <li><strong>Combo "áudio pro"</strong>: aplica todos os 4 acima em sequência (DeNoise + Voice + EQ + Compressor)</li>
+</ul>
+
+<p><strong>Comandos exemplo:</strong></p>
+<pre><code>"limpa o áudio do clip 1"
+"aplica DeNoise + Voice Enhancer na track A1"
+"adiciona música tal.mp3 em A2 com auto-ducking"
+"áudio pro completo nos 3 clips"</code></pre>
+
+<h3 id="cor">5.3 🎨 Cor (LUT)</h3>
+<ul>
+  <li><strong>Cinematic Teal &amp; Orange</strong>: hollywood blockbuster, ação/drama</li>
+  <li><strong>Cinematic Cool</strong>: moody blue-grey, corporate</li>
+  <li><strong>Warm Vintage</strong>: filme antigo, vlog/doc</li>
+  <li><strong>Moody</strong>: crushed blacks, true crime/terror</li>
+  <li><strong>Punchy</strong>: vibrant, TikTok/Reels</li>
+</ul>
+
+<p>Todos via <strong>Lumetri Color nativo</strong> — você ajusta depois no painel Effect Controls.</p>
+
+<pre><code>"aplica LUT cinematográfico nos 3 clips"
+"deixa moody no clip selecionado"
+"warm vintage no V1"</code></pre>
+
+<h3 id="legendas">5.4 📝 Legendas</h3>
+<ul>
+  <li>Legendas em <strong>3 estilos</strong>: Karaokê Amarelo · TikTok White · Netflix Clean · Viral Punchy</li>
+  <li>Lower thirds (chyron) profissional</li>
+  <li>Title cards cinematográficos</li>
+  <li>Inserir MOGRTs do seu acervo</li>
+</ul>
+
+<pre><code>"adiciona legendas estilo viral amarelas em V2"
+"cria lower third com nome 'João' e cargo 'CEO'"
+"insere title card 'CAPÍTULO 1' no início"</code></pre>
+
+<div class="doc-callout">
+  <strong>💡 Pra legendas em massa</strong>
+  Pra fluxo de SRT/transcrição completa, use o <strong>Motion Legendas</strong> (plugin separado, mais especializado).
+</div>
+
+<h3 id="export">5.5 📤 Export</h3>
+<p>Exporta o vídeo final via Adobe Media Encoder, em qualquer preset:</p>
+<ul>
+  <li>YouTube 1080p</li>
+  <li>TikTok / Reels vertical 1080×1920</li>
+  <li>Custom (você passa o <code>.epr</code>)</li>
+</ul>
+
+<pre><code>"exporta como YouTube 1080p em C:\out\video.mp4"
+"queue no AME pra TikTok vertical"</code></pre>
+
+<!-- 6. COMANDOS PRONTOS -->
+<h2 id="comandos"><span class="num">6</span>Comandos prontos (aba ⚡ Ações)</h2>
+
+<p>Pra evitar digitar, a aba <strong>Ações</strong> tem cartões clicáveis pros fluxos mais usados:</p>
+
+<table>
+  <thead><tr><th>Ação</th><th>O que faz</th></tr></thead>
+  <tbody>
+    <tr><td>✂️ Cortar silêncios (Whisper)</td><td>Detecta word-level e remove pausas reais</td></tr>
+    <tr><td>🎨 Color grade cinematográfico</td><td>Aplica LUT escolhendo automaticamente baseado na cena</td></tr>
+    <tr><td>📱 Legendas TikTok karaokê amarelas</td><td>V2 com estilo viral</td></tr>
+    <tr><td>🏷️ Lower third profissional</td><td>Chyron 5s no canto inferior</td></tr>
+    <tr><td>🔥 Edição viral completa</td><td>Combo: cortes + cor + legendas + transições + música</td></tr>
+    <tr><td>🎬 Renderiza final 1080p</td><td>Export H.264 via AME</td></tr>
+  </tbody>
+</table>
+
+<h3>Fluxo "Edição viral completa"</h3>
+<p>1 clique. A IA executa em sequência:</p>
+<ol>
+  <li>Lê o projeto + identifica clip ativo</li>
+  <li>Corta silêncios &gt; 0.4s</li>
+  <li>Aplica Lumetri Color Punchy (TikTok/Reels)</li>
+  <li>Adiciona legendas viral em V2</li>
+  <li>Cross-dissolve 8 frames entre cortes</li>
+  <li>(se passou música) auto-ducking em A2</li>
+  <li>Reporta resultado</li>
+</ol>
+<p>Tempo médio: 2-5 min pra vídeo de 5 min.</p>
+
+<!-- 7. ASSINATURA -->
+<h2 id="assinatura"><span class="num">7</span>Assinatura</h2>
+
+<h3>Trial gratuito</h3>
+<p><strong>7 dias automáticos</strong>, sem cartão. Inclui:</p>
+<ul>
+  <li>Chat ilimitado com Claude</li>
+  <li>50.000 tokens de uso (~5 horas de áudio processado via Whisper)</li>
+  <li>Acesso a todas as ferramentas</li>
+</ul>
+
+<h3>Planos</h3>
+<table>
+  <thead><tr><th>Plano</th><th>Valor</th><th>Inclui</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Anual</strong></td><td>R$ 249/ano</td><td>Chat ilimitado · 500k tokens/mês · 2 dispositivos</td></tr>
+    <tr><td><strong>Vitalício</strong></td><td>R$ 699 uma vez</td><td>Chat ilimitado · 1M tokens/mês · 3 dispositivos</td></tr>
+  </tbody>
+</table>
+
+<h3>Limite de uso</h3>
+<p>"Token" = unidade de processamento da IA. 1 minuto de transcrição Whisper ≈ 5.000 tokens.</p>
+
+<!-- 8. PROBLEMAS -->
+<h2 id="problemas"><span class="num">8</span>Resolução de problemas</h2>
+
+<h3>"Motor offline" (indicador vermelho)</h3>
+<p><strong>Causa:</strong> motor IA não subiu ou foi morto.<br>
+<strong>Solução:</strong> clique no botão <strong>⚡ Iniciar motor</strong> que aparece. Aguarde ~30s. Se persistir, rode <code>INSTALAR.bat</code> de novo.</p>
+
+<h3>"MCP offline"</h3>
+<p><strong>Causa:</strong> proxy adb-socket parou.<br>
+<strong>Solução:</strong> clique <strong>🔌 Conectar tudo</strong> no banner amarelo. Backend reinicia o proxy + reconecta sozinho.</p>
+
+<h3>"UXP não conectado"</h3>
+<p><strong>Causa:</strong> plugin UXP "Premiere MCP Agent" não está aberto no Pr.<br>
+<strong>Solução:</strong> no Premiere, vai em <code>Janela → Plugins → Premiere MCP Agent</code>. O painel UXP abre. Marca <strong>Connect on Launch</strong> pra automatizar das próximas vezes.</p>
+
+<h3>"IA respondeu mas nada aconteceu na timeline"</h3>
+<p><strong>Causa:</strong> sequência ativa não está selecionada ou track bloqueada.<br>
+<strong>Solução:</strong> clique numa sequência aberta, desbloqueie tracks, peça de novo.</p>
+
+<h3>"Whisper demora muito pra transcrever"</h3>
+<p><strong>Normal:</strong> ~30s pra cada minuto de áudio. Pra vídeo de 10min, conte ~5min de transcrição. Acontece local na sua máquina (sem internet).</p>
+
+<h3>"Tela preta no plugin"</h3>
+<p><strong>Causa:</strong> cache CEP travado.<br>
+<strong>Solução:</strong> feche Pr, apaga <code>%LOCALAPPDATA%\Temp\cep_cache</code>, reabra.</p>
+
+<h3>"Banner azul de renovar"</h3>
+<p>Trial ou assinatura venceu. Renove no botão <strong>Assinar</strong>.</p>
+
+<!-- 9. SUPORTE -->
+<h2 id="suporte"><span class="num">9</span>Suporte</h2>
+
+<ul>
+  <li><strong>Email</strong>: suporte@pacotesfx.com</li>
+  <li><strong>Tempo de resposta</strong>: 24h em dias úteis</li>
+  <li><strong>Site</strong>: <a href="https://motionpro-lp.vercel.app">motionpro-lp.vercel.app</a></li>
+</ul>
+
+<p>Ao entrar em contato, mande junto:</p>
+<ul>
+  <li>Seu email cadastrado</li>
+  <li>Print do erro</li>
+  <li>Status dos 4 indicadores (PR · Motor · MCP · UXP)</li>
+</ul>
+
+<div class="doc-footer">
+  <strong>Versão do manual:</strong> 1.0 · 2026-05-19<br>
+  <strong>Compatível com:</strong> Motion IA 1.2.0 ou superior<br>
+  © PacotesFX · Família MotionPro
+</div>
+
+</main>
+</div>
+
+</body>
+</html>

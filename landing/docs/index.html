@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Documentação · Motion Titles</title>
+<meta name="description" content="Manuais de instalação e uso dos plugins MotionPro Titles, IA e Legendas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/system.css">
+<link rel="stylesheet" href="/docs/manual.css">
+</head>
+<body>
+
+<!-- ═══════ NAV ═══════ -->
+<header class="nav" id="nav">
+  <div class="container nav-inner">
+    <a href="/" class="logo" aria-label="Motion Titles home">
+      <span class="logo-dot"></span>Motion Titles
+    </a>
+    <nav aria-label="Principal">
+      <ul class="nav-links">
+        <li><a href="/#plataforma">Plataforma</a></li>
+        <li><a href="/#familia">Família</a></li>
+        <li><a href="/#planos">Planos</a></li>
+        <li><a href="/docs/" class="active">Docs</a></li>
+        <li><a href="/download.html">Download</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<!-- ═══════ HUB CONTENT ═══════ -->
+<section style="padding: 80px 24px 40px; text-align: center;">
+  <div class="container" style="max-width: 720px;">
+    <div style="font: 700 11px 'JetBrains Mono', monospace; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 14px;">DOCUMENTAÇÃO</div>
+    <h1 style="font: 900 44px/1.1 Inter, sans-serif; letter-spacing: -1.2px; margin-bottom: 16px;">Manuais oficiais</h1>
+    <p style="font: 400 18px/1.55 Inter, sans-serif; color: var(--fg-muted); margin: 0;">
+      Tudo que você precisa saber pra instalar e usar os plugins da família <strong style="color: var(--fg);">MotionPro</strong>.
+      Atualizado sempre que sai versão nova.
+    </p>
+  </div>
+</section>
+
+<section style="padding: 0 24px 80px;">
+  <div class="container" style="max-width: 1080px;">
+    <div class="docs-hub-grid">
+
+      <a href="/docs/titles.html" class="docs-hub-card">
+        <span class="badge">Templates</span>
+        <h3>Motion Titles</h3>
+        <p>Biblioteca de 7.906 templates motion graphics. Instalação, navegação, busca, favoritos e como aplicar no Premiere.</p>
+        <div class="arrow">Ler manual →</div>
+      </a>
+
+      <a href="/docs/ia.html" class="docs-hub-card">
+        <span class="badge">Agente IA</span>
+        <h3>Motion IA</h3>
+        <p>Agente Claude que edita a timeline real do Premiere. Comandos em linguagem natural, ferramentas e fluxos.</p>
+        <div class="arrow">Ler manual →</div>
+      </a>
+
+      <a href="/docs/legendas.html" class="docs-hub-card">
+        <span class="badge">Legendas</span>
+        <h3>Motion Legendas</h3>
+        <p>Legendas animadas em massa. SRT, Captions do Premiere, modo viral 1-palavra, SFX e pre-render.</p>
+        <div class="arrow">Ler manual →</div>
+      </a>
+
+    </div>
+
+    <!-- Quick links -->
+    <div style="margin-top: 60px; padding: 32px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px;">
+      <h3 style="font: 800 18px Inter, sans-serif; margin-bottom: 12px;">Atalhos rápidos</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+        <a href="/download.html" style="color: var(--accent); text-decoration: none; font: 500 14px Inter;">📥 Baixar plugins</a>
+        <a href="/account.html" style="color: var(--accent); text-decoration: none; font: 500 14px Inter;">👤 Minha conta</a>
+        <a href="/reset-password.html" style="color: var(--accent); text-decoration: none; font: 500 14px Inter;">🔑 Esqueci senha</a>
+        <a href="/#planos" style="color: var(--accent); text-decoration: none; font: 500 14px Inter;">💎 Ver planos</a>
+        <a href="/seguranca.html" style="color: var(--accent); text-decoration: none; font: 500 14px Inter;">🔒 Segurança</a>
+        <a href="mailto:suporte@pacotesfx.com" style="color: var(--accent); text-decoration: none; font: 500 14px Inter;">✉️ Suporte</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════ FOOTER (simplificado) ═══════ -->
+<footer class="footer">
+  <div class="container">
+    <div style="text-align: center; padding: 40px 0; color: var(--fg-subtle); font: 400 13px Inter, sans-serif;">
+      © <span id="yr"></span> · PacotesFX · Família MotionPro
+    </div>
+  </div>
+</footer>
+<script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+
+</body>
+</html>
