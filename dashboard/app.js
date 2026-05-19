@@ -1,4 +1,4 @@
-// MotionPro Admin Dashboard
+// Motion Titles Admin Dashboard
 const API = window.MV_API || "https://motionpro.vercel.app";
 const TOKEN_KEY = "mv_admin_token";
 
@@ -90,6 +90,7 @@ document.querySelectorAll(".nav-item").forEach(item => {
         if (v === "users") refreshUsers();
         if (v === "subscriptions") refreshSubs();
         if (v === "devices") refreshDevices();
+        if (v === "sessions") { /* lazy: só carrega quando user clica Carregar */ }
         if (v === "audit") refreshAudit();
     });
 });
@@ -118,9 +119,10 @@ function planBadge(plan) {
 function productBadge(productId) {
     if (!productId) return '';
     const map = {
-        motionpro:  { emoji: "🎬", label: "MotionPro", color: "blue" },
-        legendas:   { emoji: "💬", label: "Legendas",  color: "green" },
-        bundle_all: { emoji: "💎", label: "Bundle",    color: "purple" }
+        motionpro:  { emoji: "🎬", label: "Titles",   color: "blue" },
+        legendas:   { emoji: "💬", label: "Legendas", color: "green" },
+        ia:         { emoji: "🤖", label: "IA",       color: "orange" },
+        bundle_all: { emoji: "💎", label: "Bundle",   color: "purple" }
     };
     const p = map[productId] || { emoji: "📦", label: productId, color: "gray" };
     return `<span class="badge badge--${p.color}" title="${productId}">${p.emoji} ${p.label}</span>`;
@@ -230,6 +232,16 @@ document.getElementById("users-search").addEventListener("input", () => {
 });
 document.getElementById("users-status").addEventListener("change", refreshUsers);
 
+// Devices + Sessions wiring
+document.getElementById("refresh-devices")?.addEventListener("click", refreshDevices);
+document.getElementById("devices-search")?.addEventListener("input", () => {
+    clearTimeout(window._devT);
+    window._devT = setTimeout(refreshDevices, 300);
+});
+document.getElementById("devices-country")?.addEventListener("change", refreshDevices);
+document.getElementById("devices-status")?.addEventListener("change", refreshDevices);
+document.getElementById("refresh-sessions")?.addEventListener("click", refreshSessions);
+
 // ===== SUBSCRIPTIONS =====
 async function refreshSubs() {
     try {
@@ -268,42 +280,96 @@ async function refreshSubs() {
 document.getElementById("refresh-subs").addEventListener("click", refreshSubs);
 
 // ===== DEVICES =====
+function flag(country) {
+    return ({ BR: "🇧🇷", US: "🇺🇸", PT: "🇵🇹", GB: "🇬🇧", DE: "🇩🇪", FR: "🇫🇷", ES: "🇪🇸", MX: "🇲🇽", AR: "🇦🇷", LOCAL: "🏠" }[country]) || "🌐";
+}
+
 async function refreshDevices() {
     try {
-        const r = await api("/v1/admin/users?limit=500");
-        const rows = [];
-        r.users.forEach(u => {
-            (u.subscriptions || []);
+        const params = new URLSearchParams();
+        const s = document.getElementById("devices-search")?.value.trim();
+        const c = document.getElementById("devices-country")?.value;
+        const r = document.getElementById("devices-status")?.value;
+        if (s) params.set("search", s);
+        if (c) params.set("country", c);
+        if (r) params.set("revoked", r);
+        params.set("limit", "200");
+
+        const d = await api("/v1/admin/devices?" + params);
+        const rows = (d.devices || []).map(dev => {
+            const loc = [dev.city, dev.country].filter(Boolean).join(", ");
+            return `<tr>
+                <td class="email-cell">${dev.email}</td>
+                <td>${dev.label || dev.hostname || '—'}<br><small><code>${(dev.id||"").slice(0,8)}</code></small></td>
+                <td>${dev.os_name || '—'}</td>
+                <td><code>${dev.last_ip || '—'}</code></td>
+                <td>${flag(dev.country)} ${loc || '—'}</td>
+                <td class="date-cell">${fmtDateTime(dev.last_seen)}</td>
+                <td>${dev.revoked ? '<span class="badge badge--red">Revogado</span>' : '<span class="badge badge--green">Ativo</span>'}</td>
+                <td>
+                  ${!dev.revoked ? `<button class="btn btn--danger btn--sm" data-revoke-device="${dev.id}">Revogar</button>` : ''}
+                  <button class="btn btn--ghost btn--sm" data-load-sessions="${dev.user_id}" title="Ver sessões deste user">🔐</button>
+                </td>
+            </tr>`;
         });
-        // Fetch full details — backend lista devices via users; vamos chamar detail de cada
-        // Pra performance, pega só de usuarios com devices
-        const candidates = r.users.filter(u => u.total_devices > 0);
-        const detailRows = [];
-        for (const u of candidates) {
-            const d = await api("/v1/admin/users/" + u.id);
-            d.devices.forEach(dev => {
-                detailRows.push(`<tr>
-                    <td class="email-cell">${u.email}</td>
-                    <td><code>${dev.fingerprint.slice(0,16)}…</code></td>
-                    <td>${dev.label || '—'}</td>
-                    <td class="date-cell">${fmtDateTime(dev.first_seen)}</td>
-                    <td class="date-cell">${fmtDateTime(dev.last_seen)}</td>
-                    <td>${dev.revoked ? '<span class="badge badge--red">Revogado</span>' : '<span class="badge badge--green">Ativo</span>'}</td>
-                    <td>${!dev.revoked ? `<button class="btn btn--danger btn--sm" data-revoke-device="${dev.id}">Revogar</button>` : ''}</td>
-                </tr>`);
-            });
-        }
-        document.getElementById("devices-tbody").innerHTML = detailRows.join("") || `<tr><td colspan="7" class="empty">Nenhum dispositivo registrado</td></tr>`;
+        document.getElementById("devices-tbody").innerHTML = rows.join("") || `<tr><td colspan="8" class="empty">Nenhum dispositivo encontrado</td></tr>`;
+
         document.querySelectorAll("button[data-revoke-device]").forEach(b => {
             b.addEventListener("click", async (e) => {
                 const id = e.target.dataset.revokeDevice;
                 if (!confirm("Revogar este dispositivo? O cliente vai precisar reativar.")) return;
-                try {
-                    await api(`/v1/admin/devices/${id}/revoke`, { method: "POST" });
-                    toast("Dispositivo revogado");
-                    refreshDevices();
-                } catch (e) { toast("Erro: " + e.message, "error"); }
+                try { await api(`/v1/admin/devices/${id}/revoke`, { method: "POST" }); toast("Revogado"); refreshDevices(); }
+                catch (e) { toast("Erro: " + e.message, "error"); }
             });
+        });
+        document.querySelectorAll("button[data-load-sessions]").forEach(b => {
+            b.addEventListener("click", (e) => {
+                const uid = e.target.dataset.loadSessions;
+                document.querySelector('.nav-item[data-view="sessions"]').click();
+                document.getElementById("sessions-user-id").value = uid;
+                refreshSessions();
+            });
+        });
+    } catch (e) { toast("Erro: " + e.message, "error"); }
+}
+
+// ===== SESSIONS =====
+async function refreshSessions() {
+    const uid = document.getElementById("sessions-user-id").value.trim();
+    if (!uid) { toast("Cole um user_id primeiro", "error"); return; }
+    try {
+        const r = await api(`/v1/admin/users/${uid}/sessions`);
+        const rows = (r.sessions || []).map(s => {
+            const expired = new Date(s.expires_at) < new Date();
+            const revoked = s.revoked;
+            const cls = revoked ? "row-revoked" : (expired ? "row-expired" : "");
+            return `<tr class="${cls}">
+                <td>${s.device_label || s.hostname || '—'}<br><small>${s.os_name || ''}</small></td>
+                <td><code>${s.last_ip || '?'}</code> ${flag(s.country)}</td>
+                <td class="date-cell">${fmtDateTime(s.issued_at)}</td>
+                <td class="date-cell">${fmtDateTime(s.expires_at)}</td>
+                <td class="date-cell">${fmtDateTime(s.last_seen_at)}</td>
+                <td>${revoked ? `<span class="badge badge--red">Revogada</span><br><small>${s.revoke_reason || ''}</small>` : (expired ? '<span class="badge badge--gray">Expirada</span>' : '<span class="badge badge--green">Ativa</span>')}</td>
+                <td>${!revoked && !expired ? `<button class="btn btn--danger btn--sm" data-revoke-session="${s.id}">Kill</button>` : ''}</td>
+            </tr>`;
+        });
+        document.getElementById("sessions-tbody").innerHTML = rows.join("") + `
+            <tr><td colspan="7" style="text-align:right;padding-top:18px">
+                <button class="btn btn--danger" id="revoke-all-sessions" data-uid="${uid}">⚠️ Kill TODAS sessões deste user</button>
+            </td></tr>`;
+
+        document.querySelectorAll("button[data-revoke-session]").forEach(b => {
+            b.addEventListener("click", async (e) => {
+                if (!confirm("Kill esta sessão? User vai precisar relogar nesse device.")) return;
+                try { await api(`/v1/admin/sessions/${e.target.dataset.revokeSession}/revoke`, { method: "POST", body: JSON.stringify({ reason: "admin_kill" }) }); toast("Kill"); refreshSessions(); }
+                catch (e) { toast("Erro: " + e.message, "error"); }
+            });
+        });
+        const allBtn = document.getElementById("revoke-all-sessions");
+        if (allBtn) allBtn.addEventListener("click", async () => {
+            if (!confirm("KILL TODAS as sessões deste user? Vai deslogar em todos os devices.")) return;
+            try { const r2 = await api(`/v1/admin/users/${uid}/sessions/revoke-all`, { method: "POST", body: JSON.stringify({ reason: "admin_killall" }) }); toast(`Killed ${r2.revoked} sessions`); refreshSessions(); }
+            catch (e) { toast("Erro: " + e.message, "error"); }
         });
     } catch (e) { toast("Erro: " + e.message, "error"); }
 }
@@ -317,8 +383,8 @@ async function refreshAnalytics() {
 
         // Conversion cards (por produto)
         document.getElementById("conv-cards").innerHTML = d.conversion.map(c => {
-            const productName = { motionpro: "MotionPro", legendas: "Legendas", bundle_all: "Bundle" }[c.product_id] || c.product_id;
-            const emoji = { motionpro: "🎬", legendas: "💬", bundle_all: "💎" }[c.product_id] || "📦";
+            const productName = { motionpro: "Motion Titles", legendas: "Motion Legendas", ia: "Motion IA", bundle_all: "Bundle" }[c.product_id] || c.product_id;
+            const emoji = { motionpro: "🎬", legendas: "💬", ia: "🤖", bundle_all: "💎" }[c.product_id] || "📦";
             return `<div class="kpi">
                 <div class="kpi-label">${emoji} ${productName} · Conversão</div>
                 <div class="kpi-value ${c.conversion_rate >= 30 ? 'green' : c.conversion_rate >= 15 ? 'blue' : 'orange'}">${c.conversion_rate}%</div>
@@ -350,16 +416,16 @@ async function refreshAnalytics() {
         const byProduct = {};
         d.subs_active.forEach(s => {
             if (s.status === "active" || s.status === "trialing") {
-                const key = s.product_id || "motionpro";
+                const key = s.product_id || "Motion Titles";
                 byProduct[key] = (byProduct[key] || 0) + s.count;
             }
         });
         renderDoughnut("chart-products",
             Object.keys(byProduct).map(k => ({
-                motionpro: "MotionPro", legendas: "Legendas", bundle_all: "Bundle"
+                motionpro: "Motion Titles", legendas: "Motion Legendas", ia: "Motion IA", bundle_all: "Bundle"
             }[k] || k)),
             Object.values(byProduct),
-            ["#2563EB", "#22c55e", "#a855f7", "#f59e0b"]
+            ["#2563EB", "#22c55e", "#f97316", "#a855f7", "#f59e0b"]
         );
     } catch (e) { toast("Erro: " + e.message, "error"); }
 }
@@ -449,13 +515,20 @@ async function openUserDrawer(id) {
         document.getElementById("drawer-body").innerHTML = `
             <div class="drawer-actions">
                 <select id="grant-product" style="background:var(--bg2);border:1px solid var(--border2);color:var(--txt);border-radius:6px;padding:7px 10px;font:600 12px Inter;cursor:pointer">
-                    <option value="motionpro">🎬 MotionPro</option>
-                    <option value="legendas">💬 Legendas</option>
+                    <option value="motionpro">🎬 Motion Titles</option>
+                    <option value="legendas">💬 Motion Legendas</option>
+                    <option value="ia">🤖 Motion IA</option>
                     <option value="bundle_all">💎 Bundle Completo</option>
                 </select>
                 <button class="btn btn--primary btn--sm" data-act="grant-yearly">+ Anual cortesia</button>
                 <button class="btn btn--primary btn--sm" data-act="grant-lifetime">+ Vitalício cortesia</button>
-                <button class="btn btn--danger btn--sm" data-act="revoke">🚫 Revogar TUDO</button>
+                <button class="btn btn--ghost btn--sm" data-act="extend-trial">⏰ +7d trial</button>
+                <button class="btn btn--ghost btn--sm" data-act="send-email">📧 Enviar email</button>
+                <button class="btn btn--ghost btn--sm" data-act="killall-sessions">🔐 Kill sessions</button>
+                ${(d.subscriptions || []).some(s => s.status === 'revoked')
+                    ? '<button class="btn btn--primary btn--sm" data-act="unblock">✅ Desbloquear</button>'
+                    : '<button class="btn btn--danger btn--sm" data-act="block">🚫 BLOQUEAR</button>'}
+                <button class="btn btn--danger btn--sm" data-act="delete-user" style="background:#7f1d1d">🗑 DELETAR</button>
                 ${!u.is_admin ? '<button class="btn btn--ghost btn--sm" data-act="promote">🛡 Promover a admin</button>' : ''}
                 ${u.stripe_customer ? `<a class="btn btn--ghost btn--sm" target="_blank" href="https://dashboard.stripe.com/customers/${u.stripe_customer}">↗ Stripe</a>` : ''}
             </div>
@@ -526,7 +599,39 @@ async function openUserDrawer(id) {
             </div>
 
             <div class="drawer-section">
-                <h4>Auditoria (${d.audit.length} últimos)</h4>
+                <h4>🔐 Sessões ativas (${(d.sessions || []).filter(s => !s.revoked && new Date(s.expires_at) > new Date()).length}/${(d.sessions || []).length})</h4>
+                ${!(d.sessions || []).length ? '<p class="muted">Sem sessions registradas (migration 006 pendente?)</p>' : (d.sessions || []).slice(0, 10).map(s => {
+                    const exp = new Date(s.expires_at);
+                    const ativo = !s.revoked && exp > new Date();
+                    return `
+                    <div class="drawer-field" style="margin-bottom:6px;font-size:13px">
+                        <div style="display:flex;justify-content:space-between;align-items:center">
+                            <div>
+                                ${ativo ? '<span class="badge badge--green">🟢 ativa</span>' : (s.revoked ? '<span class="badge badge--red">revogada</span>' : '<span class="badge badge--gray">expirada</span>')}
+                                <code style="font-size:11px;margin:0 8px">${s.last_ip || '?'}</code>
+                                ${flag(s.country)} ${s.country || ''}
+                                <div style="font-size:11px;color:var(--mut);margin-top:2px">
+                                    último ping: ${fmtDateTime(s.last_seen_at)} · expira ${fmtDate(s.expires_at)}
+                                </div>
+                            </div>
+                            ${ativo ? `<button class="btn btn--danger btn--sm" data-revoke-session="${s.id}">Kill</button>` : ''}
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>
+
+            <div class="drawer-section">
+                <h4>📥 Downloads recentes (${(d.downloads || []).length})</h4>
+                ${!(d.downloads || []).length ? '<p class="muted">Nenhum download registrado</p>' : (d.downloads || []).slice(0, 10).map(dl => `
+                    <div class="drawer-field" style="margin-bottom:4px;font-size:12.5px">
+                        <span class="muted">${fmtDateTime(dl.created_at)}</span>
+                        <code style="font-size:11px;margin-left:8px">IP ${dl.ip || '?'}</code>
+                    </div>
+                `).join('')}
+            </div>
+
+            <div class="drawer-section">
+                <h4>📜 Auditoria (${d.audit.length} últimos)</h4>
                 ${d.audit.length === 0 ? '<p class="muted">Sem eventos</p>' : d.audit.slice(0, 20).map(a => `
                     <div class="drawer-field" style="margin-bottom:6px;font-size:13px">
                         <span class="muted">${fmtDateTime(a.created_at)}</span>
@@ -557,11 +662,51 @@ async function openUserDrawer(id) {
             if (!confirm("Promover esta conta a ADMIN?")) return;
             try { await api(`/v1/admin/users/${id}/promote`, { method: "POST" }); toast("Promovido a admin"); openUserDrawer(id); refreshUsers(); } catch (e) { toast(e.message, "error"); }
         });
+        wire('[data-act="extend-trial"]', async () => {
+            const days = Number(prompt("Estender trial em quantos dias?", "7")) || 7;
+            if (days < 1 || days > 365) { toast("Dias inválido (1-365)", "error"); return; }
+            try { await api(`/v1/admin/users/${id}/extend-trial`, { method: "POST", body: JSON.stringify({ days }) }); toast(`Trial +${days}d`); openUserDrawer(id); refreshUsers(); } catch (e) { toast(e.message, "error"); }
+        });
+        wire('[data-act="send-email"]', async () => {
+            const subject = prompt("Assunto do email:", "Aviso importante");
+            if (!subject) return;
+            const text = prompt("Mensagem (texto simples):", "");
+            if (!text) return;
+            const html = `<div style="font-family:Inter,sans-serif;padding:24px;max-width:560px;color:#0a0a0a"><h2 style="color:#2563eb">${subject}</h2><p style="line-height:1.6;color:#444">${text.replace(/\n/g,'<br>')}</p><hr style="margin:24px 0;border:none;border-top:1px solid #e6e6ea"><p style="font-size:12px;color:#888">PacotesFX · MotionPro · suporte@pacotesfx.com</p></div>`;
+            try { const r = await api(`/v1/admin/users/${id}/send-email`, { method: "POST", body: JSON.stringify({ subject, html, text }) }); toast(`Email enviado pra ${r.sent_to}`); } catch (e) { toast(e.message, "error"); }
+        });
+        wire('[data-act="killall-sessions"]', async () => {
+            if (!confirm("Kill TODAS as sessões deste user? Ele vai precisar logar de novo em todos os devices.")) return;
+            try { const r = await api(`/v1/admin/users/${id}/sessions/revoke-all`, { method: "POST", body: JSON.stringify({ reason: "admin_killall" }) }); toast(`Killed ${r.revoked || 0} sessions`); openUserDrawer(id); } catch (e) { toast(e.message, "error"); }
+        });
+        wire('[data-act="block"]', async () => {
+            const reason = prompt("Motivo do bloqueio? (vai pro audit log)", "fraude/abuso") || "admin_block";
+            if (!confirm(`⛔ BLOQUEAR este usuário?\n\nVai:\n  • Cancelar todas subscriptions\n  • Revogar todos dispositivos\n  • Kill todas sessions\n  • Cliente vê paywall ao tentar usar\n\nReversível via Desbloquear.`)) return;
+            try { await api(`/v1/admin/users/${id}/block`, { method: "POST", body: JSON.stringify({ reason }) }); toast("Usuário BLOQUEADO", "success"); openUserDrawer(id); refreshUsers(); } catch (e) { toast(e.message, "error"); }
+        });
+        wire('[data-act="unblock"]', async () => {
+            if (!confirm("Desbloquear este usuário?\n\nVai reativar subs/devices que foram revogados pelo admin.")) return;
+            try { await api(`/v1/admin/users/${id}/unblock`, { method: "POST" }); toast("Usuário desbloqueado"); openUserDrawer(id); refreshUsers(); } catch (e) { toast(e.message, "error"); }
+        });
+        wire('[data-act="delete-user"]', async () => {
+            const email = u.email;
+            const confirma1 = prompt(`⚠️ AÇÃO IRREVERSÍVEL\n\nIsso vai DELETAR PERMANENTEMENTE:\n  • Conta de ${email}\n  • Todos devices/sessions/subscriptions/audit\n  • Cancelar Stripe sub se ativa\n  • Liberar email pra novo signup\n\nDigite o email completo pra confirmar:`);
+            if (confirma1 !== email) { toast("Email não bateu — abortado", "error"); return; }
+            if (!confirm(`Última chance. DELETAR ${email}?`)) return;
+            try { await api(`/v1/admin/users/${id}`, { method: "DELETE" }); toast(`${email} deletado`, "success"); document.getElementById("drawer").hidden = true; refreshUsers(); } catch (e) { toast(e.message, "error"); }
+        });
         document.querySelectorAll('[data-revoke-dev]').forEach(b => {
             b.addEventListener("click", async () => {
                 const did = b.dataset.revokeDev;
                 if (!confirm("Revogar este dispositivo?")) return;
                 try { await api(`/v1/admin/devices/${did}/revoke`, { method: "POST" }); toast("Dispositivo revogado"); openUserDrawer(id); } catch (e) { toast(e.message, "error"); }
+            });
+        });
+        document.querySelectorAll('[data-revoke-session]').forEach(b => {
+            b.addEventListener("click", async () => {
+                const sid = b.dataset.revokeSession;
+                if (!confirm("Kill esta session?")) return;
+                try { await api(`/v1/admin/sessions/${sid}/revoke`, { method: "POST", body: JSON.stringify({ reason: "admin_drawer" }) }); toast("Session killed"); openUserDrawer(id); } catch (e) { toast(e.message, "error"); }
             });
         });
     } catch (e) {
