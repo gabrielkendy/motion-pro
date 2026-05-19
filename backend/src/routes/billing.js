@@ -9,7 +9,7 @@ const { welcomeEmail, paymentFailedEmail } = require("../utils/email");
 
 const stripe = Stripe(process.env.STRIPE_SECRET || "sk_test_xxx");
 
-// Fallback caso DB esteja indisponível — só pro motionpro
+// Fallback caso DB esteja indisponível — só pro Motion Titles
 const FALLBACK_PRICES = {
     motionpro: {
         yearly:   process.env.STRIPE_PRICE_YEARLY,
@@ -251,9 +251,9 @@ async function webhook(req, res) {
                 );
 
                 // Manda welcome (com senha temporária se foi criado agora)
-                const productName = product_id === "legendas" ? "MotionPro Legendas"
-                                  : product_id === "bundle_all" ? "Pacote Completo MotionPro"
-                                  : "MotionPro";
+                const productName = product_id === "legendas" ? "Motion Legendas"
+                                  : product_id === "bundle_all" ? "Pacote Completo Motion Titles"
+                                  : "Motion Titles";
                 const downloadUrl = product_id === "legendas"
                     ? PUBLIC_URL + "/legendas/download.html"
                     : PUBLIC_URL + "/download.html";

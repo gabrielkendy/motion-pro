@@ -3,6 +3,8 @@ const router = require("express").Router();
 const { pool } = require("../db");
 const { requireAuth } = require("../middleware/auth");
 const { signLicense, verifyLicense } = require("../utils/jwt");
+const { clientIp, clientUa, geoLookup, parseUaToOs } = require("../utils/ipgeo");
+const { newDeviceLoginEmail } = require("../utils/email");
 
 /* Per-plan device limits */
 const DEVICE_LIMITS = {
@@ -86,12 +88,12 @@ router.post("/issue", requireAuth, async (req, res, next) => {
 
         let sub = await getActiveSubscription(req.user.id, product);
 
-        // 🎁 PRIMEIRA VEZ NESSE PRODUTO? Cria trial automático (14 dias).
+        // 🎁 PRIMEIRA VEZ NESSE PRODUTO? Cria trial automático (7 dias — env TRIAL_DAYS).
         // Aplica só se: status=none (nunca teve sub desse produto) e produto válido (não bundle).
         if (sub.status === "none" && product !== "bundle_all") {
             const prodExists = await pool.query("SELECT 1 FROM products WHERE id=$1 AND is_active=true", [product]);
             if (prodExists.rowCount) {
-                const trialDays = Number(process.env.TRIAL_DAYS || 14);
+                const trialDays = Number(process.env.TRIAL_DAYS || 7);
                 const expiresAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
                 await pool.query(
                     `INSERT INTO subscriptions(user_id, product_id, plan, status, current_period_end)
@@ -133,16 +135,77 @@ router.post("/issue", requireAuth, async (req, res, next) => {
             return res.status(403).json({ error: "device_limit_reached", limit, plan: sub.plan });
         }
 
-        // Register/refresh device
+        // Register/refresh device — capturando IP/UA/geo
+        const ip  = clientIp(req);
+        const ua  = clientUa(req);
+        const geo = await geoLookup(ip, req).catch(() => ({}));
+        const osName = parseUaToOs(ua);
+        const hostname = req.body?.hostname || null;
+        const label    = req.body?.label    || null;
+
         let deviceId = exists ? exists.id : null;
+        let isNewDevice = false;
         if (!deviceId) {
-            const ins = await pool.query(
-                "INSERT INTO devices(user_id, fingerprint) VALUES($1,$2) RETURNING id",
-                [req.user.id, fingerprint]
-            );
+            isNewDevice = true;
+            const ins = await pool.query(`
+                INSERT INTO devices(user_id, fingerprint, label, hostname, os_name,
+                                    first_ip, last_ip, country, region, city)
+                VALUES($1,$2,$3,$4,$5,$6,$6,$7,$8,$9)
+                RETURNING id
+            `, [req.user.id, fingerprint, label, hostname, osName,
+                ip, geo.country || null, geo.region || null, geo.city || null]);
             deviceId = ins.rows[0].id;
+        } else {
+            await pool.query(`
+                UPDATE devices SET
+                  last_seen = now(),
+                  last_ip   = COALESCE($2, last_ip),
+                  last_ua   = COALESCE($3, last_ua),
+                  country   = COALESCE($4, country),
+                  region    = COALESCE($5, region),
+                  city      = COALESCE($6, city),
+                  os_name   = COALESCE($7, os_name),
+                  hostname  = COALESCE($8, hostname),
+                  label     = COALESCE($9, label)
+                WHERE id=$1
+            `, [deviceId, ip, ua, geo.country, geo.region, geo.city, osName, hostname, label]);
         }
-        await pool.query("UPDATE devices SET last_seen=now() WHERE id=$1", [deviceId]);
+        // Sempre atualiza last_seen/ua
+        await pool.query("UPDATE devices SET last_seen=now(), last_ua=COALESCE($2, last_ua) WHERE id=$1",
+            [deviceId, ua]);
+
+        // ── New device alert email (fire-and-forget, dedup) ──
+        if (isNewDevice) {
+            (async () => {
+                try {
+                    const sent = await pool.query(
+                        "SELECT 1 FROM new_device_alerts WHERE user_id=$1 AND device_id=$2",
+                        [req.user.id, deviceId]
+                    );
+                    if (sent.rowCount === 0) {
+                        const u = await pool.query("SELECT email, name FROM users WHERE id=$1", [req.user.id]);
+                        if (u.rowCount) {
+                            await newDeviceLoginEmail({
+                                email: u.rows[0].email,
+                                name:  u.rows[0].name,
+                                productName: product === "ia" ? "Motion IA" : product === "legendas" ? "Motion Legendas" : "Motion Titles",
+                                deviceLabel: label || hostname || "Dispositivo desconhecido",
+                                ip,
+                                country: geo.country,
+                                city:    geo.city,
+                                ua,
+                                when: new Date().toISOString(),
+                                manageUrl: (process.env.DASHBOARD_URL || "https://motionpro.vercel.app") + "/dashboard#devices",
+                            });
+                            await pool.query(
+                                "INSERT INTO new_device_alerts(user_id, device_id) VALUES($1,$2) ON CONFLICT DO NOTHING",
+                                [req.user.id, deviceId]
+                            );
+                        }
+                    }
+                } catch (e) { console.error("[new_device_alert]", e.message); }
+            })();
+        }
 
         // Compose license (license JWT inclui product)
         const license = signLicense({

@@ -19,8 +19,8 @@ function requireCronSecret(req, res, next) {
 
 function productInfo(productId) {
     const map = {
-        motionpro:  { name: "MotionPro",          pricingUrl: PUBLIC_URL + "/#pricing" },
-        legendas:   { name: "MotionPro Legendas", pricingUrl: PUBLIC_URL + "/legendas/#pricing" },
+        motionpro:  { name: "Motion Titles",          pricingUrl: PUBLIC_URL + "/#pricing" },
+        legendas:   { name: "Motion Legendas", pricingUrl: PUBLIC_URL + "/legendas/#pricing" },
         bundle_all: { name: "Pacote Completo",    pricingUrl: PUBLIC_URL + "/#pricing" }
     };
     return map[productId] || map.motionpro;
