@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="description" content="Motion Legendas — 549 títulos premium dentro do Premiere Pro. Plugin nativo. Importação em 1 clique. 100% editável na timeline." />
-<meta property="og:title" content="Motion Legendas — Títulos e lower thirds prontos dentro do Premiere" />
-<meta property="og:description" content="549 títulos profissionais. Plugin CEP nativo. Editáveis na timeline. R$149/ano ou R$399 vitalício." />
+<meta name="description" content="Motion Titles — 7.906 motion graphics premium dentro do Premiere Pro. Plugin nativo. Importação em 1 clique. 100% editável na timeline." />
+<meta property="og:title" content="Motion Titles — O acervo definitivo de motion graphics dentro do Premiere" />
+<meta property="og:description" content="7.906 templates premium. Plugin CEP nativo. Editáveis na timeline. R$199/ano ou R$499 vitalício." />
 <meta property="og:type" content="website" />
 <meta property="og:image" content="/img/og.png" />
-<title>Motion Legendas — Títulos e lower thirds prontos dentro do Premiere</title>
+<title>Motion Titles — O acervo definitivo de motion graphics dentro do Premiere</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,8 +25,7 @@
 
 <style>
 /* ════════════════════════════════════════════════════════════════
-   LEGENDAS LANDING · STYLES (mesmos componentes da home,
-   adaptados pro produto Motion Legendas)
+   HOME-SPECIFIC STYLES (componentes ricos que só aparecem na home)
    ════════════════════════════════════════════════════════════════ */
 
 /* ── HERO ── */
@@ -55,6 +54,7 @@
 @keyframes blobDrift1 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 33% { transform: translate3d(120px,80px,0) scale(1.1); } 66% { transform: translate3d(-40px,140px,0) scale(.95); } }
 @keyframes blobDrift2 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(-140px,100px,0) scale(1.15); } }
 @keyframes blobDrift3 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(80px,-120px,0) scale(1.08); } }
+/* Pausa animações quando hero sai da viewport */
 .hero[data-paused="true"] .blob,
 .hero[data-paused="true"] .hero-marquee-track,
 .hero[data-paused="true"] .hero-badge::after { animation-play-state: paused !important; }
@@ -237,16 +237,6 @@
 .custom-close p { font-size: clamp(1.2rem, 2vw, 1.6rem); font-weight: 500; line-height: 1.35; color: var(--fg); letter-spacing: -.02em; max-width: none; }
 .custom-close .accent { color: var(--accent); font-weight: 700; display: block; margin-top: 4px; }
 
-/* ── CATEGORIAS GRID ── */
-.cats { background: var(--bg-elevated); }
-.cats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; max-width: 1100px; margin: 0 auto; }
-.cat-card { background: white; padding: 28px 24px; border-radius: 12px; border: 1px solid var(--border); transition: all .35s var(--ease-out); }
-.cat-card:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 14px 32px -8px rgba(37,99,235,.12); }
-.cat-card.featured { border-color: var(--accent); background: linear-gradient(180deg, rgba(37,99,235,.04), white); }
-.cat-card .num { font: 800 32px 'JetBrains Mono', monospace; color: var(--accent); margin-bottom: 8px; letter-spacing: -.04em; }
-.cat-card strong { display: block; font-size: 1rem; font-weight: 700; color: var(--fg); margin-bottom: 4px; letter-spacing: -.01em; }
-.cat-card .count { font-family: 'JetBrains Mono', monospace; font-size: .7rem; color: var(--fg-muted); letter-spacing: .12em; text-transform: uppercase; }
-
 /* ── FLUXO (DARK) ── */
 .flux { background: var(--bg-dark); color: var(--fg-on-dark); }
 .flux .section-title { color: var(--fg-on-dark); }
@@ -313,11 +303,6 @@
 .pricing-callout { max-width: 900px; margin: 70px auto 0; background: white; border: 1px solid var(--border); border-radius: 16px; padding: 28px 36px; }
 .pricing-callout p { font-size: 15px; color: var(--fg); line-height: 1.65; max-width: none; }
 .pricing-callout p strong { font-weight: 600; display: block; margin-bottom: 6px; }
-.pricing-bundle { max-width: 900px; margin: 24px auto 0; background: linear-gradient(135deg, rgba(37,99,235,.08), rgba(37,99,235,.02)); border: 2px solid var(--accent); border-radius: 16px; padding: 32px 36px; text-align: center; }
-.pricing-bundle .tag { font-family: 'JetBrains Mono', monospace; font-size: .7rem; font-weight: 700; letter-spacing: .2em; color: var(--accent); margin-bottom: 12px; display: block; }
-.pricing-bundle h3 { font-size: clamp(1.25rem, 2vw, 1.6rem); font-weight: 800; letter-spacing: -.02em; margin-bottom: 8px; }
-.pricing-bundle h3 em { font-style: normal; color: var(--accent); }
-.pricing-bundle p { color: var(--fg-muted); font-size: 14px; margin: 0 auto 18px; }
 
 /* ── MANIFESTO ── */
 .manifesto { padding: clamp(120px, 18vw, 180px) 0; text-align: center; }
@@ -343,148 +328,8 @@
 .faq-item.open .faq-a { max-height: 400px; opacity: 1; padding-bottom: 28px; }
 .faq-a p { font-size: 15.5px; color: var(--fg-muted); line-height: 1.65; max-width: 65ch; padding-right: 50px; }
 
-/* ── HERO PREVIEW STACK (substitui chips chatos por preview cards) ── */
-.hero-preview-stack { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
-.prev-card {
-  position: absolute;
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 18px 22px;
-  box-shadow: 0 18px 50px -18px rgba(10,10,10,.18), 0 2px 8px rgba(10,10,10,.04);
-  min-width: 200px;
-  opacity: 0;
-  font-family: 'Inter', sans-serif;
-  transform-origin: center;
-}
-.prev-card .eyebrow {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .58rem; letter-spacing: .18em; text-transform: uppercase;
-  color: var(--fg-subtle);
-  margin-bottom: 8px;
-  display: block;
-}
-.prev-card .ttl { font-weight: 800; letter-spacing: -.025em; color: var(--fg); line-height: 1.1; }
-.prev-card .meta { margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: .6rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
-
-.prev-card.p1 { top: 14%; left: 4%; }
-.prev-card.p1 .ttl { font-size: 18px; }
-.prev-card.p2 { top: 10%; right: 6%; background: #0a0a0a; color: white; border-color: transparent; }
-.prev-card.p2 .eyebrow { color: rgba(255,255,255,.4); }
-.prev-card.p2 .ttl { color: white; font-size: 22px; font-style: italic; }
-.prev-card.p2 .meta { color: #93c5fd; }
-.prev-card.p3 { bottom: 22%; left: 5%; }
-.prev-card.p3 .ttl { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: -.01em; }
-.prev-card.p4 { bottom: 18%; right: 4%; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border-color: transparent; }
-.prev-card.p4 .eyebrow { color: rgba(255,255,255,.55); }
-.prev-card.p4 .ttl { color: white; font-size: 19px; }
-.prev-card.p4 .meta { color: rgba(255,255,255,.7); }
-
-@media (max-width: 1100px) { .hero-preview-stack { display: none; } }
-
-/* ── STYLES SHOWCASE (grid com tipografia real de cada estilo) ── */
-.styles { background: var(--bg); position: relative; }
-.styles-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 18px;
-  max-width: 1200px; margin: 0 auto;
-}
-.style-tile {
-  position: relative;
-  aspect-ratio: 4 / 3;
-  border-radius: 16px;
-  overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
-  text-align: center; padding: 30px;
-  transition: transform .5s var(--ease-out), box-shadow .5s var(--ease-out);
-  cursor: default;
-}
-.style-tile:hover { transform: translateY(-6px); box-shadow: 0 28px 60px -22px rgba(10,10,10,.25); }
-.style-tile__label {
-  position: absolute; top: 18px; left: 22px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .65rem; letter-spacing: .2em; text-transform: uppercase;
-  font-weight: 500; opacity: .7;
-}
-.style-tile__count {
-  position: absolute; bottom: 18px; right: 22px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .65rem; letter-spacing: .12em; opacity: .7;
-}
-.style-tile__txt { font-family: 'Inter', sans-serif; line-height: 1; }
-
-/* Variantes — cada uma com personalidade visual real */
-.style-tile.s-simple    { background: #fafafa; border: 1px solid var(--border); color: var(--fg); }
-.style-tile.s-simple    .style-tile__txt { font-size: clamp(2rem, 5vw, 3.4rem); font-weight: 600; letter-spacing: -.02em; }
-.style-tile.s-fashion   { background: #1a1a1a; color: white; }
-.style-tile.s-fashion   .style-tile__txt { font-size: clamp(2.2rem, 5.5vw, 3.8rem); font-weight: 300; font-style: italic; letter-spacing: -.01em; font-family: Georgia, serif; }
-.style-tile.s-urban     { background: linear-gradient(135deg, #dc2626 0%, #1a1a1a 100%); color: white; }
-.style-tile.s-urban     .style-tile__txt { font-size: clamp(2.4rem, 6vw, 4rem); font-weight: 900; letter-spacing: -.04em; text-transform: uppercase; }
-.style-tile.s-glitch    { background: #0a0a0a; color: white; }
-.style-tile.s-glitch    .style-tile__txt { font-size: clamp(2.2rem, 5.5vw, 3.8rem); font-weight: 800; letter-spacing: -.02em; font-family: 'JetBrains Mono', monospace; position: relative; }
-.style-tile.s-glitch    .style-tile__txt::before, .style-tile.s-glitch .style-tile__txt::after { content: attr(data-txt); position: absolute; inset: 0; mix-blend-mode: screen; }
-.style-tile.s-glitch    .style-tile__txt::before { color: #ff003c; transform: translate(-2px, 0); }
-.style-tile.s-glitch    .style-tile__txt::after  { color: #00f0ff; transform: translate(2px, 0); }
-.style-tile.s-huge      { background: var(--accent); color: white; }
-.style-tile.s-huge      .style-tile__txt { font-size: clamp(3rem, 8vw, 5.5rem); font-weight: 900; letter-spacing: -.05em; line-height: .85; text-transform: uppercase; }
-.style-tile.s-minimal   { background: white; border: 1px solid var(--border); color: var(--fg); }
-.style-tile.s-minimal   .style-tile__txt { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 200; letter-spacing: .04em; text-transform: lowercase; }
-.style-tile.s-wedding   { background: linear-gradient(180deg, #fdf4ff 0%, #fce7f3 100%); color: #831843; }
-.style-tile.s-wedding   .style-tile__txt { font-family: Georgia, serif; font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 400; font-style: italic; letter-spacing: 0; }
-.style-tile.s-elegant   { background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%); color: #d4af37; }
-.style-tile.s-elegant   .style-tile__txt { font-family: Georgia, serif; font-size: clamp(2.4rem, 5.5vw, 3.6rem); font-weight: 400; letter-spacing: .02em; }
-.style-tile.s-corporate { background: #f5f5f7; color: var(--fg); border: 1px solid var(--border); }
-.style-tile.s-corporate .style-tile__txt { font-size: clamp(1.6rem, 3.5vw, 2.4rem); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
-.style-tile.s-lower     { background: #0a0a0a; color: white; align-items: flex-end; justify-content: flex-start; padding: 30px; text-align: left; }
-.style-tile.s-lower     .style-tile__inner { background: rgba(255,255,255,.06); backdrop-filter: blur(8px); border-left: 3px solid var(--accent); padding: 12px 18px; max-width: 80%; }
-.style-tile.s-lower     .style-tile__name { font-weight: 700; font-size: 18px; letter-spacing: -.02em; }
-.style-tile.s-lower     .style-tile__role { font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: rgba(255,255,255,.55); letter-spacing: .15em; text-transform: uppercase; margin-top: 4px; }
-
-/* ── USE CASES (testimonials/casos reais) ── */
-.usecases { background: var(--bg-elevated); }
-.usecases-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px; max-width: 1200px; margin: 0 auto; }
-.uc-card {
-  background: white; border: 1px solid var(--border); border-radius: 18px;
-  padding: 36px 32px;
-  display: flex; flex-direction: column; gap: 16px;
-  transition: transform .4s var(--ease-out), box-shadow .4s var(--ease-out), border-color .4s;
-  position: relative; overflow: hidden;
-}
-.uc-card:hover { transform: translateY(-6px); box-shadow: 0 24px 60px -22px rgba(37,99,235,.18); border-color: var(--accent); }
-.uc-card__type { font-family: 'JetBrains Mono', monospace; font-size: .68rem; letter-spacing: .2em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
-.uc-card__quote { font-size: 17px; font-weight: 500; color: var(--fg); line-height: 1.45; letter-spacing: -.01em; max-width: none; }
-.uc-card__quote::before { content: "“"; font-family: Georgia, serif; font-size: 3.2rem; color: var(--accent); opacity: .3; line-height: 0; position: absolute; top: 50px; left: 20px; }
-.uc-card__meta { display: flex; align-items: center; gap: 14px; margin-top: auto; padding-top: 18px; border-top: 1px solid var(--border); }
-.uc-card__avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-hot)); color: white; display: grid; place-items: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
-.uc-card__who { display: flex; flex-direction: column; gap: 2px; }
-.uc-card__name { font-weight: 600; font-size: 14px; color: var(--fg); }
-.uc-card__role { font-size: 12px; color: var(--fg-muted); }
-.uc-card__metric { background: var(--accent); color: white; padding: 6px 12px; border-radius: 100px; font-family: 'JetBrains Mono', monospace; font-size: .65rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; align-self: flex-start; }
-
-/* ── BANNER EDITORIAL gigante ── */
-.editorial-banner { padding: clamp(80px, 14vw, 140px) 0; background: var(--bg-dark); color: var(--fg-on-dark); text-align: center; position: relative; overflow: hidden; }
-.editorial-banner::before {
-  content: ""; position: absolute; inset: 0;
-  background:
-    radial-gradient(circle at 20% 30%, rgba(37,99,235,.18), transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba(147,197,253,.12), transparent 50%);
-  pointer-events: none;
-}
-.editorial-banner .container { position: relative; }
-.editorial-line {
-  font-size: clamp(3rem, 11vw, 9rem);
-  font-weight: 900;
-  letter-spacing: -.05em;
-  line-height: .9;
-  color: var(--fg-on-dark);
-  margin-bottom: 16px;
-}
-.editorial-line em { color: var(--accent); font-style: italic; font-weight: 400; font-family: Georgia, serif; }
-.editorial-banner__sub { font-family: 'JetBrains Mono', monospace; font-size: .72rem; letter-spacing: .3em; text-transform: uppercase; color: var(--fg-on-dark-muted); margin-top: 24px; }
-
 /* ── CONTENT-VISIBILITY (otimiza renderização de seções offscreen) ── */
-.problem, .custom, .styles, .cats, .usecases, .editorial-banner, .flux, .compare-table,
+.problem, .custom, .familia, .flux, .compare-table,
 .pricing, .manifesto, .faq, .cta-final {
   content-visibility: auto;
   contain-intrinsic-size: auto 900px;
@@ -513,11 +358,11 @@
     </a>
     <nav aria-label="Principal">
       <ul class="nav-links">
-        <li><a href="/titles/">Titles</a></li>
-        <li><a href="/legendas/" aria-current="page" style="color:var(--fg)"><strong>Legendas</strong></a></li>
+        <li><a href="/titles/" aria-current="page" style="color:var(--fg)"><strong>Titles</strong></a></li>
+        <li><a href="/legendas/">Legendas</a></li>
         <li><a href="#planos">Preços</a></li>
         <li><a href="#faq">FAQ</a></li>
-        <li><a href="/docs/legendas.html">Manual</a></li>
+        <li><a href="/docs/">Docs</a></li>
       </ul>
     </nav>
     <div class="nav-right">
@@ -537,39 +382,25 @@
   </div>
   <div class="hero-glow" id="heroGlow" aria-hidden="true"></div>
 
-  <div class="hero-preview-stack" aria-hidden="true">
-    <div class="prev-card p1" data-depth="0.35">
-      <span class="eyebrow">— Editorial</span>
-      <div class="ttl">Como cortar 14h<br>do seu mês</div>
-      <div class="meta">Lower Third · 01</div>
-    </div>
-    <div class="prev-card p2" data-depth="0.55">
-      <span class="eyebrow">— Glitch · v04</span>
-      <div class="ttl"><em>Breaking</em><br>News</div>
-      <div class="meta">FX · 0:02 → 0:04</div>
-    </div>
-    <div class="prev-card p3" data-depth="0.4">
-      <span class="eyebrow">— Huge</span>
-      <div class="ttl">EPISÓDIO<br>017</div>
-      <div class="meta">Title · 2.4s</div>
-    </div>
-    <div class="prev-card p4" data-depth="0.6">
-      <span class="eyebrow">— Wedding</span>
-      <div class="ttl">Ana &amp; Felipe</div>
-      <div class="meta">Save the Date</div>
-    </div>
+  <div class="hero-chips" aria-hidden="true">
+    <div class="hero-chip c1" data-depth="0.4"><span class="ico"></span>Lower Thirds</div>
+    <div class="hero-chip c2" data-depth="0.6"><span class="ico"></span>Transitions</div>
+    <div class="hero-chip c3" data-depth="0.3"><span class="ico"></span>Reels Pack</div>
+    <div class="hero-chip c4" data-depth="0.5"><span class="ico"></span>Monster FX</div>
+    <div class="hero-chip c5" data-depth="0.7"><span class="ico"></span>SFX Visual</div>
+    <div class="hero-chip c6" data-depth="0.35"><span class="ico"></span>Títulos Ultimate</div>
   </div>
 
   <div class="container hero-inner">
-    <span class="hero-badge"><span class="dot"></span>MOTION SUITE · PLUGIN 02 · 549 títulos legendados</span>
+    <span class="hero-badge"><span class="dot"></span>MOTION SUITE · PLUGIN 01 · 7.906 templates</span>
     <h1 class="hero-title" id="heroTitle">
-      <span class="line">Cada legenda manual</span>
-      <span class="line">são 30s. Você <span class="italic-em" data-scramble="tem 40 takes">tem 40 takes.</span></span>
+      <span class="line">Procurar template</span>
+      <span class="line">não é <span class="italic-em" data-scramble="editar">editar.</span></span>
     </h1>
     <p class="hero-sub">
-      549 títulos profissionais. 10 estilos. 1 clique pra timeline.
-      Edite fonte, cor e animação no Essential Graphics — sem Title Tool, sem After Effects, sem render.
-      A entrevista que levava 20min de formatação, agora leva 2.
+      7.906 motion graphics premium dentro do Premiere.
+      1 clique pra importar. Edite fonte, cor, posição e timing direto na timeline.
+      Sem pasta. Sem render. Sem desculpa.
     </p>
     <div class="hero-ctas">
       <a href="#planos" class="btn btn-primary btn-magnetic"><span>Começar agora <span class="arrow">→</span></span></a>
@@ -584,14 +415,14 @@
 
     <div class="hero-marquee" aria-hidden="true">
       <div class="hero-marquee-track">
-        <span>Simple</span><span>Fashion</span><span>Urban</span>
-        <span>Glitch</span><span>Huge</span><span>Minimal</span>
-        <span>Wedding</span><span>Elegant</span><span>Corporate</span>
-        <span>Lower Thirds</span><span>Entrevistas</span><span>Créditos</span>
-        <span>Simple</span><span>Fashion</span><span>Urban</span>
-        <span>Glitch</span><span>Huge</span><span>Minimal</span>
-        <span>Wedding</span><span>Elegant</span><span>Corporate</span>
-        <span>Lower Thirds</span><span>Entrevistas</span><span>Créditos</span>
+        <span>Lower Thirds</span><span>Transitions</span><span>Títulos Ultimate</span>
+        <span>Reels Pack</span><span>Instagram Stories</span><span>Monster FX</span>
+        <span>SFX Visual</span><span>Glitch</span><span>Typography</span>
+        <span>Logo Reveal</span><span>Call-to-Action</span><span>Cinematic Titles</span>
+        <span>Lower Thirds</span><span>Transitions</span><span>Títulos Ultimate</span>
+        <span>Reels Pack</span><span>Instagram Stories</span><span>Monster FX</span>
+        <span>SFX Visual</span><span>Glitch</span><span>Typography</span>
+        <span>Logo Reveal</span><span>Call-to-Action</span><span>Cinematic Titles</span>
       </div>
     </div>
   </div>
@@ -605,10 +436,10 @@
 <section class="stats" id="stats">
   <div class="container">
     <div class="stats-grid">
-      <div class="stat-item reveal"><div class="num" data-counter="549" data-format="thousand">0</div><div class="label">Títulos na timeline</div></div>
-      <div class="stat-item reveal"><div class="num" data-counter="10">0</div><div class="label">Categorias premium</div></div>
+      <div class="stat-item reveal"><div class="num" data-counter="7906" data-format="thousand">0</div><div class="label">Templates na timeline</div></div>
       <div class="stat-item reveal"><div class="num" data-counter="1">0</div><div class="label">Clique pra importar</div></div>
       <div class="stat-item reveal"><div class="num" data-counter="100" data-suffix="%">0%</div><div class="label">Editáveis na hora</div></div>
+      <div class="stat-item reveal"><div class="num" data-counter="0">0</div><div class="label">Pastas pra organizar</div></div>
     </div>
   </div>
 </section>
@@ -619,25 +450,21 @@
     <div class="sec-head reveal">
       <span class="tag-mono"><span class="dot"></span>— A VERDADE INCÔMODA</span>
       <h2 class="section-title">
-        Você não é lento.<br>
-        Sua ferramenta é <span class="italic-em">de 2008.</span>
+        Você não é editor lento.<br>
+        Você só tá usando o <span class="italic-em">método errado.</span>
       </h2>
     </div>
     <div class="problem-grid">
       <div class="problem-left reveal">
         <p>
-          A Adobe parou de evoluir o Title Tool em 2017 — substituiu por Essential Graphics. Mas o painel padrão te dá retângulo branco com cursor piscando. Toda animação, toda paleta, toda micro-decisão de tipografia: você refaz à mão. Pra cada take. Pra cada cliente. Todo mês.
-        </p>
-        <p style="margin-top:18px">
-          Não é problema seu. É o ferramentário que ficou para trás.
+          8 pastas no HD. Pacotes de 2019 que você nem lembra que baixou. Preview que só funciona depois de importar. Render só pra ver se o lower third combina com a paleta.
         </p>
       </div>
       <div class="problem-right reveal">
-        <div class="problem-num"><div class="big">30s <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por título</span></div><div class="small">só pra estilizar</div></div>
-        <div class="problem-num"><div class="big">20min <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por entrevista</span></div><div class="small">com 40 takes</div></div>
-        <div class="problem-num"><div class="big">2h <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por semana</span></div><div class="small">formatando texto</div></div>
-        <div class="problem-num"><div class="big">8h <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por mês</span></div><div class="small">= 1 dia útil inteiro</div></div>
-        <div class="problem-close">Um dia por mês fazendo o trabalho que o After Effects já faria em 2 cliques se você tivesse o template certo.</div>
+        <div class="problem-num"><div class="big">3h <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por dia</span></div><div class="small">procurando arquivo</div></div>
+        <div class="problem-num"><div class="big">15h <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por semana</span></div><div class="small">somando os dias úteis</div></div>
+        <div class="problem-num"><div class="big">60h <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por mês</span></div><div class="small">um trabalho inteiro</div></div>
+        <div class="problem-close">É um emprego inteiro de procurar template dentro do seu emprego de editar.</div>
       </div>
     </div>
     <div class="problem-cta reveal">Acabou.</div>
@@ -654,24 +481,24 @@
     <div class="platform-grid">
       <article class="feat-card reveal">
         <div class="feat-num"><span>01</span><span>CATÁLOGO</span></div>
-        <h3 class="card-title">549 títulos organizados em 10 estilos.</h3>
-        <p class="desc">Simple, Fashion, Urban, Glitch, Huge, Minimal, Wedding, Elegant, Corporate e Lower Thirds. Cada estilo com variações suficientes pra qualquer contexto de produção.</p>
+        <h3 class="card-title">7.906 templates organizados como editor pensa.</h3>
+        <p class="desc">Categoria. Estilo. Duração. Mood. Filtros que fazem sentido pra quem edita — não pra quem cataloga.</p>
         <ul class="feat-list">
-          <li>Títulos pra abertura e identificação</li>
-          <li>100 lower thirds pra entrevistas</li>
-          <li>Estilos editorial, corporativo, casamento</li>
-          <li>Glitch e huge pra reels e social</li>
+          <li>Tipografias e Lower Thirds</li>
+          <li>Transições e elementos de UI</li>
+          <li>Pacotes Instagram e Reels</li>
+          <li>Monster FX · Títulos Ultimate · SFX visual</li>
         </ul>
       </article>
       <article class="feat-card reveal">
         <div class="feat-num"><span>02</span><span>PLUGIN</span></div>
         <h3 class="card-title">Painel CEP nativo. Mora dentro do Premiere.</h3>
-        <p class="desc">Janela → Extensões → Motion Legendas. Não trava. Não pesa. Não te tira do flow.</p>
+        <p class="desc">Janela → Extensões → Motion Titles. Não trava. Não pesa. Não te tira do flow.</p>
         <ul class="feat-list">
-          <li>Duplo-clique = template no CTI</li>
-          <li>Busca por nome, categoria, estilo</li>
-          <li>Favoritos por projeto</li>
-          <li>Funciona offline por 7 dias</li>
+          <li>Importação em 1 clique direto no CTI</li>
+          <li>Busca global instantânea</li>
+          <li>Preview ao hover — sem importar</li>
+          <li>Atualizações silenciosas em background</li>
         </ul>
       </article>
       <article class="feat-card reveal">
@@ -681,7 +508,7 @@
         <ul class="feat-list">
           <li>Auditoria completa em tempo real</li>
           <li>Troca de dispositivo instantânea</li>
-          <li>Suporte em português, mesma cidade</li>
+          <li>Funciona em viagem, avião, no break do café</li>
         </ul>
       </article>
     </div>
@@ -695,95 +522,19 @@
       <span class="tag-mono"><span class="dot"></span>— CONTROLE TOTAL</span>
       <h2 class="section-title">Template não é prisão.<br>É <span class="italic-em">ponto de partida.</span></h2>
       <p class="lede">
-        Esquece "baixei um título renderizado e tô preso ao que o cara fez". Todo título do Motion Legendas é composição viva — você muda fonte, cor, posição, timing.
+        Esquece "baixei um MP4 renderizado e tô preso ao que o cara fez". Todo template do Motion Titles é composição viva no Premiere.
       </p>
     </div>
     <div class="editorial-table">
       <div class="editorial-row reveal"><div class="ed-label">Fonte</div><div class="ed-desc">Troque pela fonte do cliente em 2 cliques. Importação direta de TTF, OTF e variable fonts.</div></div>
-      <div class="editorial-row reveal"><div class="ed-label">Cor</div><div class="ed-desc">Paleta da marca, gradientes, sombras. Cada layer ajustável por slider de Essential Graphics.</div></div>
-      <div class="editorial-row reveal"><div class="ed-label">Posição</div><div class="ed-desc">Mova, rotacione, escale — keyframes inclusos. Anchor point editável direto na timeline.</div></div>
-      <div class="editorial-row reveal"><div class="ed-label">Timing</div><div class="ed-desc">Acelere, desacelere, recorte — tudo no CTI. Entrada e saída acessíveis por handle.</div></div>
-      <div class="editorial-row reveal"><div class="ed-label">Duração</div><div class="ed-desc">Estique sem deformar a animação. Time Remap embutido e dinâmico.</div></div>
+      <div class="editorial-row reveal"><div class="ed-label">Cor</div><div class="ed-desc">Paleta da marca, gradientes, controles de exposição. Cada layer, ajustável por slider.</div></div>
+      <div class="editorial-row reveal"><div class="ed-label">Posição</div><div class="ed-desc">Mova, rotacione, escale — keyframes inclusos. Anchor points editáveis.</div></div>
+      <div class="editorial-row reveal"><div class="ed-label">Timing</div><div class="ed-desc">Acelere, desacelere, recorte — tudo no CTI. Time Remap acessível por handle.</div></div>
+      <div class="editorial-row reveal"><div class="ed-label">Áudio</div><div class="ed-desc">SFX embutido, mutável, substituível. Trilhas separadas por trigger.</div></div>
     </div>
     <div class="custom-close reveal">
-      <p>Você não compra título engessado.<span class="accent">Você compra base profissional pra customizar em segundos.</span></p>
+      <p>Você não compra template.<span class="accent">Você compra base profissional pra customizar em segundos.</span></p>
     </div>
-  </div>
-</section>
-
-<!-- ════════════════════════ STYLES SHOWCASE ════════════════════════ -->
-<section class="styles">
-  <div class="container">
-    <div class="sec-head reveal" style="text-align:center;margin-left:auto;margin-right:auto;">
-      <span class="tag-mono"><span class="dot"></span>— CATÁLOGO COMPLETO</span>
-      <h2 class="section-title">10 estilos.<br>549 <span class="italic-em">títulos.</span></h2>
-      <p class="lede" style="margin:24px auto 0">Cada estilo tem personalidade própria. Editorial, urbano, minimalista, casamento. Você escolhe pelo mood, não pelo nome de pasta.</p>
-    </div>
-    <div class="styles-grid">
-      <div class="style-tile s-simple reveal">
-        <span class="style-tile__label">— Simple</span>
-        <div class="style-tile__txt">Editorial</div>
-        <span class="style-tile__count">50 títulos</span>
-      </div>
-      <div class="style-tile s-fashion reveal">
-        <span class="style-tile__label">— Fashion</span>
-        <div class="style-tile__txt"><em>Vogue</em></div>
-        <span class="style-tile__count">24 títulos</span>
-      </div>
-      <div class="style-tile s-urban reveal">
-        <span class="style-tile__label">— Urban</span>
-        <div class="style-tile__txt">STREET</div>
-        <span class="style-tile__count">15 títulos</span>
-      </div>
-      <div class="style-tile s-glitch reveal">
-        <span class="style-tile__label">— Glitch</span>
-        <div class="style-tile__txt" data-txt="ERROR.404">ERROR.404</div>
-        <span class="style-tile__count">30 títulos</span>
-      </div>
-      <div class="style-tile s-huge reveal">
-        <span class="style-tile__label">— Huge</span>
-        <div class="style-tile__txt">ANO<br>NOVO</div>
-        <span class="style-tile__count">80 títulos</span>
-      </div>
-      <div class="style-tile s-minimal reveal">
-        <span class="style-tile__label">— Minimal</span>
-        <div class="style-tile__txt">whitespace</div>
-        <span class="style-tile__count">60 títulos</span>
-      </div>
-      <div class="style-tile s-wedding reveal">
-        <span class="style-tile__label">— Wedding</span>
-        <div class="style-tile__txt">Ana &amp; Felipe</div>
-        <span class="style-tile__count">70 títulos</span>
-      </div>
-      <div class="style-tile s-elegant reveal">
-        <span class="style-tile__label">— Elegant</span>
-        <div class="style-tile__txt">Coleção</div>
-        <span class="style-tile__count">70 títulos</span>
-      </div>
-      <div class="style-tile s-corporate reveal">
-        <span class="style-tile__label">— Corporate</span>
-        <div class="style-tile__txt">Q4 · 2026</div>
-        <span class="style-tile__count">50 títulos</span>
-      </div>
-      <div class="style-tile s-lower reveal">
-        <span class="style-tile__label" style="color:rgba(255,255,255,.55)">— Lower Thirds</span>
-        <div class="style-tile__inner">
-          <div class="style-tile__name">Mariana Costa</div>
-          <div class="style-tile__role">Diretora · ProdutorA</div>
-        </div>
-        <span class="style-tile__count" style="color:rgba(255,255,255,.55)">100 layouts</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════ EDITORIAL BANNER ════════════════════════ -->
-<section class="editorial-banner">
-  <div class="container">
-    <div class="editorial-line reveal">549 títulos.</div>
-    <div class="editorial-line reveal">11 segundos por título.</div>
-    <div class="editorial-line reveal"><em>0 desculpa.</em></div>
-    <p class="editorial-banner__sub reveal">— Da timeline pra entrega · sem render · sem retrabalho</p>
   </div>
 </section>
 
@@ -803,26 +554,26 @@
         <div style="position:absolute;top:16px;right:16px;background:rgba(37, 99, 235,.12);color:#2563eb;padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1.2px">CARRO-CHEFE</div>
         <div style="font-size:36px;margin-bottom:16px">🎬</div>
         <h3 style="font-size:22px;font-weight:800;letter-spacing:-.4px;margin-bottom:8px">Motion Titles</h3>
-        <p style="color:rgba(255,255,255,.55);font-size:14px;line-height:1.5;margin-bottom:20px">7.906 motion graphics premium importáveis em 1 clique. Títulos, transições, lower thirds, reels e mais.</p>
+        <p style="color:rgba(255,255,255,.55);font-size:14px;line-height:1.5;margin-bottom:20px">7.906 motion graphics premium importáveis em 1 clique. Títulos, transições, lower thirds, etc.</p>
         <div style="font-size:12px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.5px">Premiere Pro · Plugin CEP nativo</div>
         <div style="margin-top:24px;display:flex;justify-content:space-between;align-items:center">
           <span style="color:#2563eb;font-weight:700;font-size:13px">Ver plugin →</span>
-          <span style="color:rgba(255,255,255,.3);font-size:12px">R$ 199/ano</span>
+          <span style="color:rgba(255,255,255,.3);font-size:12px">R$ 49/mês</span>
         </div>
       </a>
 
-      <!-- Motion Legendas (atual) -->
-      <div class="familia-card reveal" style="display:block;background:#0e0e0e;border:1px solid rgba(124,77,255,.4);border-radius:16px;padding:32px;position:relative;overflow:hidden">
-        <div style="position:absolute;top:16px;right:16px;background:rgba(124,77,255,.18);color:#a78bfa;padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1.2px">VOCÊ ESTÁ AQUI</div>
+      <!-- Motion Legendas -->
+      <a href="/legendas/" class="familia-card reveal" style="display:block;text-decoration:none;color:inherit;background:#0e0e0e;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:32px;transition:all .25s;position:relative;overflow:hidden">
+        <div style="position:absolute;top:16px;right:16px;background:rgba(124,77,255,.15);color:#a78bfa;padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1.2px">NOVO</div>
         <div style="font-size:36px;margin-bottom:16px">💬</div>
         <h3 style="font-size:22px;font-weight:800;letter-spacing:-.4px;margin-bottom:8px">Motion Legendas</h3>
-        <p style="color:rgba(255,255,255,.55);font-size:14px;line-height:1.5;margin-bottom:20px">549 títulos e lower thirds editáveis na timeline. 10 categorias pra qualquer contexto.</p>
-        <div style="font-size:12px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.5px">Premiere Pro · Plugin CEP nativo</div>
+        <p style="color:rgba(255,255,255,.55);font-size:14px;line-height:1.5;margin-bottom:20px">Importa SRT/Captions e aplica em massa com templates animados. Modo 1-palavra estilo viral.</p>
+        <div style="font-size:12px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.5px">61 templates · SFX integrado · Inject mode</div>
         <div style="margin-top:24px;display:flex;justify-content:space-between;align-items:center">
-          <a href="#planos" style="color:#a78bfa;font-weight:700;font-size:13px;text-decoration:none">Ver planos ↓</a>
+          <span style="color:#a78bfa;font-weight:700;font-size:13px">Ver plugin →</span>
           <span style="color:rgba(255,255,255,.3);font-size:12px">R$ 149/ano</span>
         </div>
-      </div>
+      </a>
 
       <!-- Em breve: IA -->
       <div class="familia-card reveal" style="display:block;background:#0a0a0a;border:1px dashed rgba(255,255,255,.1);border-radius:16px;padding:32px;position:relative;overflow:hidden;opacity:.6">
@@ -839,7 +590,7 @@
     </div>
 
     <div style="text-align:center;margin-top:40px">
-      <p style="color:rgba(255,255,255,.45);font-size:14px">Plano <strong style="color:#fff">Bundle Completo</strong> dá acesso a Titles + Legendas por R$ 299/ano. Veja em <a href="#planos" style="color:#2563eb">planos</a>.</p>
+      <p style="color:rgba(255,255,255,.45);font-size:14px">Plano <strong style="color:#fff">Bundle Completo</strong> dá acesso a todos os plugins. Veja em <a href="#planos" style="color:#2563eb">planos</a>.</p>
     </div>
   </div>
 </section>
@@ -861,14 +612,14 @@
     </div>
     <div class="flux-grid">
       <div class="flux-line" id="fluxLine"></div>
-      <div class="flux-step reveal"><div class="num">01</div><h4>Instale</h4><p>30 segundos. Setup automático. Zero pasta pra mover, zero conflito de versão.</p></div>
-      <div class="flux-step reveal"><div class="num">02</div><h4>Entre</h4><p>Login. Catálogo carrega sozinho. Organizado por categoria, pronto pra busca.</p></div>
-      <div class="flux-step reveal"><div class="num">03</div><h4>Busque</h4><p>Por nome, estilo, contexto. Preview no hover. Sem importar pra ver.</p></div>
-      <div class="flux-step reveal"><div class="num">04</div><h4>Aplique</h4><p>Duplo-clique manda pro CTI da timeline ativa. Edite texto, fonte, cor. Exporte.</p></div>
+      <div class="flux-step reveal"><div class="num">01</div><h4>Instale</h4><p>30 segundos. Setup automático. Zero pasta pra mover.</p></div>
+      <div class="flux-step reveal"><div class="num">02</div><h4>Entre</h4><p>Login. Catálogo carrega sozinho. Já organizado por pack e categoria.</p></div>
+      <div class="flux-step reveal"><div class="num">03</div><h4>Busque</h4><p>Nome, categoria, estilo, duração. Preview no hover. Sem abrir arquivo.</p></div>
+      <div class="flux-step reveal"><div class="num">04</div><h4>Aplique</h4><p>Clique único. Vai pra timeline ativa no CTI. Edite. Exporte. Entrega.</p></div>
     </div>
     <div class="flux-close reveal">
-      <div class="head">Da intenção à legenda renderizável: <span class="accent">11 segundos.</span></div>
-      <div class="sub">O tempo que você levava pra digitar uma linha no Title Tool.</div>
+      <div class="head">Da intenção à timeline: <span class="accent">11 segundos.</span></div>
+      <div class="sub">O tempo que você levava pra abrir uma pasta.</div>
     </div>
   </div>
 </section>
@@ -878,85 +629,19 @@
   <div class="container">
     <div class="sec-head reveal">
       <span class="tag-mono"><span class="dot"></span>— O QUE MUDA</span>
-      <h2 class="section-title">Antes do Motion Legendas.<br>Depois do <span class="italic-em">Motion Legendas.</span></h2>
+      <h2 class="section-title">Antes do Motion Titles.<br>Depois do <span class="italic-em">Motion Titles.</span></h2>
     </div>
     <div class="compare-table">
-      <div class="compare-head"><div>Tarefa</div><div>Hoje</div><div class="h-pro">Motion Legendas</div></div>
-      <div class="compare-row reveal"><div class="task">Achar lower third pra entrevista</div><div class="before">Vasculhar 4 packs</div><div class="after">Busca por categoria</div></div>
-      <div class="compare-row reveal"><div class="task">Estilizar título de abertura</div><div class="before">30s no Title Tool</div><div class="after">2 cliques + texto</div></div>
-      <div class="compare-row reveal"><div class="task">Trocar fonte da marca</div><div class="before">Refazer no AE</div><div class="after">Slider de Essential</div></div>
-      <div class="compare-row reveal"><div class="task">Trocar cor brand</div><div class="before">Title Tool não suporta</div><div class="after">Slider direto</div></div>
-      <div class="compare-row reveal"><div class="task">Animar entrada/saída</div><div class="before">Keyframes manuais</div><div class="after">Já vem animado</div></div>
-      <div class="compare-row reveal"><div class="task">Aplicar em 40 takes</div><div class="before">30min repetindo</div><div class="after">Duplo-clique + ajuste</div></div>
-      <div class="compare-row reveal"><div class="task">Encontrar estilo certo</div><div class="before">Memória + sorte</div><div class="after">Preview no hover</div></div>
+      <div class="compare-head"><div>Tarefa</div><div>Hoje</div><div class="h-pro">Motion Titles</div></div>
+      <div class="compare-row reveal"><div class="task">Achar lower third</div><div class="before">4–8 minutos</div><div class="after">11 segundos</div></div>
+      <div class="compare-row reveal"><div class="task">Preview do template</div><div class="before">Importar + render</div><div class="after">Hover do mouse</div></div>
+      <div class="compare-row reveal"><div class="task">Trocar fonte</div><div class="before">Renderizar de novo</div><div class="after">2 cliques</div></div>
+      <div class="compare-row reveal"><div class="task">Trocar cor da marca</div><div class="before">Refazer no After Effects</div><div class="after">Slider no Premiere</div></div>
+      <div class="compare-row reveal"><div class="task">Organizar 8 packs</div><div class="before">Pasta + pasta + pasta…</div><div class="after">Não existe</div></div>
+      <div class="compare-row reveal"><div class="task">Backup do catálogo</div><div class="before">HD + nuvem + reza</div><div class="after">Não é problema seu</div></div>
+      <div class="compare-row reveal"><div class="task">Encontrar template certo</div><div class="before">Memória + sorte</div><div class="after">Busca instantânea</div></div>
     </div>
     <div class="compare-close reveal"><p>Não é uma evolução. <span class="accent">É outra categoria.</span></p></div>
-  </div>
-</section>
-
-<!-- ════════════════════════ USE CASES ════════════════════════ -->
-<section class="usecases">
-  <div class="container">
-    <div class="sec-head reveal" style="text-align:center;margin-left:auto;margin-right:auto;">
-      <span class="tag-mono"><span class="dot"></span>— QUEM USA · POR QUE USA</span>
-      <h2 class="section-title">Quatro editores.<br>Quatro <span class="italic-em">contextos.</span></h2>
-      <p class="lede" style="margin:24px auto 0">Não é tabela de feature. É como o plugin entra na rotina real de quem entrega vídeo todo dia.</p>
-    </div>
-    <div class="usecases-grid">
-
-      <article class="uc-card reveal">
-        <span class="uc-card__type">YouTube · 2 vídeos/sem</span>
-        <span class="uc-card__metric">14h/mês economizadas</span>
-        <p class="uc-card__quote">Cada entrevista de 1h são 40 takes. Antes do Motion Legendas era 30 minutos só formatando título de cada take. Agora? Duplo-clique, escolho fonte, troca de cor e tô na próxima.</p>
-        <div class="uc-card__meta">
-          <div class="uc-card__avatar">RM</div>
-          <div class="uc-card__who">
-            <div class="uc-card__name">Rafael Moreira</div>
-            <div class="uc-card__role">Editor · Canal de entrevistas</div>
-          </div>
-        </div>
-      </article>
-
-      <article class="uc-card reveal">
-        <span class="uc-card__type">Casamentos · 30 eventos/ano</span>
-        <span class="uc-card__metric">3 dias úteis/casamento</span>
-        <p class="uc-card__quote">A categoria Wedding sozinha já justifica. 70 layouts elegantes que substituem aquele template MP4 do AE que todo videomaker usa. Cliente percebe a diferença.</p>
-        <div class="uc-card__meta">
-          <div class="uc-card__avatar">CN</div>
-          <div class="uc-card__who">
-            <div class="uc-card__name">Camila Nunes</div>
-            <div class="uc-card__role">Wedding videomaker · Belo Horizonte</div>
-          </div>
-        </div>
-      </article>
-
-      <article class="uc-card reveal">
-        <span class="uc-card__type">Social ads · 8 campanhas/mês</span>
-        <span class="uc-card__metric">3× o output mensal</span>
-        <p class="uc-card__quote">Glitch e Huge são minhas fontes diárias pra reels e anúncio. Antes eu fazia 1 versão por campanha. Hoje testo 3 estilos diferentes em 10 minutos.</p>
-        <div class="uc-card__meta">
-          <div class="uc-card__avatar">LF</div>
-          <div class="uc-card__who">
-            <div class="uc-card__name">Lucas Ferreira</div>
-            <div class="uc-card__role">Social media · Agência boutique</div>
-          </div>
-        </div>
-      </article>
-
-      <article class="uc-card reveal">
-        <span class="uc-card__type">Documentário · 6 séries/ano</span>
-        <span class="uc-card__metric">+R$ 4.200/mês de margem</span>
-        <p class="uc-card__quote">Lower Thirds é a melhor categoria. 100 layouts variados, cada identificação de personagem sai em 8 segundos. Cobro o mesmo do cliente e entrego em metade do tempo.</p>
-        <div class="uc-card__meta">
-          <div class="uc-card__avatar">AS</div>
-          <div class="uc-card__who">
-            <div class="uc-card__name">André Silveira</div>
-            <div class="uc-card__role">Documentarista · Produtora independente</div>
-          </div>
-        </div>
-      </article>
-
-    </div>
   </div>
 </section>
 
@@ -966,34 +651,34 @@
     <div class="sec-head reveal">
       <span class="tag-mono"><span class="dot"></span>— INVESTIMENTO</span>
       <h2 class="section-title">Dois planos.<br>Zero <span class="italic-em">pegadinha.</span></h2>
-      <p class="lede" style="margin-top:20px">Leva só as Legendas. Ou leva a Suite inteira por mais R$ 10/mês.</p>
+      <p class="lede" style="margin-top:20px">Leva só o Titles. Ou leva a Suite inteira por mais R$ 10/mês.</p>
     </div>
     <div class="price-grid">
       <article class="price-card reveal">
-        <div class="price-tag">01 · Só Legendas</div>
-        <h3>Motion Legendas</h3>
+        <div class="price-tag">01 · Só Titles</div>
+        <h3>Motion Titles</h3>
         <div class="price-amount"><span class="num">R$ 49,90</span><span class="suf">/mês</span></div>
         <p class="price-micro">ou R$ 249,00/ano · 2 meses grátis</p>
         <ul class="price-features">
-          <li>549 títulos legendados em 10 estilos</li>
-          <li>Transcrição automática em PT-BR</li>
-          <li>Sound effects inclusos</li>
+          <li>7.906 templates premium</li>
           <li>2 dispositivos simultâneos</li>
           <li>Atualizações inclusas</li>
+          <li>Suporte por e-mail</li>
+          <li>Cancele quando quiser</li>
         </ul>
-        <button class="btn btn-dark btn-full" data-buy-suite="legendas_monthly">Assinar Legendas · R$ 49,90/mês <span class="arrow">→</span></button>
+        <button class="btn btn-dark btn-full" data-buy-suite="titles_monthly">Assinar Titles · R$ 49,90/mês <span class="arrow">→</span></button>
         <div class="price-foot">7 dias trial · cancele em 1 clique</div>
       </article>
       <article class="price-card popular reveal">
         <span class="price-badge">Mais escolhido</span>
         <div class="price-tag">02 · A Suite</div>
-        <h3>Motion Suite (Legendas + Titles)</h3>
+        <h3>Motion Suite (Titles + Legendas)</h3>
         <div class="price-amount"><span class="num">R$ 59,90</span><span class="suf">/mês</span></div>
         <p class="price-micro">ou R$ 399,90/ano · o segundo plugin sai por R$ 10/mês</p>
         <ul class="price-features">
-          <li>549 títulos legendados <strong>+</strong> 7.906 motion graphics</li>
-          <li>Transcrição automática + SFX inclusos</li>
-          <li>Lower thirds, transições, reels, glitch e mais</li>
+          <li>7.906 templates <strong>+</strong> 549 títulos legendados</li>
+          <li>Legenda automática com motion + SFX inclusos</li>
+          <li>10 estilos de motion (word-by-word, karaokê)</li>
           <li>2 dispositivos simultâneos</li>
           <li>Suporte prioritário</li>
         </ul>
@@ -1001,7 +686,6 @@
         <div class="price-foot">7 dias trial · cancele em 1 clique</div>
       </article>
     </div>
-
     <div class="pricing-callout reveal" style="text-align:center">
       <p>
         <strong>Faz a conta:</strong>
@@ -1016,7 +700,7 @@
   <div class="container">
     <div class="manifesto-inner reveal">
       <p class="manifesto-quote">
-        Construí o Motion Legendas porque ninguém devia ficar até 2h da manhã digitando texto no Title Tool. O plugin entrega 549 títulos prontos pra customizar — e devolve a noite pra quem precisa dela.
+        Construí o Motion Titles porque editor não devia perder hora procurando arquivo. Devia perder hora editando. O plugin une o que tava espalhado em 8 pastas e devolve o tempo pra edição de verdade — a parte que paga a conta.
       </p>
       <div class="manifesto-sig">
         <span class="name">Gabriel Kendy</span>
@@ -1034,15 +718,14 @@
       <h2 class="section-title">Dúvidas comuns.</h2>
     </div>
     <div class="faq-list">
-      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Funciona em qual versão do Premiere?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Premiere Pro CC 2019 em diante (Windows e Mac). Plugin é CEP nativo, instalação automática via instalador.</p></div></div>
-      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Importa SRT ou só aplica títulos manuais?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Aplicação manual via CTI da timeline (1 clique por título). Importação SRT em massa está no roadmap pra v1.5.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Funciona no Premiere e no After Effects?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Hoje, exclusivamente Premiere Pro (2022 em diante). After Effects tá no roadmap pra 2026.</p></div></div>
       <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Posso usar em projetos comerciais?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Sim. Licença comercial inclusa nos 2 planos. Vídeo de cliente, YouTube monetizado, social ads, evento pago — tudo liberado.</p></div></div>
       <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Quantas máquinas posso ativar?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Anual: 2 simultâneas. Vitalício: 3 simultâneas. Troca de máquina em 1 clique no dashboard.</p></div></div>
-      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">E se eu cancelar a assinatura?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Mantém acesso até o fim do período pago. Sem multa. Sem ligação de retenção. Sem chantagem.</p></div></div>
-      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Como funciona o reembolso?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>14 dias a partir da compra. Não gostou, pede no suporte, devolve 100%. Sem formulário de 12 campos.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">E se eu cancelar a assinatura?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Mantém acesso até o fim do período pago. Sem multa. Sem ligação de retenção. Sem chantagem emocional.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Como funciona o reembolso?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>14 dias a partir da compra. Não gostou, pede no suporte, devolve 100%. Sem pergunta, sem formulário de 12 campos.</p></div></div>
       <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Aceita Pix?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Aceita. Pix, cartão, boleto via Stripe Checkout. Vitalício no Pix sai com desconto adicional.</p></div></div>
-      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Funciona offline?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Sim. Depois de baixar os templates, funciona 7 dias offline antes de pedir reauth. Pra trabalhar em viagem ou em locação sem internet.</p></div></div>
-      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Vale comprar Titles + Legendas juntos?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Sim — pelo Bundle Anual de R$ 299, você paga R$ 49 a menos que comprando separado. 8.455 templates totais, mesma conta, mesma licença.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">O plugin precisa de internet?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Pra baixar template novo, sim. Pra usar o que já baixou, não. Funciona offline por 7 dias antes de pedir reauth.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Atualizam o catálogo?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Sim. Releases mensais com 50 a 200 templates novos. Vitalício recebe tudo, pra sempre.</p></div></div>
     </div>
   </div>
 </section>
@@ -1053,24 +736,24 @@
     <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap:80px; align-items:center; max-width:1100px; margin:0 auto;">
       <div class="reveal">
         <span class="tag-mono"><span class="dot"></span>— A OUTRA METADE DA SUITE</span>
-        <h2 class="section-title" style="margin-top:20px">A legenda tá resolvida.<br>E o <span class="italic-em">título?</span></h2>
+        <h2 class="section-title" style="margin-top:20px">O título tá resolvido.<br>E a <span class="italic-em">legenda?</span></h2>
         <p style="margin-top:24px; font-size:clamp(1.05rem,1.4vw,1.2rem); color:var(--fg); line-height:1.55; max-width:none;">
-          O Motion Legendas cuida das suas legendas. Mas todo vídeo abre com um título — e animar na mão queima os mesmos minutos que você acabou de economizar. O <strong>Motion Titles</strong> é a outra metade: 7.906 títulos prontos pra arrastar, aplicados em 1 clique.
+          O Motion Titles cuida dos seus títulos. Mas todo vídeo que você entrega ainda precisa de legenda — e sincronizar na mão queima os mesmos 30 minutos que você acabou de economizar. O <strong>Motion Legendas</strong> é a outra metade: transcreve, anima e entrega em 11 segundos.
         </p>
         <div style="margin-top:36px;">
-          <a href="/titles/" class="btn btn-secondary btn-lg btn-magnetic"><span>Conhecer o Motion Titles <span class="arrow">→</span></span></a>
+          <a href="/legendas/" class="btn btn-secondary btn-lg btn-magnetic"><span>Conhecer o Motion Legendas <span class="arrow">→</span></span></a>
         </div>
       </div>
       <div class="reveal" style="background:white; border:1px solid var(--border); border-radius:20px; padding:36px; box-shadow:0 20px 60px -20px rgba(37,99,235,.12);">
-        <div style="font-family:'JetBrains Mono',monospace; font-size:.7rem; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); margin-bottom:14px;">PLUGIN 01</div>
-        <h3 style="font-size:clamp(1.4rem,1.9vw,1.8rem); font-weight:800; letter-spacing:-.02em; margin-bottom:14px;">Motion Titles</h3>
-        <p style="margin-bottom:24px; color:var(--fg-muted); font-size:15px;">7.906 títulos animados prontos. Painel CEP nativo, fonte/cor/posição editáveis, aplica em 1 clique.</p>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:.7rem; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); margin-bottom:14px;">PLUGIN 02</div>
+        <h3 style="font-size:clamp(1.4rem,1.9vw,1.8rem); font-weight:800; letter-spacing:-.02em; margin-bottom:14px;">Motion Legendas</h3>
+        <p style="margin-bottom:24px; color:var(--fg-muted); font-size:15px;">Legenda automática com motion. 549 títulos legendados, 10 estilos, sound effects inclusos.</p>
         <ul style="list-style:none; display:flex; flex-direction:column; gap:10px; margin-bottom:24px;">
-          <li style="font-size:14px; color:var(--fg);"><span style="color:var(--accent);">→</span> Lower thirds, transições, reels pack</li>
-          <li style="font-size:14px; color:var(--fg);"><span style="color:var(--accent);">→</span> Monster FX, Glitch, Cinematic titles</li>
-          <li style="font-size:14px; color:var(--fg);"><span style="color:var(--accent);">→</span> 100% editável na timeline</li>
+          <li style="font-size:14px; color:var(--fg);"><span style="color:var(--accent);">→</span> Transcrição automática em 1 clique</li>
+          <li style="font-size:14px; color:var(--fg);"><span style="color:var(--accent);">→</span> 10 estilos de motion (word-by-word, karaokê)</li>
+          <li style="font-size:14px; color:var(--fg);"><span style="color:var(--accent);">→</span> Sound effects já embutidos</li>
         </ul>
-        <a href="/titles/" class="btn btn-primary btn-full"><span>Ver o plugin <span class="arrow">→</span></span></a>
+        <a href="/legendas/" class="btn btn-primary btn-full"><span>Ver o plugin <span class="arrow">→</span></span></a>
       </div>
     </div>
   </div>
@@ -1082,24 +765,24 @@
   <div class="container" style="position:relative;">
     <div class="sec-head reveal" style="text-align:center; margin:0 auto 60px; max-width:780px;">
       <span class="tag-mono" style="color:#93c5fd"><span class="dot"></span>— FAZ A CONTA</span>
-      <h2 class="section-title" style="color:var(--fg-on-dark); margin-top:16px;">Leva só as Legendas?<br>Ou <span class="italic-em">a edição inteira?</span></h2>
+      <h2 class="section-title" style="color:var(--fg-on-dark); margin-top:16px;">Leva só o Titles?<br>Ou <span class="italic-em">a edição inteira?</span></h2>
       <p style="color:var(--fg-on-dark-muted); margin-top:24px; font-size:clamp(1rem,1.3vw,1.15rem); max-width:560px; margin-left:auto; margin-right:auto;">
-        O Motion Legendas sozinho já resolve suas legendas. Mas a Suite resolve legenda <strong>e</strong> título — e o segundo plugin sai por só R$ 10 a mais.
+        O Motion Titles sozinho já resolve seus títulos. Mas a Suite resolve título <strong>e</strong> legenda — e o segundo plugin sai por só R$ 10 a mais.
       </p>
     </div>
 
     <div class="reveal" style="display:grid; grid-template-columns:1fr 1fr; gap:24px; max-width:900px; margin:0 auto;">
       <div style="background:#0e0e0e; border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:32px; text-align:left;">
-        <div style="font-family:'JetBrains Mono',monospace; font-size:.7rem; letter-spacing:.2em; text-transform:uppercase; color:rgba(255,255,255,.5); margin-bottom:14px;">SÓ LEGENDAS</div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:.7rem; letter-spacing:.2em; text-transform:uppercase; color:rgba(255,255,255,.5); margin-bottom:14px;">SÓ TITLES</div>
         <div style="font-size:clamp(2rem,3.5vw,2.8rem); font-weight:800; letter-spacing:-.04em; color:#fff;">R$ 49,90<span style="font-size:.45em; color:rgba(255,255,255,.5); font-weight:500"> /mês</span></div>
-        <p style="color:rgba(255,255,255,.55); font-size:14px; margin-top:14px; max-width:none;">549 títulos legendados. Só.</p>
-        <button class="btn btn-ghost btn-full" data-buy-suite="legendas_monthly" style="margin-top:24px; border-color:rgba(255,255,255,.15); color:rgba(255,255,255,.85);">Quero só as Legendas <span class="arrow">→</span></button>
+        <p style="color:rgba(255,255,255,.55); font-size:14px; margin-top:14px; max-width:none;">7.906 templates animados. Só.</p>
+        <button class="btn btn-ghost btn-full" data-buy-suite="titles_monthly" style="margin-top:24px; border-color:rgba(255,255,255,.15); color:rgba(255,255,255,.85);">Quero só o Titles <span class="arrow">→</span></button>
       </div>
       <div style="background:linear-gradient(180deg, rgba(37,99,235,.18), rgba(37,99,235,.04)); border:2px solid var(--accent); border-radius:18px; padding:32px; text-align:left; position:relative;">
         <div style="position:absolute; top:-14px; left:32px; background:var(--accent); color:white; padding:6px 14px; border-radius:100px; font-family:'JetBrains Mono',monospace; font-size:.65rem; letter-spacing:.2em; text-transform:uppercase; font-weight:500;">Mais escolhido</div>
         <div style="font-family:'JetBrains Mono',monospace; font-size:.7rem; letter-spacing:.2em; text-transform:uppercase; color:#93c5fd; margin-bottom:14px;">A SUITE COMPLETA</div>
         <div style="font-size:clamp(2rem,3.5vw,2.8rem); font-weight:800; letter-spacing:-.04em; color:#fff;">R$ 59,90<span style="font-size:.45em; color:rgba(255,255,255,.55); font-weight:500"> /mês</span></div>
-        <p style="color:rgba(255,255,255,.7); font-size:14px; margin-top:14px; max-width:none;">Legendas <strong>+</strong> Titles. A edição inteira.</p>
+        <p style="color:rgba(255,255,255,.7); font-size:14px; margin-top:14px; max-width:none;">Titles <strong>+</strong> Legendas. A edição inteira.</p>
         <button class="btn btn-primary btn-full" data-buy-suite="suite_monthly" style="margin-top:24px;">Quero a Suite (+R$10) <span class="arrow">→</span></button>
       </div>
     </div>
@@ -1117,7 +800,7 @@
       <span class="line">A pergunta não é</span>
       <span class="line accent">se você precisa.</span>
       <span class="line">É quanto tempo a mais</span>
-      <span class="line accent">você vai gastar no Title Tool.</span>
+      <span class="line accent">você vai perder pra admitir.</span>
     </h2>
     <p class="lede reveal">7 dias grátis. Sem cartão. Cancele com 1 clique.</p>
     <div class="reveal"><a href="#planos" class="btn btn-primary btn-giant">Começar agora <span class="arrow">→</span></a></div>
@@ -1140,17 +823,17 @@
         <li><a href="#fluxo">Como funciona</a></li>
         <li><a href="#planos">Preços</a></li>
         <li><a href="#faq">Perguntas frequentes</a></li>
-        <li><a href="/legendas/download.html">Download</a></li>
+        <li><a href="/download.html">Download</a></li>
       </ul></div>
       <div class="footer-col"><h5>Plugins</h5><ul>
         <li><a href="/">Motion Titles (7.906 templates)</a></li>
-        <li><a href="/legendas/">Motion Legendas (549 títulos)</a></li>
+        <li><a href="/legendas/">Motion Legendas</a></li>
       </ul></div>
       <div class="footer-col"><h5>Docs</h5><ul>
         <li><a href="/docs/">Central de manuais</a></li>
         <li><a href="/docs/titles.html">Manual Motion Titles</a></li>
-        <li><a href="/docs/legendas.html">Manual Motion Legendas</a></li>
         <li><a href="/docs/ia.html">Manual Motion IA</a></li>
+        <li><a href="/docs/legendas.html">Manual Motion Legendas</a></li>
       </ul></div>
       <div class="footer-col"><h5>Conta</h5><ul>
         <li><a href="/account.html">Entrar</a></li>
@@ -1173,7 +856,7 @@
 
 <!-- ════════════════════════ WHATSAPP FAB ════════════════════════ -->
 <a class="wa-fab"
-   href="https://wa.me/5531997554040?text=Quero%20conhecer%20o%20Motion%20Legendas"
+   href="https://wa.me/5531997554040?text=Quero%20conhecer%20o%20MotionPro"
    target="_blank" rel="noopener noreferrer"
    aria-label="Falar no WhatsApp">
   <span class="wa-fab-label">
@@ -1192,10 +875,10 @@
 <script src="/js/system.js"></script>
 <script>
 /* ════════════════════════════════════════════════════════════════
-   LEGENDAS-SPECIFIC SCRIPT (mesmo motion stack da home)
+   HOME-SPECIFIC SCRIPT (GSAP/Lenis motion stack)
    - Lenis com integração oficial ScrollTrigger (1 RAF único)
    - Hero animations consolidadas e pausáveis fora da viewport
-   - Checkout das legendas passa product=legendas
+   - Scramble pausa quando offscreen
    ════════════════════════════════════════════════════════════════ */
 (function () {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1214,7 +897,7 @@
     document.querySelectorAll('.hero-chip').forEach(c => c.style.opacity = 1);
   }
   function init() {
-    // ─── Lenis smooth scroll ───
+    // ─── Lenis smooth scroll (config oficial Lenis+GSAP) ───
     let lenis = null;
     if (!reduced && typeof window.Lenis !== 'undefined') {
       try {
@@ -1226,9 +909,12 @@
           touchMultiplier: 1.6,
           syncTouch: false
         });
+        // Integração oficial: ScrollTrigger atualiza a cada scroll do Lenis
         lenis.on('scroll', ScrollTrigger.update);
+        // 1 ÚNICO RAF: gsap.ticker dirige o Lenis
         gsap.ticker.add(time => lenis.raf(time * 1000));
         gsap.ticker.lagSmoothing(0);
+        // Expor pra debug/anchor scroll
         window.__lenis = lenis;
       } catch (e) { lenis = null; }
     }
@@ -1243,7 +929,7 @@
             [...node.textContent].forEach(ch => {
               const s = document.createElement('span');
               s.className = 'char';
-              s.textContent = ch === ' ' ? ' ' : ch;
+              s.textContent = ch === ' ' ? ' ' : ch;
               frag.appendChild(s);
             });
             parent.replaceChild(frag, node);
@@ -1272,7 +958,8 @@
       if (marquee) tl.from(marquee, { opacity: 0, y: 30, duration: 1 }, '-=0.5');
     }
 
-    // Reveal stagger
+    // Reveal: o CSS já tem opacity:0 + transform + transition.
+    // ScrollTrigger.batch só adiciona .in com stagger (sem GSAP tween duplicado).
     if (!reduced) {
       ScrollTrigger.batch('.reveal', {
         start: 'top 88%',
@@ -1325,27 +1012,21 @@
       fluxLine.classList.add('in');
     }
 
-    // HERO preview cards + parallax CONSOLIDADO
-    const previews = document.querySelectorAll('.prev-card');
-    const cardRotations = [-6, 4, 3, -5]; // p1, p2, p3, p4
-    if (previews.length && !reduced) {
-      previews.forEach((card, i) => {
-        gsap.set(card, { rotation: cardRotations[i] || 0 });
+    // HERO chips reveal + float + parallax CONSOLIDADO em 1 timeline
+    const chips = document.querySelectorAll('.hero-chip');
+    if (chips.length && !reduced) {
+      gsap.to(chips, { opacity: 1, duration: 1, stagger: .1, delay: 1.2, ease: 'power2.out' });
+      chips.forEach((chip, i) => {
+        gsap.to(chip, { y: (i % 2 === 0 ? -14 : 14), duration: 3.5 + (i * .3), repeat: -1, yoyo: true, ease: 'sine.inOut', delay: 1.5 + i * .2 });
       });
-      gsap.fromTo(previews,
-        { opacity: 0, scale: 0.85, y: 30 },
-        { opacity: 1, scale: 1, y: 0, duration: 1.1, stagger: .15, delay: 1.0, ease: 'back.out(1.4)' }
-      );
-      // Float idle (mantém a rotação)
-      previews.forEach((card, i) => {
-        gsap.to(card, { y: (i % 2 === 0 ? -16 : 16), duration: 4 + (i * .4), repeat: -1, yoyo: true, ease: 'sine.inOut', delay: 2 + i * .3 });
-      });
+
+      // ─── 1 SÓ ScrollTrigger pro parallax do hero ───
       const heroTl = gsap.timeline({
         scrollTrigger: {
           trigger: '.hero',
           start: 'top top',
           end: 'bottom top',
-          scrub: 0.5,
+          scrub: 0.5,                  // lerp suave, mais barato que scrub:true
           invalidateOnRefresh: true
         }
       });
@@ -1354,15 +1035,17 @@
         .to('.hero-bg .blob.b2', { y: -180 }, 0)
         .to('.hero-bg .blob.b3', { y: 240 }, 0)
         .to('.hero-inner', { opacity: 0.3, y: -60 }, 0);
-      previews.forEach(card => {
-        const depth = parseFloat(card.dataset.depth) || 0.4;
-        heroTl.to(card, { y: `+=${depth * 240}` }, 0);
+
+      // Chips parallax em batch (1 tween por chip mas com mesmo ScrollTrigger)
+      chips.forEach(chip => {
+        const depth = parseFloat(chip.dataset.depth) || 0.4;
+        heroTl.to(chip, { y: `+=${depth * 220}` }, 0);
       });
-    } else if (previews.length) {
-      previews.forEach(c => c.style.opacity = 1);
+    } else if (chips.length) {
+      chips.forEach(c => c.style.opacity = 1);
     }
 
-    // Pausa CSS do hero quando offscreen
+    // ─── Pausa CSS animations do hero quando offscreen (GPU/CPU saver) ───
     const heroEl = document.querySelector('.hero');
     if (heroEl) {
       const heroIO = new IntersectionObserver((entries) => {
@@ -1411,7 +1094,7 @@
       });
     }
 
-    // Scramble com pausa offscreen
+    // Scramble
     const SCRAMBLE_CHARS = '!<>-_\\/[]{}—=+*^?#________';
     function scramble(el, finalText, dur = 900) {
       const len = finalText.length, start = performance.now();
@@ -1436,6 +1119,7 @@
         let intervalId = null;
         let visible = true;
         setTimeout(() => scramble(el, final, 1100), 1800);
+        // Só roda o loop enquanto estiver visível
         const startLoop = () => {
           if (intervalId) return;
           intervalId = setInterval(() => { if (visible) scramble(el, final, 1000); }, 7000);
@@ -1458,7 +1142,7 @@
       });
     });
 
-    // Smooth anchor (delegated)
+    // Smooth anchor (delegated, com Lenis ou fallback nativo)
     document.addEventListener('click', e => {
       const a = e.target.closest('a[href^="#"]');
       if (!a) return;
@@ -1471,13 +1155,13 @@
       else el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
-    // ─── CHECKOUT MOTION SUITE (legendas_monthly / legendas_yearly / suite_monthly / suite_yearly) ───
+    // ─── CHECKOUT MOTION SUITE (titles_monthly / titles_yearly / suite_monthly / suite_yearly) ───
     document.addEventListener('click', async e => {
       const btn = e.target.closest('[data-buy-suite]');
       if (!btn) return;
       e.preventDefault();
-      const plan = btn.dataset.buySuite;
-      const [product, freq] = plan.split('_');
+      const plan = btn.dataset.buySuite;  // e.g. "suite_monthly", "titles_yearly"
+      const [product, freq] = plan.split('_');  // ["suite", "monthly"]
       const orig = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span> Indo pra Stripe...';
@@ -1503,35 +1187,7 @@
       }
     });
 
-    // ─── CHECKOUT LEGADO (data-buy-legendas, mantido pra compat) ───
-    document.addEventListener('click', async e => {
-      const btn = e.target.closest('[data-buy-legendas]');
-      if (!btn) return;
-      e.preventDefault();
-      const plan = btn.dataset.buyLegendas;
-      const orig = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Indo pra Stripe...';
-      try {
-        const token = localStorage.getItem('mv_session');
-        const savedEmail = localStorage.getItem('mv_email');
-        const headers = { 'Content-Type': 'application/json' };
-        if (token) headers.Authorization = 'Bearer ' + token;
-        const r = await fetch((window.MV_API || 'https://motionpro.vercel.app') + '/v1/billing/checkout?plan=' + plan + '&product=legendas', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ plan, product: 'legendas', email: savedEmail || undefined })
-        });
-        const data = await r.json().catch(() => ({}));
-        if (!r.ok || !data.url) throw new Error(data.error || 'checkout_failed');
-        window.location.href = data.url;
-      } catch (err) {
-        if (window.MV && window.MV.toast) window.MV.toast('Erro: ' + err.message, 'error');
-        btn.disabled = false;
-        btn.innerHTML = orig;
-      }
-    });
-
+    // Refresh ScrollTrigger quando fontes carregarem (evita misposicionamento)
     if (document.fonts && document.fonts.ready) {
       document.fonts.ready.then(() => ScrollTrigger.refresh());
     }

@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="description" content="Motion Titles — 7.906 motion graphics premium dentro do Premiere Pro. Plugin nativo. Importação em 1 clique. 100% editável na timeline." />
-<meta property="og:title" content="Motion Titles — O acervo definitivo de motion graphics dentro do Premiere" />
-<meta property="og:description" content="7.906 templates premium. Plugin CEP nativo. Editáveis na timeline. R$199/ano ou R$499 vitalício." />
+<meta name="description" content="Motion Suite — dois plugins de Premiere Pro que resolvem sua edição inteira. 7.906 títulos animados + legenda automática com motion. R$ 59,90/mês." />
+<meta property="og:title" content="Motion Suite — Dois plugins. Um Premiere. Sua edição inteira mais rápida." />
+<meta property="og:description" content="7.906 títulos animados + legenda automática com motion. R$ 59,90/mês a Suite completa." />
 <meta property="og:type" content="website" />
 <meta property="og:image" content="/img/og.png" />
-<title>Motion Titles — O acervo definitivo de motion graphics dentro do Premiere</title>
+<title>Motion Suite — Dois plugins. Um Premiere. Sua edição inteira mais rápida.</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,7 +25,9 @@
 
 <style>
 /* ════════════════════════════════════════════════════════════════
-   HOME-SPECIFIC STYLES (componentes ricos que só aparecem na home)
+   MOTION SUITE HOME · STYLES
+   Página persuasiva da suíte. Vende o combo aqui mesmo + envia
+   tráfego pros sites individuais dos plugins.
    ════════════════════════════════════════════════════════════════ */
 
 /* ── HERO ── */
@@ -54,9 +56,7 @@
 @keyframes blobDrift1 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 33% { transform: translate3d(120px,80px,0) scale(1.1); } 66% { transform: translate3d(-40px,140px,0) scale(.95); } }
 @keyframes blobDrift2 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(-140px,100px,0) scale(1.15); } }
 @keyframes blobDrift3 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(80px,-120px,0) scale(1.08); } }
-/* Pausa animações quando hero sai da viewport */
 .hero[data-paused="true"] .blob,
-.hero[data-paused="true"] .hero-marquee-track,
 .hero[data-paused="true"] .hero-badge::after { animation-play-state: paused !important; }
 
 .hero-bg::before {
@@ -68,16 +68,6 @@
   mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black, transparent 75%);
   -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black, transparent 75%);
 }
-
-.hero-glow {
-  position: absolute; top: 0; left: 0;
-  width: 600px; height: 600px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(37,99,235,.18) 0%, transparent 60%);
-  pointer-events: none; transform: translate(-50%, -50%); z-index: -1;
-  opacity: 0; transition: opacity .6s var(--ease-out);
-  mix-blend-mode: multiply;
-}
-.hero:hover .hero-glow { opacity: 1; }
 
 .hero-inner { position: relative; z-index: 2; max-width: 980px; margin: 0 auto; width: 100%; }
 .hero-badge {
@@ -107,7 +97,7 @@
 .hero-title .char { display: inline-block; }
 .hero-sub {
   font-size: clamp(1.05rem, 1.5vw, 1.25rem);
-  max-width: 620px; margin: 0 auto 48px;
+  max-width: 680px; margin: 0 auto 48px;
   color: var(--fg-muted); line-height: 1.55;
 }
 .hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-bottom: 36px; }
@@ -117,78 +107,27 @@
   color: var(--fg-subtle);
 }
 
-.hero-chips { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
-.hero-chip {
-  position: absolute;
-  background: rgba(255,255,255,.92);
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  padding: 7px 14px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .65rem; letter-spacing: .12em; text-transform: uppercase;
-  color: var(--fg-muted);
-  display: inline-flex; align-items: center; gap: 8px;
-  box-shadow: 0 6px 18px -6px rgba(10,10,10,.12);
-  white-space: nowrap;
-  opacity: 0;
-}
-.hero-chip .ico { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
-.hero-chip.c1 { top: 22%; left: 6%; }
-.hero-chip.c2 { top: 18%; right: 7%; }
-.hero-chip.c3 { top: 58%; left: 4%; }
-.hero-chip.c4 { top: 62%; right: 5%; }
-.hero-chip.c5 { top: 38%; right: 12%; }
-.hero-chip.c6 { top: 42%; left: 10%; }
-@media (max-width: 900px) { .hero-chips { display: none; } }
-
-.hero-marquee {
-  position: relative; width: 100%;
-  margin-top: 70px;
+/* ── HERO METRICS ── */
+.hero-metrics {
+  margin-top: 80px;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
+  max-width: 900px; margin-left: auto; margin-right: auto;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
-  padding: 18px 0; overflow: hidden;
-  mask-image: linear-gradient(90deg, transparent 0%, black 12%, black 88%, transparent 100%);
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 12%, black 88%, transparent 100%);
+  padding: 36px 0;
 }
-.hero-marquee-track {
-  display: flex; gap: 56px; width: max-content;
-  animation: marquee 38s linear infinite;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .8rem; letter-spacing: .18em; text-transform: uppercase;
-  color: var(--fg-subtle); align-items: center;
-}
-.hero-marquee-track span { display: inline-flex; align-items: center; gap: 16px; }
-.hero-marquee-track span::after { content: ""; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
-@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-
-.scroll-cue {
-  position: absolute; bottom: 28px; left: 50%;
-  transform: translateX(-50%);
-  display: flex; flex-direction: column; align-items: center; gap: 10px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .65rem; letter-spacing: .3em; text-transform: uppercase;
-  color: var(--fg-subtle);
-}
-.scroll-cue .line { width: 1px; height: 40px; background: linear-gradient(180deg, transparent, var(--fg-subtle), transparent); animation: scrollLine 2.2s ease-in-out infinite; }
-@keyframes scrollLine { 0% { transform: scaleY(0); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
-
-/* ── STATS ── */
-.stats { padding: 80px 0; border-top: 1px solid var(--border); position: relative; }
-.stats::before { content: ""; position: absolute; top: -1px; left: 0; height: 1px; background: var(--accent); width: 0; transition: width 1.4s var(--ease-out); }
-.stats.in-view::before { width: 100%; }
-.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
-@media (max-width: 800px) { .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 50px 20px; } }
-.stat-item .num {
+@media (max-width: 800px) { .hero-metrics { grid-template-columns: repeat(2, 1fr); gap: 36px 16px; } }
+.hero-metric .num {
   font-family: 'JetBrains Mono', monospace;
   font-variant-numeric: tabular-nums;
-  font-size: clamp(2.8rem, 6vw, 4.5rem);
+  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
   font-weight: 600; letter-spacing: -.04em;
-  color: var(--accent); line-height: 1; margin-bottom: 14px;
+  color: var(--accent); line-height: 1; margin-bottom: 10px;
 }
-.stat-item .label {
+.hero-metric .label {
   font-family: 'JetBrains Mono', monospace;
-  font-size: .7rem; letter-spacing: .2em; text-transform: uppercase;
-  color: var(--fg-muted); font-weight: 500;
+  font-size: .65rem; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--fg-muted);
 }
 
 /* ── SECTION HEADER ── */
@@ -206,39 +145,53 @@
 .problem-num .big { font-family: 'JetBrains Mono', monospace; font-size: clamp(2rem, 3.5vw, 2.8rem); font-weight: 600; color: var(--accent); letter-spacing: -.03em; line-height: 1; margin-bottom: 6px; }
 .problem-num .small { font-size: 14px; color: var(--fg-muted); font-family: 'JetBrains Mono', monospace; letter-spacing: .04em; }
 .problem-close { margin-top: 36px; padding-top: 28px; border-top: 1px solid var(--border); font-size: 1rem; color: var(--fg); font-weight: 500; font-style: italic; line-height: 1.5; }
-.problem-cta { margin-top: 60px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: .85rem; letter-spacing: .35em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
 
-/* ── PLATAFORMA ── */
-.platform-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-@media (max-width: 900px) { .platform-grid { grid-template-columns: 1fr; } }
-.feat-card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 44px 36px; transition: all .5s var(--ease-out); position: relative; overflow: hidden; }
-.feat-card::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 0% 0%, rgba(37,99,235,.04), transparent 60%); opacity: 0; transition: opacity .5s var(--ease-out); pointer-events: none; }
-.feat-card:hover { transform: translateY(-8px); border-color: var(--border-hover); box-shadow: 0 20px 40px rgba(37,99,235,.08); }
-.feat-card:hover::before { opacity: 1; }
-.feat-num { font-family: 'JetBrains Mono', monospace; font-size: 1rem; font-weight: 500; color: var(--accent); letter-spacing: .15em; margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
-.feat-num::after { content: ""; flex: 1; height: 1px; background: var(--border); }
-.feat-card h3 { margin-bottom: 18px; }
-.feat-card .desc { font-size: 15px; margin-bottom: 28px; line-height: 1.6; }
+/* ── OS DOIS PRODUTOS (coração da página) ── */
+.products-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 28px;
+  max-width: 1100px; margin: 0 auto;
+}
+@media (max-width: 900px) { .products-grid { grid-template-columns: 1fr; } }
+.product-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 44px 40px;
+  display: flex; flex-direction: column;
+  transition: transform .5s var(--ease-out), border-color .5s, box-shadow .5s;
+  position: relative; overflow: hidden;
+}
+.product-card::before {
+  content: ""; position: absolute; top: 0; right: 0; width: 240px; height: 240px;
+  background: radial-gradient(circle, rgba(37,99,235,.06), transparent 65%);
+  transform: translate(40%, -40%);
+  pointer-events: none;
+}
+.product-card:hover { transform: translateY(-8px); border-color: var(--border-hover); box-shadow: 0 28px 60px -20px rgba(37,99,235,.15); }
+.product-card__num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .7rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--accent); font-weight: 500;
+  margin-bottom: 18px;
+  display: flex; align-items: center; gap: 10px;
+}
+.product-card__num::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.product-card__brand { font-size: 1rem; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; margin-bottom: 16px; color: var(--fg); }
+.product-card__title { font-size: clamp(1.5rem, 2.3vw, 2rem); font-weight: 800; letter-spacing: -.025em; line-height: 1.15; margin-bottom: 18px; }
+.product-card__desc { font-size: 15.5px; color: var(--fg-muted); margin-bottom: 28px; line-height: 1.6; max-width: none; }
+.product-card__features { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; flex: 1; }
+.product-card__features li { font-size: 14.5px; color: var(--fg); display: flex; gap: 12px; line-height: 1.5; }
+.product-card__features li::before { content: "✓"; color: var(--accent); font-weight: 700; flex-shrink: 0; }
+.product-card__cta { margin-top: auto; }
 
-/* ── PERSONALIZAÇÃO ── */
-.custom { background: var(--bg-elevated); position: relative; overflow: hidden; }
-.custom::before { content: ""; position: absolute; top: 10%; left: 50%; width: 800px; height: 800px; transform: translateX(-50%); background: radial-gradient(circle, rgba(37,99,235,.06), transparent 60%); pointer-events: none; }
-.custom .container { position: relative; }
-.custom .sec-head { text-align: center; margin-left: auto; margin-right: auto; }
-.custom .sec-head .lede { margin: 0 auto; }
-.editorial-table { max-width: 1000px; margin: 0 auto; border-top: 1px solid var(--border); }
-.editorial-row { display: grid; grid-template-columns: 220px 1fr; gap: 60px; padding: 32px 0; border-bottom: 1px solid var(--border); align-items: baseline; transition: padding .4s var(--ease-out); }
-.editorial-row:hover { padding-left: 16px; padding-right: 16px; }
-.editorial-row:hover .ed-label { color: var(--accent); }
-.editorial-row .ed-label { font-size: clamp(1.5rem, 2.5vw, 2.2rem); font-weight: 800; letter-spacing: -.03em; color: var(--fg); transition: color .4s var(--ease-out); }
-.editorial-row .ed-desc { font-size: clamp(1rem, 1.3vw, 1.15rem); color: var(--fg-muted); max-width: none; line-height: 1.55; }
-@media (max-width: 700px) { .editorial-row { grid-template-columns: 1fr; gap: 8px; padding: 24px 0; } }
-.custom-close { max-width: 700px; margin: 90px auto 0; text-align: center; }
-.custom-close p { font-size: clamp(1.2rem, 2vw, 1.6rem); font-weight: 500; line-height: 1.35; color: var(--fg); letter-spacing: -.02em; max-width: none; }
-.custom-close .accent { color: var(--accent); font-weight: 700; display: block; margin-top: 4px; }
+/* ── TRANSITION BAR ── */
+.transition-bar { background: var(--bg-dark); color: var(--fg-on-dark); padding: clamp(80px, 14vw, 120px) 0; text-align: center; }
+.transition-bar h2 { font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; letter-spacing: -.03em; max-width: 800px; margin: 0 auto; color: var(--fg-on-dark); }
+.transition-bar h2 .line { display: block; }
+.transition-bar h2 .accent { color: var(--accent); font-style: italic; }
 
 /* ── FLUXO (DARK) ── */
-.flux { background: var(--bg-dark); color: var(--fg-on-dark); }
+.flux { background: var(--bg-dark); color: var(--fg-on-dark); border-top: 1px solid rgba(255,255,255,.04); }
 .flux .section-title { color: var(--fg-on-dark); }
 .flux .lede { color: var(--fg-on-dark-muted); }
 .flux-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; position: relative; margin-top: 40px; }
@@ -254,7 +207,6 @@
 .flux-close { margin-top: 100px; text-align: center; max-width: 700px; margin-left: auto; margin-right: auto; }
 .flux-close .head { font-size: clamp(1.3rem, 2.2vw, 1.8rem); font-weight: 700; letter-spacing: -.02em; color: var(--fg-on-dark); line-height: 1.3; }
 .flux-close .head .accent { color: var(--accent); }
-.flux-close .sub { margin-top: 14px; color: var(--fg-on-dark-muted); font-size: 15px; }
 
 /* ── COMPARE ── */
 .compare-table { max-width: 1100px; margin: 0 auto; border-top: 1px solid var(--border); }
@@ -300,9 +252,14 @@
 .price-features li { font-size: 14.5px; color: var(--fg); display: flex; gap: 12px; align-items: flex-start; line-height: 1.5; }
 .price-features li::before { content: "→"; color: var(--accent); font-family: 'JetBrains Mono', monospace; flex-shrink: 0; font-weight: 500; }
 .price-foot { margin-top: 14px; font-size: 12.5px; color: var(--fg-subtle); text-align: center; font-family: 'JetBrains Mono', monospace; letter-spacing: .05em; }
-.pricing-callout { max-width: 900px; margin: 70px auto 0; background: white; border: 1px solid var(--border); border-radius: 16px; padding: 28px 36px; }
-.pricing-callout p { font-size: 15px; color: var(--fg); line-height: 1.65; max-width: none; }
-.pricing-callout p strong { font-weight: 600; display: block; margin-bottom: 6px; }
+.pricing-callout { max-width: 900px; margin: 70px auto 0; background: white; border: 1px solid var(--border); border-radius: 16px; padding: 28px 36px; text-align: center; }
+.pricing-callout p { font-size: 15px; color: var(--fg); line-height: 1.65; max-width: none; margin: 0 auto; }
+
+/* ── PRICING TOGGLE ── */
+.price-toggle { display: inline-flex; align-items: center; gap: 8px; padding: 6px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 100px; margin: 0 auto 40px; }
+.price-toggle button { padding: 10px 22px; font-family: 'JetBrains Mono', monospace; font-size: .7rem; letter-spacing: .15em; text-transform: uppercase; color: var(--fg-muted); border-radius: 100px; transition: all .3s var(--ease-out); cursor: pointer; }
+.price-toggle button.active { background: white; color: var(--fg); box-shadow: 0 2px 6px rgba(10,10,10,.06); font-weight: 600; }
+.price-toggle .sale { background: var(--accent); color: white; padding: 3px 8px; border-radius: 100px; font-size: .55rem; margin-left: 6px; }
 
 /* ── MANIFESTO ── */
 .manifesto { padding: clamp(120px, 18vw, 180px) 0; text-align: center; }
@@ -328,9 +285,8 @@
 .faq-item.open .faq-a { max-height: 400px; opacity: 1; padding-bottom: 28px; }
 .faq-a p { font-size: 15.5px; color: var(--fg-muted); line-height: 1.65; max-width: 65ch; padding-right: 50px; }
 
-/* ── CONTENT-VISIBILITY (otimiza renderização de seções offscreen) ── */
-.problem, .custom, .familia, .flux, .compare-table,
-.pricing, .manifesto, .faq, .cta-final {
+/* ── CONTENT-VISIBILITY ── */
+.problem, .flux, .compare, .pricing, .manifesto, .faq, .cta-final {
   content-visibility: auto;
   contain-intrinsic-size: auto 900px;
 }
@@ -353,23 +309,21 @@
 <!-- ════════════════════════ NAV ════════════════════════ -->
 <header class="nav" id="nav">
   <div class="container nav-inner">
-    <a href="/" class="logo" aria-label="Motion Titles home">
-      <span class="logo-dot"></span>Motion Titles
+    <a href="/" class="logo" aria-label="Motion Suite home">
+      <span class="logo-dot"></span>Motion Suite
     </a>
     <nav aria-label="Principal">
       <ul class="nav-links">
-        <li><a href="#plataforma">Plataforma</a></li>
-        <li><a href="#familia">Família</a></li>
-        <li><a href="#fluxo">Fluxo</a></li>
-        <li><a href="#planos">Planos</a></li>
+        <li><a href="/titles/">Titles</a></li>
+        <li><a href="/legendas/">Legendas</a></li>
+        <li><a href="#planos">Preços</a></li>
         <li><a href="#faq">FAQ</a></li>
         <li><a href="/docs/">Docs</a></li>
-        <li><a href="/download.html">Download</a></li>
       </ul>
     </nav>
     <div class="nav-right">
       <a href="/account.html" class="link-login" data-action="login">Entrar</a>
-      <a href="#planos" class="btn btn-primary">Assinar</a>
+      <a href="#planos" class="btn btn-primary">Quero a Suite</a>
       <button class="menu-toggle" aria-label="Abrir menu"><span></span><span></span><span></span></button>
     </div>
   </div>
@@ -382,66 +336,30 @@
     <div class="blob b2"></div>
     <div class="blob b3"></div>
   </div>
-  <div class="hero-glow" id="heroGlow" aria-hidden="true"></div>
-
-  <div class="hero-chips" aria-hidden="true">
-    <div class="hero-chip c1" data-depth="0.4"><span class="ico"></span>Lower Thirds</div>
-    <div class="hero-chip c2" data-depth="0.6"><span class="ico"></span>Transitions</div>
-    <div class="hero-chip c3" data-depth="0.3"><span class="ico"></span>Reels Pack</div>
-    <div class="hero-chip c4" data-depth="0.5"><span class="ico"></span>Monster FX</div>
-    <div class="hero-chip c5" data-depth="0.7"><span class="ico"></span>SFX Visual</div>
-    <div class="hero-chip c6" data-depth="0.35"><span class="ico"></span>Títulos Ultimate</div>
-  </div>
 
   <div class="container hero-inner">
-    <span class="hero-badge"><span class="dot"></span>v2.5 · Nativo no Premiere Pro</span>
+    <span class="hero-badge"><span class="dot"></span>MOTION SUITE · DOIS PLUGINS · UM PREMIERE</span>
     <h1 class="hero-title" id="heroTitle">
-      <span class="line">Procurar template</span>
-      <span class="line">não é <span class="italic-em" data-scramble="editar">editar.</span></span>
+      <span class="line">O Premiere já é seu.</span>
+      <span class="line">Faltava parar de</span>
+      <span class="line"><span class="italic-em" data-scramble="fazer tudo na mão">fazer tudo na mão.</span></span>
     </h1>
     <p class="hero-sub">
-      7.906 motion graphics premium dentro do Premiere.
-      1 clique pra importar. Edite fonte, cor, posição e timing direto na timeline.
-      Sem pasta. Sem render. Sem desculpa.
+      7.906 títulos animados e legenda automática com motion — nativos no Premiere, aplicados em 1 clique. A Motion Suite não te faz editor melhor. Te faz o editor que entrega no prazo.
     </p>
     <div class="hero-ctas">
-      <a href="#planos" class="btn btn-primary btn-magnetic"><span>Começar agora <span class="arrow">→</span></span></a>
-      <a href="#fluxo" class="btn btn-secondary btn-magnetic">
-        <span>
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 1.5L10 6L2 10.5V1.5Z" fill="currentColor"/></svg>
-          Ver em 90 segundos
-        </span>
+      <a href="#planos" class="btn btn-primary btn-magnetic btn-lg"><span>Quero a Suite <span class="arrow">→</span></span></a>
+      <a href="#produtos" class="btn btn-secondary btn-magnetic btn-lg">
+        <span>Ver os dois plugins <span class="arrow">↓</span></span>
       </a>
     </div>
     <p class="trust-line">7 dias grátis · Sem cartão · Cancele em 1 clique</p>
 
-    <div class="hero-marquee" aria-hidden="true">
-      <div class="hero-marquee-track">
-        <span>Lower Thirds</span><span>Transitions</span><span>Títulos Ultimate</span>
-        <span>Reels Pack</span><span>Instagram Stories</span><span>Monster FX</span>
-        <span>SFX Visual</span><span>Glitch</span><span>Typography</span>
-        <span>Logo Reveal</span><span>Call-to-Action</span><span>Cinematic Titles</span>
-        <span>Lower Thirds</span><span>Transitions</span><span>Títulos Ultimate</span>
-        <span>Reels Pack</span><span>Instagram Stories</span><span>Monster FX</span>
-        <span>SFX Visual</span><span>Glitch</span><span>Typography</span>
-        <span>Logo Reveal</span><span>Call-to-Action</span><span>Cinematic Titles</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="scroll-cue" aria-hidden="true">
-    <span>SCROLL</span><span class="line"></span>
-  </div>
-</section>
-
-<!-- ════════════════════════ STATS ════════════════════════ -->
-<section class="stats" id="stats">
-  <div class="container">
-    <div class="stats-grid">
-      <div class="stat-item reveal"><div class="num" data-counter="7906" data-format="thousand">0</div><div class="label">Templates na timeline</div></div>
-      <div class="stat-item reveal"><div class="num" data-counter="1">0</div><div class="label">Clique pra importar</div></div>
-      <div class="stat-item reveal"><div class="num" data-counter="100" data-suffix="%">0%</div><div class="label">Editáveis na hora</div></div>
-      <div class="stat-item reveal"><div class="num" data-counter="0">0</div><div class="label">Pastas pra organizar</div></div>
+    <div class="hero-metrics">
+      <div class="hero-metric"><div class="num" data-counter="7906" data-format="thousand">0</div><div class="label">títulos prontos</div></div>
+      <div class="hero-metric"><div class="num" data-counter="549">0</div><div class="label">títulos legendados</div></div>
+      <div class="hero-metric"><div class="num" data-counter="1">0</div><div class="label">clique pra aplicar</div></div>
+      <div class="hero-metric"><div class="num" data-counter="11" data-suffix="s">0</div><div class="label">intenção → timeline</div></div>
     </div>
   </div>
 </section>
@@ -450,263 +368,220 @@
 <section class="problem">
   <div class="container">
     <div class="sec-head reveal">
-      <span class="tag-mono"><span class="dot"></span>— A VERDADE INCÔMODA</span>
+      <span class="tag-mono"><span class="dot"></span>— O PROBLEMA</span>
       <h2 class="section-title">
-        Você não é editor lento.<br>
-        Você só tá usando o <span class="italic-em">método errado.</span>
+        Você não edita devagar.<br>
+        Você edita <span class="italic-em">sem ferramenta.</span>
       </h2>
     </div>
     <div class="problem-grid">
       <div class="problem-left reveal">
         <p>
-          8 pastas no HD. Pacotes de 2019 que você nem lembra que baixou. Preview que só funciona depois de importar. Render só pra ver se o lower third combina com a paleta.
+          Animar título do zero. Sincronizar legenda quadro a quadro. Caçar aquele template que sumiu na pasta. Cada uma dessas tarefas parece pequena — até você somar o mês inteiro e perceber que perdeu um cliente inteiro em trabalho braçal.
+        </p>
+        <p style="margin-top:18px">
+          Não é skill que falta. É <strong>sistema</strong>.
         </p>
       </div>
       <div class="problem-right reveal">
-        <div class="problem-num"><div class="big">3h <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por dia</span></div><div class="small">procurando arquivo</div></div>
-        <div class="problem-num"><div class="big">15h <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por semana</span></div><div class="small">somando os dias úteis</div></div>
-        <div class="problem-num"><div class="big">60h <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por mês</span></div><div class="small">um trabalho inteiro</div></div>
-        <div class="problem-close">É um emprego inteiro de procurar template dentro do seu emprego de editar.</div>
+        <div class="problem-num"><div class="big">3h <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por dia</span></div><div class="small">animando título e legendando na mão</div></div>
+        <div class="problem-num"><div class="big">15h <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por semana</span></div><div class="small">que viram retrabalho e revisão</div></div>
+        <div class="problem-num"><div class="big">60h <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por mês</span></div><div class="small">= um cliente inteiro que você não conseguiu atender</div></div>
+        <div class="problem-close">Esse é o emprego invisível que a Motion Suite cancela.</div>
       </div>
     </div>
-    <div class="problem-cta reveal">Acabou.</div>
+    <div style="text-align:center; margin-top: 60px;">
+      <a href="#planos" class="btn btn-primary btn-magnetic reveal"><span>Recuperar meu tempo <span class="arrow">→</span></span></a>
+    </div>
   </div>
 </section>
 
-<!-- ════════════════════════ PLATAFORMA ════════════════════════ -->
-<section id="plataforma">
+<!-- ════════════════════════ OS DOIS PRODUTOS ════════════════════════ -->
+<section id="produtos">
   <div class="container">
-    <div class="sec-head reveal">
-      <span class="tag-mono"><span class="dot"></span>— A PLATAFORMA</span>
-      <h2 class="section-title">Três frentes.<br>Um <span class="italic-em">produto.</span></h2>
+    <div class="sec-head reveal" style="text-align:center; margin-left:auto; margin-right:auto;">
+      <span class="tag-mono"><span class="dot"></span>— A SUITE</span>
+      <h2 class="section-title">Dois plugins.<br><span class="italic-em">Uma edição inteira.</span></h2>
+      <p class="lede" style="margin:24px auto 0">Cada um resolve metade do seu trabalho chato. Juntos, resolvem a edição inteira. Conheça os dois — ou pule direto pro combo.</p>
     </div>
-    <div class="platform-grid">
-      <article class="feat-card reveal">
-        <div class="feat-num"><span>01</span><span>CATÁLOGO</span></div>
-        <h3 class="card-title">7.906 templates organizados como editor pensa.</h3>
-        <p class="desc">Categoria. Estilo. Duração. Mood. Filtros que fazem sentido pra quem edita — não pra quem cataloga.</p>
-        <ul class="feat-list">
-          <li>Tipografias e Lower Thirds</li>
-          <li>Transições e elementos de UI</li>
-          <li>Pacotes Instagram e Reels</li>
-          <li>Monster FX · Títulos Ultimate · SFX visual</li>
+
+    <div class="products-grid">
+
+      <!-- CARD 1 — Motion Titles -->
+      <article class="product-card reveal">
+        <div class="product-card__num"><span>PLUGIN 01</span></div>
+        <div class="product-card__brand">MOTION TITLES</div>
+        <h3 class="product-card__title">7.906 títulos prontos pra arrastar.</h3>
+        <p class="product-card__desc">Animações organizadas como editor pensa: categoria, estilo, duração. Você acha, arrasta, solta. Sem keyframe, sem expressão, sem "depois eu animo".</p>
+        <ul class="product-card__features">
+          <li>Painel CEP nativo, dentro do Premiere</li>
+          <li>Fonte, cor e posição 100% editáveis na timeline</li>
+          <li>Lower thirds, transições, reels, glitch, monster FX</li>
+          <li>Aplica em 1 clique</li>
         </ul>
+        <div class="product-card__cta">
+          <a href="/titles/" class="btn btn-secondary btn-lg btn-full"><span>Conhecer o Motion Titles <span class="arrow">→</span></span></a>
+        </div>
       </article>
-      <article class="feat-card reveal">
-        <div class="feat-num"><span>02</span><span>PLUGIN</span></div>
-        <h3 class="card-title">Painel CEP nativo. Mora dentro do Premiere.</h3>
-        <p class="desc">Janela → Extensões → Motion Titles. Não trava. Não pesa. Não te tira do flow.</p>
-        <ul class="feat-list">
-          <li>Importação em 1 clique direto no CTI</li>
-          <li>Busca global instantânea</li>
-          <li>Preview ao hover — sem importar</li>
-          <li>Atualizações silenciosas em background</li>
+
+      <!-- CARD 2 — Motion Legendas -->
+      <article class="product-card reveal">
+        <div class="product-card__num"><span>PLUGIN 02</span></div>
+        <div class="product-card__brand">MOTION LEGENDAS</div>
+        <h3 class="product-card__title">Legenda automática. Com motion.</h3>
+        <p class="product-card__desc">Transcreve, anima e entrega. 549 títulos legendados em 10 estilos + sound effects inclusos. A legenda que tomava 30 minutos da sua vida agora toma 11 segundos.</p>
+        <ul class="product-card__features">
+          <li>Transcrição automática em 1 clique (PT-BR)</li>
+          <li>10 estilos de motion (word-by-word, karaokê)</li>
+          <li>Sound effects já embutidos</li>
+          <li>Lower thirds + 9 categorias visuais</li>
         </ul>
+        <div class="product-card__cta">
+          <a href="/legendas/" class="btn btn-secondary btn-lg btn-full"><span>Conhecer o Motion Legendas <span class="arrow">→</span></span></a>
+        </div>
       </article>
-      <article class="feat-card reveal">
-        <div class="feat-num"><span>03</span><span>LICENÇA</span></div>
-        <h3 class="card-title">Sistema próprio. Você no controle.</h3>
-        <p class="desc">2-3 máquinas. Revogação em 1 clique. Offline por 7 dias. Sem DRM agressivo, sem chamada gringa pro suporte.</p>
-        <ul class="feat-list">
-          <li>Auditoria completa em tempo real</li>
-          <li>Troca de dispositivo instantânea</li>
-          <li>Funciona em viagem, avião, no break do café</li>
-        </ul>
-      </article>
+
     </div>
   </div>
 </section>
 
-<!-- ════════════════════════ PERSONALIZAÇÃO ════════════════════════ -->
-<section class="custom">
+<!-- ════════════════════════ TRANSITION BAR ════════════════════════ -->
+<section class="transition-bar">
   <div class="container">
-    <div class="sec-head reveal">
-      <span class="tag-mono"><span class="dot"></span>— CONTROLE TOTAL</span>
-      <h2 class="section-title">Template não é prisão.<br>É <span class="italic-em">ponto de partida.</span></h2>
-      <p class="lede">
-        Esquece "baixei um MP4 renderizado e tô preso ao que o cara fez". Todo template do Motion Titles é composição viva no Premiere.
-      </p>
-    </div>
-    <div class="editorial-table">
-      <div class="editorial-row reveal"><div class="ed-label">Fonte</div><div class="ed-desc">Troque pela fonte do cliente em 2 cliques. Importação direta de TTF, OTF e variable fonts.</div></div>
-      <div class="editorial-row reveal"><div class="ed-label">Cor</div><div class="ed-desc">Paleta da marca, gradientes, controles de exposição. Cada layer, ajustável por slider.</div></div>
-      <div class="editorial-row reveal"><div class="ed-label">Posição</div><div class="ed-desc">Mova, rotacione, escale — keyframes inclusos. Anchor points editáveis.</div></div>
-      <div class="editorial-row reveal"><div class="ed-label">Timing</div><div class="ed-desc">Acelere, desacelere, recorte — tudo no CTI. Time Remap acessível por handle.</div></div>
-      <div class="editorial-row reveal"><div class="ed-label">Áudio</div><div class="ed-desc">SFX embutido, mutável, substituível. Trilhas separadas por trigger.</div></div>
-    </div>
-    <div class="custom-close reveal">
-      <p>Você não compra template.<span class="accent">Você compra base profissional pra customizar em segundos.</span></p>
-    </div>
+    <h2 class="reveal">
+      <span class="line">Separados, já são desleais.</span>
+      <span class="line">Juntos, <span class="accent">é covardia.</span></span>
+    </h2>
   </div>
 </section>
 
-<!-- ════════════════════════ FAMÍLIA Motion Titles ════════════════════════ -->
-<section class="familia" id="familia" style="padding:120px 0;background:linear-gradient(180deg,#0a0a0a 0%,#000 100%);border-top:1px solid rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.04)">
-  <div class="container">
-    <div class="sec-head reveal" style="text-align:center;max-width:780px;margin:0 auto 60px">
-      <span class="tag-mono"><span class="dot"></span>— FAMÍLIA</span>
-      <h2 class="section-title" style="margin-top:16px">Um ecossistema.<br>Vários <span class="italic-em">plugins.</span></h2>
-      <p style="color:rgba(255,255,255,.55);font-size:18px;line-height:1.5;margin-top:20px">Cada plugin foi feito pra resolver uma dor específica do editor. Funcionam separados, melhores juntos.</p>
-    </div>
-
-    <div class="familia-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;max-width:1100px;margin:0 auto">
-
-      <!-- Motion Titles -->
-      <a href="/" class="familia-card reveal" style="display:block;text-decoration:none;color:inherit;background:#0e0e0e;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:32px;transition:all .25s;position:relative;overflow:hidden">
-        <div style="position:absolute;top:16px;right:16px;background:rgba(37, 99, 235,.12);color:#2563eb;padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1.2px">CARRO-CHEFE</div>
-        <div style="font-size:36px;margin-bottom:16px">🎬</div>
-        <h3 style="font-size:22px;font-weight:800;letter-spacing:-.4px;margin-bottom:8px">Motion Titles</h3>
-        <p style="color:rgba(255,255,255,.55);font-size:14px;line-height:1.5;margin-bottom:20px">7.906 motion graphics premium importáveis em 1 clique. Títulos, transições, lower thirds, etc.</p>
-        <div style="font-size:12px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.5px">Premiere Pro · Plugin CEP nativo</div>
-        <div style="margin-top:24px;display:flex;justify-content:space-between;align-items:center">
-          <span style="color:#2563eb;font-weight:700;font-size:13px">Ver plugin →</span>
-          <span style="color:rgba(255,255,255,.3);font-size:12px">R$ 49/mês</span>
-        </div>
-      </a>
-
-      <!-- Motion Legendas -->
-      <a href="/legendas/" class="familia-card reveal" style="display:block;text-decoration:none;color:inherit;background:#0e0e0e;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:32px;transition:all .25s;position:relative;overflow:hidden">
-        <div style="position:absolute;top:16px;right:16px;background:rgba(124,77,255,.15);color:#a78bfa;padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1.2px">NOVO</div>
-        <div style="font-size:36px;margin-bottom:16px">💬</div>
-        <h3 style="font-size:22px;font-weight:800;letter-spacing:-.4px;margin-bottom:8px">Motion Legendas</h3>
-        <p style="color:rgba(255,255,255,.55);font-size:14px;line-height:1.5;margin-bottom:20px">Importa SRT/Captions e aplica em massa com templates animados. Modo 1-palavra estilo viral.</p>
-        <div style="font-size:12px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.5px">61 templates · SFX integrado · Inject mode</div>
-        <div style="margin-top:24px;display:flex;justify-content:space-between;align-items:center">
-          <span style="color:#a78bfa;font-weight:700;font-size:13px">Ver plugin →</span>
-          <span style="color:rgba(255,255,255,.3);font-size:12px">R$ 149/ano</span>
-        </div>
-      </a>
-
-      <!-- Em breve: IA -->
-      <div class="familia-card reveal" style="display:block;background:#0a0a0a;border:1px dashed rgba(255,255,255,.1);border-radius:16px;padding:32px;position:relative;overflow:hidden;opacity:.6">
-        <div style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1.2px">EM BREVE</div>
-        <div style="font-size:36px;margin-bottom:16px">🤖</div>
-        <h3 style="font-size:22px;font-weight:800;letter-spacing:-.4px;margin-bottom:8px">Motion IA</h3>
-        <p style="color:rgba(255,255,255,.4);font-size:14px;line-height:1.5;margin-bottom:20px">Agente Claude que edita a timeline do Premiere por comandos em linguagem natural.</p>
-        <div style="font-size:12px;color:rgba(255,255,255,.3);font-weight:600;letter-spacing:.5px">Beta privado · Q4 2026</div>
-        <div style="margin-top:24px">
-          <a href="/account.html" style="color:rgba(255,255,255,.5);font-weight:700;font-size:13px;text-decoration:none">Entrar na lista de espera →</a>
-        </div>
-      </div>
-
-    </div>
-
-    <div style="text-align:center;margin-top:40px">
-      <p style="color:rgba(255,255,255,.45);font-size:14px">Plano <strong style="color:#fff">Bundle Completo</strong> dá acesso a todos os plugins. Veja em <a href="#planos" style="color:#2563eb">planos</a>.</p>
-    </div>
-  </div>
-</section>
-
-<style>
-  .familia-card:hover {
-    border-color: rgba(37, 99, 235,.4) !important;
-    transform: translateY(-3px);
-    box-shadow: 0 10px 30px rgba(0,0,0,.5);
-  }
-</style>
-
-<!-- ════════════════════════ FLUXO ════════════════════════ -->
+<!-- ════════════════════════ FLUXO (DARK) ════════════════════════ -->
 <section class="flux" id="fluxo">
   <div class="container">
     <div class="sec-head reveal">
-      <span class="tag-mono"><span class="dot"></span>— FLUXO</span>
+      <span class="tag-mono"><span class="dot"></span>— O FLUXO</span>
       <h2 class="section-title">Quatro passos.<br>Sem desculpa pra <span class="italic-em">demorar.</span></h2>
     </div>
     <div class="flux-grid">
       <div class="flux-line" id="fluxLine"></div>
-      <div class="flux-step reveal"><div class="num">01</div><h4>Instale</h4><p>30 segundos. Setup automático. Zero pasta pra mover.</p></div>
-      <div class="flux-step reveal"><div class="num">02</div><h4>Entre</h4><p>Login. Catálogo carrega sozinho. Já organizado por pack e categoria.</p></div>
-      <div class="flux-step reveal"><div class="num">03</div><h4>Busque</h4><p>Nome, categoria, estilo, duração. Preview no hover. Sem abrir arquivo.</p></div>
-      <div class="flux-step reveal"><div class="num">04</div><h4>Aplique</h4><p>Clique único. Vai pra timeline ativa no CTI. Edite. Exporte. Entrega.</p></div>
+      <div class="flux-step reveal"><div class="num">01</div><h4>Instala</h4><p>Dois cliques e já tá rodando dentro do Premiere. Setup automático.</p></div>
+      <div class="flux-step reveal"><div class="num">02</div><h4>Abre</h4><p>Painel nativo. Você nem sai da timeline pra escolher.</p></div>
+      <div class="flux-step reveal"><div class="num">03</div><h4>Escolhe</h4><p>Título ou legenda. Filtra por categoria, estilo, duração. Preview no hover.</p></div>
+      <div class="flux-step reveal"><div class="num">04</div><h4>Aplica</h4><p>Arrasta, solta, edita o que quiser. Fim.</p></div>
     </div>
     <div class="flux-close reveal">
       <div class="head">Da intenção à timeline: <span class="accent">11 segundos.</span></div>
-      <div class="sub">O tempo que você levava pra abrir uma pasta.</div>
     </div>
   </div>
 </section>
 
-<!-- ════════════════════════ COMPARAÇÃO ════════════════════════ -->
-<section>
+<!-- ════════════════════════ ANTES vs DEPOIS ════════════════════════ -->
+<section class="compare">
   <div class="container">
     <div class="sec-head reveal">
-      <span class="tag-mono"><span class="dot"></span>— O QUE MUDA</span>
-      <h2 class="section-title">Antes do Motion Titles.<br>Depois do <span class="italic-em">Motion Titles.</span></h2>
+      <span class="tag-mono"><span class="dot"></span>— A VIRADA</span>
+      <h2 class="section-title">Antes da Motion Suite.<br>Depois da <span class="italic-em">Motion Suite.</span></h2>
     </div>
     <div class="compare-table">
-      <div class="compare-head"><div>Tarefa</div><div>Hoje</div><div class="h-pro">Motion Titles</div></div>
-      <div class="compare-row reveal"><div class="task">Achar lower third</div><div class="before">4–8 minutos</div><div class="after">11 segundos</div></div>
-      <div class="compare-row reveal"><div class="task">Preview do template</div><div class="before">Importar + render</div><div class="after">Hover do mouse</div></div>
-      <div class="compare-row reveal"><div class="task">Trocar fonte</div><div class="before">Renderizar de novo</div><div class="after">2 cliques</div></div>
-      <div class="compare-row reveal"><div class="task">Trocar cor da marca</div><div class="before">Refazer no After Effects</div><div class="after">Slider no Premiere</div></div>
-      <div class="compare-row reveal"><div class="task">Organizar 8 packs</div><div class="before">Pasta + pasta + pasta…</div><div class="after">Não existe</div></div>
-      <div class="compare-row reveal"><div class="task">Backup do catálogo</div><div class="before">HD + nuvem + reza</div><div class="after">Não é problema seu</div></div>
-      <div class="compare-row reveal"><div class="task">Encontrar template certo</div><div class="before">Memória + sorte</div><div class="after">Busca instantânea</div></div>
+      <div class="compare-head"><div>Tarefa</div><div>Antes</div><div class="h-pro">Motion Suite</div></div>
+      <div class="compare-row reveal"><div class="task">Animar um título</div><div class="before">30 min de keyframe</div><div class="after">1 clique</div></div>
+      <div class="compare-row reveal"><div class="task">Legendar o vídeo</div><div class="before">30 min sincronizando</div><div class="after">11 segundos</div></div>
+      <div class="compare-row reveal"><div class="task">Achar o template</div><div class="before">"onde eu salvei isso?"</div><div class="after">Painel organizado</div></div>
+      <div class="compare-row reveal"><div class="task">Personalizar</div><div class="before">Refaz tudo do zero</div><div class="after">Fonte, cor, posição</div></div>
+      <div class="compare-row reveal"><div class="task">Sound effects</div><div class="before">Banco genérico avulso</div><div class="after">Já vem na legenda</div></div>
+      <div class="compare-row reveal"><div class="task">Lower third pra entrevista</div><div class="before">Title Tool manual</div><div class="after">100 layouts prontos</div></div>
+      <div class="compare-row reveal"><div class="task">Cliente pede alteração</div><div class="before">Refazer do zero</div><div class="after">Editar inline</div></div>
     </div>
-    <div class="compare-close reveal"><p>Não é uma evolução. <span class="accent">É outra categoria.</span></p></div>
+    <div class="compare-close reveal">
+      <p>Não é uma evolução.<span class="accent">É outra categoria.</span></p>
+    </div>
   </div>
 </section>
 
-<!-- ════════════════════════ PRICING ════════════════════════ -->
+<!-- ════════════════════════ PRICING (combo ancorado) ════════════════════════ -->
 <section class="pricing" id="planos">
   <div class="container">
-    <div class="sec-head reveal">
-      <span class="tag-mono"><span class="dot"></span>— INVESTIMENTO</span>
+    <div class="sec-head reveal" style="text-align:center; margin-left:auto; margin-right:auto;">
+      <span class="tag-mono"><span class="dot"></span>— OS PLANOS</span>
       <h2 class="section-title">Dois planos.<br>Zero <span class="italic-em">pegadinha.</span></h2>
+      <div class="price-toggle reveal" role="tablist" aria-label="Frequência" style="margin-top:32px;">
+        <button id="toggle-monthly" class="active" data-freq="monthly" role="tab" aria-selected="true">Mensal</button>
+        <button id="toggle-yearly" data-freq="yearly" role="tab" aria-selected="false">Anual <span class="sale">2 meses grátis</span></button>
+      </div>
     </div>
+
     <div class="price-grid">
-      <article class="price-card popular reveal">
-        <span class="price-badge">Mais popular</span>
-        <div class="price-tag">01 · Anual</div>
-        <h3>Motion Titles Anual</h3>
-        <div class="price-amount"><span class="num">R$ 199</span><span class="suf">/ano</span></div>
-        <p class="price-micro">~R$ 16,58/mês · economia vs vitalício no 1º ano</p>
+
+      <!-- 1 PLUGIN -->
+      <article class="price-card reveal">
+        <div class="price-tag">À escolha</div>
+        <h3>Motion Titles <em style="font-style:normal;color:var(--fg-muted);font-weight:500">ou</em> Motion Legendas</h3>
+        <div class="price-amount" data-amount-monthly="R$ 49,90" data-amount-yearly="R$ 249,00">
+          <span class="num">R$ 49,90</span>
+          <span class="suf" data-suf-monthly="/mês" data-suf-yearly="/ano">/mês</span>
+        </div>
+        <p class="price-micro" data-micro-monthly="Escolhe 1 dos 2 plugins · cobrança mensal" data-micro-yearly="Escolhe 1 dos 2 plugins · 2 meses grátis no anual">Escolhe 1 dos 2 plugins · cobrança mensal</p>
         <ul class="price-features">
-          <li>7.906 templates premium</li>
+          <li>Escolhe 1 dos 2 plugins</li>
           <li>2 dispositivos simultâneos</li>
           <li>Atualizações inclusas</li>
-          <li>Suporte prioritário (resposta em até 4h úteis)</li>
-          <li>Cancele quando quiser, sem multa</li>
+          <li>Suporte direto por e-mail</li>
+          <li>Cancele quando quiser</li>
         </ul>
-        <button class="btn btn-primary btn-full" data-buy="yearly">Assinar Anual <span class="arrow">→</span></button>
+        <div style="display:flex; gap:8px; flex-direction:column;">
+          <button class="btn btn-dark btn-full" data-buy-suite="titles_monthly" data-plan-titles-monthly="titles_monthly" data-plan-titles-yearly="titles_yearly">
+            <span data-cta-monthly="Começar com Titles" data-cta-yearly="Começar com Titles">Começar com Titles</span> <span class="arrow">→</span>
+          </button>
+          <button class="btn btn-secondary btn-full" data-buy-suite="legendas_monthly" data-plan-legendas-monthly="legendas_monthly" data-plan-legendas-yearly="legendas_yearly">
+            <span>Começar com Legendas</span> <span class="arrow">→</span>
+          </button>
+        </div>
         <div class="price-foot">7 dias trial · cancele em 1 clique</div>
       </article>
-      <article class="price-card reveal">
-        <div class="price-tag" style="color:var(--fg-muted)">02 · Vitalício</div>
-        <h3>Motion Titles Vitalício</h3>
-        <div class="price-amount"><span class="num">R$ 499</span><span class="suf">/pagamento único</span></div>
-        <p class="price-micro">Sem mensalidade. Pra sempre. Se paga em 2,5 anos.</p>
+
+      <!-- COMBO -->
+      <article class="price-card popular reveal">
+        <span class="price-badge">⭐ Mais escolhido</span>
+        <div class="price-tag">Recomendado</div>
+        <h3>A Suite completa</h3>
+        <div class="price-amount" data-amount-monthly="R$ 59,90" data-amount-yearly="R$ 399,90">
+          <span class="num">R$ 59,90</span>
+          <span class="suf" data-suf-monthly="/mês" data-suf-yearly="/ano">/mês</span>
+        </div>
+        <p class="price-micro" data-micro-monthly="Motion Titles + Motion Legendas · o segundo plugin sai por R$ 10/mês" data-micro-yearly="Motion Titles + Motion Legendas · 2 meses grátis no anual">Motion Titles + Motion Legendas · o segundo plugin sai por R$ 10/mês</p>
         <ul class="price-features">
-          <li>Acesso vitalício ao catálogo</li>
-          <li>3 dispositivos simultâneos</li>
-          <li>Todas as atualizações futuras inclusas</li>
-          <li>Suporte vitalício</li>
-          <li>Pague uma vez. Esqueça.</li>
+          <li>Motion Titles <strong>+</strong> Motion Legendas</li>
+          <li>7.906 títulos + 549 títulos legendados</li>
+          <li>Todos os 10 estilos + sound effects</li>
+          <li>2 dispositivos simultâneos</li>
+          <li>Suporte prioritário</li>
         </ul>
-        <button class="btn btn-dark btn-full" data-buy="lifetime">Comprar Vitalício <span class="arrow">→</span></button>
-        <div class="price-foot">Reembolso em 14 dias. Sem perguntas.</div>
+        <button class="btn btn-primary btn-full btn-lg" data-buy-suite="suite_monthly" data-plan-suite-monthly="suite_monthly" data-plan-suite-yearly="suite_yearly">
+          Quero a Suite completa <span class="arrow">→</span>
+        </button>
+        <div class="price-foot">7 dias trial · cancele em 1 clique</div>
       </article>
+
     </div>
+
     <div class="pricing-callout reveal">
       <p>
-        <strong>💡 Comparação honesta:</strong>
-        Pacote avulso de motion graphics no mercado: R$ 150 a R$ 800.
-        Motion Titles Vitalício: R$ 499 uma vez. 7.906 templates. Faz a conta.
+        Um plugin: <strong>R$ 49,90</strong>. Os dois: <strong>R$ 59,90</strong>. Faz a conta — o segundo plugin sai por <strong style="color:var(--accent)">R$ 10/mês</strong>.
       </p>
     </div>
   </div>
 </section>
 
-<!-- ════════════════════════ MANIFESTO ════════════════════════ -->
+<!-- ════════════════════════ MANIFESTO / DEPOIMENTO ════════════════════════ -->
 <section class="manifesto">
   <div class="container">
     <div class="manifesto-inner reveal">
       <p class="manifesto-quote">
-        Construí o Motion Titles porque editor não devia perder hora procurando arquivo. Devia perder hora editando. O plugin une o que tava espalhado em 8 pastas e devolve o tempo pra edição de verdade — a parte que paga a conta.
+        Construí a Motion Suite porque editor não devia perder hora animando título nem sincronizando legenda na mão. O plugin instala, resolve, e devolve o tempo pra parte que paga a conta — editar de verdade.
       </p>
       <div class="manifesto-sig">
         <span class="name">Gabriel Kendy</span>
-        <span class="role">Founder · PacotesFX</span>
+        <span class="role">Criador da Motion Suite · PacotesFX</span>
       </div>
     </div>
   </div>
@@ -720,14 +595,14 @@
       <h2 class="section-title">Dúvidas comuns.</h2>
     </div>
     <div class="faq-list">
-      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Funciona no Premiere e no After Effects?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Hoje, exclusivamente Premiere Pro (2022 em diante). After Effects tá no roadmap pra 2026.</p></div></div>
-      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Posso usar em projetos comerciais?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Sim. Licença comercial inclusa nos 2 planos. Vídeo de cliente, YouTube monetizado, social ads, evento pago — tudo liberado.</p></div></div>
-      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Quantas máquinas posso ativar?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Anual: 2 simultâneas. Vitalício: 3 simultâneas. Troca de máquina em 1 clique no dashboard.</p></div></div>
-      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">E se eu cancelar a assinatura?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Mantém acesso até o fim do período pago. Sem multa. Sem ligação de retenção. Sem chantagem emocional.</p></div></div>
-      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Como funciona o reembolso?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>14 dias a partir da compra. Não gostou, pede no suporte, devolve 100%. Sem pergunta, sem formulário de 12 campos.</p></div></div>
-      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Aceita Pix?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Aceita. Pix, cartão, boleto via Stripe Checkout. Vitalício no Pix sai com desconto adicional.</p></div></div>
-      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">O plugin precisa de internet?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Pra baixar template novo, sim. Pra usar o que já baixou, não. Funciona offline por 7 dias antes de pedir reauth.</p></div></div>
-      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Atualizam o catálogo?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Sim. Releases mensais com 50 a 200 templates novos. Vitalício recebe tudo, pra sempre.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Funciona no Premiere e no After Effects?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>A Motion Suite é nativa do Premiere Pro (painel CEP). Os títulos podem ser levados pro After, mas a experiência de 1 clique foi feita pro Premiere. CC 2019 em diante (Windows e Mac).</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Posso usar em projetos comerciais / de cliente?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Sim. A licença cobre uso comercial ilimitado. Vídeo de cliente, YouTube monetizado, social ads, evento pago — tudo liberado. Sem royalty.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Quantas máquinas posso ativar?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Cada licença ativa em até 2 máquinas (ex: desktop + notebook). Troca de máquina em 1 clique no dashboard. Precisa de mais? Fala com a gente.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Posso assinar só um plugin?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Pode. O plano de 1 plugin (R$ 49,90/mês) deixa você escolher Titles ou Legendas. Mas pelo combo, o segundo plugin sai por só R$ 10 a mais.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">A legenda automática é precisa? Em português?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Sim, transcrição otimizada pra português-BR. Você sempre revisa antes de aplicar — mas o trabalho pesado já vem feito.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Como funciona o reembolso?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>7 dias de garantia incondicional. Não curtiu, devolve. Sem perguntas, sem formulário de 12 campos.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">O plugin precisa de internet?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Só pra ativar a licença e pra transcrição automática das legendas. Os títulos rodam offline por até 7 dias antes de pedir reauth.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">A assinatura inclui as atualizações?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Sim. Enquanto a assinatura estiver ativa, você recebe todos os novos títulos, estilos e updates da suíte.</p></div></div>
     </div>
   </div>
 </section>
@@ -741,9 +616,9 @@
       <span class="line">É quanto tempo a mais</span>
       <span class="line accent">você vai perder pra admitir.</span>
     </h2>
-    <p class="lede reveal">7 dias grátis. Sem cartão. Cancele com 1 clique.</p>
+    <p class="lede reveal">Dois plugins. Um clique. Sua edição inteira mais rápida — começando hoje.</p>
     <div class="reveal"><a href="#planos" class="btn btn-primary btn-giant">Começar agora <span class="arrow">→</span></a></div>
-    <p class="micro reveal">Suporte em português · Equipe brasileira · Sem fila gringa</p>
+    <p class="micro reveal">7 dias grátis · Sem cartão · Cancele com 1 clique</p>
   </div>
 </section>
 
@@ -752,31 +627,24 @@
   <div class="container">
     <div class="footer-grid">
       <div>
-        <div class="logo"><span class="logo-dot"></span>Motion Titles</div>
-        <p class="footer-tag">O acervo definitivo de motion graphics. Construído por editor, pra editor.</p>
+        <div class="logo"><span class="logo-dot"></span>Motion Suite</div>
+        <p class="footer-tag">Dois plugins. Um Premiere. Sua edição inteira mais rápida. Construído por editor, pra editor.</p>
         <div class="footer-copy">© <span data-yr></span> · PacotesFX</div>
       </div>
-      <div class="footer-col"><h5>Produto</h5><ul>
-        <li><a href="#plataforma">Plataforma</a></li>
-        <li><a href="#familia">Família Motion Titles</a></li>
+      <div class="footer-col"><h5>Produtos</h5><ul>
+        <li><a href="/titles/">Motion Titles</a></li>
+        <li><a href="/legendas/">Motion Legendas</a></li>
+        <li><a href="#planos">A Suite (combo)</a></li>
+      </ul></div>
+      <div class="footer-col"><h5>Recursos</h5><ul>
+        <li><a href="#produtos">Os dois plugins</a></li>
         <li><a href="#fluxo">Como funciona</a></li>
         <li><a href="#planos">Preços</a></li>
-        <li><a href="#faq">Perguntas frequentes</a></li>
-        <li><a href="/download.html">Download</a></li>
-      </ul></div>
-      <div class="footer-col"><h5>Plugins</h5><ul>
-        <li><a href="/">Motion Titles (7.906 templates)</a></li>
-        <li><a href="/legendas/">Motion Legendas</a></li>
-      </ul></div>
-      <div class="footer-col"><h5>Docs</h5><ul>
-        <li><a href="/docs/">Central de manuais</a></li>
-        <li><a href="/docs/titles.html">Manual Motion Titles</a></li>
-        <li><a href="/docs/ia.html">Manual Motion IA</a></li>
-        <li><a href="/docs/legendas.html">Manual Motion Legendas</a></li>
+        <li><a href="#faq">FAQ</a></li>
       </ul></div>
       <div class="footer-col"><h5>Conta</h5><ul>
         <li><a href="/account.html">Entrar</a></li>
-        <li><a href="#planos">Assinar</a></li>
+        <li><a href="/docs/">Docs</a></li>
         <li><a href="/reset-password.html">Esqueci a senha</a></li>
       </ul></div>
       <div class="footer-col"><h5>Legal</h5><ul>
@@ -788,14 +656,14 @@
     </div>
     <div class="footer-bottom">
       <span>Brasil · Belo Horizonte</span>
-      <span>v2.5 · <span data-yr></span></span>
+      <span>v3.0 Motion Suite · <span data-yr></span></span>
     </div>
   </div>
 </footer>
 
 <!-- ════════════════════════ WHATSAPP FAB ════════════════════════ -->
 <a class="wa-fab"
-   href="https://wa.me/5531997554040?text=Quero%20conhecer%20o%20MotionPro"
+   href="https://wa.me/5531997554040?text=Quero%20conhecer%20a%20Motion%20Suite"
    target="_blank" rel="noopener noreferrer"
    aria-label="Falar no WhatsApp">
   <span class="wa-fab-label">
@@ -814,10 +682,8 @@
 <script src="/js/system.js"></script>
 <script>
 /* ════════════════════════════════════════════════════════════════
-   HOME-SPECIFIC SCRIPT (GSAP/Lenis motion stack)
-   - Lenis com integração oficial ScrollTrigger (1 RAF único)
-   - Hero animations consolidadas e pausáveis fora da viewport
-   - Scramble pausa quando offscreen
+   MOTION SUITE HOME · SCRIPT
+   Lenis + ScrollTrigger + Pricing toggle + Checkout suite
    ════════════════════════════════════════════════════════════════ */
 (function () {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -833,10 +699,9 @@
   }
   function fallback() {
     document.querySelectorAll('.reveal').forEach(el => el.classList.add('in'));
-    document.querySelectorAll('.hero-chip').forEach(c => c.style.opacity = 1);
   }
   function init() {
-    // ─── Lenis smooth scroll (config oficial Lenis+GSAP) ───
+    // ─── Lenis smooth scroll ───
     let lenis = null;
     if (!reduced && typeof window.Lenis !== 'undefined') {
       try {
@@ -845,15 +710,11 @@
           easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
           smoothWheel: true,
           wheelMultiplier: 1,
-          touchMultiplier: 1.6,
-          syncTouch: false
+          touchMultiplier: 1.6
         });
-        // Integração oficial: ScrollTrigger atualiza a cada scroll do Lenis
         lenis.on('scroll', ScrollTrigger.update);
-        // 1 ÚNICO RAF: gsap.ticker dirige o Lenis
         gsap.ticker.add(time => lenis.raf(time * 1000));
         gsap.ticker.lagSmoothing(0);
-        // Expor pra debug/anchor scroll
         window.__lenis = lenis;
       } catch (e) { lenis = null; }
     }
@@ -868,7 +729,7 @@
             [...node.textContent].forEach(ch => {
               const s = document.createElement('span');
               s.className = 'char';
-              s.textContent = ch === ' ' ? ' ' : ch;
+              s.textContent = ch === ' ' ? ' ' : ch;
               frag.appendChild(s);
             });
             parent.replaceChild(frag, node);
@@ -880,7 +741,6 @@
       });
     }
 
-    // HERO timeline
     if (!reduced) {
       const tl = gsap.timeline({ delay: 0.3, defaults: { ease: 'power3.out' } });
       const badge = document.querySelector('.hero-badge');
@@ -888,23 +748,20 @@
       const sub   = document.querySelector('.hero-sub');
       const ctas  = document.querySelectorAll('.hero-ctas > *');
       const trust = document.querySelector('.trust-line');
-      const marquee = document.querySelector('.hero-marquee');
+      const metrics = document.querySelector('.hero-metrics');
       if (badge) tl.from(badge, { opacity: 0, y: 20, duration: .8 });
-      if (chars.length) tl.from(chars, { opacity: 0, y: 80, rotateX: -90, duration: 1, stagger: .03, ease: 'power4.out' }, '-=0.5');
+      if (chars.length) tl.from(chars, { opacity: 0, y: 80, rotateX: -90, duration: 1, stagger: .02, ease: 'power4.out' }, '-=0.5');
       if (sub) tl.from(sub, { opacity: 0, y: 30, duration: .8 }, '-=0.6');
       if (ctas.length) tl.from(ctas, { opacity: 0, y: 40, duration: .7, stagger: .1, ease: 'back.out(1.7)' }, '-=0.4');
       if (trust) tl.from(trust, { opacity: 0, y: 10, duration: .6 }, '-=0.4');
-      if (marquee) tl.from(marquee, { opacity: 0, y: 30, duration: 1 }, '-=0.5');
+      if (metrics) tl.from(metrics, { opacity: 0, y: 30, duration: 1 }, '-=0.4');
     }
 
-    // Reveal: o CSS já tem opacity:0 + transform + transition.
-    // ScrollTrigger.batch só adiciona .in com stagger (sem GSAP tween duplicado).
+    // Reveal stagger
     if (!reduced) {
       ScrollTrigger.batch('.reveal', {
         start: 'top 88%',
-        onEnter: batch => {
-          batch.forEach((el, i) => setTimeout(() => el.classList.add('in'), i * 70));
-        },
+        onEnter: batch => batch.forEach((el, i) => setTimeout(() => el.classList.add('in'), i * 70)),
         once: true
       });
     } else {
@@ -936,12 +793,6 @@
       obs.observe(el);
     });
 
-    // STATS line in
-    const stats = document.getElementById('stats');
-    if (stats) {
-      ScrollTrigger.create({ trigger: stats, start: 'top 80%', onEnter: () => stats.classList.add('in-view') });
-    }
-
     // FLUX line
     const fluxLine = document.getElementById('fluxLine');
     const fluxGrid = document.querySelector('.flux-grid');
@@ -951,68 +802,22 @@
       fluxLine.classList.add('in');
     }
 
-    // HERO chips reveal + float + parallax CONSOLIDADO em 1 timeline
-    const chips = document.querySelectorAll('.hero-chip');
-    if (chips.length && !reduced) {
-      gsap.to(chips, { opacity: 1, duration: 1, stagger: .1, delay: 1.2, ease: 'power2.out' });
-      chips.forEach((chip, i) => {
-        gsap.to(chip, { y: (i % 2 === 0 ? -14 : 14), duration: 3.5 + (i * .3), repeat: -1, yoyo: true, ease: 'sine.inOut', delay: 1.5 + i * .2 });
-      });
-
-      // ─── 1 SÓ ScrollTrigger pro parallax do hero ───
-      const heroTl = gsap.timeline({
-        scrollTrigger: {
-          trigger: '.hero',
-          start: 'top top',
-          end: 'bottom top',
-          scrub: 0.5,                  // lerp suave, mais barato que scrub:true
-          invalidateOnRefresh: true
-        }
-      });
-      heroTl
+    // Hero parallax + pausa offscreen
+    if (!reduced) {
+      gsap.timeline({
+        scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: 0.5 }
+      })
         .to('.hero-bg .blob.b1', { y: 200 }, 0)
         .to('.hero-bg .blob.b2', { y: -180 }, 0)
         .to('.hero-bg .blob.b3', { y: 240 }, 0)
         .to('.hero-inner', { opacity: 0.3, y: -60 }, 0);
-
-      // Chips parallax em batch (1 tween por chip mas com mesmo ScrollTrigger)
-      chips.forEach(chip => {
-        const depth = parseFloat(chip.dataset.depth) || 0.4;
-        heroTl.to(chip, { y: `+=${depth * 220}` }, 0);
-      });
-    } else if (chips.length) {
-      chips.forEach(c => c.style.opacity = 1);
     }
-
-    // ─── Pausa CSS animations do hero quando offscreen (GPU/CPU saver) ───
     const heroEl = document.querySelector('.hero');
     if (heroEl) {
       const heroIO = new IntersectionObserver((entries) => {
-        entries.forEach(en => {
-          heroEl.dataset.paused = en.isIntersecting ? 'false' : 'true';
-        });
+        entries.forEach(en => { heroEl.dataset.paused = en.isIntersecting ? 'false' : 'true'; });
       }, { rootMargin: '100px' });
       heroIO.observe(heroEl);
-    }
-
-    // HERO mouse glow
-    const hero = document.getElementById('hero');
-    const heroGlow = document.getElementById('heroGlow');
-    if (hero && heroGlow && !reduced) {
-      let glowX = 0, glowY = 0, targetX = 0, targetY = 0;
-      hero.addEventListener('mousemove', e => {
-        const r = hero.getBoundingClientRect();
-        targetX = e.clientX - r.left; targetY = e.clientY - r.top;
-        heroGlow.style.opacity = '1';
-      });
-      hero.addEventListener('mouseleave', () => heroGlow.style.opacity = '0');
-      function rafGlow() {
-        glowX += (targetX - glowX) * 0.12;
-        glowY += (targetY - glowY) * 0.12;
-        heroGlow.style.transform = `translate(calc(${glowX}px - 50%), calc(${glowY}px - 50%))`;
-        requestAnimationFrame(rafGlow);
-      }
-      rafGlow();
     }
 
     // Magnetic buttons
@@ -1055,14 +860,9 @@
     if (!reduced) {
       document.querySelectorAll('[data-scramble]').forEach(el => {
         const final = el.dataset.scramble + '.';
-        let intervalId = null;
-        let visible = true;
+        let intervalId = null, visible = true;
         setTimeout(() => scramble(el, final, 1100), 1800);
-        // Só roda o loop enquanto estiver visível
-        const startLoop = () => {
-          if (intervalId) return;
-          intervalId = setInterval(() => { if (visible) scramble(el, final, 1000); }, 7000);
-        };
+        const startLoop = () => { if (!intervalId) intervalId = setInterval(() => { if (visible) scramble(el, final, 1000); }, 7000); };
         const stopLoop = () => { if (intervalId) { clearInterval(intervalId); intervalId = null; } };
         const io = new IntersectionObserver(([entry]) => {
           visible = entry.isIntersecting;
@@ -1081,7 +881,43 @@
       });
     });
 
-    // Smooth anchor (delegated, com Lenis ou fallback nativo)
+    // ─── PRICING TOGGLE (Mensal / Anual) ───
+    let currentFreq = 'monthly';
+    function setFreq(freq) {
+      currentFreq = freq;
+      document.querySelectorAll('.price-toggle button').forEach(b => {
+        const active = b.dataset.freq === freq;
+        b.classList.toggle('active', active);
+        b.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      // Atualiza valores
+      document.querySelectorAll('.price-amount').forEach(el => {
+        const num = el.querySelector('.num');
+        const suf = el.querySelector('.suf');
+        if (num) num.textContent = el.dataset['amount' + freq.charAt(0).toUpperCase() + freq.slice(1)] || num.textContent;
+        if (suf) suf.textContent = suf.dataset['suf' + freq.charAt(0).toUpperCase() + freq.slice(1)] || suf.textContent;
+      });
+      document.querySelectorAll('.price-micro').forEach(el => {
+        el.textContent = el.dataset['micro' + freq.charAt(0).toUpperCase() + freq.slice(1)] || el.textContent;
+      });
+      // Atualiza data-buy-suite dos botões
+      document.querySelectorAll('[data-buy-suite]').forEach(btn => {
+        const key = 'plan' + freq.charAt(0).toUpperCase() + freq.slice(1);
+        // procura data-plan-{product}-{freq}
+        Object.keys(btn.dataset).forEach(k => {
+          // ex: planTitlesMonthly, planSuiteYearly
+          const m = k.match(/^plan(Titles|Legendas|Suite)(Monthly|Yearly)$/);
+          if (m && m[2].toLowerCase() === freq) {
+            btn.dataset.buySuite = btn.dataset[k];
+          }
+        });
+      });
+    }
+    document.querySelectorAll('.price-toggle button').forEach(b => {
+      b.addEventListener('click', () => setFreq(b.dataset.freq));
+    });
+
+    // Smooth anchor
     document.addEventListener('click', e => {
       const a = e.target.closest('a[href^="#"]');
       if (!a) return;
@@ -1094,7 +930,38 @@
       else el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
-    // Refresh ScrollTrigger quando fontes carregarem (evita misposicionamento)
+    // ─── CHECKOUT MOTION SUITE ───
+    document.addEventListener('click', async e => {
+      const btn = e.target.closest('[data-buy-suite]');
+      if (!btn) return;
+      e.preventDefault();
+      const plan = btn.dataset.buySuite;  // ex: "suite_monthly"
+      const [product, freq] = plan.split('_');
+      const orig = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Indo pra Stripe...';
+      try {
+        const token = localStorage.getItem('mv_session');
+        const savedEmail = localStorage.getItem('mv_email');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers.Authorization = 'Bearer ' + token;
+        const url = (window.MV_API || 'https://motionpro.vercel.app')
+          + '/v1/billing/checkout?plan=' + encodeURIComponent(freq)
+          + '&product=' + encodeURIComponent(product);
+        const r = await fetch(url, {
+          method: 'POST', headers,
+          body: JSON.stringify({ plan: freq, product, email: savedEmail || undefined })
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok || !data.url) throw new Error(data.error || 'checkout_failed');
+        window.location.href = data.url;
+      } catch (err) {
+        if (window.MV && window.MV.toast) window.MV.toast('Erro: ' + err.message, 'error');
+        btn.disabled = false;
+        btn.innerHTML = orig;
+      }
+    });
+
     if (document.fonts && document.fonts.ready) {
       document.fonts.ready.then(() => ScrollTrigger.refresh());
     }
