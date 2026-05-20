@@ -1,254 +1,1459 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Motion Legendas — 549 títulos premium para Premiere Pro</title>
-<meta name="description" content="Plugin de títulos, lower thirds e legendas estilizadas. 549 templates organizados em 10 categorias. Para Premiere Pro CC 2019+.">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="Motion Legendas — 549 títulos premium dentro do Premiere Pro. Plugin nativo. Importação em 1 clique. 100% editável na timeline." />
+<meta property="og:title" content="Motion Legendas — Títulos e lower thirds prontos dentro do Premiere" />
+<meta property="og:description" content="549 títulos profissionais. Plugin CEP nativo. Editáveis na timeline. R$149/ano ou R$399 vitalício." />
+<meta property="og:type" content="website" />
+<meta property="og:image" content="/img/og.png" />
+<title>Motion Legendas — Títulos e lower thirds prontos dentro do Premiere</title>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css">
-</head>
-<body>
-<header class="nav">
-    <div class="wrap nav__inner">
-        <a href="/" class="brand">Motion<span class="brand-mark">·</span>Pro <span style="font-weight:500;color:var(--mut);margin-left:6px;font-size:14px">Legendas</span></a>
-        <nav class="nav__links">
-            <a href="#manifesto">O que é</a>
-            <a href="#pilares">Recursos</a>
-            <a href="#pricing">Preços</a>
-            <a href="/docs/legendas.html">Manual</a>
-            <a href="/legendas/download.html">Download</a>
-            <a href="/#familia">Família Motion Titles</a>
-        </nav>
-        <div class="nav__actions">
-            <a href="#pricing" class="btn btn--primary btn--sm">Assinar</a>
-        </div>
-    </div>
-</header>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
-<!-- HERO -->
-<section class="hero" id="manifesto">
-    <div class="wrap">
-        <div class="hero__eyebrow">
-            <span class="dot"></span> v1.0 · 549 títulos · Premiere Pro CC 2019+
-        </div>
-        <h1 class="hero__title">
-            <em>TÍTULOS</em> e <em>LOWER THIRDS</em><br>
-            que dão personalidade<br>
-            ao seu vídeo<span class="period">.</span>
-        </h1>
-        <p class="hero__lead">
-            549 títulos profissionais organizados em 10 categorias (Simple, Fashion, Urban, Glitch, Huge, Minimal, Wedding, Elegant, Corporate, Lower Thirds). Importação 1 clique no CTI da sua timeline.
-        </p>
-        <div class="hero__cta">
-            <a href="#pricing" class="btn btn--primary btn--lg">Começar agora <span class="arrow">→</span></a>
-            <a href="#pilares" class="btn btn--ghost btn--lg">Ver recursos</a>
-        </div>
-        <div class="hero__stats">
-            <div><strong>549</strong><span>Títulos premium</span></div>
-            <div><strong>10</strong><span>Categorias</span></div>
-            <div><strong>01</strong><span>Painel no Premiere</span></div>
-            <div><strong>7d</strong><span>Trial sem cartão</span></div>
-        </div>
-    </div>
-</section>
+<link rel="stylesheet" href="/css/system.css">
 
-<!-- PILARES -->
-<section class="section" id="pilares">
-    <div class="wrap">
-        <div class="section__head">
-            <span class="section__tag">O que vem dentro</span>
-            <h2 class="section__title">10 categorias<span class="period">.</span> 549 títulos<span class="period">.</span> Tudo editável<span class="period">.</span></h2>
-        </div>
-        <div class="pillars">
-            <article class="pillar">
-                <div class="pillar__num">01</div>
-                <h3 class="pillar__title">TÍTULOS</h3>
-                <p class="pillar__desc">9 estilos diferentes pra qualquer contexto de produção audiovisual.</p>
-                <ul class="pillar__list">
-                    <li>Simple Titles (50)</li>
-                    <li>Fashion · Urban · Glitch</li>
-                    <li>Huge · Minimal · Wedding</li>
-                    <li>Elegant · Corporate</li>
-                </ul>
-            </article>
-            <article class="pillar">
-                <div class="pillar__num">02</div>
-                <h3 class="pillar__title">LOWER THIRDS</h3>
-                <p class="pillar__desc">100 lower thirds pra entrevistas, créditos, identificação de pessoas.</p>
-                <ul class="pillar__list">
-                    <li>100 layouts profissionais</li>
-                    <li>Cores e fontes editáveis</li>
-                    <li>Duração customizável</li>
-                    <li>Animação de entrada/saída</li>
-                </ul>
-            </article>
-            <article class="pillar">
-                <div class="pillar__num">03</div>
-                <h3 class="pillar__title">PLUGIN</h3>
-                <p class="pillar__desc">Painel CEP nativo do Premiere — mesmo padrão do Motion Titles.</p>
-                <ul class="pillar__list">
-                    <li>Duplo-clique = na timeline</li>
-                    <li>Busca por nome</li>
-                    <li>Favoritos por categoria</li>
-                    <li>Funciona offline (7 dias)</li>
-                </ul>
-            </article>
-        </div>
-    </div>
-</section>
+<link rel="preload" as="script" href="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin>
+<link rel="preload" as="script" href="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" crossorigin>
+<link rel="preload" as="script" href="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+<script src="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js" defer></script>
 
-<!-- PRICING -->
-<section class="section" id="pricing">
-    <div class="wrap">
-        <div class="section__head section__head--center">
-            <span class="section__tag">Investimento</span>
-            <h2 class="section__title">Escolha seu plano<span class="period">.</span></h2>
-        </div>
+<style>
+/* ════════════════════════════════════════════════════════════════
+   LEGENDAS LANDING · STYLES (mesmos componentes da home,
+   adaptados pro produto Motion Legendas)
+   ════════════════════════════════════════════════════════════════ */
 
-        <div class="plans" style="grid-template-columns:repeat(2,1fr);max-width:780px">
-            <article class="plan plan--featured">
-                <div class="plan__ribbon">MAIS POPULAR</div>
-                <div class="plan__head">
-                    <span class="plan__tag">01 · Anual</span>
-                    <h3 class="plan__name">Legendas <em>Anual</em></h3>
-                </div>
-                <div class="plan__price"><span class="plan__currency">R$</span><strong>149</strong><span class="plan__period">/ano</span></div>
-                <p class="plan__sub">~R$ 12,40/mês · economia de 62% vs vitalício</p>
-                <ul class="plan__list">
-                    <li><span class="check">→</span> 549 títulos premium</li>
-                    <li><span class="check">→</span> 2 dispositivos simultâneos</li>
-                    <li><span class="check">→</span> Atualizações inclusas</li>
-                    <li><span class="check">→</span> Suporte por e-mail</li>
-                    <li><span class="check">→</span> Cancele quando quiser</li>
-                </ul>
-                <button class="btn btn--primary btn--full btn--lg buy" data-plan="yearly">
-                    Assinar Anual <span class="arrow">→</span>
-                </button>
-                <p class="plan__foot">7 dias trial sem cartão</p>
-            </article>
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  padding-top: 160px;
+  padding-bottom: 120px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+  text-align: center; isolation: isolate;
+}
+.hero-bg { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.hero-bg .blob {
+  position: absolute; border-radius: 50%; filter: blur(70px);
+  opacity: .55; transform: translateZ(0);
+}
+.hero-bg .blob.b1 { top: -160px; left: -120px; width: 520px; height: 520px;
+  background: radial-gradient(circle, #2563eb 0%, transparent 65%);
+  animation: blobDrift1 22s var(--ease-in-out) infinite; }
+.hero-bg .blob.b2 { top: 5%; right: -180px; width: 480px; height: 480px;
+  background: radial-gradient(circle, #93c5fd 0%, transparent 65%); opacity: .42;
+  animation: blobDrift2 26s var(--ease-in-out) infinite; }
+.hero-bg .blob.b3 { bottom: -200px; left: 30%; width: 600px; height: 600px;
+  background: radial-gradient(circle, #dbeafe 0%, transparent 60%); opacity: .7;
+  animation: blobDrift3 30s var(--ease-in-out) infinite; }
+@keyframes blobDrift1 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 33% { transform: translate3d(120px,80px,0) scale(1.1); } 66% { transform: translate3d(-40px,140px,0) scale(.95); } }
+@keyframes blobDrift2 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(-140px,100px,0) scale(1.15); } }
+@keyframes blobDrift3 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(80px,-120px,0) scale(1.08); } }
+.hero[data-paused="true"] .blob,
+.hero[data-paused="true"] .hero-marquee-track,
+.hero[data-paused="true"] .hero-badge::after { animation-play-state: paused !important; }
 
-            <article class="plan">
-                <div class="plan__head">
-                    <span class="plan__tag">02 · Vitalício</span>
-                    <h3 class="plan__name">Legendas <em>Vitalício</em></h3>
-                </div>
-                <div class="plan__price"><span class="plan__currency">R$</span><strong>399</strong><span class="plan__period">pagamento único</span></div>
-                <p class="plan__sub">Sem mensalidade. Para sempre.</p>
-                <ul class="plan__list">
-                    <li><span class="check">→</span> Acesso vitalício</li>
-                    <li><span class="check">→</span> 3 dispositivos simultâneos</li>
-                    <li><span class="check">→</span> Todas atualizações futuras</li>
-                    <li><span class="check">→</span> Suporte vitalício</li>
-                    <li><span class="check">→</span> Pague uma vez, esqueça</li>
-                </ul>
-                <button class="btn btn--dark btn--full btn--lg buy" data-plan="lifetime">
-                    Comprar Vitalício <span class="arrow">→</span>
-                </button>
-                <p class="plan__foot">Reembolso em 14 dias</p>
-            </article>
-        </div>
-
-        <!-- BUNDLE CTA -->
-        <div style="max-width:780px;margin:40px auto 0;text-align:center;padding:32px;background:linear-gradient(180deg,var(--acc-soft),transparent);border:2px solid var(--acc);border-radius:12px">
-            <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--acc);margin-bottom:10px">💎 PACOTE COMPLETO</div>
-            <h3 style="font-size:24px;font-weight:800;margin-bottom:8px">Motion Titles + Legendas por <em style="font-style:normal;color:var(--acc)">R$ 299/ano</em></h3>
-            <p style="color:var(--mut);font-size:14px;margin-bottom:20px">8.455 templates totais. Economia de R$ 49/ano (14% off vs comprar separado).</p>
-            <a href="/#pricing" class="btn btn--primary btn--lg">Ver Pacote Completo →</a>
-        </div>
-    </div>
-</section>
-
-<!-- CATEGORIAS DETALHADAS -->
-<section class="section" style="background:var(--bg-soft)">
-    <div class="wrap">
-        <div class="section__head section__head--center">
-            <span class="section__tag">Catálogo completo</span>
-            <h2 class="section__title">10 categorias premium<span class="period">.</span></h2>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;max-width:900px;margin:0 auto">
-            <div style="background:var(--bg);padding:24px;border-radius:10px;border:1px solid var(--line)"><div style="font:800 32px Inter;color:var(--acc);margin-bottom:6px">01</div><strong>Simple Titles</strong><br><span style="color:var(--mut);font-size:13px">50 títulos</span></div>
-            <div style="background:var(--bg);padding:24px;border-radius:10px;border:1px solid var(--line)"><div style="font:800 32px Inter;color:var(--acc);margin-bottom:6px">02</div><strong>Fashion Titles</strong><br><span style="color:var(--mut);font-size:13px">24 títulos</span></div>
-            <div style="background:var(--bg);padding:24px;border-radius:10px;border:1px solid var(--line)"><div style="font:800 32px Inter;color:var(--acc);margin-bottom:6px">03</div><strong>Urban Titles</strong><br><span style="color:var(--mut);font-size:13px">15 títulos</span></div>
-            <div style="background:var(--bg);padding:24px;border-radius:10px;border:1px solid var(--line)"><div style="font:800 32px Inter;color:var(--acc);margin-bottom:6px">04</div><strong>Glitch Titles</strong><br><span style="color:var(--mut);font-size:13px">30 títulos</span></div>
-            <div style="background:var(--bg);padding:24px;border-radius:10px;border:1px solid var(--line)"><div style="font:800 32px Inter;color:var(--acc);margin-bottom:6px">05</div><strong>Huge Titles</strong><br><span style="color:var(--mut);font-size:13px">80 títulos</span></div>
-            <div style="background:var(--bg);padding:24px;border-radius:10px;border:1px solid var(--line)"><div style="font:800 32px Inter;color:var(--acc);margin-bottom:6px">06</div><strong>Minimal Titles</strong><br><span style="color:var(--mut);font-size:13px">60 títulos</span></div>
-            <div style="background:var(--bg);padding:24px;border-radius:10px;border:1px solid var(--line)"><div style="font:800 32px Inter;color:var(--acc);margin-bottom:6px">07</div><strong>Wedding Titles</strong><br><span style="color:var(--mut);font-size:13px">70 títulos</span></div>
-            <div style="background:var(--bg);padding:24px;border-radius:10px;border:1px solid var(--line)"><div style="font:800 32px Inter;color:var(--acc);margin-bottom:6px">08</div><strong>Elegant Titles</strong><br><span style="color:var(--mut);font-size:13px">70 títulos</span></div>
-            <div style="background:var(--bg);padding:24px;border-radius:10px;border:1px solid var(--line)"><div style="font:800 32px Inter;color:var(--acc);margin-bottom:6px">09</div><strong>Corporate</strong><br><span style="color:var(--mut);font-size:13px">50 títulos</span></div>
-            <div style="background:var(--bg);padding:24px;border-radius:10px;border:1px solid var(--line);border-color:var(--acc)"><div style="font:800 32px Inter;color:var(--acc);margin-bottom:6px">10</div><strong>Lower Thirds</strong><br><span style="color:var(--mut);font-size:13px">100 layouts</span></div>
-        </div>
-    </div>
-</section>
-
-<footer class="foot">
-    <div class="wrap">
-        <div class="foot__grid">
-            <div class="foot__brand">
-                <div class="brand brand--lg">Motion<span class="brand-mark">·</span>Pro</div>
-                <p>Plugins profissionais pra Premiere Pro. Construído por editores, pra editores.</p>
-                <p class="foot__byline">© <span id="yr"></span> Motion Titles · uma marca PacotesFX</p>
-            </div>
-            <div>
-                <h4>Produtos</h4>
-                <a href="/">Motion Titles (7.906 templates)</a>
-                <a href="/legendas/">Legendas (549 títulos)</a>
-                <a href="/#pricing">Pacote Completo</a>
-            </div>
-            <div>
-                <h4>Conta</h4>
-                <a href="/reset-password.html">Recuperar senha</a>
-                <a href="/legendas/download.html">Download</a>
-            </div>
-            <div>
-                <h4>Legal</h4>
-                <a href="/terms.html">Termos</a>
-                <a href="/privacy.html">Privacidade</a>
-                <a href="mailto:suporte@pacotesfx.com">suporte@pacotesfx.com</a>
-            </div>
-        </div>
-    </div>
-</footer>
-
-<div id="toast" class="toast" hidden></div>
-
-<script>
-document.getElementById('yr').textContent = new Date().getFullYear();
-window.MV_API = "https://motionpro.vercel.app";
-
-function toast(msg, type) {
-    const t = document.getElementById('toast');
-    t.textContent = msg; t.className = 'toast ' + (type||'success'); t.hidden = false;
-    setTimeout(() => t.hidden = true, 3500);
+.hero-bg::before {
+  content: ""; position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(10,10,10,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10,10,10,.04) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black, transparent 75%);
 }
 
-// Buy buttons — checkout direto com product=legendas
-document.querySelectorAll('.buy').forEach(btn => {
-    btn.addEventListener('click', async () => {
-        const plan = btn.dataset.plan;
-        btn.disabled = true;
-        const orig = btn.innerHTML;
-        btn.innerHTML = '<span class="spinner"></span> Redirecionando pra Stripe...';
-        try {
-            const token = localStorage.getItem("mv_session");
-            const headers = { 'Content-Type': 'application/json' };
-            if (token) headers.Authorization = 'Bearer ' + token;
-            const savedEmail = localStorage.getItem("mv_email");
-            const r = await fetch(window.MV_API + '/v1/billing/checkout', {
-                method: 'POST', headers,
-                body: JSON.stringify({ plan, product: "legendas", email: savedEmail })
-            });
-            const data = await r.json();
-            if (data.url) { window.location.href = data.url; }
-            else { throw new Error(data.error || 'checkout_failed'); }
-        } catch (e) {
-            toast('Erro: ' + e.message, 'error');
-            btn.disabled = false; btn.innerHTML = orig;
-        }
-    });
-});
+.hero-glow {
+  position: absolute; top: 0; left: 0;
+  width: 600px; height: 600px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(37,99,235,.18) 0%, transparent 60%);
+  pointer-events: none; transform: translate(-50%, -50%); z-index: -1;
+  opacity: 0; transition: opacity .6s var(--ease-out);
+  mix-blend-mode: multiply;
+}
+.hero:hover .hero-glow { opacity: 1; }
+
+.hero-inner { position: relative; z-index: 2; max-width: 980px; margin: 0 auto; width: 100%; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 8px 16px;
+  background: rgba(255,255,255,.7);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .7rem; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--fg-muted);
+  margin-bottom: 40px;
+  box-shadow: 0 8px 24px -8px rgba(37,99,235,.18);
+  position: relative; overflow: hidden;
+}
+.hero-badge::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(37,99,235,.12) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: badgeShine 4s var(--ease-in-out) 2s infinite;
+}
+@keyframes badgeShine { 0% { transform: translateX(-100%); } 60%,100% { transform: translateX(100%); } }
+.hero-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: pulse 2.4s var(--ease-out) infinite; position: relative; z-index: 1; }
+.hero-title { font-size: clamp(2.6rem, 7vw, 6.2rem) !important; margin-bottom: 36px; }
+.hero-title .line { display: block; }
+.hero-title .char { display: inline-block; }
+.hero-sub {
+  font-size: clamp(1.05rem, 1.5vw, 1.25rem);
+  max-width: 620px; margin: 0 auto 48px;
+  color: var(--fg-muted); line-height: 1.55;
+}
+.hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-bottom: 36px; }
+.trust-line {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--fg-subtle);
+}
+
+.hero-chips { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.hero-chip {
+  position: absolute;
+  background: rgba(255,255,255,.92);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 7px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .65rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--fg-muted);
+  display: inline-flex; align-items: center; gap: 8px;
+  box-shadow: 0 6px 18px -6px rgba(10,10,10,.12);
+  white-space: nowrap;
+  opacity: 0;
+}
+.hero-chip .ico { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.hero-chip.c1 { top: 22%; left: 6%; }
+.hero-chip.c2 { top: 18%; right: 7%; }
+.hero-chip.c3 { top: 58%; left: 4%; }
+.hero-chip.c4 { top: 62%; right: 5%; }
+.hero-chip.c5 { top: 38%; right: 12%; }
+.hero-chip.c6 { top: 42%; left: 10%; }
+@media (max-width: 900px) { .hero-chips { display: none; } }
+
+.hero-marquee {
+  position: relative; width: 100%;
+  margin-top: 70px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 18px 0; overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent 0%, black 12%, black 88%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 12%, black 88%, transparent 100%);
+}
+.hero-marquee-track {
+  display: flex; gap: 56px; width: max-content;
+  animation: marquee 38s linear infinite;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .8rem; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--fg-subtle); align-items: center;
+}
+.hero-marquee-track span { display: inline-flex; align-items: center; gap: 16px; }
+.hero-marquee-track span::after { content: ""; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+.scroll-cue {
+  position: absolute; bottom: 28px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .65rem; letter-spacing: .3em; text-transform: uppercase;
+  color: var(--fg-subtle);
+}
+.scroll-cue .line { width: 1px; height: 40px; background: linear-gradient(180deg, transparent, var(--fg-subtle), transparent); animation: scrollLine 2.2s ease-in-out infinite; }
+@keyframes scrollLine { 0% { transform: scaleY(0); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
+
+/* ── STATS ── */
+.stats { padding: 80px 0; border-top: 1px solid var(--border); position: relative; }
+.stats::before { content: ""; position: absolute; top: -1px; left: 0; height: 1px; background: var(--accent); width: 0; transition: width 1.4s var(--ease-out); }
+.stats.in-view::before { width: 100%; }
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+@media (max-width: 800px) { .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 50px 20px; } }
+.stat-item .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(2.8rem, 6vw, 4.5rem);
+  font-weight: 600; letter-spacing: -.04em;
+  color: var(--accent); line-height: 1; margin-bottom: 14px;
+}
+.stat-item .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .7rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--fg-muted); font-weight: 500;
+}
+
+/* ── SECTION HEADER ── */
+.sec-head { margin-bottom: 80px; max-width: 900px; }
+.sec-head .section-title { margin-bottom: 24px; }
+
+/* ── PROBLEMA ── */
+.problem { background: var(--bg-elevated); }
+.problem-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 100px; max-width: 1100px; margin: 0 auto; align-items: start; }
+@media (max-width: 900px) { .problem-grid { grid-template-columns: 1fr; gap: 50px; } }
+.problem-left p { font-size: clamp(1.1rem, 1.5vw, 1.35rem); color: var(--fg); font-weight: 400; line-height: 1.55; letter-spacing: -.01em; max-width: none; }
+.problem-right { padding-left: 24px; border-left: 1px solid var(--border); }
+@media (max-width: 900px) { .problem-right { padding-left: 0; border-left: none; border-top: 1px solid var(--border); padding-top: 36px; } }
+.problem-num { margin-bottom: 28px; }
+.problem-num .big { font-family: 'JetBrains Mono', monospace; font-size: clamp(2rem, 3.5vw, 2.8rem); font-weight: 600; color: var(--accent); letter-spacing: -.03em; line-height: 1; margin-bottom: 6px; }
+.problem-num .small { font-size: 14px; color: var(--fg-muted); font-family: 'JetBrains Mono', monospace; letter-spacing: .04em; }
+.problem-close { margin-top: 36px; padding-top: 28px; border-top: 1px solid var(--border); font-size: 1rem; color: var(--fg); font-weight: 500; font-style: italic; line-height: 1.5; }
+.problem-cta { margin-top: 60px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: .85rem; letter-spacing: .35em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+
+/* ── PLATAFORMA ── */
+.platform-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+@media (max-width: 900px) { .platform-grid { grid-template-columns: 1fr; } }
+.feat-card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 44px 36px; transition: all .5s var(--ease-out); position: relative; overflow: hidden; }
+.feat-card::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 0% 0%, rgba(37,99,235,.04), transparent 60%); opacity: 0; transition: opacity .5s var(--ease-out); pointer-events: none; }
+.feat-card:hover { transform: translateY(-8px); border-color: var(--border-hover); box-shadow: 0 20px 40px rgba(37,99,235,.08); }
+.feat-card:hover::before { opacity: 1; }
+.feat-num { font-family: 'JetBrains Mono', monospace; font-size: 1rem; font-weight: 500; color: var(--accent); letter-spacing: .15em; margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
+.feat-num::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.feat-card h3 { margin-bottom: 18px; }
+.feat-card .desc { font-size: 15px; margin-bottom: 28px; line-height: 1.6; }
+
+/* ── PERSONALIZAÇÃO ── */
+.custom { background: var(--bg-elevated); position: relative; overflow: hidden; }
+.custom::before { content: ""; position: absolute; top: 10%; left: 50%; width: 800px; height: 800px; transform: translateX(-50%); background: radial-gradient(circle, rgba(37,99,235,.06), transparent 60%); pointer-events: none; }
+.custom .container { position: relative; }
+.custom .sec-head { text-align: center; margin-left: auto; margin-right: auto; }
+.custom .sec-head .lede { margin: 0 auto; }
+.editorial-table { max-width: 1000px; margin: 0 auto; border-top: 1px solid var(--border); }
+.editorial-row { display: grid; grid-template-columns: 220px 1fr; gap: 60px; padding: 32px 0; border-bottom: 1px solid var(--border); align-items: baseline; transition: padding .4s var(--ease-out); }
+.editorial-row:hover { padding-left: 16px; padding-right: 16px; }
+.editorial-row:hover .ed-label { color: var(--accent); }
+.editorial-row .ed-label { font-size: clamp(1.5rem, 2.5vw, 2.2rem); font-weight: 800; letter-spacing: -.03em; color: var(--fg); transition: color .4s var(--ease-out); }
+.editorial-row .ed-desc { font-size: clamp(1rem, 1.3vw, 1.15rem); color: var(--fg-muted); max-width: none; line-height: 1.55; }
+@media (max-width: 700px) { .editorial-row { grid-template-columns: 1fr; gap: 8px; padding: 24px 0; } }
+.custom-close { max-width: 700px; margin: 90px auto 0; text-align: center; }
+.custom-close p { font-size: clamp(1.2rem, 2vw, 1.6rem); font-weight: 500; line-height: 1.35; color: var(--fg); letter-spacing: -.02em; max-width: none; }
+.custom-close .accent { color: var(--accent); font-weight: 700; display: block; margin-top: 4px; }
+
+/* ── CATEGORIAS GRID ── */
+.cats { background: var(--bg-elevated); }
+.cats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; max-width: 1100px; margin: 0 auto; }
+.cat-card { background: white; padding: 28px 24px; border-radius: 12px; border: 1px solid var(--border); transition: all .35s var(--ease-out); }
+.cat-card:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 14px 32px -8px rgba(37,99,235,.12); }
+.cat-card.featured { border-color: var(--accent); background: linear-gradient(180deg, rgba(37,99,235,.04), white); }
+.cat-card .num { font: 800 32px 'JetBrains Mono', monospace; color: var(--accent); margin-bottom: 8px; letter-spacing: -.04em; }
+.cat-card strong { display: block; font-size: 1rem; font-weight: 700; color: var(--fg); margin-bottom: 4px; letter-spacing: -.01em; }
+.cat-card .count { font-family: 'JetBrains Mono', monospace; font-size: .7rem; color: var(--fg-muted); letter-spacing: .12em; text-transform: uppercase; }
+
+/* ── FLUXO (DARK) ── */
+.flux { background: var(--bg-dark); color: var(--fg-on-dark); }
+.flux .section-title { color: var(--fg-on-dark); }
+.flux .lede { color: var(--fg-on-dark-muted); }
+.flux-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; position: relative; margin-top: 40px; }
+@media (max-width: 800px) { .flux-grid { grid-template-columns: repeat(2, 1fr); } }
+.flux-line { position: absolute; top: 60px; left: 0; right: 0; height: 1px; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform 1.4s var(--ease-out); z-index: 0; }
+.flux-line.in { transform: scaleX(1); }
+@media (max-width: 800px) { .flux-line { display: none; } }
+.flux-step { position: relative; padding-top: 90px; z-index: 1; }
+.flux-step::before { content: ""; position: absolute; top: 56px; left: 0; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgba(37,99,235,.18); }
+.flux-step .num { font-family: 'JetBrains Mono', monospace; font-size: clamp(3rem, 5vw, 4.5rem); font-weight: 600; color: var(--accent); letter-spacing: -.04em; line-height: 1; margin-bottom: 16px; }
+.flux-step h4 { font-size: 1rem; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; color: var(--fg-on-dark); margin-bottom: 14px; }
+.flux-step p { color: var(--fg-on-dark-muted); font-size: 15px; line-height: 1.55; max-width: none; }
+.flux-close { margin-top: 100px; text-align: center; max-width: 700px; margin-left: auto; margin-right: auto; }
+.flux-close .head { font-size: clamp(1.3rem, 2.2vw, 1.8rem); font-weight: 700; letter-spacing: -.02em; color: var(--fg-on-dark); line-height: 1.3; }
+.flux-close .head .accent { color: var(--accent); }
+.flux-close .sub { margin-top: 14px; color: var(--fg-on-dark-muted); font-size: 15px; }
+
+/* ── COMPARE ── */
+.compare-table { max-width: 1100px; margin: 0 auto; border-top: 1px solid var(--border); }
+.compare-head, .compare-row { display: grid; grid-template-columns: 1.4fr 1fr 1fr; padding: 22px 16px; border-bottom: 1px solid var(--border); align-items: center; gap: 24px; }
+.compare-head { font-family: 'JetBrains Mono', monospace; font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; color: var(--fg-subtle); font-weight: 500; }
+.compare-head .h-pro { color: var(--accent); }
+.compare-row { transition: background .3s var(--ease-out); }
+.compare-row:hover { background: var(--bg-elevated); }
+.compare-row .task { font-size: 15px; font-weight: 500; color: var(--fg); }
+.compare-row .before { font-size: 15px; color: var(--fg-muted); font-style: italic; }
+.compare-row .after { font-size: 15px; color: var(--fg); font-weight: 600; display: flex; align-items: center; gap: 10px; }
+.compare-row .after::before {
+  content: ""; width: 14px; height: 14px; flex-shrink: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M3 8.5L6.5 12L13 4.5' stroke='%232563eb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-size: contain; background-repeat: no-repeat;
+}
+@media (max-width: 700px) {
+  .compare-head { display: none; }
+  .compare-row { grid-template-columns: 1fr; gap: 6px; padding: 18px 0; }
+  .compare-row .task { font-weight: 600; margin-bottom: 4px; }
+  .compare-row .before::before { content: "Hoje: "; font-style: normal; color: var(--fg-subtle); font-family: 'JetBrains Mono', monospace; font-size: .7rem; letter-spacing: .15em; text-transform: uppercase; }
+  .compare-row .after::before { display: none; }
+}
+.compare-close { max-width: 700px; margin: 90px auto 0; text-align: center; }
+.compare-close p { font-size: clamp(1.4rem, 2.5vw, 2rem); font-weight: 600; letter-spacing: -.025em; color: var(--fg); max-width: none; }
+.compare-close .accent { color: var(--accent); font-weight: 800; display: block; }
+
+/* ── PRICING ── */
+.pricing { background: var(--bg-elevated); }
+.price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1100px; margin: 0 auto; align-items: stretch; }
+@media (max-width: 900px) { .price-grid { grid-template-columns: 1fr; } }
+.price-card { background: white; border: 1px solid var(--border); border-radius: 20px; padding: 44px 40px; position: relative; transition: all .5s var(--ease-out); display: flex; flex-direction: column; }
+.price-card.popular { border: 2px solid var(--accent); box-shadow: 0 20px 60px rgba(37,99,235,.15); transform: translateY(-4px); }
+.price-card:not(.popular):hover { transform: translateY(-6px); border-color: var(--border-hover); box-shadow: 0 20px 40px rgba(0,0,0,.04); }
+.price-badge { position: absolute; top: -14px; left: 40px; background: var(--accent); color: white; padding: 6px 14px; border-radius: 100px; font-family: 'JetBrains Mono', monospace; font-size: .65rem; letter-spacing: .2em; text-transform: uppercase; font-weight: 500; }
+.price-tag { font-family: 'JetBrains Mono', monospace; font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; color: var(--accent); margin-bottom: 24px; font-weight: 500; }
+.price-card h3 { font-size: clamp(1.6rem, 2.2vw, 2rem); font-weight: 700; letter-spacing: -.02em; margin-bottom: 24px; }
+.price-amount { display: flex; align-items: baseline; gap: 6px; margin-bottom: 12px; }
+.price-amount .num { font-variant-numeric: tabular-nums; font-size: clamp(3rem, 5vw, 4.2rem); font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+.price-amount .suf { font-size: 15px; color: var(--fg-muted); font-weight: 500; }
+.price-micro { font-size: 13.5px; color: var(--fg-muted); margin-bottom: 32px; line-height: 1.5; }
+.price-features { list-style: none; display: flex; flex-direction: column; gap: 12px; padding: 24px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 28px; flex: 1; }
+.price-features li { font-size: 14.5px; color: var(--fg); display: flex; gap: 12px; align-items: flex-start; line-height: 1.5; }
+.price-features li::before { content: "→"; color: var(--accent); font-family: 'JetBrains Mono', monospace; flex-shrink: 0; font-weight: 500; }
+.price-foot { margin-top: 14px; font-size: 12.5px; color: var(--fg-subtle); text-align: center; font-family: 'JetBrains Mono', monospace; letter-spacing: .05em; }
+.pricing-callout { max-width: 900px; margin: 70px auto 0; background: white; border: 1px solid var(--border); border-radius: 16px; padding: 28px 36px; }
+.pricing-callout p { font-size: 15px; color: var(--fg); line-height: 1.65; max-width: none; }
+.pricing-callout p strong { font-weight: 600; display: block; margin-bottom: 6px; }
+.pricing-bundle { max-width: 900px; margin: 24px auto 0; background: linear-gradient(135deg, rgba(37,99,235,.08), rgba(37,99,235,.02)); border: 2px solid var(--accent); border-radius: 16px; padding: 32px 36px; text-align: center; }
+.pricing-bundle .tag { font-family: 'JetBrains Mono', monospace; font-size: .7rem; font-weight: 700; letter-spacing: .2em; color: var(--accent); margin-bottom: 12px; display: block; }
+.pricing-bundle h3 { font-size: clamp(1.25rem, 2vw, 1.6rem); font-weight: 800; letter-spacing: -.02em; margin-bottom: 8px; }
+.pricing-bundle h3 em { font-style: normal; color: var(--accent); }
+.pricing-bundle p { color: var(--fg-muted); font-size: 14px; margin: 0 auto 18px; }
+
+/* ── MANIFESTO ── */
+.manifesto { padding: clamp(120px, 18vw, 180px) 0; text-align: center; }
+.manifesto-inner { max-width: 800px; margin: 0 auto; position: relative; }
+.manifesto-inner::before, .manifesto-inner::after { position: absolute; font-family: Georgia, serif; font-size: clamp(6rem, 10vw, 9rem); color: var(--accent); opacity: .25; line-height: 1; }
+.manifesto-inner::before { content: "«"; top: -40px; left: -10px; }
+.manifesto-inner::after  { content: "»"; bottom: -90px; right: -10px; }
+.manifesto-quote { font-weight: 500; font-style: italic; font-size: clamp(1.4rem, 2.5vw, 2rem); line-height: 1.4; letter-spacing: -.02em; color: var(--fg); max-width: none; }
+.manifesto-sig { margin-top: 50px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.manifesto-sig::before { content: ""; width: 60px; height: 1px; background: var(--border); margin-bottom: 18px; }
+.manifesto-sig .name { font-weight: 600; font-size: 16px; color: var(--fg); }
+.manifesto-sig .role { font-family: 'JetBrains Mono', monospace; font-size: .7rem; letter-spacing: .2em; text-transform: uppercase; color: var(--fg-muted); margin-top: 4px; }
+
+/* ── FAQ ── */
+.faq { background: var(--bg-elevated); }
+.faq-list { max-width: 800px; margin: 0 auto; border-top: 1px solid var(--border); }
+.faq-item { border-bottom: 1px solid var(--border); }
+.faq-q { width: 100%; text-align: left; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 28px 0; font-size: clamp(1rem, 1.3vw, 1.13rem); font-weight: 600; color: var(--fg); letter-spacing: -.01em; transition: color .3s; }
+.faq-q:hover { color: var(--accent); }
+.faq-icon { width: 24px; height: 24px; flex-shrink: 0; display: grid; place-items: center; transition: transform .4s var(--ease-out); color: var(--fg-muted); }
+.faq-item.open .faq-icon { transform: rotate(45deg); color: var(--accent); }
+.faq-a { max-height: 0; overflow: hidden; opacity: 0; transition: max-height .5s var(--ease-out), opacity .4s, padding .4s; }
+.faq-item.open .faq-a { max-height: 400px; opacity: 1; padding-bottom: 28px; }
+.faq-a p { font-size: 15.5px; color: var(--fg-muted); line-height: 1.65; max-width: 65ch; padding-right: 50px; }
+
+/* ── HERO PREVIEW STACK (substitui chips chatos por preview cards) ── */
+.hero-preview-stack { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.prev-card {
+  position: absolute;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 22px;
+  box-shadow: 0 18px 50px -18px rgba(10,10,10,.18), 0 2px 8px rgba(10,10,10,.04);
+  min-width: 200px;
+  opacity: 0;
+  font-family: 'Inter', sans-serif;
+  transform-origin: center;
+}
+.prev-card .eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .58rem; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--fg-subtle);
+  margin-bottom: 8px;
+  display: block;
+}
+.prev-card .ttl { font-weight: 800; letter-spacing: -.025em; color: var(--fg); line-height: 1.1; }
+.prev-card .meta { margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: .6rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+
+.prev-card.p1 { top: 14%; left: 4%; }
+.prev-card.p1 .ttl { font-size: 18px; }
+.prev-card.p2 { top: 10%; right: 6%; background: #0a0a0a; color: white; border-color: transparent; }
+.prev-card.p2 .eyebrow { color: rgba(255,255,255,.4); }
+.prev-card.p2 .ttl { color: white; font-size: 22px; font-style: italic; }
+.prev-card.p2 .meta { color: #93c5fd; }
+.prev-card.p3 { bottom: 22%; left: 5%; }
+.prev-card.p3 .ttl { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: -.01em; }
+.prev-card.p4 { bottom: 18%; right: 4%; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border-color: transparent; }
+.prev-card.p4 .eyebrow { color: rgba(255,255,255,.55); }
+.prev-card.p4 .ttl { color: white; font-size: 19px; }
+.prev-card.p4 .meta { color: rgba(255,255,255,.7); }
+
+@media (max-width: 1100px) { .hero-preview-stack { display: none; } }
+
+/* ── STYLES SHOWCASE (grid com tipografia real de cada estilo) ── */
+.styles { background: var(--bg); position: relative; }
+.styles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+  max-width: 1200px; margin: 0 auto;
+}
+.style-tile {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center; padding: 30px;
+  transition: transform .5s var(--ease-out), box-shadow .5s var(--ease-out);
+  cursor: default;
+}
+.style-tile:hover { transform: translateY(-6px); box-shadow: 0 28px 60px -22px rgba(10,10,10,.25); }
+.style-tile__label {
+  position: absolute; top: 18px; left: 22px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .65rem; letter-spacing: .2em; text-transform: uppercase;
+  font-weight: 500; opacity: .7;
+}
+.style-tile__count {
+  position: absolute; bottom: 18px; right: 22px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .65rem; letter-spacing: .12em; opacity: .7;
+}
+.style-tile__txt { font-family: 'Inter', sans-serif; line-height: 1; }
+
+/* Variantes — cada uma com personalidade visual real */
+.style-tile.s-simple    { background: #fafafa; border: 1px solid var(--border); color: var(--fg); }
+.style-tile.s-simple    .style-tile__txt { font-size: clamp(2rem, 5vw, 3.4rem); font-weight: 600; letter-spacing: -.02em; }
+.style-tile.s-fashion   { background: #1a1a1a; color: white; }
+.style-tile.s-fashion   .style-tile__txt { font-size: clamp(2.2rem, 5.5vw, 3.8rem); font-weight: 300; font-style: italic; letter-spacing: -.01em; font-family: Georgia, serif; }
+.style-tile.s-urban     { background: linear-gradient(135deg, #dc2626 0%, #1a1a1a 100%); color: white; }
+.style-tile.s-urban     .style-tile__txt { font-size: clamp(2.4rem, 6vw, 4rem); font-weight: 900; letter-spacing: -.04em; text-transform: uppercase; }
+.style-tile.s-glitch    { background: #0a0a0a; color: white; }
+.style-tile.s-glitch    .style-tile__txt { font-size: clamp(2.2rem, 5.5vw, 3.8rem); font-weight: 800; letter-spacing: -.02em; font-family: 'JetBrains Mono', monospace; position: relative; }
+.style-tile.s-glitch    .style-tile__txt::before, .style-tile.s-glitch .style-tile__txt::after { content: attr(data-txt); position: absolute; inset: 0; mix-blend-mode: screen; }
+.style-tile.s-glitch    .style-tile__txt::before { color: #ff003c; transform: translate(-2px, 0); }
+.style-tile.s-glitch    .style-tile__txt::after  { color: #00f0ff; transform: translate(2px, 0); }
+.style-tile.s-huge      { background: var(--accent); color: white; }
+.style-tile.s-huge      .style-tile__txt { font-size: clamp(3rem, 8vw, 5.5rem); font-weight: 900; letter-spacing: -.05em; line-height: .85; text-transform: uppercase; }
+.style-tile.s-minimal   { background: white; border: 1px solid var(--border); color: var(--fg); }
+.style-tile.s-minimal   .style-tile__txt { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 200; letter-spacing: .04em; text-transform: lowercase; }
+.style-tile.s-wedding   { background: linear-gradient(180deg, #fdf4ff 0%, #fce7f3 100%); color: #831843; }
+.style-tile.s-wedding   .style-tile__txt { font-family: Georgia, serif; font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 400; font-style: italic; letter-spacing: 0; }
+.style-tile.s-elegant   { background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%); color: #d4af37; }
+.style-tile.s-elegant   .style-tile__txt { font-family: Georgia, serif; font-size: clamp(2.4rem, 5.5vw, 3.6rem); font-weight: 400; letter-spacing: .02em; }
+.style-tile.s-corporate { background: #f5f5f7; color: var(--fg); border: 1px solid var(--border); }
+.style-tile.s-corporate .style-tile__txt { font-size: clamp(1.6rem, 3.5vw, 2.4rem); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.style-tile.s-lower     { background: #0a0a0a; color: white; align-items: flex-end; justify-content: flex-start; padding: 30px; text-align: left; }
+.style-tile.s-lower     .style-tile__inner { background: rgba(255,255,255,.06); backdrop-filter: blur(8px); border-left: 3px solid var(--accent); padding: 12px 18px; max-width: 80%; }
+.style-tile.s-lower     .style-tile__name { font-weight: 700; font-size: 18px; letter-spacing: -.02em; }
+.style-tile.s-lower     .style-tile__role { font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: rgba(255,255,255,.55); letter-spacing: .15em; text-transform: uppercase; margin-top: 4px; }
+
+/* ── USE CASES (testimonials/casos reais) ── */
+.usecases { background: var(--bg-elevated); }
+.usecases-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px; max-width: 1200px; margin: 0 auto; }
+.uc-card {
+  background: white; border: 1px solid var(--border); border-radius: 18px;
+  padding: 36px 32px;
+  display: flex; flex-direction: column; gap: 16px;
+  transition: transform .4s var(--ease-out), box-shadow .4s var(--ease-out), border-color .4s;
+  position: relative; overflow: hidden;
+}
+.uc-card:hover { transform: translateY(-6px); box-shadow: 0 24px 60px -22px rgba(37,99,235,.18); border-color: var(--accent); }
+.uc-card__type { font-family: 'JetBrains Mono', monospace; font-size: .68rem; letter-spacing: .2em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+.uc-card__quote { font-size: 17px; font-weight: 500; color: var(--fg); line-height: 1.45; letter-spacing: -.01em; max-width: none; }
+.uc-card__quote::before { content: "“"; font-family: Georgia, serif; font-size: 3.2rem; color: var(--accent); opacity: .3; line-height: 0; position: absolute; top: 50px; left: 20px; }
+.uc-card__meta { display: flex; align-items: center; gap: 14px; margin-top: auto; padding-top: 18px; border-top: 1px solid var(--border); }
+.uc-card__avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-hot)); color: white; display: grid; place-items: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+.uc-card__who { display: flex; flex-direction: column; gap: 2px; }
+.uc-card__name { font-weight: 600; font-size: 14px; color: var(--fg); }
+.uc-card__role { font-size: 12px; color: var(--fg-muted); }
+.uc-card__metric { background: var(--accent); color: white; padding: 6px 12px; border-radius: 100px; font-family: 'JetBrains Mono', monospace; font-size: .65rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; align-self: flex-start; }
+
+/* ── BANNER EDITORIAL gigante ── */
+.editorial-banner { padding: clamp(80px, 14vw, 140px) 0; background: var(--bg-dark); color: var(--fg-on-dark); text-align: center; position: relative; overflow: hidden; }
+.editorial-banner::before {
+  content: ""; position: absolute; inset: 0;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(37,99,235,.18), transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(147,197,253,.12), transparent 50%);
+  pointer-events: none;
+}
+.editorial-banner .container { position: relative; }
+.editorial-line {
+  font-size: clamp(3rem, 11vw, 9rem);
+  font-weight: 900;
+  letter-spacing: -.05em;
+  line-height: .9;
+  color: var(--fg-on-dark);
+  margin-bottom: 16px;
+}
+.editorial-line em { color: var(--accent); font-style: italic; font-weight: 400; font-family: Georgia, serif; }
+.editorial-banner__sub { font-family: 'JetBrains Mono', monospace; font-size: .72rem; letter-spacing: .3em; text-transform: uppercase; color: var(--fg-on-dark-muted); margin-top: 24px; }
+
+/* ── CONTENT-VISIBILITY (otimiza renderização de seções offscreen) ── */
+.problem, .custom, .styles, .cats, .usecases, .editorial-banner, .flux, .compare-table,
+.pricing, .manifesto, .faq, .cta-final {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
+
+/* ── CTA FINAL ── */
+.cta-final { background: var(--bg-dark); color: var(--fg-on-dark); padding: clamp(120px, 18vw, 200px) 0; text-align: center; position: relative; overflow: hidden; }
+.cta-final::before { content: ""; position: absolute; top: 50%; left: 50%; width: 900px; height: 900px; transform: translate(-50%, -50%); background: radial-gradient(circle, rgba(37,99,235,.15), transparent 55%); pointer-events: none; }
+.cta-final .container { position: relative; }
+.cta-final h2 { font-size: clamp(1.8rem, 4vw, 3.2rem); font-weight: 800; line-height: 1.1; letter-spacing: -.035em; max-width: 820px; margin: 0 auto 32px; color: var(--fg-on-dark); }
+.cta-final h2 .line { display: block; }
+.cta-final h2 .accent { color: var(--accent); font-style: italic; }
+.cta-final .lede { font-size: clamp(1rem, 1.3vw, 1.2rem); color: var(--fg-on-dark-muted); max-width: 540px; margin: 0 auto 44px; }
+.cta-final .micro { margin: 32px auto 0; font-family: 'JetBrains Mono', monospace; font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; color: var(--fg-on-dark-muted); max-width: none; text-align: center; display: block; }
+</style>
+</head>
+<body>
+
+<div class="scroll-progress" aria-hidden="true"></div>
+
+<!-- ════════════════════════ NAV ════════════════════════ -->
+<header class="nav" id="nav">
+  <div class="container nav-inner">
+    <a href="/" class="logo" aria-label="Motion Titles home">
+      <span class="logo-dot"></span>Motion Titles
+    </a>
+    <nav aria-label="Principal">
+      <ul class="nav-links">
+        <li><a href="#plataforma">Plataforma</a></li>
+        <li><a href="#familia">Família</a></li>
+        <li><a href="#fluxo">Fluxo</a></li>
+        <li><a href="#planos">Planos</a></li>
+        <li><a href="#faq">FAQ</a></li>
+        <li><a href="/docs/legendas.html">Manual</a></li>
+        <li><a href="/legendas/download.html">Download</a></li>
+      </ul>
+    </nav>
+    <div class="nav-right">
+      <a href="/account.html" class="link-login" data-action="login">Entrar</a>
+      <a href="#planos" class="btn btn-primary">Assinar</a>
+      <button class="menu-toggle" aria-label="Abrir menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<!-- ════════════════════════ HERO ════════════════════════ -->
+<section class="hero" id="hero">
+  <div class="hero-bg" aria-hidden="true">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+  </div>
+  <div class="hero-glow" id="heroGlow" aria-hidden="true"></div>
+
+  <div class="hero-preview-stack" aria-hidden="true">
+    <div class="prev-card p1" data-depth="0.35">
+      <span class="eyebrow">— Editorial</span>
+      <div class="ttl">Como cortar 14h<br>do seu mês</div>
+      <div class="meta">Lower Third · 01</div>
+    </div>
+    <div class="prev-card p2" data-depth="0.55">
+      <span class="eyebrow">— Glitch · v04</span>
+      <div class="ttl"><em>Breaking</em><br>News</div>
+      <div class="meta">FX · 0:02 → 0:04</div>
+    </div>
+    <div class="prev-card p3" data-depth="0.4">
+      <span class="eyebrow">— Huge</span>
+      <div class="ttl">EPISÓDIO<br>017</div>
+      <div class="meta">Title · 2.4s</div>
+    </div>
+    <div class="prev-card p4" data-depth="0.6">
+      <span class="eyebrow">— Wedding</span>
+      <div class="ttl">Ana &amp; Felipe</div>
+      <div class="meta">Save the Date</div>
+    </div>
+  </div>
+
+  <div class="container hero-inner">
+    <span class="hero-badge"><span class="dot"></span>v1.0 · Premiere Pro CC 2019+ · 549 títulos prontos</span>
+    <h1 class="hero-title" id="heroTitle">
+      <span class="line">Cada legenda manual</span>
+      <span class="line">são 30s. Você <span class="italic-em" data-scramble="tem 40 takes">tem 40 takes.</span></span>
+    </h1>
+    <p class="hero-sub">
+      549 títulos profissionais. 10 estilos. 1 clique pra timeline.
+      Edite fonte, cor e animação no Essential Graphics — sem Title Tool, sem After Effects, sem render.
+      A entrevista que levava 20min de formatação, agora leva 2.
+    </p>
+    <div class="hero-ctas">
+      <a href="#planos" class="btn btn-primary btn-magnetic"><span>Começar agora <span class="arrow">→</span></span></a>
+      <a href="#fluxo" class="btn btn-secondary btn-magnetic">
+        <span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 1.5L10 6L2 10.5V1.5Z" fill="currentColor"/></svg>
+          Ver em 90 segundos
+        </span>
+      </a>
+    </div>
+    <p class="trust-line">7 dias grátis · Sem cartão · Cancele em 1 clique</p>
+
+    <div class="hero-marquee" aria-hidden="true">
+      <div class="hero-marquee-track">
+        <span>Simple</span><span>Fashion</span><span>Urban</span>
+        <span>Glitch</span><span>Huge</span><span>Minimal</span>
+        <span>Wedding</span><span>Elegant</span><span>Corporate</span>
+        <span>Lower Thirds</span><span>Entrevistas</span><span>Créditos</span>
+        <span>Simple</span><span>Fashion</span><span>Urban</span>
+        <span>Glitch</span><span>Huge</span><span>Minimal</span>
+        <span>Wedding</span><span>Elegant</span><span>Corporate</span>
+        <span>Lower Thirds</span><span>Entrevistas</span><span>Créditos</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-cue" aria-hidden="true">
+    <span>SCROLL</span><span class="line"></span>
+  </div>
+</section>
+
+<!-- ════════════════════════ STATS ════════════════════════ -->
+<section class="stats" id="stats">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-item reveal"><div class="num" data-counter="549" data-format="thousand">0</div><div class="label">Títulos na timeline</div></div>
+      <div class="stat-item reveal"><div class="num" data-counter="10">0</div><div class="label">Categorias premium</div></div>
+      <div class="stat-item reveal"><div class="num" data-counter="1">0</div><div class="label">Clique pra importar</div></div>
+      <div class="stat-item reveal"><div class="num" data-counter="100" data-suffix="%">0%</div><div class="label">Editáveis na hora</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ PROBLEMA ════════════════════════ -->
+<section class="problem">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="tag-mono"><span class="dot"></span>— A VERDADE INCÔMODA</span>
+      <h2 class="section-title">
+        Você não é lento.<br>
+        Sua ferramenta é <span class="italic-em">de 2008.</span>
+      </h2>
+    </div>
+    <div class="problem-grid">
+      <div class="problem-left reveal">
+        <p>
+          A Adobe parou de evoluir o Title Tool em 2017 — substituiu por Essential Graphics. Mas o painel padrão te dá retângulo branco com cursor piscando. Toda animação, toda paleta, toda micro-decisão de tipografia: você refaz à mão. Pra cada take. Pra cada cliente. Todo mês.
+        </p>
+        <p style="margin-top:18px">
+          Não é problema seu. É o ferramentário que ficou para trás.
+        </p>
+      </div>
+      <div class="problem-right reveal">
+        <div class="problem-num"><div class="big">30s <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por título</span></div><div class="small">só pra estilizar</div></div>
+        <div class="problem-num"><div class="big">20min <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por entrevista</span></div><div class="small">com 40 takes</div></div>
+        <div class="problem-num"><div class="big">2h <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por semana</span></div><div class="small">formatando texto</div></div>
+        <div class="problem-num"><div class="big">8h <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por mês</span></div><div class="small">= 1 dia útil inteiro</div></div>
+        <div class="problem-close">Um dia por mês fazendo o trabalho que o After Effects já faria em 2 cliques se você tivesse o template certo.</div>
+      </div>
+    </div>
+    <div class="problem-cta reveal">Acabou.</div>
+  </div>
+</section>
+
+<!-- ════════════════════════ PLATAFORMA ════════════════════════ -->
+<section id="plataforma">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="tag-mono"><span class="dot"></span>— A PLATAFORMA</span>
+      <h2 class="section-title">Três frentes.<br>Um <span class="italic-em">produto.</span></h2>
+    </div>
+    <div class="platform-grid">
+      <article class="feat-card reveal">
+        <div class="feat-num"><span>01</span><span>CATÁLOGO</span></div>
+        <h3 class="card-title">549 títulos organizados em 10 estilos.</h3>
+        <p class="desc">Simple, Fashion, Urban, Glitch, Huge, Minimal, Wedding, Elegant, Corporate e Lower Thirds. Cada estilo com variações suficientes pra qualquer contexto de produção.</p>
+        <ul class="feat-list">
+          <li>Títulos pra abertura e identificação</li>
+          <li>100 lower thirds pra entrevistas</li>
+          <li>Estilos editorial, corporativo, casamento</li>
+          <li>Glitch e huge pra reels e social</li>
+        </ul>
+      </article>
+      <article class="feat-card reveal">
+        <div class="feat-num"><span>02</span><span>PLUGIN</span></div>
+        <h3 class="card-title">Painel CEP nativo. Mora dentro do Premiere.</h3>
+        <p class="desc">Janela → Extensões → Motion Legendas. Não trava. Não pesa. Não te tira do flow.</p>
+        <ul class="feat-list">
+          <li>Duplo-clique = template no CTI</li>
+          <li>Busca por nome, categoria, estilo</li>
+          <li>Favoritos por projeto</li>
+          <li>Funciona offline por 7 dias</li>
+        </ul>
+      </article>
+      <article class="feat-card reveal">
+        <div class="feat-num"><span>03</span><span>LICENÇA</span></div>
+        <h3 class="card-title">Sistema próprio. Você no controle.</h3>
+        <p class="desc">2-3 máquinas. Revogação em 1 clique. Offline por 7 dias. Sem DRM agressivo, sem chamada gringa pro suporte.</p>
+        <ul class="feat-list">
+          <li>Auditoria completa em tempo real</li>
+          <li>Troca de dispositivo instantânea</li>
+          <li>Suporte em português, mesma cidade</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ PERSONALIZAÇÃO ════════════════════════ -->
+<section class="custom">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="tag-mono"><span class="dot"></span>— CONTROLE TOTAL</span>
+      <h2 class="section-title">Template não é prisão.<br>É <span class="italic-em">ponto de partida.</span></h2>
+      <p class="lede">
+        Esquece "baixei um título renderizado e tô preso ao que o cara fez". Todo título do Motion Legendas é composição viva — você muda fonte, cor, posição, timing.
+      </p>
+    </div>
+    <div class="editorial-table">
+      <div class="editorial-row reveal"><div class="ed-label">Fonte</div><div class="ed-desc">Troque pela fonte do cliente em 2 cliques. Importação direta de TTF, OTF e variable fonts.</div></div>
+      <div class="editorial-row reveal"><div class="ed-label">Cor</div><div class="ed-desc">Paleta da marca, gradientes, sombras. Cada layer ajustável por slider de Essential Graphics.</div></div>
+      <div class="editorial-row reveal"><div class="ed-label">Posição</div><div class="ed-desc">Mova, rotacione, escale — keyframes inclusos. Anchor point editável direto na timeline.</div></div>
+      <div class="editorial-row reveal"><div class="ed-label">Timing</div><div class="ed-desc">Acelere, desacelere, recorte — tudo no CTI. Entrada e saída acessíveis por handle.</div></div>
+      <div class="editorial-row reveal"><div class="ed-label">Duração</div><div class="ed-desc">Estique sem deformar a animação. Time Remap embutido e dinâmico.</div></div>
+    </div>
+    <div class="custom-close reveal">
+      <p>Você não compra título engessado.<span class="accent">Você compra base profissional pra customizar em segundos.</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ STYLES SHOWCASE ════════════════════════ -->
+<section class="styles">
+  <div class="container">
+    <div class="sec-head reveal" style="text-align:center;margin-left:auto;margin-right:auto;">
+      <span class="tag-mono"><span class="dot"></span>— CATÁLOGO COMPLETO</span>
+      <h2 class="section-title">10 estilos.<br>549 <span class="italic-em">títulos.</span></h2>
+      <p class="lede" style="margin:24px auto 0">Cada estilo tem personalidade própria. Editorial, urbano, minimalista, casamento. Você escolhe pelo mood, não pelo nome de pasta.</p>
+    </div>
+    <div class="styles-grid">
+      <div class="style-tile s-simple reveal">
+        <span class="style-tile__label">— Simple</span>
+        <div class="style-tile__txt">Editorial</div>
+        <span class="style-tile__count">50 títulos</span>
+      </div>
+      <div class="style-tile s-fashion reveal">
+        <span class="style-tile__label">— Fashion</span>
+        <div class="style-tile__txt"><em>Vogue</em></div>
+        <span class="style-tile__count">24 títulos</span>
+      </div>
+      <div class="style-tile s-urban reveal">
+        <span class="style-tile__label">— Urban</span>
+        <div class="style-tile__txt">STREET</div>
+        <span class="style-tile__count">15 títulos</span>
+      </div>
+      <div class="style-tile s-glitch reveal">
+        <span class="style-tile__label">— Glitch</span>
+        <div class="style-tile__txt" data-txt="ERROR.404">ERROR.404</div>
+        <span class="style-tile__count">30 títulos</span>
+      </div>
+      <div class="style-tile s-huge reveal">
+        <span class="style-tile__label">— Huge</span>
+        <div class="style-tile__txt">ANO<br>NOVO</div>
+        <span class="style-tile__count">80 títulos</span>
+      </div>
+      <div class="style-tile s-minimal reveal">
+        <span class="style-tile__label">— Minimal</span>
+        <div class="style-tile__txt">whitespace</div>
+        <span class="style-tile__count">60 títulos</span>
+      </div>
+      <div class="style-tile s-wedding reveal">
+        <span class="style-tile__label">— Wedding</span>
+        <div class="style-tile__txt">Ana &amp; Felipe</div>
+        <span class="style-tile__count">70 títulos</span>
+      </div>
+      <div class="style-tile s-elegant reveal">
+        <span class="style-tile__label">— Elegant</span>
+        <div class="style-tile__txt">Coleção</div>
+        <span class="style-tile__count">70 títulos</span>
+      </div>
+      <div class="style-tile s-corporate reveal">
+        <span class="style-tile__label">— Corporate</span>
+        <div class="style-tile__txt">Q4 · 2026</div>
+        <span class="style-tile__count">50 títulos</span>
+      </div>
+      <div class="style-tile s-lower reveal">
+        <span class="style-tile__label" style="color:rgba(255,255,255,.55)">— Lower Thirds</span>
+        <div class="style-tile__inner">
+          <div class="style-tile__name">Mariana Costa</div>
+          <div class="style-tile__role">Diretora · ProdutorA</div>
+        </div>
+        <span class="style-tile__count" style="color:rgba(255,255,255,.55)">100 layouts</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ EDITORIAL BANNER ════════════════════════ -->
+<section class="editorial-banner">
+  <div class="container">
+    <div class="editorial-line reveal">549 títulos.</div>
+    <div class="editorial-line reveal">11 segundos por título.</div>
+    <div class="editorial-line reveal"><em>0 desculpa.</em></div>
+    <p class="editorial-banner__sub reveal">— Da timeline pra entrega · sem render · sem retrabalho</p>
+  </div>
+</section>
+
+<!-- ════════════════════════ FAMÍLIA Motion Titles ════════════════════════ -->
+<section class="familia" id="familia" style="padding:120px 0;background:linear-gradient(180deg,#0a0a0a 0%,#000 100%);border-top:1px solid rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.04)">
+  <div class="container">
+    <div class="sec-head reveal" style="text-align:center;max-width:780px;margin:0 auto 60px">
+      <span class="tag-mono"><span class="dot"></span>— FAMÍLIA</span>
+      <h2 class="section-title" style="margin-top:16px">Um ecossistema.<br>Vários <span class="italic-em">plugins.</span></h2>
+      <p style="color:rgba(255,255,255,.55);font-size:18px;line-height:1.5;margin-top:20px">Cada plugin foi feito pra resolver uma dor específica do editor. Funcionam separados, melhores juntos.</p>
+    </div>
+
+    <div class="familia-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;max-width:1100px;margin:0 auto">
+
+      <!-- Motion Titles -->
+      <a href="/" class="familia-card reveal" style="display:block;text-decoration:none;color:inherit;background:#0e0e0e;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:32px;transition:all .25s;position:relative;overflow:hidden">
+        <div style="position:absolute;top:16px;right:16px;background:rgba(37, 99, 235,.12);color:#2563eb;padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1.2px">CARRO-CHEFE</div>
+        <div style="font-size:36px;margin-bottom:16px">🎬</div>
+        <h3 style="font-size:22px;font-weight:800;letter-spacing:-.4px;margin-bottom:8px">Motion Titles</h3>
+        <p style="color:rgba(255,255,255,.55);font-size:14px;line-height:1.5;margin-bottom:20px">7.906 motion graphics premium importáveis em 1 clique. Títulos, transições, lower thirds, reels e mais.</p>
+        <div style="font-size:12px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.5px">Premiere Pro · Plugin CEP nativo</div>
+        <div style="margin-top:24px;display:flex;justify-content:space-between;align-items:center">
+          <span style="color:#2563eb;font-weight:700;font-size:13px">Ver plugin →</span>
+          <span style="color:rgba(255,255,255,.3);font-size:12px">R$ 199/ano</span>
+        </div>
+      </a>
+
+      <!-- Motion Legendas (atual) -->
+      <div class="familia-card reveal" style="display:block;background:#0e0e0e;border:1px solid rgba(124,77,255,.4);border-radius:16px;padding:32px;position:relative;overflow:hidden">
+        <div style="position:absolute;top:16px;right:16px;background:rgba(124,77,255,.18);color:#a78bfa;padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1.2px">VOCÊ ESTÁ AQUI</div>
+        <div style="font-size:36px;margin-bottom:16px">💬</div>
+        <h3 style="font-size:22px;font-weight:800;letter-spacing:-.4px;margin-bottom:8px">Motion Legendas</h3>
+        <p style="color:rgba(255,255,255,.55);font-size:14px;line-height:1.5;margin-bottom:20px">549 títulos e lower thirds editáveis na timeline. 10 categorias pra qualquer contexto.</p>
+        <div style="font-size:12px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.5px">Premiere Pro · Plugin CEP nativo</div>
+        <div style="margin-top:24px;display:flex;justify-content:space-between;align-items:center">
+          <a href="#planos" style="color:#a78bfa;font-weight:700;font-size:13px;text-decoration:none">Ver planos ↓</a>
+          <span style="color:rgba(255,255,255,.3);font-size:12px">R$ 149/ano</span>
+        </div>
+      </div>
+
+      <!-- Em breve: IA -->
+      <div class="familia-card reveal" style="display:block;background:#0a0a0a;border:1px dashed rgba(255,255,255,.1);border-radius:16px;padding:32px;position:relative;overflow:hidden;opacity:.6">
+        <div style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1.2px">EM BREVE</div>
+        <div style="font-size:36px;margin-bottom:16px">🤖</div>
+        <h3 style="font-size:22px;font-weight:800;letter-spacing:-.4px;margin-bottom:8px">Motion IA</h3>
+        <p style="color:rgba(255,255,255,.4);font-size:14px;line-height:1.5;margin-bottom:20px">Agente Claude que edita a timeline do Premiere por comandos em linguagem natural.</p>
+        <div style="font-size:12px;color:rgba(255,255,255,.3);font-weight:600;letter-spacing:.5px">Beta privado · Q4 2026</div>
+        <div style="margin-top:24px">
+          <a href="/account.html" style="color:rgba(255,255,255,.5);font-weight:700;font-size:13px;text-decoration:none">Entrar na lista de espera →</a>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="text-align:center;margin-top:40px">
+      <p style="color:rgba(255,255,255,.45);font-size:14px">Plano <strong style="color:#fff">Bundle Completo</strong> dá acesso a Titles + Legendas por R$ 299/ano. Veja em <a href="#planos" style="color:#2563eb">planos</a>.</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .familia-card:hover {
+    border-color: rgba(37, 99, 235,.4) !important;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0,0,0,.5);
+  }
+</style>
+
+<!-- ════════════════════════ FLUXO ════════════════════════ -->
+<section class="flux" id="fluxo">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="tag-mono"><span class="dot"></span>— FLUXO</span>
+      <h2 class="section-title">Quatro passos.<br>Sem desculpa pra <span class="italic-em">demorar.</span></h2>
+    </div>
+    <div class="flux-grid">
+      <div class="flux-line" id="fluxLine"></div>
+      <div class="flux-step reveal"><div class="num">01</div><h4>Instale</h4><p>30 segundos. Setup automático. Zero pasta pra mover, zero conflito de versão.</p></div>
+      <div class="flux-step reveal"><div class="num">02</div><h4>Entre</h4><p>Login. Catálogo carrega sozinho. Organizado por categoria, pronto pra busca.</p></div>
+      <div class="flux-step reveal"><div class="num">03</div><h4>Busque</h4><p>Por nome, estilo, contexto. Preview no hover. Sem importar pra ver.</p></div>
+      <div class="flux-step reveal"><div class="num">04</div><h4>Aplique</h4><p>Duplo-clique manda pro CTI da timeline ativa. Edite texto, fonte, cor. Exporte.</p></div>
+    </div>
+    <div class="flux-close reveal">
+      <div class="head">Da intenção à legenda renderizável: <span class="accent">11 segundos.</span></div>
+      <div class="sub">O tempo que você levava pra digitar uma linha no Title Tool.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ COMPARAÇÃO ════════════════════════ -->
+<section>
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="tag-mono"><span class="dot"></span>— O QUE MUDA</span>
+      <h2 class="section-title">Antes do Motion Legendas.<br>Depois do <span class="italic-em">Motion Legendas.</span></h2>
+    </div>
+    <div class="compare-table">
+      <div class="compare-head"><div>Tarefa</div><div>Hoje</div><div class="h-pro">Motion Legendas</div></div>
+      <div class="compare-row reveal"><div class="task">Achar lower third pra entrevista</div><div class="before">Vasculhar 4 packs</div><div class="after">Busca por categoria</div></div>
+      <div class="compare-row reveal"><div class="task">Estilizar título de abertura</div><div class="before">30s no Title Tool</div><div class="after">2 cliques + texto</div></div>
+      <div class="compare-row reveal"><div class="task">Trocar fonte da marca</div><div class="before">Refazer no AE</div><div class="after">Slider de Essential</div></div>
+      <div class="compare-row reveal"><div class="task">Trocar cor brand</div><div class="before">Title Tool não suporta</div><div class="after">Slider direto</div></div>
+      <div class="compare-row reveal"><div class="task">Animar entrada/saída</div><div class="before">Keyframes manuais</div><div class="after">Já vem animado</div></div>
+      <div class="compare-row reveal"><div class="task">Aplicar em 40 takes</div><div class="before">30min repetindo</div><div class="after">Duplo-clique + ajuste</div></div>
+      <div class="compare-row reveal"><div class="task">Encontrar estilo certo</div><div class="before">Memória + sorte</div><div class="after">Preview no hover</div></div>
+    </div>
+    <div class="compare-close reveal"><p>Não é uma evolução. <span class="accent">É outra categoria.</span></p></div>
+  </div>
+</section>
+
+<!-- ════════════════════════ USE CASES ════════════════════════ -->
+<section class="usecases">
+  <div class="container">
+    <div class="sec-head reveal" style="text-align:center;margin-left:auto;margin-right:auto;">
+      <span class="tag-mono"><span class="dot"></span>— QUEM USA · POR QUE USA</span>
+      <h2 class="section-title">Quatro editores.<br>Quatro <span class="italic-em">contextos.</span></h2>
+      <p class="lede" style="margin:24px auto 0">Não é tabela de feature. É como o plugin entra na rotina real de quem entrega vídeo todo dia.</p>
+    </div>
+    <div class="usecases-grid">
+
+      <article class="uc-card reveal">
+        <span class="uc-card__type">YouTube · 2 vídeos/sem</span>
+        <span class="uc-card__metric">14h/mês economizadas</span>
+        <p class="uc-card__quote">Cada entrevista de 1h são 40 takes. Antes do Motion Legendas era 30 minutos só formatando título de cada take. Agora? Duplo-clique, escolho fonte, troca de cor e tô na próxima.</p>
+        <div class="uc-card__meta">
+          <div class="uc-card__avatar">RM</div>
+          <div class="uc-card__who">
+            <div class="uc-card__name">Rafael Moreira</div>
+            <div class="uc-card__role">Editor · Canal de entrevistas</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="uc-card reveal">
+        <span class="uc-card__type">Casamentos · 30 eventos/ano</span>
+        <span class="uc-card__metric">3 dias úteis/casamento</span>
+        <p class="uc-card__quote">A categoria Wedding sozinha já justifica. 70 layouts elegantes que substituem aquele template MP4 do AE que todo videomaker usa. Cliente percebe a diferença.</p>
+        <div class="uc-card__meta">
+          <div class="uc-card__avatar">CN</div>
+          <div class="uc-card__who">
+            <div class="uc-card__name">Camila Nunes</div>
+            <div class="uc-card__role">Wedding videomaker · Belo Horizonte</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="uc-card reveal">
+        <span class="uc-card__type">Social ads · 8 campanhas/mês</span>
+        <span class="uc-card__metric">3× o output mensal</span>
+        <p class="uc-card__quote">Glitch e Huge são minhas fontes diárias pra reels e anúncio. Antes eu fazia 1 versão por campanha. Hoje testo 3 estilos diferentes em 10 minutos.</p>
+        <div class="uc-card__meta">
+          <div class="uc-card__avatar">LF</div>
+          <div class="uc-card__who">
+            <div class="uc-card__name">Lucas Ferreira</div>
+            <div class="uc-card__role">Social media · Agência boutique</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="uc-card reveal">
+        <span class="uc-card__type">Documentário · 6 séries/ano</span>
+        <span class="uc-card__metric">+R$ 4.200/mês de margem</span>
+        <p class="uc-card__quote">Lower Thirds é a melhor categoria. 100 layouts variados, cada identificação de personagem sai em 8 segundos. Cobro o mesmo do cliente e entrego em metade do tempo.</p>
+        <div class="uc-card__meta">
+          <div class="uc-card__avatar">AS</div>
+          <div class="uc-card__who">
+            <div class="uc-card__name">André Silveira</div>
+            <div class="uc-card__role">Documentarista · Produtora independente</div>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ PRICING ════════════════════════ -->
+<section class="pricing" id="planos">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="tag-mono"><span class="dot"></span>— INVESTIMENTO</span>
+      <h2 class="section-title">Dois planos.<br>Zero <span class="italic-em">pegadinha.</span></h2>
+    </div>
+    <div class="price-grid">
+      <article class="price-card popular reveal">
+        <span class="price-badge">Mais popular</span>
+        <div class="price-tag">01 · Anual</div>
+        <h3>Motion Legendas Anual</h3>
+        <div class="price-amount"><span class="num">R$ 149</span><span class="suf">/ano</span></div>
+        <p class="price-micro">~R$ 12,40/mês · economia de 62% vs vitalício no 1º ano</p>
+        <ul class="price-features">
+          <li>549 títulos premium em 10 categorias</li>
+          <li>2 dispositivos simultâneos</li>
+          <li>Atualizações inclusas</li>
+          <li>Suporte por e-mail (resposta em 24h úteis)</li>
+          <li>Cancele quando quiser, sem multa</li>
+        </ul>
+        <button class="btn btn-primary btn-full" data-buy-legendas="yearly">Assinar Anual <span class="arrow">→</span></button>
+        <div class="price-foot">7 dias trial · cancele em 1 clique</div>
+      </article>
+      <article class="price-card reveal">
+        <div class="price-tag" style="color:var(--fg-muted)">02 · Vitalício</div>
+        <h3>Motion Legendas Vitalício</h3>
+        <div class="price-amount"><span class="num">R$ 399</span><span class="suf">/pagamento único</span></div>
+        <p class="price-micro">Sem mensalidade. Pra sempre. Se paga em 2,7 anos.</p>
+        <ul class="price-features">
+          <li>Acesso vitalício ao catálogo</li>
+          <li>3 dispositivos simultâneos</li>
+          <li>Todas as atualizações futuras inclusas</li>
+          <li>Suporte vitalício</li>
+          <li>Pague uma vez. Esqueça.</li>
+        </ul>
+        <button class="btn btn-dark btn-full" data-buy-legendas="lifetime">Comprar Vitalício <span class="arrow">→</span></button>
+        <div class="price-foot">Reembolso em 14 dias. Sem perguntas.</div>
+      </article>
+    </div>
+
+    <div class="pricing-bundle reveal">
+      <span class="tag">💎 BUNDLE COMPLETO</span>
+      <h3>Motion Titles + Legendas por <em>R$ 299/ano</em></h3>
+      <p>8.455 templates totais (7.906 motion graphics + 549 títulos). Economia de R$ 49/ano vs comprar separado.</p>
+      <a href="/#planos" class="btn btn-primary">Ver Bundle Completo <span class="arrow">→</span></a>
+    </div>
+
+    <div class="pricing-callout reveal">
+      <p>
+        <strong>💡 Comparação honesta:</strong>
+        Pacote avulso de títulos no mercado: R$ 120 a R$ 500.
+        Motion Legendas Vitalício: R$ 399 uma vez. 549 títulos. Faz a conta.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ MANIFESTO ════════════════════════ -->
+<section class="manifesto">
+  <div class="container">
+    <div class="manifesto-inner reveal">
+      <p class="manifesto-quote">
+        Construí o Motion Legendas porque ninguém devia ficar até 2h da manhã digitando texto no Title Tool. O plugin entrega 549 títulos prontos pra customizar — e devolve a noite pra quem precisa dela.
+      </p>
+      <div class="manifesto-sig">
+        <span class="name">Gabriel Kendy</span>
+        <span class="role">Founder · PacotesFX</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ FAQ ════════════════════════ -->
+<section class="faq" id="faq">
+  <div class="container">
+    <div class="sec-head reveal" style="text-align:center; margin-left:auto; margin-right:auto;">
+      <span class="tag-mono"><span class="dot"></span>— PERGUNTAS FREQUENTES</span>
+      <h2 class="section-title">Dúvidas comuns.</h2>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Funciona em qual versão do Premiere?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Premiere Pro CC 2019 em diante (Windows e Mac). Plugin é CEP nativo, instalação automática via instalador.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Importa SRT ou só aplica títulos manuais?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Aplicação manual via CTI da timeline (1 clique por título). Importação SRT em massa está no roadmap pra v1.5.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Posso usar em projetos comerciais?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Sim. Licença comercial inclusa nos 2 planos. Vídeo de cliente, YouTube monetizado, social ads, evento pago — tudo liberado.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Quantas máquinas posso ativar?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Anual: 2 simultâneas. Vitalício: 3 simultâneas. Troca de máquina em 1 clique no dashboard.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">E se eu cancelar a assinatura?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Mantém acesso até o fim do período pago. Sem multa. Sem ligação de retenção. Sem chantagem.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Como funciona o reembolso?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>14 dias a partir da compra. Não gostou, pede no suporte, devolve 100%. Sem formulário de 12 campos.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Aceita Pix?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Aceita. Pix, cartão, boleto via Stripe Checkout. Vitalício no Pix sai com desconto adicional.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Funciona offline?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Sim. Depois de baixar os templates, funciona 7 dias offline antes de pedir reauth. Pra trabalhar em viagem ou em locação sem internet.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Vale comprar Titles + Legendas juntos?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Sim — pelo Bundle Anual de R$ 299, você paga R$ 49 a menos que comprando separado. 8.455 templates totais, mesma conta, mesma licença.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ CTA FINAL ════════════════════════ -->
+<section class="cta-final">
+  <div class="container">
+    <h2 class="reveal">
+      <span class="line">A pergunta não é</span>
+      <span class="line accent">se você precisa.</span>
+      <span class="line">É quanto tempo a mais</span>
+      <span class="line accent">você vai gastar no Title Tool.</span>
+    </h2>
+    <p class="lede reveal">7 dias grátis. Sem cartão. Cancele com 1 clique.</p>
+    <div class="reveal"><a href="#planos" class="btn btn-primary btn-giant">Começar agora <span class="arrow">→</span></a></div>
+    <p class="micro reveal">Suporte em português · Equipe brasileira · Sem fila gringa</p>
+  </div>
+</section>
+
+<!-- ════════════════════════ FOOTER ════════════════════════ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="logo"><span class="logo-dot"></span>Motion Titles</div>
+        <p class="footer-tag">O acervo definitivo de motion graphics. Construído por editor, pra editor.</p>
+        <div class="footer-copy">© <span data-yr></span> · PacotesFX</div>
+      </div>
+      <div class="footer-col"><h5>Produto</h5><ul>
+        <li><a href="#plataforma">Plataforma</a></li>
+        <li><a href="#familia">Família Motion Titles</a></li>
+        <li><a href="#fluxo">Como funciona</a></li>
+        <li><a href="#planos">Preços</a></li>
+        <li><a href="#faq">Perguntas frequentes</a></li>
+        <li><a href="/legendas/download.html">Download</a></li>
+      </ul></div>
+      <div class="footer-col"><h5>Plugins</h5><ul>
+        <li><a href="/">Motion Titles (7.906 templates)</a></li>
+        <li><a href="/legendas/">Motion Legendas (549 títulos)</a></li>
+      </ul></div>
+      <div class="footer-col"><h5>Docs</h5><ul>
+        <li><a href="/docs/">Central de manuais</a></li>
+        <li><a href="/docs/titles.html">Manual Motion Titles</a></li>
+        <li><a href="/docs/legendas.html">Manual Motion Legendas</a></li>
+        <li><a href="/docs/ia.html">Manual Motion IA</a></li>
+      </ul></div>
+      <div class="footer-col"><h5>Conta</h5><ul>
+        <li><a href="/account.html">Entrar</a></li>
+        <li><a href="#planos">Assinar</a></li>
+        <li><a href="/reset-password.html">Esqueci a senha</a></li>
+      </ul></div>
+      <div class="footer-col"><h5>Legal</h5><ul>
+        <li><a href="/terms.html">Termos de uso</a></li>
+        <li><a href="/privacy.html">Privacidade</a></li>
+        <li><a href="/seguranca.html">Segurança</a></li>
+        <li><a href="mailto:suporte@pacotesfx.com">suporte@pacotesfx.com</a></li>
+      </ul></div>
+    </div>
+    <div class="footer-bottom">
+      <span>Brasil · Belo Horizonte</span>
+      <span>v2.5 · <span data-yr></span></span>
+    </div>
+  </div>
+</footer>
+
+<!-- ════════════════════════ WHATSAPP FAB ════════════════════════ -->
+<a class="wa-fab"
+   href="https://wa.me/5531997554040?text=Quero%20conhecer%20o%20Motion%20Legendas"
+   target="_blank" rel="noopener noreferrer"
+   aria-label="Falar no WhatsApp">
+  <span class="wa-fab-label">
+    <strong>Fala com a gente</strong>
+    <small>31 99755-4040</small>
+  </span>
+  <span class="wa-fab-btn" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.464 3.488"/></svg>
+  </span>
+</a>
+
+<script>
+  // Flag pra system.js NÃO instanciar IO de reveal duplicado (GSAP cuida)
+  window.__MV_GSAP_REVEAL__ = true;
 </script>
+<script src="/js/system.js"></script>
+<script>
+/* ════════════════════════════════════════════════════════════════
+   LEGENDAS-SPECIFIC SCRIPT (mesmo motion stack da home)
+   - Lenis com integração oficial ScrollTrigger (1 RAF único)
+   - Hero animations consolidadas e pausáveis fora da viewport
+   - Checkout das legendas passa product=legendas
+   ════════════════════════════════════════════════════════════════ */
+(function () {
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let waited = 0;
+  function ready() {
+    if (typeof window.gsap === 'undefined' || typeof window.ScrollTrigger === 'undefined') {
+      waited += 50;
+      if (waited < 4000) return setTimeout(ready, 50);
+      return fallback();
+    }
+    gsap.registerPlugin(ScrollTrigger);
+    init();
+  }
+  function fallback() {
+    document.querySelectorAll('.reveal').forEach(el => el.classList.add('in'));
+    document.querySelectorAll('.hero-chip').forEach(c => c.style.opacity = 1);
+  }
+  function init() {
+    // ─── Lenis smooth scroll ───
+    let lenis = null;
+    if (!reduced && typeof window.Lenis !== 'undefined') {
+      try {
+        lenis = new Lenis({
+          duration: 1.05,
+          easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+          smoothWheel: true,
+          wheelMultiplier: 1,
+          touchMultiplier: 1.6,
+          syncTouch: false
+        });
+        lenis.on('scroll', ScrollTrigger.update);
+        gsap.ticker.add(time => lenis.raf(time * 1000));
+        gsap.ticker.lagSmoothing(0);
+        window.__lenis = lenis;
+      } catch (e) { lenis = null; }
+    }
+
+    // HERO split em chars
+    const titleEl = document.getElementById('heroTitle');
+    if (titleEl) {
+      titleEl.querySelectorAll('.line').forEach(line => {
+        function splitNode(node, parent) {
+          if (node.nodeType === 3) {
+            const frag = document.createDocumentFragment();
+            [...node.textContent].forEach(ch => {
+              const s = document.createElement('span');
+              s.className = 'char';
+              s.textContent = ch === ' ' ? ' ' : ch;
+              frag.appendChild(s);
+            });
+            parent.replaceChild(frag, node);
+          } else if (node.nodeType === 1) {
+            [...node.childNodes].forEach(c => splitNode(c, node));
+          }
+        }
+        [...line.childNodes].forEach(n => splitNode(n, line));
+      });
+    }
+
+    // HERO timeline
+    if (!reduced) {
+      const tl = gsap.timeline({ delay: 0.3, defaults: { ease: 'power3.out' } });
+      const badge = document.querySelector('.hero-badge');
+      const chars = document.querySelectorAll('.hero-title .char');
+      const sub   = document.querySelector('.hero-sub');
+      const ctas  = document.querySelectorAll('.hero-ctas > *');
+      const trust = document.querySelector('.trust-line');
+      const marquee = document.querySelector('.hero-marquee');
+      if (badge) tl.from(badge, { opacity: 0, y: 20, duration: .8 });
+      if (chars.length) tl.from(chars, { opacity: 0, y: 80, rotateX: -90, duration: 1, stagger: .03, ease: 'power4.out' }, '-=0.5');
+      if (sub) tl.from(sub, { opacity: 0, y: 30, duration: .8 }, '-=0.6');
+      if (ctas.length) tl.from(ctas, { opacity: 0, y: 40, duration: .7, stagger: .1, ease: 'back.out(1.7)' }, '-=0.4');
+      if (trust) tl.from(trust, { opacity: 0, y: 10, duration: .6 }, '-=0.4');
+      if (marquee) tl.from(marquee, { opacity: 0, y: 30, duration: 1 }, '-=0.5');
+    }
+
+    // Reveal stagger
+    if (!reduced) {
+      ScrollTrigger.batch('.reveal', {
+        start: 'top 88%',
+        onEnter: batch => {
+          batch.forEach((el, i) => setTimeout(() => el.classList.add('in'), i * 70));
+        },
+        once: true
+      });
+    } else {
+      document.querySelectorAll('.reveal').forEach(el => el.classList.add('in'));
+    }
+
+    // COUNTERS
+    document.querySelectorAll('[data-counter]').forEach(el => {
+      const target = parseFloat(el.dataset.counter);
+      const suffix = el.dataset.suffix || '';
+      const fmt    = el.dataset.format === 'thousand';
+      const obs = new IntersectionObserver((entries) => {
+        entries.forEach(en => {
+          if (en.isIntersecting) {
+            const dur = 2000, start = performance.now();
+            function tick(now) {
+              const p = Math.min((now - start) / dur, 1);
+              const eased = 1 - Math.pow(1 - p, 3);
+              const v = Math.round(target * eased);
+              el.textContent = (fmt ? v.toLocaleString('pt-BR') : v) + suffix;
+              if (p < 1) requestAnimationFrame(tick);
+              else el.textContent = (fmt ? target.toLocaleString('pt-BR') : target) + suffix;
+            }
+            requestAnimationFrame(tick);
+            obs.disconnect();
+          }
+        });
+      }, { threshold: .4 });
+      obs.observe(el);
+    });
+
+    // STATS line in
+    const stats = document.getElementById('stats');
+    if (stats) {
+      ScrollTrigger.create({ trigger: stats, start: 'top 80%', onEnter: () => stats.classList.add('in-view') });
+    }
+
+    // FLUX line
+    const fluxLine = document.getElementById('fluxLine');
+    const fluxGrid = document.querySelector('.flux-grid');
+    if (fluxLine && fluxGrid && !reduced) {
+      ScrollTrigger.create({ trigger: fluxGrid, start: 'top 70%', onEnter: () => fluxLine.classList.add('in') });
+    } else if (fluxLine) {
+      fluxLine.classList.add('in');
+    }
+
+    // HERO preview cards + parallax CONSOLIDADO
+    const previews = document.querySelectorAll('.prev-card');
+    const cardRotations = [-6, 4, 3, -5]; // p1, p2, p3, p4
+    if (previews.length && !reduced) {
+      previews.forEach((card, i) => {
+        gsap.set(card, { rotation: cardRotations[i] || 0 });
+      });
+      gsap.fromTo(previews,
+        { opacity: 0, scale: 0.85, y: 30 },
+        { opacity: 1, scale: 1, y: 0, duration: 1.1, stagger: .15, delay: 1.0, ease: 'back.out(1.4)' }
+      );
+      // Float idle (mantém a rotação)
+      previews.forEach((card, i) => {
+        gsap.to(card, { y: (i % 2 === 0 ? -16 : 16), duration: 4 + (i * .4), repeat: -1, yoyo: true, ease: 'sine.inOut', delay: 2 + i * .3 });
+      });
+      const heroTl = gsap.timeline({
+        scrollTrigger: {
+          trigger: '.hero',
+          start: 'top top',
+          end: 'bottom top',
+          scrub: 0.5,
+          invalidateOnRefresh: true
+        }
+      });
+      heroTl
+        .to('.hero-bg .blob.b1', { y: 200 }, 0)
+        .to('.hero-bg .blob.b2', { y: -180 }, 0)
+        .to('.hero-bg .blob.b3', { y: 240 }, 0)
+        .to('.hero-inner', { opacity: 0.3, y: -60 }, 0);
+      previews.forEach(card => {
+        const depth = parseFloat(card.dataset.depth) || 0.4;
+        heroTl.to(card, { y: `+=${depth * 240}` }, 0);
+      });
+    } else if (previews.length) {
+      previews.forEach(c => c.style.opacity = 1);
+    }
+
+    // Pausa CSS do hero quando offscreen
+    const heroEl = document.querySelector('.hero');
+    if (heroEl) {
+      const heroIO = new IntersectionObserver((entries) => {
+        entries.forEach(en => {
+          heroEl.dataset.paused = en.isIntersecting ? 'false' : 'true';
+        });
+      }, { rootMargin: '100px' });
+      heroIO.observe(heroEl);
+    }
+
+    // HERO mouse glow
+    const hero = document.getElementById('hero');
+    const heroGlow = document.getElementById('heroGlow');
+    if (hero && heroGlow && !reduced) {
+      let glowX = 0, glowY = 0, targetX = 0, targetY = 0;
+      hero.addEventListener('mousemove', e => {
+        const r = hero.getBoundingClientRect();
+        targetX = e.clientX - r.left; targetY = e.clientY - r.top;
+        heroGlow.style.opacity = '1';
+      });
+      hero.addEventListener('mouseleave', () => heroGlow.style.opacity = '0');
+      function rafGlow() {
+        glowX += (targetX - glowX) * 0.12;
+        glowY += (targetY - glowY) * 0.12;
+        heroGlow.style.transform = `translate(calc(${glowX}px - 50%), calc(${glowY}px - 50%))`;
+        requestAnimationFrame(rafGlow);
+      }
+      rafGlow();
+    }
+
+    // Magnetic buttons
+    if (!reduced && matchMedia('(pointer:fine)').matches) {
+      document.querySelectorAll('.btn-magnetic').forEach(btn => {
+        const inner = btn.querySelector('span') || btn;
+        btn.addEventListener('mousemove', e => {
+          const r = btn.getBoundingClientRect();
+          const x = e.clientX - r.left - r.width / 2;
+          const y = e.clientY - r.top - r.height / 2;
+          gsap.to(btn,   { x: x * .25, y: y * .35, duration: .5, ease: 'power3.out' });
+          gsap.to(inner, { x: x * .12, y: y * .18, duration: .5, ease: 'power3.out' });
+        });
+        btn.addEventListener('mouseleave', () => {
+          gsap.to(btn,   { x: 0, y: 0, duration: .7, ease: 'elastic.out(1, .5)' });
+          gsap.to(inner, { x: 0, y: 0, duration: .7, ease: 'elastic.out(1, .5)' });
+        });
+      });
+    }
+
+    // Scramble com pausa offscreen
+    const SCRAMBLE_CHARS = '!<>-_\\/[]{}—=+*^?#________';
+    function scramble(el, finalText, dur = 900) {
+      const len = finalText.length, start = performance.now();
+      function tick(now) {
+        const t = Math.min((now - start) / dur, 1);
+        let out = '';
+        for (let i = 0; i < len; i++) {
+          const reveal = t * len;
+          if (i < reveal - 2) out += finalText[i];
+          else if (i < reveal) out += SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
+          else out += finalText[i] === ' ' ? ' ' : '';
+        }
+        el.textContent = out;
+        if (t < 1) requestAnimationFrame(tick);
+        else el.textContent = finalText;
+      }
+      requestAnimationFrame(tick);
+    }
+    if (!reduced) {
+      document.querySelectorAll('[data-scramble]').forEach(el => {
+        const final = el.dataset.scramble + '.';
+        let intervalId = null;
+        let visible = true;
+        setTimeout(() => scramble(el, final, 1100), 1800);
+        const startLoop = () => {
+          if (intervalId) return;
+          intervalId = setInterval(() => { if (visible) scramble(el, final, 1000); }, 7000);
+        };
+        const stopLoop = () => { if (intervalId) { clearInterval(intervalId); intervalId = null; } };
+        const io = new IntersectionObserver(([entry]) => {
+          visible = entry.isIntersecting;
+          if (visible) startLoop(); else stopLoop();
+        }, { rootMargin: '50px' });
+        io.observe(el);
+      });
+    }
+
+    // FAQ accordion
+    document.querySelectorAll('.faq-item').forEach(item => {
+      const btn = item.querySelector('.faq-q');
+      btn.addEventListener('click', () => {
+        const open = item.classList.toggle('open');
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+    });
+
+    // Smooth anchor (delegated)
+    document.addEventListener('click', e => {
+      const a = e.target.closest('a[href^="#"]');
+      if (!a) return;
+      const id = a.getAttribute('href');
+      if (id.length <= 1) return;
+      const el = document.querySelector(id);
+      if (!el) return;
+      e.preventDefault();
+      if (lenis) lenis.scrollTo(el, { offset: -60, duration: 1.1 });
+      else el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    // ─── CHECKOUT LEGENDAS (product="legendas") ───
+    document.addEventListener('click', async e => {
+      const btn = e.target.closest('[data-buy-legendas]');
+      if (!btn) return;
+      e.preventDefault();
+      const plan = btn.dataset.buyLegendas;
+      const orig = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Indo pra Stripe...';
+      try {
+        const token = localStorage.getItem('mv_session');
+        const savedEmail = localStorage.getItem('mv_email');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers.Authorization = 'Bearer ' + token;
+        const r = await fetch((window.MV_API || 'https://motionpro.vercel.app') + '/v1/billing/checkout?plan=' + plan + '&product=legendas', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ plan, product: 'legendas', email: savedEmail || undefined })
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok || !data.url) throw new Error(data.error || 'checkout_failed');
+        window.location.href = data.url;
+      } catch (err) {
+        if (window.MV && window.MV.toast) window.MV.toast('Erro: ' + err.message, 'error');
+        btn.disabled = false;
+        btn.innerHTML = orig;
+      }
+    });
+
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => ScrollTrigger.refresh());
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready);
+  else ready();
+})();
+</script>
+
 </body>
 </html>

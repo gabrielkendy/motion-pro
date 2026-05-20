@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════
-   MOTIONPRO · SYSTEM JS
+   Motion Titles · SYSTEM JS
    Auth modal, nav inteligente, scroll progress, reveal, WhatsApp FAB,
    toast, e helper de API. Compartilhado por TODAS as páginas.
    ════════════════════════════════════════════════════════════════ */
@@ -65,39 +65,42 @@
     window.location.href = data.url;
   };
 
-  // ---------- NAV SMART ----------
-  function initNav() {
+  // ---------- SCROLL: 1 listener único pra nav + progress + WhatsApp FAB ----------
+  function initScroll() {
     const nav = document.querySelector('.nav');
-    if (!nav) return;
+    const bar = document.querySelector('.scroll-progress');
+    const fab = document.querySelector('.wa-fab');
+    if (!nav && !bar && !fab) return;
+
     let lastY = 0, ticking = false;
-    function onScroll() {
-      const y = window.scrollY || 0;
-      if (y > 50) nav.classList.add('scrolled'); else nav.classList.remove('scrolled');
-      if (y > 200 && y > lastY + 4) nav.classList.add('hidden');
-      else if (y < lastY - 4) nav.classList.remove('hidden');
+    function update() {
+      const h = document.documentElement;
+      const y = window.scrollY || h.scrollTop || 0;
+
+      if (nav) {
+        if (y > 50) nav.classList.add('scrolled'); else nav.classList.remove('scrolled');
+        if (y > 200 && y > lastY + 4) nav.classList.add('hidden');
+        else if (y < lastY - 4) nav.classList.remove('hidden');
+      }
+      if (bar) {
+        const max = h.scrollHeight - h.clientHeight;
+        const p = max > 0 ? (y / max) : 0;
+        bar.style.width = (Math.max(0, Math.min(1, p)) * 100) + '%';
+      }
+      if (fab) {
+        if (y > 400) fab.classList.add('show'); else fab.classList.remove('show');
+      }
       lastY = y;
       ticking = false;
     }
-    window.addEventListener('scroll', () => {
-      if (!ticking) { requestAnimationFrame(onScroll); ticking = true; }
-    }, { passive: true });
-  }
-
-  // ---------- SCROLL PROGRESS ----------
-  function initProgress() {
-    const bar = document.querySelector('.scroll-progress');
-    if (!bar) return;
-    function tick() {
-      const h = document.documentElement;
-      const max = h.scrollHeight - h.clientHeight;
-      const p = max > 0 ? (h.scrollTop / max) : 0;
-      bar.style.width = (Math.max(0, Math.min(1, p)) * 100) + '%';
+    function onScroll() {
+      if (!ticking) { requestAnimationFrame(update); ticking = true; }
     }
-    window.addEventListener('scroll', tick, { passive: true });
-    tick();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    update();
   }
 
-  // ---------- REVEAL ON SCROLL ----------
+  // ---------- REVEAL ON SCROLL (skip se home tá usando GSAP) ----------
   function initReveal() {
     const els = document.querySelectorAll('.reveal');
     if (!els.length) return;
@@ -105,6 +108,8 @@
       els.forEach(el => el.classList.add('in'));
       return;
     }
+    // Se o ScrollTrigger.batch da home já está rodando, pula
+    if (window.__MV_GSAP_REVEAL__) return;
     const io = new IntersectionObserver((entries) => {
       entries.forEach(en => {
         if (en.isIntersecting) {
@@ -114,18 +119,6 @@
       });
     }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
     els.forEach(el => io.observe(el));
-  }
-
-  // ---------- WHATSAPP FAB ----------
-  function initWaFab() {
-    const fab = document.querySelector('.wa-fab');
-    if (!fab) return;
-    function tick() {
-      if (window.scrollY > 400) fab.classList.add('show');
-      else fab.classList.remove('show');
-    }
-    window.addEventListener('scroll', tick, { passive: true });
-    tick();
   }
 
   // ---------- AUTH MODAL ----------
@@ -140,7 +133,7 @@
     <div class="modal__head">
       <span class="modal__tag" id="modal-tag">— CRIAR CONTA</span>
       <h2 id="modal-title">Comece sua assinatura</h2>
-      <p id="modal-sub">Crie sua conta pra ir pro checkout. 14 dias trial sem cartão.</p>
+      <p id="modal-sub">Crie sua conta pra ir pro checkout. 7 dias trial sem cartão.</p>
     </div>
     <form id="auth-form" class="modal__form">
       <div class="form-row">
@@ -181,7 +174,7 @@
         h2:  plan ? 'Falta pouco pro checkout' : 'Crie sua conta',
         sub: plan
           ? 'Crie sua conta em 10 segundos. Em seguida você vai pro pagamento seguro do Stripe.'
-          : '14 dias de trial sem cartão. Cancele quando quiser.',
+          : '7 dias de trial sem cartão. Cancele quando quiser.',
         cta: (plan ? 'Criar conta e ir pro checkout' : 'Criar conta') + ' <span class="arrow">→</span>'
       },
       login: {
@@ -296,8 +289,8 @@
   const HEADER_HTML = `
 <header class="nav">
   <div class="container nav-inner">
-    <a href="/" class="logo" aria-label="MotionPro home">
-      <span class="logo-dot"></span>MotionPro
+    <a href="/" class="logo" aria-label="Motion Titles home">
+      <span class="logo-dot"></span>Motion Titles
     </a>
     <nav aria-label="Principal">
       <ul class="nav-links">
@@ -320,7 +313,7 @@
   <div class="container">
     <div class="footer-grid">
       <div>
-        <div class="logo"><span class="logo-dot"></span>MotionPro</div>
+        <div class="logo"><span class="logo-dot"></span>Motion Titles</div>
         <p class="footer-tag">O acervo definitivo de motion graphics. Construído por editor, pra editor.</p>
         <div class="footer-copy">© <span data-yr></span> · PacotesFX</div>
       </div>
@@ -371,10 +364,8 @@
 
   // ---------- INIT ----------
   function init() {
-    initNav();
-    initProgress();
+    initScroll();
     initReveal();
-    initWaFab();
     bindModal();
     // year footer
     document.querySelectorAll('[data-yr]').forEach(el => el.textContent = new Date().getFullYear());

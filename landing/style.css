@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════
-   MotionPro Landing · Design System BASE
+   Motion Titles Landing · Design System BASE
    monocromático tipográfico · azul accent · espaçamento generoso
    ════════════════════════════════════════════════════════════════ */
 :root{
@@ -41,9 +41,9 @@ em{font-style:normal;color:var(--acc)}
 /* ════════════════════════ NAV ════════════════════════ */
 .nav{
     position:sticky;top:0;z-index:50;
-    background:rgba(255,255,255,.92);
-    backdrop-filter:blur(20px) saturate(1.8);
-    -webkit-backdrop-filter:blur(20px) saturate(1.8);
+    background:rgba(255,255,255,.96);
+    backdrop-filter:blur(12px) saturate(1.4);
+    -webkit-backdrop-filter:blur(12px) saturate(1.4);
     border-bottom:1px solid var(--line);
     isolation:isolate;
 }
@@ -150,7 +150,7 @@ em{font-style:normal;color:var(--acc)}
 .hero__stats span{font-size:13px;color:var(--mut);font-weight:500}
 
 /* ════════════════════════ SECTIONS ════════════════════════ */
-.section{padding:var(--pad-section) 0;border-bottom:1px solid var(--line)}
+.section{padding:var(--pad-section) 0;border-bottom:1px solid var(--line);content-visibility:auto;contain-intrinsic-size:auto 900px}
 .section--dark{
     background:var(--bg-dark);color:var(--txt-inv);
     border-bottom:1px solid var(--line-dark);
