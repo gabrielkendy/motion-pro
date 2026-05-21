@@ -38,6 +38,101 @@ window.LicenseUI = (function () {
         el.textContent = label;
     }
 
+    // ── CROSS-SELL (Chunk 8) ──────────────────────────────────────────
+    var SUITE_PLUGINS = {
+        titles:   { name: "Motion Titles",   icon: "🎬", url: "/titles/",                 download: "/titles/#download" },
+        legendas: { name: "Motion Legendas", icon: "📝", url: "/legendas/",               download: "/legendas/#download" },
+        ia:       { name: "Motion IA",       icon: "🤖", url: "/ia/",                     download: "/ia/download.html" }
+    };
+
+    function landing() {
+        return (window.Auth && window.Auth.LANDING_URL)
+            || (window.MV_CONFIG && window.MV_CONFIG.landingUrl)
+            || "https://motionpro-lp.vercel.app";
+    }
+
+    function openSuitePlugin(p, mode) {
+        var meta = SUITE_PLUGINS[p];
+        if (!meta) return;
+        var url = landing() + (mode === "download" ? meta.download : meta.url);
+        if (window.Auth && window.Auth.openInBrowser) window.Auth.openInBrowser(url);
+        else window.open(url, "_blank");
+    }
+
+    function renderCrossSell(info, serverProducts) {
+        var el = $("cfg-cross-sell");
+        if (!el) return;
+        // Produtos cobertos pela licença local + pelo /v1/me/products do backend
+        var local = (info && info.products) || [];
+        var all = local.concat(serverProducts || []);
+        var others = all.filter(function (p, i, a) {
+            return p && p !== "titles" && SUITE_PLUGINS[p] && a.indexOf(p) === i;
+        });
+
+        if (others.length === 0) {
+            // Default: cross-sell padrão (não tem outras chaves)
+            el.innerHTML =
+                '<div class="cross-sell__default">' +
+                  'Motion Titles é o <b>Plugin 01</b> da Motion Suite. Conheça também:' +
+                  '<div class="cross-sell__row">' +
+                    '<a href="#" data-suite-plugin="legendas" class="cross-sell__link">📝 Motion Legendas</a>' +
+                    '<a href="#" data-suite-plugin="ia"       class="cross-sell__link">🤖 Motion IA</a>' +
+                  '</div>' +
+                  '<div class="hint" style="margin-top:10px">' +
+                    'Compre o <b>Bundle Motion Suite (MTS-)</b> e libere os 3 plugins com uma chave só.' +
+                  '</div>' +
+                '</div>';
+        } else {
+            // User já tem cobertura cross-product — mostra "baixar aqui"
+            var rows = others.map(function (p) {
+                var m = SUITE_PLUGINS[p];
+                return '' +
+                  '<div class="cross-sell__owned">' +
+                    '<div class="cross-sell__owned-icon">' + m.icon + '</div>' +
+                    '<div class="cross-sell__owned-body">' +
+                      '<div class="cross-sell__owned-name">' + m.name + '</div>' +
+                      '<div class="cross-sell__owned-sub">Você tem direito · ative em outra máquina ou baixe aqui</div>' +
+                    '</div>' +
+                    '<button class="btn btn--sm" data-suite-plugin="' + p + '" data-suite-mode="download">Baixar</button>' +
+                  '</div>';
+            }).join("");
+            el.innerHTML =
+                '<div class="cross-sell__owned-list">' +
+                  '<div class="cross-sell__owned-hd">✨ Sua chave cobre outros plugins da Suite:</div>' +
+                  rows +
+                '</div>';
+        }
+
+        // Bind cliques
+        [].forEach.call(el.querySelectorAll("[data-suite-plugin]"), function (n) {
+            n.onclick = function (e) {
+                e.preventDefault();
+                openSuitePlugin(n.getAttribute("data-suite-plugin"), n.getAttribute("data-suite-mode") || "info");
+            };
+        });
+    }
+
+    var _userProductsCache = null;
+    async function fetchUserProducts() {
+        if (_userProductsCache) return _userProductsCache;
+        var tok = localStorage.getItem("mv_session");
+        if (!tok) return [];
+        var apiBase = (window.Auth && window.Auth.API_BASE)
+            || (window.MV_CONFIG && window.MV_CONFIG.apiBaseUrl)
+            || "https://motionpro.vercel.app";
+        try {
+            var r = await fetch(apiBase + "/v1/me/products", {
+                headers: { "Authorization": "Bearer " + tok }
+            });
+            if (!r.ok) return [];
+            var data = await r.json();
+            var arr = Array.isArray(data) ? data : (data.products || []);
+            _userProductsCache = arr.map(function (x) { return typeof x === "string" ? x : (x && x.product_id) || ""; })
+                                    .filter(Boolean);
+            return _userProductsCache;
+        } catch (_) { return []; }
+    }
+
     function refresh() {
         var card = $("lic-card");
         var info = window.LicenseCache && window.LicenseCache.info
@@ -63,6 +158,12 @@ window.LicenseUI = (function () {
 
         // Atualiza email no footer drawer
         $("cfg-email") && ($("cfg-email").textContent = localStorage.getItem("mv_email") || "—");
+
+        // Chunk 8: cross-sell baseado em local products + /v1/me/products
+        renderCrossSell(info, null); // 1ª passada com info local
+        fetchUserProducts().then(function (serverProducts) {
+            renderCrossSell(info, serverProducts);
+        });
 
         // Hooks pra outros componentes (status bar do Chunk 7, tier badge do Chunk 5)
         document.dispatchEvent(new CustomEvent("license:updated", { detail: info }));
@@ -175,6 +276,16 @@ window.LicenseUI = (function () {
         var val = $("lic-validate");      if (val) val.onclick = onValidate;
         var deact = $("lic-deactivate");  if (deact) deact.onclick = onDeactivate;
         var logout = $("cfg-logout");     if (logout) logout.onclick = onLogout;
+        // Chunk 8: pílula "✨ Suite" no statusbar abre o drawer e rola até cross-sell
+        var pill = $("suite-pill");
+        if (pill) pill.onclick = function () {
+            open();
+            setTimeout(function () {
+                var cs = $("cfg-cross-sell");
+                if (cs && cs.scrollIntoView) cs.scrollIntoView({ behavior: "smooth", block: "center" });
+            }, 250);
+        };
+
         // ESC fecha drawer
         document.addEventListener("keydown", function (e) {
             if (e.key === "Escape" && $("config-drawer") && $("config-drawer").classList.contains("open")) {
