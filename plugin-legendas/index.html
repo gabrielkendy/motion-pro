@@ -4,9 +4,69 @@
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src *; img-src * data: blob: file: filesystem:; style-src 'self' 'unsafe-inline'; media-src * data: blob: file: filesystem:;">
 <title>Motion Legendas — Premiere</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/ep.css?v=425b">
 </head>
 <body>
+
+<!-- ════════════════ GATE (login fullscreen) ════════════════ -->
+<div id="gate" class="gate">
+    <div class="gate__box">
+        <div class="gate__brand">Motion <span>Legendas</span></div>
+        <div class="gate__tagline">BY PACOTESFX</div>
+        <div class="gate__tabs">
+            <button id="gt-login" class="gate__tab active" type="button">Entrar</button>
+            <button id="gt-signup" class="gate__tab" type="button">Criar conta</button>
+        </div>
+        <div class="field signup-only" id="f-name" hidden>
+            <label for="g-name">Nome</label>
+            <input id="g-name" type="text" placeholder="Seu nome">
+        </div>
+        <div class="field signup-only" id="f-phone" hidden>
+            <label for="g-phone">Telefone (opcional)</label>
+            <input id="g-phone" type="tel" placeholder="+55 11 98765-4321">
+        </div>
+        <div class="field">
+            <label for="g-email">E-mail</label>
+            <input id="g-email" type="email" placeholder="seu@email.com" autocomplete="email">
+        </div>
+        <div class="field">
+            <label for="g-password">Senha</label>
+            <input id="g-password" type="password" placeholder="Mínimo 8 caracteres" autocomplete="current-password">
+        </div>
+        <button id="g-submit" class="btn btn--primary btn--full" type="button">Entrar</button>
+        <div id="g-msg" class="gate__msg"></div>
+
+        <div class="gate__sep"><span>ou</span></div>
+        <button id="g-google" class="btn btn--ghost btn--full" type="button">
+            <svg viewBox="0 0 18 18" width="16" height="16" style="vertical-align:-3px;margin-right:8px">
+                <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+                <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
+                <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/>
+                <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+            </svg>
+            Continuar com Google
+        </button>
+        <div class="gate__foot">
+            <a id="g-have-code" href="#">Já tenho código de login</a>
+            <span style="margin:0 8px;color:var(--mut)">·</span>
+            <a id="g-forgot" href="#">Esqueci minha senha</a>
+        </div>
+
+        <!-- Modal "Tenho código" (oculto por default) -->
+        <div id="g-code-box" class="field" style="display:none;margin-top:14px;padding:14px;background:var(--bg-2);border-radius:10px;border:1px solid var(--line)">
+            <label style="font-size:12px;color:var(--mut);margin-bottom:6px;display:block">Cole o código gerado após login no navegador:</label>
+            <textarea id="g-code-input" rows="3" placeholder="ey…" style="width:100%;font-family:ui-monospace,monospace;font-size:11px;resize:vertical;background:var(--bg);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:8px"></textarea>
+            <div style="display:flex;gap:8px;margin-top:8px">
+                <button id="g-code-submit" class="btn btn--primary" style="flex:1" type="button">Entrar com código</button>
+                <button id="g-code-cancel" class="btn btn--ghost" type="button">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ════════════ HEADER (PacotesFX) ════════════ -->
 <header id="header">
     <div id="header-logo">
@@ -64,6 +124,9 @@
     </button>
     <button class="tab-btn" data-tab="tab-sfx" title="Biblioteca de efeitos sonoros">
         <span class="tab-ico">🔊</span><span class="tab-lbl">SFX</span>
+    </button>
+    <button class="tab-btn" data-tab="tab-config" title="Licença + Configurações">
+        <span class="tab-ico">⚙️</span><span class="tab-lbl">Config</span>
     </button>
 </div>
 
@@ -437,6 +500,81 @@
     </div>
 </div>
 
+<!-- ════════════ TAB: CONFIG (Licença & Settings) ════════════ -->
+<div id="tab-config" class="tab-panel">
+    <div id="config-body" style="padding:16px 14px 60px;font-family:'Inter',sans-serif">
+        <div style="font:700 13px Inter;color:var(--txt);margin-bottom:4px">🔑 Licença</div>
+        <div style="font:500 11px Inter;color:var(--mut);margin-bottom:14px">
+            Comprou pelo site? Sua chave foi enviada por e-mail.
+        </div>
+
+        <div id="lic-card" class="license-card inactive">
+            <div class="license-card__row">
+                <span class="license-card__label">Status</span>
+                <span><span id="lic-status" class="license-card__status inactive">Não ativada</span></span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Chave</span>
+                <span id="lic-key" class="license-card__value">—</span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Plano</span>
+                <span id="lic-tier" class="license-card__value">—</span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Produto</span>
+                <span id="lic-product" class="license-card__value">—</span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Devices</span>
+                <span id="lic-devices" class="license-card__value">—</span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Última validação</span>
+                <span id="lic-validated" class="license-card__value">—</span>
+            </div>
+        </div>
+
+        <div class="field">
+            <label for="lic-input">Inserir chave de licença</label>
+            <input id="lic-input" placeholder="MTL-XXXX-XXXX-XXXX  ou  MTS-XXXX-XXXX-XXXX" autocomplete="off"
+                   style="text-transform:uppercase;font-family:'JetBrains Mono',Consolas,monospace;letter-spacing:.5px">
+            <div class="hint">
+                <b>MTL-</b> = Motion Legendas standalone · <b>MTS-</b> = Bundle Motion Suite (Titles+Legendas+IA)
+            </div>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap">
+            <button id="lic-activate" class="btn btn--primary" type="button">Ativar Licença</button>
+            <button id="lic-validate" class="btn btn--sm" type="button">↻ Revalidar</button>
+            <button id="lic-deactivate" class="btn btn--danger btn--sm" type="button">Desativar</button>
+            <button id="lic-buy" class="btn btn--ghost btn--sm" type="button">Comprar →</button>
+        </div>
+
+        <div id="lic-msg" class="gate__msg" style="text-align:left;font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;min-height:0;margin-bottom:18px"></div>
+
+        <!-- Cross-sell banner (Chunk 8 preenche) -->
+        <div id="suite-cross-sell" class="hidden" style="background:linear-gradient(135deg,var(--bg-2),var(--bg-3));border:1px solid var(--acc-line);border-radius:var(--radius-lg);padding:16px 18px;margin-bottom:18px;font-family:'Inter',sans-serif">
+            <!-- conteúdo populado por config-tab.js dependendo de covers_via_bundle -->
+        </div>
+
+        <hr style="border:0;border-top:1px solid var(--line);margin:24px 0">
+
+        <div style="font:700 13px Inter;color:var(--txt);margin-bottom:14px">🔐 Sessão</div>
+        <div id="session-card" style="background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius-lg);padding:16px 18px;margin-bottom:14px">
+            <div class="license-card__row">
+                <span class="license-card__label">Usuário</span>
+                <span id="sess-email" class="license-card__value">—</span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Build</span>
+                <span class="license-card__value">v4.25.1</span>
+            </div>
+        </div>
+        <button id="sess-logout" class="btn btn--danger btn--sm" type="button">Sair da conta</button>
+    </div>
+</div>
+
 <!-- ════════════ STICKY APPLY FOOTER (só visível em tabs de legenda) ════════════ -->
 <div id="apply-footer" class="hidden">
     <div class="apply-footer-info">
@@ -481,66 +619,44 @@
     <span id="status-user">—</span>
 </div>
 
-<!-- ════════════ LOGIN OVERLAY (JWT MotionVault — visual padronizado família Motion) ════════════ -->
-<div id="login-overlay" class="hidden">
-    <div class="capture-modal motion-gate">
-        <div class="motion-gate-brand">
-            <div class="motion-gate-logo">Motion Legendas</div>
-            <div class="motion-gate-sub">by PacotesFX</div>
-        </div>
-        <div class="capture-modal-body">
-            <div id="login-view">
-                <div class="capture-field">
-                    <label>Email</label>
-                    <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email">
-                </div>
-                <div class="capture-field">
-                    <label>Senha</label>
-                    <input type="password" id="login-password" placeholder="Sua senha" autocomplete="current-password">
-                </div>
-                <div class="login-extras signup-hide">
-                    <button id="login-forgot" class="btn-link">Esqueci minha senha</button>
-                    <button id="login-toggle-signup" class="btn-link">Criar conta · 7 dias grátis</button>
-                </div>
-                <div class="signup-show" style="display:none">
-                    <div class="capture-field">
-                        <label>Nome</label>
-                        <input type="text" id="signup-name" placeholder="Seu nome">
-                    </div>
-                    <div class="capture-field">
-                        <label>Telefone (opcional)</label>
-                        <input type="tel" id="signup-phone" placeholder="+55 11 98765-4321">
-                    </div>
-                    <button id="login-toggle-login" class="btn-link">Já tenho conta</button>
-                </div>
-                <div id="login-error"></div>
-            </div>
-        </div>
-        <div class="capture-modal-footer">
-            <button id="login-confirm" class="btn-modal-primary">Entrar</button>
-        </div>
-    </div>
+<!-- ════════════ RECONNECT BANNER (sticky session — Chunk 7) ════════════ -->
+<div id="reconnect-banner" class="hidden" style="position:fixed;top:0;left:0;right:0;z-index:998;background:linear-gradient(90deg,#f59e0b,#ea580c);color:#fff;padding:8px 14px;display:flex;align-items:center;gap:10px;font:600 12px Inter;box-shadow:0 4px 12px rgba(0,0,0,0.3)">
+    <span style="font-size:14px">⚠</span>
+    <span id="reconnect-banner-text" style="flex:1">Sua sessão expirou. Reconecte pra sincronizar.</span>
+    <button id="reconnect-banner-btn" type="button" style="background:#fff;color:#ea580c;border:0;font:700 11px Inter;padding:5px 12px;border-radius:5px;cursor:pointer">Reconectar</button>
+    <button id="reconnect-banner-dismiss" type="button" title="Dispensar" style="background:transparent;border:0;color:#fff;font:700 14px Inter;cursor:pointer;padding:0 4px">×</button>
 </div>
 
-<!-- ════════════ PAYWALL ════════════ -->
-<div id="paywall" class="hidden">
-    <div class="capture-modal">
-        <div class="capture-modal-header"><span>Trial expirado</span></div>
-        <div class="capture-modal-body" style="text-align:center">
-            <div style="font-size:42px;margin-bottom:8px">⏰</div>
-            <p>Pra continuar usando, assine um plano.</p>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:18px 0">
-                <div style="background:var(--panel-alt);padding:12px;border-radius:6px">
-                    <div style="font-size:9px;color:var(--text-dim);letter-spacing:1px">ANUAL</div>
-                    <div style="font:800 18px Inter">R$ 149<small style="font:500 10px Inter">/ano</small></div>
-                </div>
-                <div style="background:rgba(37, 99, 235,.1);border:1px solid var(--accent);padding:12px;border-radius:6px">
-                    <div style="font-size:9px;color:var(--text-dim);letter-spacing:1px">VITALÍCIO</div>
-                    <div style="font:800 18px Inter">R$ 399<small style="font:500 10px Inter">once</small></div>
-                </div>
+<!-- ════════════ PAYWALL (fullscreen — Motion Suite style) ════════════ -->
+<div id="paywall" class="paywall hidden">
+    <div class="paywall__box">
+        <div style="font-size:42px;margin-bottom:14px">⏰</div>
+        <h2 id="pw-title" class="paywall__title">Renovar Motion Legendas</h2>
+        <p id="pw-sub" style="color:var(--mut);font-size:12px;margin-bottom:22px;line-height:1.5">
+            Pra continuar aplicando legendas profissionais no Premiere, ative uma licença ou assine um plano.
+        </p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px">
+            <div style="background:var(--bg-3);border:1px solid var(--line);padding:14px 12px;border-radius:8px;text-align:left">
+                <div style="font:700 9px Inter;color:var(--mut);letter-spacing:1.5px;margin-bottom:4px">ANUAL</div>
+                <div style="font:800 20px Inter;color:var(--txt)">R$ 149<small style="font:500 10px Inter;color:var(--mut)">/ano</small></div>
+                <div style="font:500 10px Inter;color:var(--mut);margin-top:4px">Pro · 3 devices</div>
             </div>
-            <button id="paywall-cta" class="btn-modal-primary" style="width:100%">Ver planos →</button>
-            <button id="paywall-logout" class="btn-link" style="margin-top:8px">Sair</button>
+            <div style="background:var(--acc-soft);border:1px solid var(--acc);padding:14px 12px;border-radius:8px;text-align:left;position:relative">
+                <div style="position:absolute;top:-8px;right:8px;background:var(--acc);color:#fff;font:700 8px Inter;padding:2px 6px;border-radius:99px;letter-spacing:1px">POPULAR</div>
+                <div style="font:700 9px Inter;color:var(--acc);letter-spacing:1.5px;margin-bottom:4px">VITALÍCIO</div>
+                <div style="font:800 20px Inter;color:var(--txt)">R$ 399<small style="font:500 10px Inter;color:var(--mut)">once</small></div>
+                <div style="font:500 10px Inter;color:var(--mut);margin-top:4px">Lifetime · 5 devices</div>
+            </div>
+        </div>
+
+        <button id="paywall-cta" class="btn btn--primary btn--full" type="button">Renovar Motion Legendas →</button>
+        <button id="paywall-cta-suite" class="btn btn--ghost btn--full" type="button" style="margin-top:8px">Ou ver o Bundle Motion Suite (Titles + Legendas + IA)</button>
+
+        <div style="margin-top:18px;display:flex;justify-content:center;gap:14px;font:500 11px Inter">
+            <a id="paywall-have-key" href="#" style="color:var(--acc-2);text-decoration:none">Já tenho uma chave</a>
+            <span style="color:var(--mut-2)">·</span>
+            <a id="paywall-logout" href="#" style="color:var(--mut);text-decoration:none">Sair</a>
         </div>
     </div>
 </div>
@@ -653,7 +769,12 @@
 <script src="js/lib/CSInterface.js?v=425b"></script>
 <script src="js/config.js?v=425b"></script>
 <script src="js/asset-loader.js?v=425b"></script>
+<script src="js/license-cache.js?v=425b"></script>
+<script src="js/license-client.js?v=425b"></script>
 <script src="js/auth.js?v=425b"></script>
+<script src="js/config-tab.js?v=425b"></script>
+<script src="js/tier-gating.js?v=425b"></script>
+<script src="js/cross-sell.js?v=425b"></script>
 <script src="js/main.js?v=425b"></script>
 </body>
 </html>

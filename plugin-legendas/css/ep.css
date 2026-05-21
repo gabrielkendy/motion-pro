@@ -1341,3 +1341,329 @@ body.mode-oneword .cut-multi-only { display: none !important; }
     font: 500 10px Inter; color: var(--text-3);
     flex: 1; text-align: right;
 }
+
+/* ════════════════════════════════════════════════════════════════
+   MOTION SUITE — variáveis + gate + buttons + fields unificados
+   (espelha plugin-ia/css/app.css · cor primária #2563eb)
+   ════════════════════════════════════════════════════════════════ */
+:root {
+    /* Aliases pra esquema do Motion IA — coexistem com vars legacy */
+    --bg-2:      #15151c;
+    --bg-3:      #1c1c25;
+    --bg-hover:  #25252f;
+    --line:      #2a2a34;
+    --line-soft: #1f1f28;
+    --txt:       #ececf1;
+    --txt-2:     #c4c7d4;
+    --mut:       #8590a8;
+    --mut-2:     #5d6678;
+    --acc:       #2563eb;
+    --acc-2:     #3b82f6;
+    --acc-soft:  rgba(37, 99, 235, 0.12);
+    --acc-line:  rgba(37, 99, 235, 0.35);
+    --ok:        #10b981;
+    --ok-soft:   rgba(16, 185, 129, 0.12);
+    --err:       #ff5566;
+    --err-soft:  rgba(255, 85, 102, 0.12);
+    --warn-soft: rgba(245, 158, 11, 0.15);
+    --radius-lg: 12px;
+}
+
+/* ─── GATE (login fullscreen — clone do Motion IA) ─── */
+.gate {
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at top, rgba(37,99,235,0.10), transparent 60%), var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000;
+    padding: 24px;
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+.gate.hidden { display: none !important; }
+.gate__box {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 36px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+    animation: gate-slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.gate__brand {
+    text-align: center; margin-bottom: 6px;
+    font-weight: 800; font-size: 22px; letter-spacing: -0.5px;
+    color: var(--txt);
+}
+.gate__brand span { color: var(--acc); }
+.gate__tagline {
+    text-align: center;
+    font-size: 11px; color: var(--mut);
+    text-transform: uppercase; letter-spacing: 2px;
+    margin-bottom: 28px;
+}
+.gate__tabs {
+    display: flex; background: var(--bg);
+    border-radius: 8px; padding: 4px;
+    margin-bottom: 22px;
+}
+.gate__tab {
+    flex: 1; background: transparent; border: 0;
+    color: var(--mut); padding: 9px;
+    border-radius: 6px;
+    font-size: 12px; font-weight: 600;
+    font-family: inherit;
+    transition: all 0.15s;
+    cursor: pointer;
+}
+.gate__tab.active { background: var(--acc); color: #fff; }
+.gate__tab:hover:not(.active) { color: var(--txt); }
+.gate__msg {
+    margin-top: 12px;
+    font-size: 12px;
+    text-align: center;
+    min-height: 18px;
+    color: var(--mut);
+}
+.gate__msg.err { color: var(--err); }
+.gate__msg.ok  { color: var(--ok); }
+.gate__foot {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 11px;
+    color: var(--mut);
+}
+.gate__foot a { color: var(--acc-2); text-decoration: none; cursor: pointer; }
+.gate__foot a:hover { text-decoration: underline; }
+.gate__sep {
+    display: flex; align-items: center; gap: 10px;
+    margin: 18px 0 14px;
+    font-size: 10px; color: var(--mut);
+    text-transform: uppercase; letter-spacing: 1px;
+}
+.gate__sep::before, .gate__sep::after {
+    content: ""; flex: 1; height: 1px; background: var(--line);
+}
+
+/* ─── BUTTONS unificados (--primary, --ghost, --full, --sm, --danger) ─── */
+.btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 6px;
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--txt);
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-size: 13px; font-weight: 600;
+    font-family: inherit;
+    transition: all 0.15s;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.btn:hover:not(:disabled) { background: var(--bg-3); border-color: var(--mut-2); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn--primary {
+    background: var(--acc);
+    border-color: var(--acc);
+    color: #fff;
+}
+.btn--primary:hover:not(:disabled) {
+    background: var(--acc-2);
+    border-color: var(--acc-2);
+}
+.btn--full { width: 100%; padding: 12px; }
+.btn--sm { padding: 6px 12px; font-size: 12px; }
+.btn--danger {
+    background: var(--err-soft);
+    border-color: var(--err);
+    color: var(--err);
+}
+.btn--danger:hover:not(:disabled) {
+    background: var(--err);
+    color: #fff;
+}
+.btn--ok {
+    background: var(--ok-soft);
+    border-color: var(--ok);
+    color: var(--ok);
+}
+.btn--ghost {
+    border-color: transparent;
+    color: var(--mut);
+}
+.btn--ghost:hover:not(:disabled) {
+    background: var(--bg-3);
+    color: var(--txt);
+}
+.btn.loading {
+    color: transparent !important;
+    position: relative;
+    pointer-events: none;
+}
+.btn.loading::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    color: white;
+    animation: gate-spin 0.6s linear infinite;
+}
+.btn--primary.loading::after { color: white; border-top-color: white; }
+
+/* ─── FIELDS unificados ─── */
+.field { margin-bottom: 14px; }
+.field label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--mut);
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+.field input,
+.field select,
+.field textarea {
+    width: 100%;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    color: var(--txt);
+    padding: 10px 13px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    transition: border 0.15s, box-shadow 0.15s;
+}
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+    outline: none;
+    border-color: var(--acc);
+    box-shadow: 0 0 0 3px var(--acc-soft);
+}
+.field .hint {
+    font-size: 11px;
+    color: var(--mut);
+    margin-top: 6px;
+}
+
+/* ─── SPINNER + animations ─── */
+.spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid var(--line);
+    border-top-color: var(--acc);
+    border-radius: 50%;
+    animation: gate-spin 0.6s linear infinite;
+    vertical-align: middle;
+}
+@keyframes gate-spin { to { transform: rotate(360deg); } }
+@keyframes gate-fadeInUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes gate-slideUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes gate-fadeIn {
+    from { opacity: 0; } to { opacity: 1; }
+}
+
+/* ─── LICENSE CARD (usado no Chunk 5 — tab Config) ─── */
+.license-card {
+    background: linear-gradient(135deg, var(--bg-2), var(--bg-3));
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--ok);
+    border-radius: var(--radius-lg);
+    padding: 20px 22px;
+    margin-bottom: 20px;
+}
+.license-card.inactive { border-left-color: var(--mut-2); }
+.license-card.expired,
+.license-card.revoked,
+.license-card.suspended { border-left-color: var(--err); }
+.license-card__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    font-size: 13px;
+    border-bottom: 1px solid var(--line-soft);
+}
+.license-card__row:last-child { border-bottom: none; }
+.license-card__label {
+    color: var(--mut);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 10px;
+    font-weight: 700;
+}
+.license-card__value {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 12px;
+    color: var(--txt);
+    text-align: right;
+}
+.license-card__status {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.license-card__status.active    { background: var(--ok-soft); color: var(--ok); }
+.license-card__status.inactive  { background: rgba(133, 144, 168, 0.15); color: var(--mut); }
+.license-card__status.expired,
+.license-card__status.revoked,
+.license-card__status.suspended { background: var(--err-soft); color: var(--err); }
+
+/* ─── TIER BADGE (rodapé / status bar) ─── */
+.tier-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: rgba(133, 144, 168, 0.15);
+    color: var(--mut);
+}
+.tier-badge.basic    { background: var(--acc-soft); color: var(--acc-2); }
+.tier-badge.pro      { background: var(--acc-soft); color: var(--acc); }
+.tier-badge.lifetime { background: linear-gradient(90deg, var(--acc), #8b5cf6); color: #fff; }
+
+/* ─── PAYWALL fullscreen (refinado no Chunk 7) ─── */
+.paywall {
+    position: fixed; inset: 0;
+    background: rgba(13, 13, 17, 0.92);
+    backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 999;
+    padding: 24px;
+    animation: gate-fadeIn 0.2s ease;
+}
+.paywall.hidden { display: none !important; }
+.paywall__box {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 36px;
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+    animation: gate-slideUp 0.3s ease;
+}
+.paywall__title {
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    color: var(--txt);
+}
