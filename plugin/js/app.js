@@ -1066,6 +1066,11 @@ if (loadCatalog()) {
     if (window.LicenseClient && typeof window.LicenseClient.startAutoValidate === "function") {
         window.LicenseClient.startAutoValidate(24);
     }
+
+    // Chunk 4: drawer "⚙ Licença & Config" (slide-over no headbar).
+    if (window.LicenseUI && typeof window.LicenseUI.init === "function") {
+        window.LicenseUI.init();
+    }
 }
 
 })();

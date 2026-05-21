@@ -141,6 +141,9 @@
         <button id="q-clear" class="q-clear hidden">×</button>
     </div>
     <div class="headbar__actions">
+        <button id="btn-config" class="iconbtn" title="Licença & Config (⚙)" aria-label="Licença & Config">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
         <button id="btn-density" class="iconbtn" title="Densidade (compacto/normal/grande)">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         </button>
@@ -175,12 +178,83 @@
     <div id="log-body" class="log__body"></div>
 </div>
 
+<!-- ════════════════ CONFIG DRAWER (slide-over · Chunk 4) ════════════════ -->
+<div id="cfg-backdrop" class="cfg-backdrop"></div>
+<aside id="config-drawer" class="cfg-drawer" role="dialog" aria-labelledby="cfg-title" aria-hidden="true">
+    <header class="cfg-drawer__head">
+        <div>
+            <div id="cfg-title" class="cfg-drawer__title">⚙ Licença & Config</div>
+            <div class="cfg-drawer__sub" id="cfg-email">—</div>
+        </div>
+        <button id="cfg-close" class="cfg-drawer__close" title="Fechar (Esc)" aria-label="Fechar painel">×</button>
+    </header>
+    <div class="cfg-drawer__body">
+
+        <div class="card__title" style="margin-bottom:8px">🔑 Licença Motion Titles</div>
+        <div id="lic-card" class="license-card inactive">
+            <div class="license-card__row">
+                <span class="license-card__label">Status</span>
+                <span><span id="lic-status" class="license-card__status inactive">Não ativada</span></span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Chave</span>
+                <span id="lic-key" class="license-card__value">—</span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Última validação</span>
+                <span id="lic-validated" class="license-card__value">—</span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Produto(s)</span>
+                <span id="lic-product" class="license-card__value">—</span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Plano</span>
+                <span id="lic-tier" class="license-card__value">—</span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Devices ativos</span>
+                <span id="lic-devices" class="license-card__value">—</span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Expira em</span>
+                <span id="lic-expires" class="license-card__value">—</span>
+            </div>
+        </div>
+
+        <div class="field">
+            <label for="lic-input">Inserir / trocar chave de licença</label>
+            <input id="lic-input" placeholder="MTI-PRO-XXXX-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false">
+            <div class="hint">
+                Comprou pelo site? A chave foi enviada no seu e-mail.<br>
+                Aceita <b>MTI-</b> (Motion Titles) e <b>MTS-</b> (Bundle Motion Suite — vale pros 3 plugins).
+            </div>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px">
+            <button id="lic-activate" class="btn btn--primary">Ativar Licença</button>
+            <button id="lic-validate" class="btn btn--sm">↻ Revalidar</button>
+            <button id="lic-deactivate" class="btn btn--danger btn--sm">Desativar</button>
+        </div>
+        <div id="lic-msg" class="gate__msg" style="text-align:left;min-height:18px"></div>
+
+        <hr style="border:0;border-top:1px solid #232838;margin:24px 0">
+
+        <div class="card__title" style="margin-bottom:8px">👤 Conta</div>
+        <div class="hint" style="margin-bottom:12px">
+            Logout não desativa a licença neste device — você pode entrar de novo sem perder ativação.
+        </div>
+        <button id="cfg-logout" class="btn btn--ghost">Sair desta conta</button>
+
+    </div>
+</aside>
+
 <script src="js/lib/CSInterface.js?v=300"></script>
 <script src="js/config.js?v=300"></script>
 <script src="js/asset-loader.js?v=300"></script>
 <script src="js/license-cache.js?v=300"></script>
 <script src="js/license-client.js?v=300"></script>
 <script src="js/auth.js?v=300"></script>
+<script src="js/license-ui.js?v=300"></script>
 <script src="js/app.js?v=300"></script>
 </body>
 </html>
