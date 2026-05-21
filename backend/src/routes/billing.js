@@ -6,19 +6,10 @@ const crypto = require("crypto");
 const { pool } = require("../db");
 const { requireAuth } = require("../middleware/auth");
 const { welcomeEmail, paymentFailedEmail } = require("../utils/email");
+// M4: reusa gerador de keys já existente em license-keys.js (DRY)
+const { genKey: generateLicenseKey } = require("./license-keys");
 
 const stripe = Stripe(process.env.STRIPE_SECRET || "sk_test_xxx");
-
-// Gera license key PFX-{TIER}-XXXX-XXXX-XXXX-XXXX (4 grupos hex)
-//   PFX: MTI (titles), MTL (legendas), MIA (ia), MTS (suite bundle)
-function generateLicenseKey(prefix, tier) {
-    const VALID = ["MTI", "MTL", "MIA", "MTS"];
-    const px = String(prefix || "MIA").toUpperCase().slice(0, 3);
-    if (!VALID.includes(px)) throw new Error("invalid_prefix:" + px);
-    const t = (tier || "PRO").toUpperCase().slice(0, 4);
-    const rand = () => crypto.randomBytes(2).toString("hex").toUpperCase();
-    return `${px}-${t}-${rand()}-${rand()}-${rand()}-${rand()}`;
-}
 
 // Mapa: product_id (canônico ou alias) → { prefix, products[], productName, downloadUrl }
 function resolveProduct(productId) {
@@ -171,26 +162,28 @@ function genTempPassword() {
     return `${grp()}-${grp()}-${grp()}`;
 }
 
+// Race-safe via INSERT ... ON CONFLICT (email) DO UPDATE RETURNING.
+// xmax=0 ⇨ linha foi INSERIDA agora (não atualizada) — usamos isso pra
+// saber se devemos retornar a senha temporária pro welcome email.
 async function findOrCreateUser({ email, stripeCustomerId }) {
     if (!email) return null;
     const norm = email.toLowerCase().trim();
-    let r = await pool.query("SELECT id, email FROM users WHERE email=$1", [norm]);
-    if (r.rowCount) {
-        // Garante que stripe_customer está linkado
-        if (stripeCustomerId) {
-            await pool.query("UPDATE users SET stripe_customer=$1 WHERE id=$2 AND (stripe_customer IS NULL OR stripe_customer<>$1)",
-                [stripeCustomerId, r.rows[0].id]);
-        }
-        return { user: r.rows[0], created: false, plainPassword: null };
-    }
-    // CRIA conta a partir do pagamento
     const plain = genTempPassword();
     const hash = await bcrypt.hash(plain, 12);
-    const ins = await pool.query(
-        "INSERT INTO users(email, password_hash, stripe_customer) VALUES($1,$2,$3) RETURNING id, email",
+    const r = await pool.query(
+        `INSERT INTO users(email, password_hash, stripe_customer)
+              VALUES ($1, $2, $3)
+         ON CONFLICT (email) DO UPDATE
+              SET stripe_customer = COALESCE(users.stripe_customer, EXCLUDED.stripe_customer)
+         RETURNING id, email, (xmax = 0) AS created`,
         [norm, hash, stripeCustomerId || null]
     );
-    return { user: ins.rows[0], created: true, plainPassword: plain };
+    const row = r.rows[0];
+    return {
+        user: { id: row.id, email: row.email },
+        created: row.created,
+        plainPassword: row.created ? plain : null
+    };
 }
 
 async function upsertSubscription({ userId, productId, plan, status, stripeSubId, periodEnd, cancelAt }) {
@@ -288,35 +281,63 @@ async function webhook(req, res) {
                 //   titles   → MTI-…  (Motion Titles)
                 //   legendas → MTL-…  (Motion Legendas)
                 //   suite    → MTS-…  (Bundle: cobre titles+legendas+ia)
+                //
+                // CRÍTICO (C2 + C3 + C4):
+                //   - INSERT license_keys + license_audit em transação atômica.
+                //   - SELECT prévio por notes='stripe-auto-<cs.id>' impede
+                //     duplo-issuance se Stripe re-disparar a session.
+                //   - Se a transação falhar, RELANÇAMOS a exception — o catch
+                //     externo limpa stripe_events_seen pra que Stripe retente.
+                //   - Unique index parcial idx_lk_stripe_auto_unique (migration
+                //     012) é a defesa-em-profundidade caso o SELECT race.
                 const resolved = resolveProduct(product_id);
                 let licenseKeyPlaintext = null;
                 if (resolved) {
-                    try {
-                        const tier = isLifetime ? "lifetime" : (plan === "lifetime" ? "lifetime" : "pro");
-                        licenseKeyPlaintext = generateLicenseKey(resolved.prefix, tier);
-                        const prefix = licenseKeyPlaintext.slice(0, 14);
-                        const hash = await bcrypt.hash(licenseKeyPlaintext, 10);
-                        // Bundle ganha mais devices (5/3); plugin individual: 5 lifetime / 3 pro
-                        const maxDevices = tier === "lifetime" ? 5 : 3;
-                        const expiresAt = (tier === "lifetime") ? null
-                            : (periodEnd || new Date(Date.now() + 365 * 24 * 3600 * 1000));
-                        await pool.query(
-                            `INSERT INTO license_keys
-                             (key_hash, key_prefix, tier, products, max_devices, expires_at, notes, customer_email, issued_by)
-                             VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-                            [hash, prefix, tier, resolved.products, maxDevices, expiresAt,
-                             "stripe-auto-" + cs.id, user.email, null]
-                        );
-                        await pool.query(
-                            "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'license_key_auto_issued', $2)",
-                            [user.id, {
-                                tier, key_prefix: prefix, prefix_type: resolved.prefix,
-                                products: resolved.products, stripe_session: cs.id
-                            }]
-                        );
-                        console.log("[webhook]", resolved.prefix, "license key generated for", user.email, prefix);
-                    } catch (e) {
-                        console.error("[webhook] license key generation FAILED:", e.message);
+                    const sessionNote = "stripe-auto-" + cs.id;
+                    const existing = await pool.query(
+                        "SELECT key_prefix FROM license_keys WHERE notes=$1 LIMIT 1",
+                        [sessionNote]
+                    );
+                    if (existing.rowCount > 0) {
+                        console.log("[webhook] license key já emitida pra session", cs.id, existing.rows[0].key_prefix);
+                        // Pula geração — user já recebeu chave no checkout original.
+                        // Welcome email vai sem `miaLicenseKey` (apropriado: era retry).
+                    } else {
+                        const client = await pool.connect();
+                        try {
+                            await client.query("BEGIN");
+                            const tier = isLifetime ? "lifetime" : (plan === "lifetime" ? "lifetime" : "pro");
+                            const candidate = generateLicenseKey(tier, resolved.prefix);
+                            const prefix = candidate.slice(0, 14);
+                            const hash = await bcrypt.hash(candidate, 10);
+                            // Bundle ganha mais devices (5/3); plugin individual: 5 lifetime / 3 pro
+                            const maxDevices = tier === "lifetime" ? 5 : 3;
+                            const expiresAt = (tier === "lifetime") ? null
+                                : (periodEnd || new Date(Date.now() + 365 * 24 * 3600 * 1000));
+                            await client.query(
+                                `INSERT INTO license_keys
+                                 (key_hash, key_prefix, tier, products, max_devices, expires_at, notes, customer_email, issued_by)
+                                 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+                                [hash, prefix, tier, resolved.products, maxDevices, expiresAt,
+                                 sessionNote, user.email, null]
+                            );
+                            await client.query(
+                                "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'license_key_auto_issued', $2)",
+                                [user.id, {
+                                    tier, key_prefix: prefix, prefix_type: resolved.prefix,
+                                    products: resolved.products, stripe_session: cs.id
+                                }]
+                            );
+                            await client.query("COMMIT");
+                            licenseKeyPlaintext = candidate;
+                            console.log("[webhook]", resolved.prefix, "license key generated for", user.email, prefix);
+                        } catch (e) {
+                            try { await client.query("ROLLBACK"); } catch (_) {}
+                            console.error("[webhook] license key TX failed — relançando pra Stripe retentar:", e.message);
+                            throw e;   // → catch externo → limpa stripe_events_seen → Stripe retenta
+                        } finally {
+                            client.release();
+                        }
                     }
                 }
 
@@ -392,7 +413,16 @@ async function webhook(req, res) {
         }
         res.json({ received: true });
     } catch (e) {
+        // CRÍTICO: handler falhou DEPOIS do INSERT em stripe_events_seen.
+        // Limpa o registro pra que Stripe retente esse mesmo event_id —
+        // senão evento fica permanentemente perdido.
         console.error("[webhook handler error]", e);
+        try {
+            await pool.query("DELETE FROM stripe_events_seen WHERE event_id=$1", [event.id]);
+            console.warn("[webhook] event", event.id, "removido de stripe_events_seen pra retry Stripe");
+        } catch (cleanupErr) {
+            console.error("[webhook] cleanup stripe_events_seen falhou:", cleanupErr.message);
+        }
         res.status(500).send("err");
     }
 }
