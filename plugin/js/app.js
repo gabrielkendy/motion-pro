@@ -799,6 +799,24 @@ function updateTrialUI() {
     var paywall = document.getElementById("paywall");
     if (!bar) return;
 
+    // Chunk 6: license-key novo (MTI-/MTS-) tem prioridade sobre o sistema legacy.
+    // Se a chave estiver válida offline, esconde paywall + trial-bar e sai.
+    if (window.LicenseCache && window.LicenseCache.isValidForOfflineUse && window.LicenseCache.isValidForOfflineUse()) {
+        bar.className = "trialbar hidden";
+        if (paywall) paywall.classList.add("hidden");
+        return;
+    }
+
+    // Chunk 6: admin verificado bypassa paywall (mia_user_meta compartilhado pela Suite)
+    try {
+        var meta = JSON.parse(localStorage.getItem("mia_user_meta") || "{}");
+        if (meta && meta.is_admin_verified) {
+            bar.className = "trialbar hidden";
+            if (paywall) paywall.classList.add("hidden");
+            return;
+        }
+    } catch (_) {}
+
     // Plano pago — esconde tudo
     if (plan === "yearly" || plan === "lifetime") {
         bar.className = "trialbar hidden";
@@ -844,30 +862,29 @@ function showPaywall(title) {
 }
 
 function bindTrialUI() {
+    // Chunk 6: URL de pricing centralizada em Auth.PRICING_URL (config.js)
+    var pricingUrl = (window.Auth && window.Auth.PRICING_URL)
+        || (window.MV_CONFIG && window.MV_CONFIG.pricingUrl)
+        || (LANDING_URL + "/titles/#pricing");
+
     var btnUpgrade = document.getElementById("btn-upgrade");
     if (btnUpgrade) {
-        btnUpgrade.onclick = function () {
-            openInBrowser(LANDING_URL + "/#pricing");
-        };
+        btnUpgrade.onclick = function () { openInBrowser(pricingUrl); };
     }
     var pwCta = document.getElementById("paywall-cta");
     if (pwCta) {
-        pwCta.onclick = function () {
-            openInBrowser(LANDING_URL + "/#pricing");
-        };
+        pwCta.textContent = "Renovar / assinar agora →";
+        pwCta.onclick = function () { openInBrowser(pricingUrl); };
     }
     var pwLogout = document.getElementById("paywall-logout");
     if (pwLogout) {
         pwLogout.onclick = function () {
-            localStorage.removeItem("mv_session");
-            localStorage.removeItem("mv_license");
-            localStorage.removeItem("mv_plan");
-            localStorage.removeItem("mv_status");
-            localStorage.removeItem("mv_expires");
-            localStorage.removeItem("mv_email_verified");
+            // Chunk 6: logout unificado via Auth.logout() (limpa mv_* + mvt_* + mia_user_meta)
+            if (window.Auth && window.Auth.logout) window.Auth.logout();
             var pw = document.getElementById("paywall");
             if (pw) pw.classList.add("hidden");
-            showGate("login");
+            if (window.Auth && window.Auth.showGate) window.Auth.showGate("login");
+            else showGate("login");
         };
     }
 
@@ -957,16 +974,31 @@ function updateVerifyBar() {
 function startHeartbeat() {
     if (DEV_BYPASS) return;
     var fp = computeFingerprint();
+    var PRODUCT_ID = (window.Auth && window.Auth.PRODUCT_ID)
+        || (window.MV_CONFIG && window.MV_CONFIG.productId)
+        || "titles";
     var tick = async function () {
+        // Chunk 6: paralelamente revalida a chave MTI-/MTS- (sistema novo).
+        // Se admin revogou no dashboard, o validate({silent:true}) atualiza o
+        // LicenseCache pra status revoked → updateTrialUI vai mostrar paywall.
+        if (window.LicenseClient && window.LicenseCache) {
+            var cached = window.LicenseCache.load && window.LicenseCache.load();
+            if (cached && cached.license_key) {
+                window.LicenseClient.validate({ silent: true })
+                    .then(function () { updateTrialUI(); if (window.Features) window.Features.updateUI(); })
+                    .catch(function () { /* offline tolerado */ });
+            }
+        }
         try {
-            var r = await gateApi("/v1/license/heartbeat", { fingerprint: fp });
-            // Heartbeat OK → esconde banner de reconexão se estava aparecendo
+            // Backend β unified contract: product_id="titles" no heartbeat
+            var r = await gateApi("/v1/license/heartbeat", { fingerprint: fp, product_id: PRODUCT_ID });
             hideReauthBar();
             if (r.revoked || r.subscription_inactive) {
                 localStorage.setItem("mv_plan", r.plan || "free");
                 localStorage.setItem("mv_status", r.status || "revoked");
                 if (r.expires_at) localStorage.setItem("mv_expires", r.expires_at);
                 updateTrialUI();
+                if (window.Features) window.Features.updateUI();
                 return;
             }
             if (r.license) {
@@ -975,15 +1007,16 @@ function startHeartbeat() {
                 localStorage.setItem("mv_status", r.status || "");
                 localStorage.setItem("mv_expires", r.expires_at || "");
                 updateTrialUI();
+                if (window.Features) window.Features.updateUI();
             }
         } catch (e) {
             var msg = (typeof e === "string" ? e : (e && e.message)) || "";
             if (msg === "invalid_token" || msg === "missing_token") {
-                // Sessão expirou no servidor. NÃO apaga nada do localStorage.
-                // Mostra banner pedindo pra reconectar; cara segue usando offline com license cached.
+                // Sessão expirou no servidor. NÃO apaga localStorage nem cache.
+                // Banner reauth mantém o user logado (re-login só atualiza JWT).
                 showReauthBar();
             }
-            // Outros erros (offline, 500, timeout): mantém license cached, continua usando
+            // Offline / 500 / timeout: mantém cache + license-cache, continua usando
         }
     };
     tick();
