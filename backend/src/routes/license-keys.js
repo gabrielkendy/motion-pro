@@ -20,6 +20,8 @@ const crypto = require("crypto");
 const { pool } = require("../db");
 const { requireAdmin } = require("../middleware/auth");
 const { clientIp } = require("../utils/ipgeo");
+// A7: tabela canônica de produtos + aliases — fonte única
+const { normalizeProductId, expandProducts } = require("../utils/product-aliases");
 
 // ============================================================
 // KEY GENERATION (admin)
@@ -106,21 +108,15 @@ router.post("/license-keys/activate", async (req, res, next) => {
         }
 
         // Se o plugin que está ativando especificou seu id, valida que a chave
-        // cobre esse produto. Compatível com MTS- (bundle) e chaves individuais.
+        // cobre esse produto. expandProducts() expande aliases + bundle MTS-
+        // pra ids canônicos, então a comparação é direta.
         if (plugin && Array.isArray(row.products) && row.products.length > 0) {
-            const ALIASES = {
-                "motionpro": "titles", "Motion Titles": "titles", "motion_titles": "titles",
-                "motionia": "ia", "motion_ia": "ia",
-                "motion_legendas": "legendas",
-                "bundle_all": "suite", "motion_suite": "suite"
-            };
-            const requested = (ALIASES[plugin] || plugin).toLowerCase();
-            const granted = row.products.map(p => (ALIASES[p] || p).toLowerCase());
-            const ok = granted.includes(requested) || granted.includes("suite");
-            if (!ok) {
+            const requested = normalizeProductId(plugin);
+            const granted = expandProducts(row.products);
+            if (!requested || !granted.includes(requested)) {
                 return res.status(403).json({
                     error: "plugin_not_licensed",
-                    requested,
+                    requested: requested || plugin,
                     granted
                 });
             }
@@ -359,6 +355,18 @@ router.post("/admin/maintenance/run-migration-012", requireAdmin, async (_req, r
         const sqlPath = path.join(__dirname, "..", "..", "migrations", "012_unified_license_prefixes.sql");
         await pool.query(fs.readFileSync(sqlPath, "utf8"));
         res.json({ ok: true, migration: "012_unified_license_prefixes", executed_at: new Date().toISOString() });
+    } catch (e) {
+        res.status(500).json({ error: "migration_failed", message: e.message });
+    }
+});
+
+// Endpoint admin pra rodar a migration 013 (oauth_states table)
+router.post("/admin/maintenance/run-migration-013", requireAdmin, async (_req, res, next) => {
+    try {
+        const fs = require("fs"); const path = require("path");
+        const sqlPath = path.join(__dirname, "..", "..", "migrations", "013_oauth_states.sql");
+        await pool.query(fs.readFileSync(sqlPath, "utf8"));
+        res.json({ ok: true, migration: "013_oauth_states", executed_at: new Date().toISOString() });
     } catch (e) {
         res.status(500).json({ error: "migration_failed", message: e.message });
     }

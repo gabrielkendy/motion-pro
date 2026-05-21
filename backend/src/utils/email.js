@@ -68,9 +68,12 @@ const BRAND_FOOTER = `
   </td></tr>
 </table>`;
 
-function welcomeEmail({ email, password, plan, downloadUrl, productName, miaLicenseKey }) {
+function welcomeEmail({ email, password, plan, downloadUrl, productName, licenseKey, miaLicenseKey }) {
     const planName = plan === "lifetime" ? "Vitalício" : plan === "yearly" ? "Anual" : plan;
     const pName = productName || "Motion Titles";
+    // M2: nome canônico é `licenseKey`. `miaLicenseKey` aceito como alias
+    // legacy (callers antigos) até deprecation completa.
+    const keyPlain = licenseKey || miaLicenseKey || null;
     const html = `
 <!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Motion Titles</title></head><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
 ${BRAND_HEADER}
@@ -107,14 +110,14 @@ ${BRAND_HEADER}
       </p>
     </div>
 
-    ${miaLicenseKey ? `
+    ${keyPlain ? `
     <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:2px solid #2563EB;border-radius:8px;padding:24px;margin-bottom:24px">
       <div style="font:600 11px Inter,Arial,sans-serif;color:#2563EB;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px">🔑 Sua chave de licença ${pName}</div>
       <p style="color:#444;font:400 14px/1.6 Inter,Arial,sans-serif;margin:0 0 14px">
-        Use essa chave em <strong>⚙ Config → Ativar Licença</strong> dentro do ${pName}${miaLicenseKey.startsWith("MTS-") ? " (vale pros 3 plugins do bundle)" : ""}:
+        Use essa chave em <strong>⚙ Config → Ativar Licença</strong> dentro do ${pName}${keyPlain.startsWith("MTS-") ? " (vale pros 3 plugins do bundle)" : ""}:
       </p>
       <div style="background:#fff;padding:18px;border-radius:6px;border:1px solid #bfdbfe;text-align:center">
-        <code style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:16px;font-weight:700;color:#2563EB;letter-spacing:1px">${miaLicenseKey}</code>
+        <code style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:16px;font-weight:700;color:#2563EB;letter-spacing:1px">${keyPlain}</code>
       </div>
       <p style="color:#666;font:400 12px Inter,Arial,sans-serif;margin:14px 0 0">
         ⚠️ Guarde essa chave em local seguro. Ela é única e libera todas as features do seu tier.
@@ -160,7 +163,7 @@ ${BRAND_FOOTER}
         to: email,
         subject: `✅ Bem-vindo ao ${pName} · suas credenciais + download`,
         html,
-        text: `Bem-vindo ao ${pName}!\n\nSeu plano ${planName} está ativo.\n\nE-mail: ${email}\nSenha temporária: ${password}${miaLicenseKey ? `\n\nChave ${pName}: ${miaLicenseKey}` : ""}\n\nBaixe o plugin: ${downloadUrl}\n\nDepois abra o Premiere em Janela > Extensões > ${pName} e faça login.\n\nDúvidas: suporte@pacotesfx.com`
+        text: `Bem-vindo ao ${pName}!\n\nSeu plano ${planName} está ativo.\n\nE-mail: ${email}\nSenha temporária: ${password}${keyPlain ? `\n\nChave ${pName}: ${keyPlain}` : ""}\n\nBaixe o plugin: ${downloadUrl}\n\nDepois abra o Premiere em Janela > Extensões > ${pName} e faça login.\n\nDúvidas: suporte@pacotesfx.com`
     });
 }
 

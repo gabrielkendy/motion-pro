@@ -29,31 +29,48 @@ const jwt     = require("jsonwebtoken");
 const { pool } = require("../db");
 const { sendEmail, magicLinkEmail } = require("../utils/email");
 const { clientIp, clientUa } = require("../utils/ipgeo");
+// A7: tabela canônica de produtos + aliases — fonte única
+const { normalizePlugin } = require("../utils/product-aliases");
 
 const STATE_TTL_MS = 10 * 60 * 1000;             // 10min
 const MAGIC_TTL_MIN = 15;
-const stateStore = new Map();                    // state → { provider, ts, return_to, plugin }
 
-// Plugins suportados pelo OAuth genérico (sprint Motion Suite Ultra Pro)
-const VALID_PLUGINS = new Set(["titles", "legendas", "ia", "suite"]);
-
-function gcStates() {
-    const now = Date.now();
-    for (const [k, v] of stateStore) if (now - v.ts > STATE_TTL_MS) stateStore.delete(k);
+// State store em DB (tabela oauth_states, migration 013) — serverless-safe.
+// Antes era Map<string, …> in-memory; em Vercel/Lambda zerava entre
+// /start e /callback nas cold starts, causando "invalid_state" intermitente.
+async function saveState(state, payload) {
+    const expiresAt = new Date(Date.now() + STATE_TTL_MS);
+    await pool.query(
+        `INSERT INTO oauth_states(state, provider, return_to, plugin, expires_at)
+              VALUES ($1, $2, $3, $4, $5)`,
+        [state, payload.provider, payload.return_to, payload.plugin || null, expiresAt]
+    );
 }
 
-// Normaliza plugin recebido pelos clients (aceita alias legacy)
-function normalizePlugin(p) {
-    if (!p) return null;
-    const v = String(p).toLowerCase().trim();
-    const aliases = {
-        "motionpro": "titles", "motion_titles": "titles",
-        "motionia": "ia", "motion_ia": "ia",
-        "motion_legendas": "legendas",
-        "bundle_all": "suite", "motion_suite": "suite"
-    };
-    const canonical = aliases[v] || v;
-    return VALID_PLUGINS.has(canonical) ? canonical : null;
+// Consome state (single-use). Retorna o payload se válido + não consumido +
+// não expirado; senão retorna null. Usa UPDATE … RETURNING pra ser atômico
+// contra race condition de double-callback do provider.
+async function consumeState(state, expectedProvider) {
+    const r = await pool.query(
+        `UPDATE oauth_states
+            SET consumed_at = now()
+          WHERE state = $1
+            AND provider = $2
+            AND consumed_at IS NULL
+            AND expires_at > now()
+       RETURNING provider, return_to, plugin`,
+        [state, expectedProvider]
+    );
+    return r.rows[0] || null;
+}
+
+// GC oportunista — roda no /start, limpa registros velhos. Best-effort.
+async function gcStates() {
+    try {
+        await pool.query(
+            "DELETE FROM oauth_states WHERE expires_at < now() - interval '1 hour'"
+        );
+    } catch (_) { /* best-effort, não bloqueia OAuth */ }
 }
 
 function issueJwt(user) {
@@ -97,32 +114,33 @@ const PROVIDERS = {
 };
 
 // ───────────────────── /start ─────────────────────
-router.get("/:provider/start", (req, res) => {
-    gcStates();
-    const p = PROVIDERS[req.params.provider];
-    if (!p) return res.status(404).json({ error: "unknown_provider" });
-    if (!p.client_id() || !p.client_secret()) {
-        return res.status(503).json({ error: "oauth_not_configured", provider: req.params.provider });
-    }
+router.get("/:provider/start", async (req, res, next) => {
+    try {
+        const p = PROVIDERS[req.params.provider];
+        if (!p) return res.status(404).json({ error: "unknown_provider" });
+        if (!p.client_id() || !p.client_secret()) {
+            return res.status(503).json({ error: "oauth_not_configured", provider: req.params.provider });
+        }
 
-    const plugin = normalizePlugin(req.query.plugin);
-    const state = crypto.randomBytes(24).toString("base64url");
-    stateStore.set(state, {
-        provider: req.params.provider,
-        ts: Date.now(),
-        return_to: req.query.return_to || process.env.OAUTH_SUCCESS_URL || "/",
-        plugin: plugin || null,
-    });
+        gcStates();   // best-effort, não awaita
+        const plugin = normalizePlugin(req.query.plugin);
+        const state = crypto.randomBytes(24).toString("base64url");
+        await saveState(state, {
+            provider: req.params.provider,
+            return_to: req.query.return_to || process.env.OAUTH_SUCCESS_URL || "/",
+            plugin: plugin || null,
+        });
 
-    const url = new URL(p.authorize);
-    url.searchParams.set("client_id", p.client_id());
-    url.searchParams.set("redirect_uri", `${process.env.OAUTH_REDIRECT_BASE}/v1/oauth/${req.params.provider}/callback`);
-    url.searchParams.set("scope", p.scope);
-    url.searchParams.set("state", state);
-    url.searchParams.set("response_type", "code");
-    if (req.params.provider === "google") url.searchParams.set("access_type", "offline");
+        const url = new URL(p.authorize);
+        url.searchParams.set("client_id", p.client_id());
+        url.searchParams.set("redirect_uri", `${process.env.OAUTH_REDIRECT_BASE}/v1/oauth/${req.params.provider}/callback`);
+        url.searchParams.set("scope", p.scope);
+        url.searchParams.set("state", state);
+        url.searchParams.set("response_type", "code");
+        if (req.params.provider === "google") url.searchParams.set("access_type", "offline");
 
-    res.redirect(url.toString());
+        res.redirect(url.toString());
+    } catch (e) { next(e); }
 });
 
 // ───────────────────── /callback ─────────────────────
@@ -132,11 +150,8 @@ router.get("/:provider/callback", async (req, res, next) => {
         if (!p) return res.status(404).send("unknown_provider");
         const { code, state } = req.query;
         if (!code || !state) return res.status(400).send("missing code/state");
-        const saved = stateStore.get(state);
-        if (!saved || saved.provider !== req.params.provider) {
-            return res.status(400).send("invalid_state");
-        }
-        stateStore.delete(state);
+        const saved = await consumeState(String(state), req.params.provider);
+        if (!saved) return res.status(400).send("invalid_state");
 
         // 1) trade code → access_token
         const tokenResp = await fetch(p.token, {
