@@ -170,6 +170,11 @@ window.Auth = (function () {
                     }
                 } catch (_) { /* sem licença ainda é ok — paywall trata */ }
 
+                // Sticky session: marca last_login_at pra grace period 30d
+                localStorage.setItem("mtl_last_login_at", new Date().toISOString());
+                localStorage.removeItem("mtl_session_expired_at");
+                hideReconnectBanner();
+
                 if (msg) {
                     msg.textContent = "✓ " + (mode === "signup" ? "Conta criada! Trial de 7 dias ativo." : "Bem-vindo!");
                     msg.className = "gate__msg ok";
@@ -255,6 +260,10 @@ window.Auth = (function () {
                             localStorage.setItem("mtl_via_bundle", lic.covers_via_bundle ? "true" : "false");
                         }
                     } catch (_) {}
+
+                    localStorage.setItem("mtl_last_login_at", new Date().toISOString());
+                    localStorage.removeItem("mtl_session_expired_at");
+                    hideReconnectBanner();
 
                     if (msg) { msg.textContent = "✓ Login Google: " + me.email; msg.className = "gate__msg ok"; }
                     setTimeout(function () {
@@ -348,11 +357,62 @@ window.Auth = (function () {
 
     function bindTrialUI() {
         var pwLogout = $("paywall-logout");
-        if (pwLogout) pwLogout.onclick = logout;
+        if (pwLogout) pwLogout.onclick = function (e) { if (e) e.preventDefault(); logout(); };
         var pwCta = $("paywall-cta");
-        if (pwCta) pwCta.onclick = function () { openInBrowser(PRICING_URL); };
+        if (pwCta) pwCta.onclick = function () {
+            var checkoutUrl = API_BASE + "/v1/checkout?product=" + encodeURIComponent(PRODUCT_ID);
+            openInBrowser(checkoutUrl);
+        };
+        var pwCtaSuite = $("paywall-cta-suite");
+        if (pwCtaSuite) pwCtaSuite.onclick = function () {
+            openInBrowser(LANDING_URL + "/#suite");
+        };
+        var pwHaveKey = $("paywall-have-key");
+        if (pwHaveKey) pwHaveKey.onclick = function (e) {
+            if (e) e.preventDefault();
+            // Esconde paywall, abre tab Config
+            var pw = $("paywall"); if (pw) pw.classList.add("hidden");
+            var configTab = document.querySelector('.tab-btn[data-tab="tab-config"]');
+            if (configTab) configTab.click();
+            var input = $("lic-input"); if (input) { try { input.focus(); } catch (_) {} }
+        };
         var trialBtn = $("btn-upgrade");
         if (trialBtn) trialBtn.onclick = function () { openInBrowser(PRICING_URL); };
+
+        // Reconnect banner
+        var rb = $("reconnect-banner-btn");
+        if (rb) rb.onclick = function () { showGate("login"); hideReconnectBanner(); };
+        var rbd = $("reconnect-banner-dismiss");
+        if (rbd) rbd.onclick = function () { hideReconnectBanner(); };
+    }
+
+    // ── Sticky session 30d ───────────────────────────────────────────
+    var STICKY_GRACE_DAYS = 30;
+    function showReconnectBanner(text) {
+        var b = $("reconnect-banner"); if (!b) return;
+        var t = $("reconnect-banner-text");
+        if (t && text) t.textContent = text;
+        b.classList.remove("hidden");
+    }
+    function hideReconnectBanner() {
+        var b = $("reconnect-banner"); if (!b) return;
+        b.classList.add("hidden");
+    }
+    function isWithinStickyGrace() {
+        var expiredAt = localStorage.getItem("mtl_session_expired_at");
+        if (!expiredAt) return true; // ainda não expirou nunca
+        try {
+            var ms = new Date(expiredAt).getTime();
+            if (isNaN(ms)) return true;
+            var daysSince = (Date.now() - ms) / (1000 * 60 * 60 * 24);
+            return daysSince < STICKY_GRACE_DAYS;
+        } catch (_) { return true; }
+    }
+    function markSessionExpired() {
+        if (!localStorage.getItem("mtl_session_expired_at")) {
+            localStorage.setItem("mtl_session_expired_at", new Date().toISOString());
+        }
+        showReconnectBanner("Sua sessão expirou. Reconecte pra sincronizar licença e tier.");
     }
 
     function startHeartbeat() {
@@ -379,9 +439,16 @@ window.Auth = (function () {
             } catch (e) {
                 var msg = (typeof e === "string" ? e : (e && e.message)) || "";
                 // Sticky session: invalid_token NÃO desloga imediatamente.
-                // Chunk 7 vai mostrar banner "Reconectar" em vez de forçar logout.
+                // Mostra banner "Reconectar" e mantém last_login_at por 30d.
+                // Após STICKY_GRACE_DAYS, força logout pra evitar bypass infinito.
                 if (msg === "invalid_token" || msg === "missing_token") {
-                    console.warn("[auth] heartbeat token inválido — sticky session, aguardando reconectar");
+                    markSessionExpired();
+                    if (!isWithinStickyGrace()) {
+                        console.warn("[auth] sticky grace expirado (30d) — forçando logout");
+                        logout();
+                    } else {
+                        console.warn("[auth] heartbeat token inválido — sticky session ativa, aguardando reconectar");
+                    }
                 }
             }
         };
@@ -419,9 +486,11 @@ window.Auth = (function () {
             "mv_session", "mv_email", "mv_name",
             "mtl_license", "mtl_plan", "mtl_status", "mtl_expires",
             "mtl_via_bundle", "mtl_email_verified", "mtl_user_meta",
+            "mtl_last_login_at", "mtl_session_expired_at",
             // limpa legacy também
             "mpl_session", "mpl_email", "mpl_name"
         ].forEach(function (k) { localStorage.removeItem(k); });
+        hideReconnectBanner();
         // Limpa cache de licença MTL-
         if (window.LicenseCache && typeof window.LicenseCache.clearCache === "function") {
             try { window.LicenseCache.clearCache(); } catch (_) {}

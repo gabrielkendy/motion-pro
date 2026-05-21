@@ -619,25 +619,44 @@
     <span id="status-user">—</span>
 </div>
 
-<!-- ════════════ PAYWALL ════════════ -->
-<div id="paywall" class="hidden">
-    <div class="capture-modal">
-        <div class="capture-modal-header"><span>Trial expirado</span></div>
-        <div class="capture-modal-body" style="text-align:center">
-            <div style="font-size:42px;margin-bottom:8px">⏰</div>
-            <p>Pra continuar usando, assine um plano.</p>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:18px 0">
-                <div style="background:var(--panel-alt);padding:12px;border-radius:6px">
-                    <div style="font-size:9px;color:var(--text-dim);letter-spacing:1px">ANUAL</div>
-                    <div style="font:800 18px Inter">R$ 149<small style="font:500 10px Inter">/ano</small></div>
-                </div>
-                <div style="background:rgba(37, 99, 235,.1);border:1px solid var(--accent);padding:12px;border-radius:6px">
-                    <div style="font-size:9px;color:var(--text-dim);letter-spacing:1px">VITALÍCIO</div>
-                    <div style="font:800 18px Inter">R$ 399<small style="font:500 10px Inter">once</small></div>
-                </div>
+<!-- ════════════ RECONNECT BANNER (sticky session — Chunk 7) ════════════ -->
+<div id="reconnect-banner" class="hidden" style="position:fixed;top:0;left:0;right:0;z-index:998;background:linear-gradient(90deg,#f59e0b,#ea580c);color:#fff;padding:8px 14px;display:flex;align-items:center;gap:10px;font:600 12px Inter;box-shadow:0 4px 12px rgba(0,0,0,0.3)">
+    <span style="font-size:14px">⚠</span>
+    <span id="reconnect-banner-text" style="flex:1">Sua sessão expirou. Reconecte pra sincronizar.</span>
+    <button id="reconnect-banner-btn" type="button" style="background:#fff;color:#ea580c;border:0;font:700 11px Inter;padding:5px 12px;border-radius:5px;cursor:pointer">Reconectar</button>
+    <button id="reconnect-banner-dismiss" type="button" title="Dispensar" style="background:transparent;border:0;color:#fff;font:700 14px Inter;cursor:pointer;padding:0 4px">×</button>
+</div>
+
+<!-- ════════════ PAYWALL (fullscreen — Motion Suite style) ════════════ -->
+<div id="paywall" class="paywall hidden">
+    <div class="paywall__box">
+        <div style="font-size:42px;margin-bottom:14px">⏰</div>
+        <h2 id="pw-title" class="paywall__title">Renovar Motion Legendas</h2>
+        <p id="pw-sub" style="color:var(--mut);font-size:12px;margin-bottom:22px;line-height:1.5">
+            Pra continuar aplicando legendas profissionais no Premiere, ative uma licença ou assine um plano.
+        </p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px">
+            <div style="background:var(--bg-3);border:1px solid var(--line);padding:14px 12px;border-radius:8px;text-align:left">
+                <div style="font:700 9px Inter;color:var(--mut);letter-spacing:1.5px;margin-bottom:4px">ANUAL</div>
+                <div style="font:800 20px Inter;color:var(--txt)">R$ 149<small style="font:500 10px Inter;color:var(--mut)">/ano</small></div>
+                <div style="font:500 10px Inter;color:var(--mut);margin-top:4px">Pro · 3 devices</div>
             </div>
-            <button id="paywall-cta" class="btn-modal-primary" style="width:100%">Ver planos →</button>
-            <button id="paywall-logout" class="btn-link" style="margin-top:8px">Sair</button>
+            <div style="background:var(--acc-soft);border:1px solid var(--acc);padding:14px 12px;border-radius:8px;text-align:left;position:relative">
+                <div style="position:absolute;top:-8px;right:8px;background:var(--acc);color:#fff;font:700 8px Inter;padding:2px 6px;border-radius:99px;letter-spacing:1px">POPULAR</div>
+                <div style="font:700 9px Inter;color:var(--acc);letter-spacing:1.5px;margin-bottom:4px">VITALÍCIO</div>
+                <div style="font:800 20px Inter;color:var(--txt)">R$ 399<small style="font:500 10px Inter;color:var(--mut)">once</small></div>
+                <div style="font:500 10px Inter;color:var(--mut);margin-top:4px">Lifetime · 5 devices</div>
+            </div>
+        </div>
+
+        <button id="paywall-cta" class="btn btn--primary btn--full" type="button">Renovar Motion Legendas →</button>
+        <button id="paywall-cta-suite" class="btn btn--ghost btn--full" type="button" style="margin-top:8px">Ou ver o Bundle Motion Suite (Titles + Legendas + IA)</button>
+
+        <div style="margin-top:18px;display:flex;justify-content:center;gap:14px;font:500 11px Inter">
+            <a id="paywall-have-key" href="#" style="color:var(--acc-2);text-decoration:none">Já tenho uma chave</a>
+            <span style="color:var(--mut-2)">·</span>
+            <a id="paywall-logout" href="#" style="color:var(--mut);text-decoration:none">Sair</a>
         </div>
     </div>
 </div>
