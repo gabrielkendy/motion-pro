@@ -741,105 +741,27 @@ function computeFingerprint() {
     return "fnv:" + h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0") + s.length.toString(16);
 }
 
+/* Gate UI + bindings delegados ao window.Auth (plugin/js/auth.js · Chunk 2).
+ * Stubs abaixo mantém a API antiga viva pro código legacy de paywall/heartbeat
+ * (será unificado no Chunk 6). */
 function showGate(initialMode) {
-    var gate = document.getElementById("gate");
-    if (!gate) return;
-    gate.classList.remove("hidden");
-    setGateMode(initialMode || "login");
+    if (window.Auth) return window.Auth.showGate(initialMode);
+    var gate = document.getElementById("gate"); if (gate) gate.classList.remove("hidden");
 }
 function hideGate() {
-    var gate = document.getElementById("gate");
-    if (gate) gate.classList.add("hidden");
+    if (window.Auth) return window.Auth.hideGate();
+    var gate = document.getElementById("gate"); if (gate) gate.classList.add("hidden");
 }
-function setGateMode(mode) {
-    var isSignup = mode === "signup";
-    document.getElementById("gt-login").classList.toggle("active", !isSignup);
-    document.getElementById("gt-signup").classList.toggle("active", isSignup);
-    document.getElementById("g-submit").textContent = isSignup ? "Criar conta · iniciar 7 dias grátis" : "Entrar";
-    document.getElementById("g-msg").textContent = "";
-    document.getElementById("g-msg").className = "gate__msg";
-    document.getElementById("g-submit").dataset.mode = mode;
-    // Mostra/esconde campos extras do signup
-    [].forEach.call(document.querySelectorAll(".signup-only"), function (el) {
-        el.hidden = !isSignup;
-    });
-    // autocomplete da senha
-    document.getElementById("g-password").autocomplete = isSignup ? "new-password" : "current-password";
-}
-
+function setGateMode(_mode) { /* delegado ao window.Auth.init() */ }
 function bindGate() {
-    var gtL = document.getElementById("gt-login");
-    var gtS = document.getElementById("gt-signup");
-    var sub = document.getElementById("g-submit");
-    var msg = document.getElementById("g-msg");
-    var forgot = document.getElementById("g-forgot");
-    if (!gtL) return;
-
-    gtL.onclick = function () { setGateMode("login"); };
-    gtS.onclick = function () { setGateMode("signup"); };
-
-    // Esqueci minha senha → abre browser na página de reset
-    if (forgot) {
-        forgot.onclick = function (e) {
-            e.preventDefault();
-            var email = document.getElementById("g-email").value.trim();
-            var url = LANDING_URL + "/reset-password.html";
-            if (email) url += "?email=" + encodeURIComponent(email);
-            openInBrowser(url);
-            msg.textContent = "✓ Página de recuperação aberta no navegador";
-            msg.className = "gate__msg ok";
-        };
-    }
-
-    sub.onclick = async function () {
-        var mode = sub.dataset.mode || "login";
-        var email = document.getElementById("g-email").value.trim().toLowerCase();
-        var password = document.getElementById("g-password").value;
-        var name = document.getElementById("g-name").value.trim();
-        var phone = document.getElementById("g-phone").value.trim();
-        var optin = document.getElementById("g-optin").checked;
-        if (!email || password.length < 8) {
-            msg.textContent = "Email e senha (mín 8) obrigatórios"; return;
-        }
-        if (mode === "signup" && name.length < 2) {
-            msg.textContent = "Digite seu nome completo"; return;
-        }
-        sub.disabled = true; msg.textContent = "Conectando..."; msg.className = "gate__msg";
-        try {
-            var fp = computeFingerprint();
-            var payload = { email: email, password: password, fingerprint: fp };
-            if (mode === "signup") {
-                payload.name = name;
-                payload.phone = phone || null;
-                payload.marketing_optin = optin;
-            }
-            var data = await gateApi("/v1/auth/" + mode, payload);
-            localStorage.setItem("mv_session", data.session_token);
-            localStorage.setItem("mv_email", email);
-            // issue license
-            var lic = await gateApi("/v1/license/issue", { fingerprint: fp });
-            localStorage.setItem("mv_license", lic.license);
-            localStorage.setItem("mv_plan", lic.plan);
-            localStorage.setItem("mv_status", lic.status || "");
-            localStorage.setItem("mv_expires", lic.expires_at || "");
-            // Marca email como não verificado no signup (vai mostrar banner)
-            if (mode === "signup") {
-                localStorage.setItem("mv_email_verified", "false");
-                localStorage.removeItem("mv_verify_dismissed_until");
-                if (name) localStorage.setItem("mv_name", name);
-            } else {
-                // No login, busca status atual do banco
-                setTimeout(checkEmailVerified, 800);
-            }
-            msg.textContent = "✓ " + (mode === "signup" ? "Conta criada! Verifique seu e-mail. trial de 7 dias ativo." : "Bem-vindo!");
-            msg.className = "gate__msg ok";
-            setTimeout(function () { hideGate(); hideReauthBar(); updateTrialUI(); updateVerifyBar(); }, 500);
-        } catch (e) {
-            msg.textContent = "Erro: " + (typeof e === "string" ? e : (e.message || "falha"));
-            msg.className = "gate__msg";
-        }
-        sub.disabled = false;
-    };
+    // Auth.init() já chama bindGate internamente. Listener pós-login pra
+    // atualizar trial/verify bars legacy.
+    document.addEventListener("auth:ready", function () {
+        try { hideReauthBar(); } catch (_) {}
+        try { updateTrialUI(); } catch (_) {}
+        try { updateVerifyBar(); } catch (_) {}
+        try { checkEmailVerified(); } catch (_) {}
+    }, { once: false });
 }
 
 /* ============================================================
@@ -1123,9 +1045,16 @@ if (loadCatalog()) {
     if (CATALOG.packs.length) selectPack(CATALOG.packs[0].id);
     $("count").textContent = CATALOG.total_items.toLocaleString("pt-BR") + " templates · " + CATALOG.packs.length + " packs · build " + BUILD;
     $("status").textContent = "Pronto · build " + BUILD;
-    bindGate();
+    // Chunk 2: Auth gate (incl. Google OAuth + "Tenho código") delegado ao window.Auth.
+    // Trial/paywall/heartbeat continuam legacy até Chunk 6 unificar.
+    if (window.Auth && typeof window.Auth.init === "function") {
+        window.Auth.init();
+    } else {
+        // Fallback defensivo caso auth.js falhe ao carregar (não deveria acontecer)
+        showGate("login");
+    }
+    bindGate();             // só ativa listener auth:ready (stub)
     bindTrialUI();
-    tryRestoreSession();
     updateTrialUI();
     updateVerifyBar();
     checkEmailVerified();
