@@ -6,6 +6,16 @@
 
 ---
 
+## 🚧 ATENÇÃO · território cruzado (atualizado 2026-05-21)
+
+**`landing/oauth-bridge.html`** é mantido pelo **AGENTE β** até o sprint
+backend fechar. É página utility ligada ao contrato OAuth (aceita
+`#plugin=titles|legendas|ia|suite` no fragment e adapta UX) — NÃO é
+design de landing. **AGENTE θ: não mexer nesse arquivo** até β fechar PR.
+Se precisar de alteração visual urgente, abra issue cruzada com β.
+
+---
+
 ## 🎯 Meta final do sprint
 
 Sair de "3 plugins funcionais" → "**Motion Suite SaaS profissional**" com:

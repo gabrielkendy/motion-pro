@@ -3,13 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Login Motion IA · Sucesso</title>
+<title>Login Motion Suite · Sucesso</title>
+<!--
+    BRIDGE OAuth genérica do Motion Suite (sprint Ultra Pro · AGENTE β).
+    Aceita #plugin=titles|legendas|ia|suite no fragment e adapta UX.
+    Mantida pelo agente β até o sprint backend fechar — NÃO MEXER (agente θ).
+-->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root { --bg:#0a0c12; --bg-2:#11131c; --txt:#e7e9ee; --mut:#8b93a7; --acc:#2563eb; --ok:#10b981; --line:#1f2330; }
 * { box-sizing:border-box; margin:0; padding:0; }
 body { font-family:Inter,system-ui,sans-serif; background:var(--bg); color:var(--txt); min-height:100vh; display:grid; place-items:center; padding:32px; line-height:1.5; }
 .card { background:var(--bg-2); border:1px solid var(--line); border-radius:16px; padding:40px; max-width:560px; width:100%; }
+.brand { font-size:13px; color:var(--mut); letter-spacing:.5px; text-transform:uppercase; margin-bottom:12px; font-weight:600; }
 .icon { font-size:48px; margin-bottom:16px; }
 h1 { font-size:24px; font-weight:800; margin-bottom:8px; letter-spacing:-.3px; }
 .sub { color:var(--mut); margin-bottom:28px; font-size:14px; }
@@ -27,14 +33,15 @@ h1 { font-size:24px; font-weight:800; margin-bottom:8px; letter-spacing:-.3px; }
 <body>
 <div class="card">
     <div id="ok-state" style="display:none">
+        <div class="brand" id="brand-tag">Motion Suite</div>
         <div class="icon">✓</div>
         <h1>Login realizado!</h1>
-        <p class="sub">Copie o código abaixo e cole no Motion IA dentro do Premiere.</p>
+        <p class="sub">Copie o código abaixo e cole no <span id="plugin-label">plugin</span> dentro do Premiere.</p>
         <div id="tk" class="token-box" title="Clique pra copiar"></div>
         <button class="copy-btn" id="copy">📋 Copiar código</button>
         <ol class="steps">
             <li><strong>1.</strong> Volte ao Premiere Pro</li>
-            <li><strong>2.</strong> Na tela de login, clique em <strong>"Tenho código"</strong></li>
+            <li><strong>2.</strong> Na tela de login do <span class="plugin-name-inline">plugin</span>, clique em <strong>"Tenho código"</strong></li>
             <li><strong>3.</strong> Cole o código copiado e clique em Entrar</li>
             <li><strong>4.</strong> Pronto! Pode fechar essa página.</li>
         </ol>
@@ -42,20 +49,48 @@ h1 { font-size:24px; font-weight:800; margin-bottom:8px; letter-spacing:-.3px; }
     <div id="err-state" style="display:none">
         <div class="icon">❌</div>
         <h1>Erro no login</h1>
-        <p class="sub">Não foi possível concluir o login com Google.</p>
+        <p class="sub">Não foi possível concluir o login.</p>
         <div class="err" id="errmsg">Token não recebido.</div>
         <p class="sub" style="margin-top:18px">Volte ao Premiere e tente novamente, ou use email/senha.</p>
     </div>
 </div>
 <script>
 (function () {
+    // Parse hash: token=<jwt>[&plugin=titles|legendas|ia|suite]
     var hash = location.hash || "";
-    var m = hash.match(/token=([^&]+)/);
-    if (!m) {
+    var tokenMatch = hash.match(/token=([^&]+)/);
+    var pluginMatch = hash.match(/plugin=([^&]+)/);
+
+    if (!tokenMatch) {
         document.getElementById("err-state").style.display = "block";
         return;
     }
-    var token = decodeURIComponent(m[1]);
+
+    var token = decodeURIComponent(tokenMatch[1]);
+    var rawPlugin = pluginMatch ? decodeURIComponent(pluginMatch[1]).toLowerCase() : "ia";
+
+    var ALIASES = {
+        "motionpro": "titles", "motion_titles": "titles",
+        "motionia": "ia", "motion_ia": "ia",
+        "motion_legendas": "legendas",
+        "bundle_all": "suite", "motion_suite": "suite"
+    };
+    var plugin = ALIASES[rawPlugin] || rawPlugin;
+
+    var PLUGIN_META = {
+        titles:   { name: "Motion Titles",   tag: "Motion Titles",   pageTitle: "Login Motion Titles · Sucesso" },
+        legendas: { name: "Motion Legendas", tag: "Motion Legendas", pageTitle: "Login Motion Legendas · Sucesso" },
+        ia:       { name: "Motion IA",       tag: "Motion IA",       pageTitle: "Login Motion IA · Sucesso" },
+        suite:    { name: "Motion Suite",    tag: "Motion Suite",    pageTitle: "Login Motion Suite · Sucesso" }
+    };
+    var meta = PLUGIN_META[plugin] || PLUGIN_META.ia;
+
+    document.title = meta.pageTitle;
+    document.getElementById("brand-tag").textContent = meta.tag;
+    document.getElementById("plugin-label").textContent = meta.name;
+    var inlineNames = document.querySelectorAll(".plugin-name-inline");
+    for (var i = 0; i < inlineNames.length; i++) inlineNames[i].textContent = meta.name;
+
     document.getElementById("ok-state").style.display = "block";
     document.getElementById("tk").textContent = token;
 
