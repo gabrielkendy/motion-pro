@@ -32,11 +32,28 @@ const { clientIp, clientUa } = require("../utils/ipgeo");
 
 const STATE_TTL_MS = 10 * 60 * 1000;             // 10min
 const MAGIC_TTL_MIN = 15;
-const stateStore = new Map();                    // state → { provider, ts, return_to }
+const stateStore = new Map();                    // state → { provider, ts, return_to, plugin }
+
+// Plugins suportados pelo OAuth genérico (sprint Motion Suite Ultra Pro)
+const VALID_PLUGINS = new Set(["titles", "legendas", "ia", "suite"]);
 
 function gcStates() {
     const now = Date.now();
     for (const [k, v] of stateStore) if (now - v.ts > STATE_TTL_MS) stateStore.delete(k);
+}
+
+// Normaliza plugin recebido pelos clients (aceita alias legacy)
+function normalizePlugin(p) {
+    if (!p) return null;
+    const v = String(p).toLowerCase().trim();
+    const aliases = {
+        "motionpro": "titles", "motion_titles": "titles",
+        "motionia": "ia", "motion_ia": "ia",
+        "motion_legendas": "legendas",
+        "bundle_all": "suite", "motion_suite": "suite"
+    };
+    const canonical = aliases[v] || v;
+    return VALID_PLUGINS.has(canonical) ? canonical : null;
 }
 
 function issueJwt(user) {
@@ -88,11 +105,13 @@ router.get("/:provider/start", (req, res) => {
         return res.status(503).json({ error: "oauth_not_configured", provider: req.params.provider });
     }
 
+    const plugin = normalizePlugin(req.query.plugin);
     const state = crypto.randomBytes(24).toString("base64url");
     stateStore.set(state, {
         provider: req.params.provider,
         ts: Date.now(),
         return_to: req.query.return_to || process.env.OAUTH_SUCCESS_URL || "/",
+        plugin: plugin || null,
     });
 
     const url = new URL(p.authorize);
@@ -190,7 +209,10 @@ router.get("/:provider/callback", async (req, res, next) => {
         const userRow = (await pool.query("SELECT id, email FROM users WHERE id=$1", [userId])).rows[0];
         const token = issueJwt(userRow);
 
-        const dest = saved.return_to + (saved.return_to.includes("#") ? "&" : "#") + "token=" + token;
+        // Anexa plugin no fragment pra que a bridge mostre UI específica
+        // (logo + texto + "voltar pro plugin X")
+        const pluginFrag = saved.plugin ? `&plugin=${encodeURIComponent(saved.plugin)}` : "";
+        const dest = saved.return_to + (saved.return_to.includes("#") ? "&" : "#") + "token=" + token + pluginFrag;
         res.redirect(dest);
     } catch (e) { next(e); }
 });
@@ -200,6 +222,7 @@ router.post("/magic/start", async (req, res, next) => {
     try {
         const email = String(req.body?.email || "").toLowerCase().trim();
         if (!email || !email.includes("@")) return res.status(400).json({ error: "invalid_email" });
+        const plugin = normalizePlugin(req.body?.plugin || req.query?.plugin);
 
         const raw = crypto.randomBytes(32).toString("base64url");
         const hash = crypto.createHash("sha256").update(raw).digest("hex");
@@ -211,7 +234,8 @@ router.post("/magic/start", async (req, res, next) => {
         );
 
         const base = process.env.OAUTH_REDIRECT_BASE || "https://motionpro.vercel.app";
-        const magicUrl = `${base}/v1/oauth/magic/consume?token=${raw}`;
+        const pluginQ = plugin ? `&plugin=${encodeURIComponent(plugin)}` : "";
+        const magicUrl = `${base}/v1/oauth/magic/consume?token=${raw}${pluginQ}`;
         await magicLinkEmail({ email, magicUrl, ip: clientIp(req), expires_in_min: MAGIC_TTL_MIN }).catch(() => {});
 
         res.json({ ok: true, expires_in: MAGIC_TTL_MIN * 60 });
@@ -222,6 +246,7 @@ router.get("/magic/consume", async (req, res, next) => {
     try {
         const raw = String(req.query.token || "");
         if (!raw) return res.status(400).send("missing_token");
+        const plugin = normalizePlugin(req.query.plugin);
         const hash = crypto.createHash("sha256").update(raw).digest("hex");
 
         const row = await pool.query(
@@ -242,7 +267,8 @@ router.get("/magic/consume", async (req, res, next) => {
             );
         }
         const token = issueJwt(u.rows[0]);
-        const dest = (process.env.OAUTH_SUCCESS_URL || "/") + "#token=" + token;
+        const pluginFrag = plugin ? `&plugin=${encodeURIComponent(plugin)}` : "";
+        const dest = (process.env.OAUTH_SUCCESS_URL || "/") + "#token=" + token + pluginFrag;
         res.redirect(dest);
     } catch (e) { next(e); }
 });

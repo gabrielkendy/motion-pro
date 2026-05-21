@@ -24,37 +24,66 @@ const { clientIp } = require("../utils/ipgeo");
 // ============================================================
 // KEY GENERATION (admin)
 // ============================================================
-function genKey(tier) {
-    // Formato: MIA-{TIER}-XXXX-XXXX-XXXX-XXXX (4 grupos de 4 hex)
+// Prefixos unificados do Motion Suite (sprint Ultra Pro):
+//   MTI- → Motion Titles
+//   MTL- → Motion Legendas
+//   MIA- → Motion IA
+//   MTS- → Bundle Motion Suite (Titles + Legendas + IA)
+const VALID_PREFIXES = ["MTI", "MTL", "MIA", "MTS"];
+const PREFIX_RE = /^(MTI|MTL|MIA|MTS)-/;
+
+// Mapeia prefix → array de produtos canônicos default. Webhook/admin
+// podem override passando `products` explícito.
+const DEFAULT_PRODUCTS_BY_PREFIX = {
+    MTI: ["titles"],
+    MTL: ["legendas"],
+    MIA: ["ia"],
+    MTS: ["titles", "legendas", "ia"]
+};
+
+function genKey(tier, prefix) {
+    // Formato: PFX-{TIER}-XXXX-XXXX-XXXX-XXXX (4 grupos de 4 hex)
+    const px = String(prefix || "MIA").toUpperCase().slice(0, 3);
+    if (!VALID_PREFIXES.includes(px)) {
+        throw new Error("invalid_prefix:" + px);
+    }
     const t = (tier || "PRO").toUpperCase().slice(0, 4);
     const rand = () => crypto.randomBytes(2).toString("hex").toUpperCase();
-    return `MIA-${t}-${rand()}-${rand()}-${rand()}-${rand()}`;
+    return `${px}-${t}-${rand()}-${rand()}-${rand()}-${rand()}`;
 }
 
 async function saveKey({ key, tier, products, maxDevices, expiresAt, notes, customerEmail, issuedBy }) {
     const hash = await bcrypt.hash(key, 10);
-    const prefix = key.slice(0, 14); // "MIA-PRO-XXXX-X"
+    const prefix = key.slice(0, 14); // "PFX-TIER-XXXX-X"
+    const pxType = key.slice(0, 3).toUpperCase();
+    // Se não veio products explícito, usa default do prefix
+    const finalProducts = (products && products.length)
+        ? products
+        : (DEFAULT_PRODUCTS_BY_PREFIX[pxType] || []);
     const r = await pool.query(
         `INSERT INTO license_keys
          (key_hash, key_prefix, tier, products, max_devices, expires_at, notes, customer_email, issued_by)
          VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)
          RETURNING id, key_prefix, tier, products, max_devices, expires_at, created_at`,
-        [hash, prefix, tier, products || [], maxDevices || 3, expiresAt || null, notes || null, customerEmail || null, issuedBy || null]
+        [hash, prefix, tier, finalProducts, maxDevices || 3, expiresAt || null, notes || null, customerEmail || null, issuedBy || null]
     );
     return r.rows[0];
 }
 
 // Localiza key no banco. Como armazenamos só hash, brute force seria caro;
 // usamos key_prefix pra estreitar busca → bcrypt.compare nos candidatos.
+// Aceita os 4 prefixos unificados (MTI/MTL/MIA/MTS).
 async function findKeyByPlaintext(plaintext) {
-    if (!plaintext || !plaintext.startsWith("MIA-")) return null;
-    const prefix = plaintext.slice(0, 14);
+    if (!plaintext) return null;
+    const clean = plaintext.trim();
+    if (!PREFIX_RE.test(clean)) return null;
+    const prefix = clean.slice(0, 14);
     const candidates = await pool.query(
         "SELECT * FROM license_keys WHERE key_prefix=$1 AND revoked_at IS NULL",
         [prefix]
     );
     for (const row of candidates.rows) {
-        if (await bcrypt.compare(plaintext, row.key_hash)) return row;
+        if (await bcrypt.compare(clean, row.key_hash)) return row;
     }
     return null;
 }
@@ -64,7 +93,7 @@ async function findKeyByPlaintext(plaintext) {
 // ============================================================
 router.post("/license-keys/activate", async (req, res, next) => {
     try {
-        const { key, device_fingerprint, device_name, device_os } = req.body || {};
+        const { key, device_fingerprint, device_name, device_os, plugin } = req.body || {};
         if (!key || !device_fingerprint) {
             return res.status(400).json({ error: "key_and_fingerprint_required" });
         }
@@ -74,6 +103,27 @@ router.post("/license-keys/activate", async (req, res, next) => {
         if (row.revoked_at) return res.status(403).json({ error: "key_revoked", reason: row.revoke_reason });
         if (row.expires_at && new Date(row.expires_at) < new Date()) {
             return res.status(403).json({ error: "key_expired", expired_at: row.expires_at });
+        }
+
+        // Se o plugin que está ativando especificou seu id, valida que a chave
+        // cobre esse produto. Compatível com MTS- (bundle) e chaves individuais.
+        if (plugin && Array.isArray(row.products) && row.products.length > 0) {
+            const ALIASES = {
+                "motionpro": "titles", "Motion Titles": "titles", "motion_titles": "titles",
+                "motionia": "ia", "motion_ia": "ia",
+                "motion_legendas": "legendas",
+                "bundle_all": "suite", "motion_suite": "suite"
+            };
+            const requested = (ALIASES[plugin] || plugin).toLowerCase();
+            const granted = row.products.map(p => (ALIASES[p] || p).toLowerCase());
+            const ok = granted.includes(requested) || granted.includes("suite");
+            if (!ok) {
+                return res.status(403).json({
+                    error: "plugin_not_licensed",
+                    requested,
+                    granted
+                });
+            }
         }
 
         // Conta devices ativos
@@ -195,13 +245,19 @@ router.post("/license-keys/deactivate", async (req, res, next) => {
 // ============================================================
 router.post("/admin/license-keys/generate", requireAdmin, async (req, res, next) => {
     try {
-        const { tier, products, max_devices, expires_at, notes, customer_email } = req.body || {};
+        const { tier, prefix, products, max_devices, expires_at, notes, customer_email } = req.body || {};
         if (!tier) return res.status(400).json({ error: "tier_required" });
 
-        const plaintext = genKey(tier);
+        let plaintext;
+        try {
+            plaintext = genKey(tier, prefix || "MIA");
+        } catch (e) {
+            return res.status(400).json({ error: "invalid_prefix", detail: e.message });
+        }
         const saved = await saveKey({
             key: plaintext, tier,
-            products: products || ["motionpro", "ia", "legendas"],
+            // Se admin não passou products, saveKey usa o default do prefix
+            products: products || null,
             maxDevices: max_devices || 3,
             expiresAt: expires_at,
             notes,
@@ -221,16 +277,21 @@ router.post("/admin/license-keys/generate", requireAdmin, async (req, res, next)
 
 router.post("/admin/license-keys/generate-bulk", requireAdmin, async (req, res, next) => {
     try {
-        const { count, tier, products, max_devices, expires_at, notes } = req.body || {};
+        const { count, tier, prefix, products, max_devices, expires_at, notes } = req.body || {};
         const n = Math.min(Math.max(Number(count) || 1, 1), 100);
         if (!tier) return res.status(400).json({ error: "tier_required" });
 
         const keys = [];
         for (let i = 0; i < n; i++) {
-            const plaintext = genKey(tier);
+            let plaintext;
+            try {
+                plaintext = genKey(tier, prefix || "MIA");
+            } catch (e) {
+                return res.status(400).json({ error: "invalid_prefix", detail: e.message });
+            }
             await saveKey({
                 key: plaintext, tier,
-                products: products || ["motionpro", "ia", "legendas"],
+                products: products || null,
                 maxDevices: max_devices || 3,
                 expiresAt: expires_at,
                 notes: (notes || "") + " (batch " + (i + 1) + "/" + n + ")",
@@ -291,4 +352,25 @@ router.post("/admin/maintenance/run-migration-009", requireAdmin, async (_req, r
     }
 });
 
-module.exports = { router };
+// Endpoint admin pra rodar a migration 012 (prefixos unificados MTI/MTL/MIA/MTS)
+router.post("/admin/maintenance/run-migration-012", requireAdmin, async (_req, res, next) => {
+    try {
+        const fs = require("fs"); const path = require("path");
+        const sqlPath = path.join(__dirname, "..", "..", "migrations", "012_unified_license_prefixes.sql");
+        await pool.query(fs.readFileSync(sqlPath, "utf8"));
+        res.json({ ok: true, migration: "012_unified_license_prefixes", executed_at: new Date().toISOString() });
+    } catch (e) {
+        res.status(500).json({ error: "migration_failed", message: e.message });
+    }
+});
+
+module.exports = {
+    router,
+    // Helpers reaproveitados pelo webhook Stripe (billing.js) pra evitar
+    // duplicação da lógica de geração de keys.
+    genKey,
+    saveKey,
+    findKeyByPlaintext,
+    VALID_PREFIXES,
+    DEFAULT_PRODUCTS_BY_PREFIX
+};
