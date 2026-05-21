@@ -575,20 +575,24 @@ function importMogrt(item) {
     }, function () { /* resolvePath rejected — toast já mostrado */ }); // close resolvePath.then
 }
 
-/* Pinga o host.jsx no boot pra confirmar que carregou. Mostra toast se falhar. */
+/* Pinga o host.jsx no boot pra confirmar que carregou. Mostra toast se falhar.
+ * Chunk 7: também publica window._hostOk pro StatusBar.checkPremiere. */
 function hostPing() {
     cs.evalScript("(typeof $.global.MotionVault === 'object') ? MotionVault.ping() : 'undefined'", function (res) {
         logLine("ping host: " + (res || "(vazio)"));
-        if (!res || res === "undefined" || res === "EvalScript error.") {
+        var bad = !res || res === "undefined" || res === "EvalScript error.";
+        window._hostOk = !bad;
+        if (bad) {
             toast("⚠ host.jsx não carregou. Reabra o painel.", "err", 6000);
             logLine("HOST AUSENTE — verifique manifest e jsx/host.jsx", "err");
-            return;
+        } else {
+            try {
+                var j = JSON.parse(res);
+                if (j && j.error) { window._hostOk = false; logLine("ping error: " + j.error, "err"); }
+                else logLine("host ok: " + j.host + " " + j.version + " seq=" + j.hasSequence);
+            } catch (e) {}
         }
-        try {
-            var j = JSON.parse(res);
-            if (j && j.error) logLine("ping error: " + j.error, "err");
-            else logLine("host ok: " + j.host + " " + j.version + " seq=" + j.hasSequence);
-        } catch (e) {}
+        if (window.StatusBar && window.StatusBar.updateAll) window.StatusBar.updateAll();
     });
 }
 
@@ -1124,6 +1128,11 @@ if (loadCatalog()) {
     // Chunk 5: tier-gating + tier badge no statusbar.
     if (window.Features && typeof window.Features.init === "function") {
         window.Features.init();
+    }
+
+    // Chunk 7: status bar 4 dots + diagnóstico técnico.
+    if (window.StatusBar && typeof window.StatusBar.init === "function") {
+        window.StatusBar.init();
     }
 }
 

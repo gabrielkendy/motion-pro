@@ -425,8 +425,53 @@ body.wide  .card__thumb { min-height: 180px; }
     padding: 0 14px;
     font-size: 10.5px;
     color: var(--txt-1);
+    gap: 14px;
+    overflow: hidden;
 }
 .muted { color: var(--txt-2); }
+
+/* ════════════════ STATUS BAR DOTS (Chunk 7) ════════════════ */
+.statusbar__dots {
+    display: flex; align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    font-size: 10px;
+    color: var(--txt-2);
+    letter-spacing: 0.4px;
+}
+.statusbar__dots .dot-label {
+    margin-right: 10px;
+    margin-left: 1px;
+}
+.statusbar__dots .dot-label:last-of-type { margin-right: 0; }
+.statusbar .dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--mut-2);
+    flex-shrink: 0;
+    transition: background 0.2s, box-shadow 0.2s;
+}
+.statusbar .dot.ok   { background: var(--ok);   box-shadow: 0 0 6px var(--ok); }
+.statusbar .dot.warn { background: var(--warn); box-shadow: 0 0 5px var(--warn); }
+.statusbar .dot.err  { background: var(--err);  box-shadow: 0 0 5px var(--err); }
+.statusbar .dot.off  { background: var(--mut-2); box-shadow: none; }
+
+/* ════════════════ DIAGNÓSTICO OUTPUT (Chunk 7) ════════════════ */
+.diag-output {
+    margin-top: 14px;
+    background: #0a0c12;
+    border: 1px solid #232838;
+    border-radius: var(--radius);
+    padding: 12px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
+    color: var(--txt);
+    white-space: pre-wrap;
+    max-height: 420px;
+    overflow: auto;
+    line-height: 1.5;
+}
 
 /* ============ TOAST ============ */
 .toast {

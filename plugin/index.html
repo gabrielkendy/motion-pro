@@ -163,8 +163,14 @@
 <aside id="side" class="sidebar"></aside>
 <main id="grid" class="grid"></main>
 
-<!-- ============ STATUS BAR ============ -->
+<!-- ============ STATUS BAR (Chunk 7: 4 dots + status + count + tier badge) ============ -->
 <footer class="statusbar">
+    <div class="statusbar__dots" id="statusbar-dots">
+        <span class="dot off" id="dot-premiere" title="Premiere host.jsx"></span><span class="dot-label">Premiere</span>
+        <span class="dot off" id="dot-auth"     title="Sessão"></span><span class="dot-label">Auth</span>
+        <span class="dot off" id="dot-license"  title="Licença"></span><span class="dot-label">Licença</span>
+        <span class="dot off" id="dot-cdn"      title="CDN R2"></span><span class="dot-label">CDN</span>
+    </div>
     <span id="status">Carregando...</span>
     <span id="count" class="muted"></span>
 </footer>
@@ -245,6 +251,16 @@
         </div>
         <button id="cfg-logout" class="btn btn--ghost">Sair desta conta</button>
 
+        <hr style="border:0;border-top:1px solid #232838;margin:24px 0">
+
+        <div class="card__title" style="margin-bottom:8px">🩺 Diagnóstico técnico</div>
+        <div class="hint" style="margin-bottom:10px">
+            Roda 5 testes (paths · license cache · /v1/me · host.jsx · CDN R2).
+            Use quando algo não funcionar — cole o output no suporte.
+        </div>
+        <button id="btn-diagnose" class="btn btn--sm">Rodar diagnóstico</button>
+        <pre id="diag-output" class="diag-output hidden"></pre>
+
     </div>
 </aside>
 
@@ -256,6 +272,7 @@
 <script src="js/auth.js?v=300"></script>
 <script src="js/license-ui.js?v=300"></script>
 <script src="js/features.js?v=300"></script>
+<script src="js/status-bar.js?v=300"></script>
 <script src="js/app.js?v=300"></script>
 </body>
 </html>
