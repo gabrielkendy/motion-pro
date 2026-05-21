@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src *; img-src * data: blob: file: filesystem:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; media-src * data: blob: file: filesystem:;">
+<title>Motion IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css?v=313">
+</head>
+<body>
+
+<!-- ════════════════ GATE (login) ════════════════ -->
+<div id="gate" class="gate hidden">
+    <div class="gate__box">
+        <div class="gate__brand">Motion <span>IA</span></div>
+        <div class="gate__tagline">by PacotesFX</div>
+        <div class="gate__tabs">
+            <button id="gt-login" class="gate__tab active">Entrar</button>
+            <button id="gt-signup" class="gate__tab">Criar conta</button>
+        </div>
+        <div class="field signup-only" id="f-name" hidden>
+            <label for="g-name">Nome</label><input id="g-name" type="text" placeholder="Seu nome">
+        </div>
+        <div class="field">
+            <label for="g-email">E-mail</label>
+            <input id="g-email" type="email" placeholder="seu@email.com" autocomplete="email">
+        </div>
+        <div class="field">
+            <label for="g-password">Senha</label>
+            <input id="g-password" type="password" placeholder="Mínimo 8 caracteres" autocomplete="current-password">
+        </div>
+        <button id="g-submit" class="btn btn--primary btn--full">Entrar</button>
+        <div id="g-msg" class="gate__msg"></div>
+
+        <div class="gate__sep"><span>ou</span></div>
+        <button id="g-google" class="btn btn--ghost btn--full" type="button">
+            <svg viewBox="0 0 18 18" width="16" height="16" style="vertical-align:-3px;margin-right:8px">
+                <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+                <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
+                <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/>
+                <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+            </svg>
+            Continuar com Google
+        </button>
+        <div class="gate__foot">
+            <a id="g-have-code" href="#">Já tenho código de login</a>
+            <span style="margin:0 8px;color:var(--mut)">·</span>
+            <a id="g-forgot" href="#">Esqueci minha senha</a>
+        </div>
+
+        <!-- Modal "Tenho código" (oculto por default) -->
+        <div id="g-code-box" class="field" style="display:none;margin-top:14px;padding:14px;background:var(--bg-2);border-radius:10px;border:1px solid var(--line)">
+            <label style="font-size:12px;color:var(--mut);margin-bottom:6px;display:block">Cole o código gerado após login no navegador:</label>
+            <textarea id="g-code-input" rows="3" placeholder="ey…" style="width:100%;font-family:ui-monospace,monospace;font-size:11px;resize:vertical;background:var(--bg);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:8px"></textarea>
+            <div style="display:flex;gap:8px;margin-top:8px">
+                <button id="g-code-submit" class="btn btn--primary" style="flex:1">Entrar com código</button>
+                <button id="g-code-cancel" class="btn btn--ghost" type="button">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════ PAYWALL (licença expirada/inválida) ════════════════ -->
+<div id="paywall" class="paywall hidden">
+    <div class="paywall__box">
+        <div style="font-size:36px;margin-bottom:14px">⏰</div>
+        <h2 style="font-size:20px;margin-bottom:8px">Licença não ativada</h2>
+        <p class="muted small" style="margin-bottom:20px">Pra acessar as features do Motion IA você precisa ativar uma licença ou assinar um plano.</p>
+        <button class="btn btn--primary btn--full" onclick="window.MIA && MIA.go('config')">Ir pra Licença</button>
+        <button id="pw-logout" class="btn btn--ghost btn--sm" style="margin-top:10px">Sair</button>
+    </div>
+</div>
+
+<!-- ════════════════ LAYOUT ════════════════ -->
+<div id="app" class="layout hidden">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar__brand">
+            <div class="logo">M</div>
+            <div class="info">
+                <div class="name">Motion IA</div>
+                <div class="tagline">by PacotesFX</div>
+            </div>
+        </div>
+
+        <div class="sidebar__section">Início</div>
+        <div class="sidebar__item active" data-view="home">
+            <span class="ico">🏠</span><span class="label">Home</span>
+        </div>
+        <div class="sidebar__item" data-view="chat">
+            <span class="ico">💬</span><span class="label">Agente IA</span>
+        </div>
+
+        <div class="sidebar__section">Features</div>
+        <!-- 12 features, lock dinâmico baseado em tier -->
+        <div class="sidebar__item locked" data-view="feat-cortar-pausas" data-feature="cortar-pausas" data-min-tier="basic">
+            <span class="ico">🎯</span><span class="label">Cortar Pausas</span><span class="lock">🔒</span>
+        </div>
+        <div class="sidebar__item locked" data-view="feat-cortar-erros" data-feature="cortar-erros" data-min-tier="pro">
+            <span class="ico">🎬</span><span class="label">Cortar Erros</span><span class="lock">🔒</span>
+        </div>
+        <div class="sidebar__item locked" data-view="feat-caca-trechos" data-feature="caca-trechos" data-min-tier="pro">
+            <span class="ico">⚡</span><span class="label">Caça-Trechos</span><span class="lock">🔒</span>
+        </div>
+        <div class="sidebar__item locked" data-view="feat-capitulos" data-feature="capitulos" data-min-tier="pro">
+            <span class="ico">📖</span><span class="label">Capítulos IA</span><span class="lock">🔒</span>
+        </div>
+        <div class="sidebar__item locked" data-view="feat-legendas" data-feature="legendas" data-min-tier="basic">
+            <span class="ico">💬</span><span class="label">Legendas IA</span><span class="lock">🔒</span>
+        </div>
+        <div class="sidebar__item locked" data-view="feat-copiar-seq" data-feature="copiar-seq" data-min-tier="basic">
+            <span class="ico">✂️</span><span class="label">Copiar Sequência</span><span class="lock">🔒</span>
+        </div>
+        <div class="sidebar__item locked" data-view="feat-transicoes" data-feature="transicoes" data-min-tier="basic">
+            <span class="ico">🎞️</span><span class="label">Transições IA</span><span class="lock">🔒</span>
+        </div>
+        <div class="sidebar__item locked" data-view="feat-bins" data-feature="bins" data-min-tier="basic">
+            <span class="ico">📁</span><span class="label">Organizar Bins</span><span class="lock">🔒</span>
+        </div>
+        <div class="sidebar__item locked" data-view="feat-multicam" data-feature="multicam" data-min-tier="pro">
+            <span class="ico">📹</span><span class="label">MultiCam IA</span><span class="lock">🔒</span>
+        </div>
+        <div class="sidebar__item locked" data-view="feat-baixar" data-feature="baixar" data-min-tier="basic">
+            <span class="ico">⬇️</span><span class="label">Baixar Vídeo</span><span class="lock">🔒</span>
+        </div>
+        <div class="sidebar__item locked" data-view="feat-auto-crop" data-feature="auto-crop" data-min-tier="pro">
+            <span class="ico">📐</span><span class="label">Auto Crop</span><span class="lock">🔒</span>
+        </div>
+        <div class="sidebar__item locked" data-view="feat-stock" data-feature="stock" data-min-tier="basic">
+            <span class="ico">📚</span><span class="label">Biblioteca Stock</span><span class="lock">🔒</span>
+        </div>
+        <div class="sidebar__item locked" data-view="feat-casper" data-feature="casper" data-min-tier="pro">
+            <span class="ico">👻</span><span class="label">Casper · Auto-edit</span><span class="lock">🔒</span>
+        </div>
+
+        <div class="sidebar__section">Sistema</div>
+        <div class="sidebar__item" data-view="config">
+            <span class="ico">⚙️</span><span class="label">Licença & Config</span>
+        </div>
+
+        <div class="sidebar__foot">
+            <div id="sb-email" style="margin-bottom:4px">—</div>
+            <div>Tier: <span id="sb-tier" class="tier-badge free">FREE</span></div>
+            <div style="margin-top:6px;font-size:9px">build 3.0.0</div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <!-- ═══ VIEW: HOME ═══ -->
+        <section class="view active" id="view-home">
+            <div class="main__header">
+                <div>
+                    <h1>Home</h1>
+                    <div class="sub">Atalhos pras features mais usadas</div>
+                </div>
+                <div>
+                    <span id="hd-status-summary" class="badge badge--mut">Carregando…</span>
+                </div>
+            </div>
+            <div class="main__body">
+                <div class="card">
+                    <div class="card__head"><div class="card__title">Atalhos rápidos</div></div>
+                    <div class="feat-grid" id="home-grid">
+                        <!-- preenchido dinâmico pelo app.js -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══ VIEW: AGENTE IA (chat) ═══ -->
+        <section class="view" id="view-chat">
+            <div class="main__header">
+                <div>
+                    <h1>Agente IA</h1>
+                    <div class="sub">Claude controla o Premiere via 23 tools · modo editorial</div>
+                </div>
+            </div>
+            <div class="chat">
+                <div class="chat__stream" id="chat-stream">
+                    <div class="chat__msg">
+                        <div class="chat__avatar">IA</div>
+                        <div class="chat__bubble">
+                            Pronto. Posso analisar o vídeo, transcrever, cortar silêncios, sugerir highlights, e executar edições.
+                            <br><br>Diga o que quer ou clique em <b>⚡ SKILLS</b> pra atalhos.
+                        </div>
+                    </div>
+                </div>
+                <div class="chat__input">
+                    <textarea id="chat-input" placeholder="Descreve o que quer (ex: corta os silêncios > 0.5s)…" rows="1"></textarea>
+                    <button id="chat-send" class="chat__send" title="Enviar (Ctrl+Enter)" aria-label="Enviar mensagem">▶</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══ VIEW: CONFIG (Licença + Config IA) ═══ -->
+        <section class="view" id="view-config">
+            <div class="main__header">
+                <div>
+                    <h1>Licença & Config</h1>
+                    <div class="sub">Ative sua licença + configure IA</div>
+                </div>
+            </div>
+            <div class="main__body">
+                <!-- LICENSE STATUS -->
+                <div class="card__title" style="margin-bottom:8px">🔑 Licença</div>
+                <div id="lic-card" class="license-card inactive">
+                    <div class="license-card__row">
+                        <span class="license-card__label">Status</span>
+                        <span><span id="lic-status" class="license-card__status inactive">Não ativada</span></span>
+                    </div>
+                    <div class="license-card__row">
+                        <span class="license-card__label">Chave</span>
+                        <span id="lic-key" class="license-card__value">—</span>
+                    </div>
+                    <div class="license-card__row">
+                        <span class="license-card__label">Última validação</span>
+                        <span id="lic-validated" class="license-card__value">—</span>
+                    </div>
+                    <div class="license-card__row">
+                        <span class="license-card__label">Produto</span>
+                        <span id="lic-product" class="license-card__value">—</span>
+                    </div>
+                    <div class="license-card__row">
+                        <span class="license-card__label">Plano</span>
+                        <span id="lic-tier" class="license-card__value">—</span>
+                    </div>
+                    <div class="license-card__row">
+                        <span class="license-card__label">Devices ativos</span>
+                        <span id="lic-devices" class="license-card__value">—</span>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Inserir chave de licença</label>
+                    <input id="lic-input" placeholder="MIA-PRO-XXXX-XXXX-XXXX-XXXX" autocomplete="off">
+                    <div class="hint">Comprou pelo site? A chave foi enviada no e-mail.</div>
+                </div>
+                <div style="display:flex; gap:8px; margin-bottom:24px">
+                    <button id="lic-activate" class="btn btn--primary">Ativar Licença</button>
+                    <button id="lic-validate" class="btn btn--sm">↻ Revalidar</button>
+                    <button id="lic-deactivate" class="btn btn--danger btn--sm">Desativar</button>
+                </div>
+
+                <hr style="border:0;border-top:1px solid var(--line);margin:24px 0">
+
+                <!-- AI CONFIG -->
+                <div class="card__title" style="margin-bottom:8px">🤖 Configuração de IA</div>
+                <div class="field">
+                    <label>Modelo Claude (Anthropic)</label>
+                    <select id="set-model">
+                        <option value="claude-sonnet-4-6">Claude Sonnet 4.6 — recomendado</option>
+                        <option value="claude-opus-4-7">Claude Opus 4.7 — top (caro)</option>
+                        <option value="claude-haiku-4-5">Claude Haiku 4.5 — rápido/barato</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Anthropic API Key (opcional · BYOK)</label>
+                    <input id="set-anthropic-key" type="password" placeholder="sk-ant-… (deixe vazio pra usar a managed)" autocomplete="off">
+                    <div id="set-key-status" class="hint">Vazio = usa pacote managed. Preenchido = BYOK ilimitado.</div>
+                </div>
+                <div class="field">
+                    <label>Google Gemini API Key (opcional · pra video vision)</label>
+                    <input id="set-gemini-key" type="password" placeholder="AIza… (opcional)" autocomplete="off">
+                    <div class="hint">Permite que IA "veja" o vídeo inteiro. Pegue em <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a></div>
+                </div>
+                <div class="field">
+                    <label>Pexels API Key (opcional · vídeos stock HD)</label>
+                    <input id="set-pexels-key" type="password" placeholder="… (gratuita em pexels.com/api)" autocomplete="off">
+                    <div class="hint">Pegue em <a href="https://www.pexels.com/api/new/" target="_blank">pexels.com/api/new/</a></div>
+                </div>
+                <div class="field">
+                    <label>Pixabay API Key (opcional · stock complementar)</label>
+                    <input id="set-pixabay-key" type="password" placeholder="… (gratuita em pixabay.com/api/docs)" autocomplete="off">
+                    <div class="hint">Pegue em <a href="https://pixabay.com/api/docs/" target="_blank">pixabay.com/api/docs/</a></div>
+                </div>
+                <div class="field">
+                    <label>Giphy API Key (opcional · GIFs animados)</label>
+                    <input id="set-giphy-key" type="password" placeholder="… (gratuita em developers.giphy.com)" autocomplete="off">
+                    <div class="hint">Pegue em <a href="https://developers.giphy.com/dashboard/" target="_blank">developers.giphy.com</a></div>
+                </div>
+                <div class="field">
+                    <label>Max tokens por resposta</label>
+                    <input id="set-max-tokens" type="number" value="4096" min="512" max="8192" step="256">
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <button id="set-save" class="btn btn--primary">💾 Salvar configuração</button>
+                    <button id="set-test" class="btn btn--sm">🧪 Testar conexões</button>
+                </div>
+                <div id="set-result" class="hint" style="margin-top:12px;min-height:20px;font-family:monospace"></div>
+            </div>
+            <div class="card">
+                <div class="card__head"><div class="card__title">Ajuda & Diagnóstico</div></div>
+                <p style="margin-bottom:10px;color:var(--mut)">Repassar tour ou ver diagnóstico técnico (paths, host.jsx, binários).</p>
+                <button id="set-tour-restart" class="btn btn--sm">🧭 Refazer tour</button>
+                <button id="set-diagnostico" class="btn btn--sm" style="margin-left:8px">🩺 Diagnóstico técnico</button>
+                <pre id="set-diag-output" style="display:none;margin-top:14px;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:12px;font-family:ui-monospace,monospace;font-size:11px;color:var(--txt);white-space:pre-wrap;max-height:400px;overflow:auto"></pre>
+            </div>
+        </section>
+
+        <!-- ═══ VIEWS DE FEATURES (placeholders dinâmicos) ═══ -->
+        <section class="view" id="view-feature"><!-- conteúdo gerado pelo app.js --></section>
+    </main>
+</div>
+
+<!-- ════════════════ STATUS BAR ════════════════ -->
+<div id="status-bar" class="status-bar hidden">
+    <div>
+        <span id="dot-premiere" class="dot warn"></span>Premiere
+        <span style="margin-left:12px"></span>
+        <span id="dot-claude" class="dot"></span>Claude
+        <span style="margin-left:12px"></span>
+        <span id="dot-gemini" class="dot"></span>Gemini
+        <span style="margin-left:12px"></span>
+        <span id="dot-license" class="dot"></span>Licença
+    </div>
+    <div>
+        <span id="status-msg">Motion IA · build 3.0.0</span>
+    </div>
+</div>
+
+<!-- ════════════════ TOAST ════════════════ -->
+<div class="toast-area" id="toast-area"></div>
+
+<!-- ════════════════ SCRIPTS ════════════════ -->
+<script src="js/lib/CSInterface.js?v=313"></script>
+<script src="js/config.js?v=313"></script>
+<script src="js/host-bridge.js?v=313"></script>
+<script src="js/bin-runner.js?v=313"></script>
+<script src="js/gemini-client.js?v=313"></script>
+<script src="js/license-cache.js?v=313"></script>
+<script src="js/license-client.js?v=313"></script>
+<script src="js/auth.js?v=313"></script>
+<script src="js/claude-tools.js?v=313"></script>
+<script src="js/agent.js?v=313"></script>
+<script src="js/settings-ui.js?v=313"></script>
+<script src="js/face-tracker.js?v=313"></script>
+<script src="js/skills.js?v=313"></script>
+<script src="js/features.js?v=313"></script>
+<script src="js/onboarding-tour.js?v=313"></script>
+<script src="js/app.js?v=313"></script>
+
+</body>
+</html>

@@ -2,7 +2,7 @@
 /**
  * tools/stripe-bootstrap-legendas.js
  *
- * Cria produtos Stripe pro MotionPro Legendas + Bundle Completo.
+ * Cria produtos Stripe pro Motion Legendas + Bundle Completo.
  * Idempotente (busca por metadata.mv_id).
  *
  * Usage:
@@ -17,12 +17,12 @@ if (!process.env.DATABASE_URL) { console.error("DATABASE_URL required"); process
 const stripe = Stripe(process.env.STRIPE_SECRET);
 
 const PRODUCTS = [
-    // ─── MotionPro Legendas ───
+    // ─── Motion Legendas ───
     {
         mv_id: "legendas_yearly",
         product_id: "legendas",
         plan: "yearly",
-        name: "MotionPro Legendas · Anual",
+        name: "Motion Legendas · Anual",
         description: "Plugin de títulos, lower thirds e legendas estilizadas pro Premiere. Atualizações inclusas.",
         unit_amount: 14900,                 // R$ 149/ano
         currency: "brl",
@@ -32,19 +32,19 @@ const PRODUCTS = [
         mv_id: "legendas_lifetime",
         product_id: "legendas",
         plan: "lifetime",
-        name: "MotionPro Legendas · Vitalício",
+        name: "Motion Legendas · Vitalício",
         description: "Pagamento único — acesso vitalício a todos os títulos e lower thirds.",
         unit_amount: 39900,                 // R$ 399 uma vez
         currency: "brl",
         recurring: null
     },
-    // ─── Bundle Completo (MotionPro + Legendas) ───
+    // ─── Bundle Completo (Motion Titles + Legendas) ───
     {
         mv_id: "bundle_yearly",
         product_id: "bundle_all",
         plan: "yearly",
-        name: "Pacote Completo MotionPro · Anual",
-        description: "MotionPro + Legendas Pro — 1 assinatura cobre tudo. Economize 14% vs comprar separado.",
+        name: "Pacote Completo Motion Titles · Anual",
+        description: "Motion Titles + Legendas Pro — 1 assinatura cobre tudo. Economize 14% vs comprar separado.",
         unit_amount: 29900,                 // R$ 299/ano (vs R$ 348 separados)
         currency: "brl",
         recurring: { interval: "year" }
@@ -53,8 +53,8 @@ const PRODUCTS = [
         mv_id: "bundle_lifetime",
         product_id: "bundle_all",
         plan: "lifetime",
-        name: "Pacote Completo MotionPro · Vitalício",
-        description: "MotionPro + Legendas Pro — acesso vitalício a tudo. Economize 22% vs separado.",
+        name: "Pacote Completo Motion Titles · Vitalício",
+        description: "Motion Titles + Legendas Pro — acesso vitalício a tudo. Economize 22% vs separado.",
         unit_amount: 69900,                 // R$ 699 (vs R$ 898 separados)
         currency: "brl",
         recurring: null

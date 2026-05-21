@@ -8,7 +8,7 @@
 ## ✅ Pré-requisitos
 - [x] Conta Cloudflare (você já tem)
 - [x] Domínio `kendyproducoes` na Cloudflare (você já tem)
-- [x] Vercel project `motionpro` (já tem)
+- [x] Vercel project `Motion Titles` (já tem)
 - [x] Neon Postgres (já tem)
 - [ ] **Itens abaixo** que preciso de você
 
@@ -19,7 +19,7 @@
 1. Cloudflare dashboard → **R2** (menu lateral)
 2. Se for a 1ª vez: aceita os termos + ativa R2 (free tier 10GB)
 3. Clica **Create bucket**
-   - Name: `motionpro-assets`
+   - Name: `Motion Titles-assets`
    - Location: **Automatic**
    - Default Storage Class: **Standard**
 4. Clica **Create bucket**
@@ -27,9 +27,9 @@
 ### R2 API Token (pra fazer upload via script)
 1. Dentro de **R2 → Manage R2 API Tokens** (canto superior direito)
 2. **Create API Token**
-   - Token name: `motionpro-upload`
+   - Token name: `Motion Titles-upload`
    - Permissions: **Object Read & Write**
-   - Specify bucket: `motionpro-assets`
+   - Specify bucket: `Motion Titles-assets`
    - TTL: ilimitado
 3. **Create API Token** → copia:
    - **Access Key ID**
@@ -68,7 +68,7 @@ CLOUDFLARE_ACCOUNT_ID = ......... (mesma da R2)
 2. **Add record**:
    - Type: `CNAME`
    - Name: `cdn`
-   - Target: `motionpro-cdn.<seu-account>.workers.dev` (vou te dar depois do deploy)
+   - Target: `Motion Titles-cdn.<seu-account>.workers.dev` (vou te dar depois do deploy)
    - Proxy status: **Proxied** (laranja)
    - TTL: Auto
 3. Salva
@@ -87,7 +87,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 Resultado: algo tipo `9f8a3e...64chars`.
 
 Esse mesmo secret precisa estar em:
-1. **Vercel backend env** (`motionpro` project) — variável `CDN_SIGN_SECRET`
+1. **Vercel backend env** (`Motion Titles` project) — variável `CDN_SIGN_SECRET`
 2. **Cloudflare Worker secret** — eu seto via `wrangler secret put CDN_SIGN_SECRET`
 
 ---
@@ -103,7 +103,7 @@ CDN_URL_TTL_MIN       = 5
 R2_ACCOUNT_ID         = <Bloco 1>
 R2_ACCESS_KEY_ID      = <Bloco 1>
 R2_SECRET_ACCESS_KEY  = <Bloco 1>
-R2_BUCKET             = motionpro-assets
+R2_BUCKET             = Motion Titles-assets
 SOURCE_ROOT           = C:\Users\Gabriel\Documents\Motion Bro
 ```
 
@@ -171,7 +171,7 @@ cd installers/zip-manual         ; .\build-zip.ps1
 cd ../zip-manual-legendas        ; .\build-zip.ps1
 ```
 
-Versões: MotionPro **v1.0.5**, Legendas **v1.1.2** (com obfuscação + asset-loader).
+Versões: Motion Titles **v1.0.5**, Legendas **v1.1.2** (com obfuscação + asset-loader).
 
 Publico no GitHub Releases → landing volta a funcionar pra qualquer cliente novo.
 
@@ -186,7 +186,7 @@ Quando bater todos esses, eu termino tudo em ~30 min:
 - [ ] **R2_SECRET_ACCESS_KEY**
 - [ ] **CLOUDFLARE_API_TOKEN** (escopo Workers + DNS)
 - [ ] **CNAME** `cdn.kendyproducoes.com` → criado no DNS (target eu mando depois do deploy)
-- [ ] **Vercel env vars** adicionadas no project `motionpro`
+- [ ] **Vercel env vars** adicionadas no project `Motion Titles`
 
 Posso te mandar instruções com prints se preferir.
 
@@ -197,7 +197,7 @@ Posso te mandar instruções com prints se preferir.
 Depois de ativado:
 - **7906 templates** ficam no R2 (não no PC do cliente)
 - Plugin baixa **on-demand** via URL assinada (TTL 5 min + device fingerprint)
-- Cache local em `%LOCALAPPDATA%\MotionPro\cache\`
+- Cache local em `%LOCALAPPDATA%\Motion Titles\cache\`
 - Cópia da pasta `%APPDATA%\Adobe\CEP\extensions\com.motionvault.panel\` **não roda** sem login válido
 - Cancelar plano → próximo download bloqueado (rate limit 5min via TTL)
 - Compartilhar login → device fingerprint não bate, server bloqueia

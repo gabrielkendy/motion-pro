@@ -1,4 +1,40 @@
-# MotionPro Legendas — Changelog
+# Motion Legendas — Changelog
+
+## 4.25.1 — 2026-05-20 — Estilo Global sem cor (cor não confiável → removida)
+
+### Removido
+- **Controle de cor da fonte** removido (4.25.0 tinha como experimental). A cor real dos MOGRTs vive hardcoded no `.aep` binário, fora do alcance de script. O fallback via effect Tint só funcionava em textos 100% brancos sem outline/sombra — resultado inconsistente, então tiramos. Pra trocar cor de legenda hoje: aplicar effect manual na track no Premiere, ou reengineering no After Effects expondo Fill Color como Essential Graphics property.
+- Removidos: swatches, color picker, `EP_importPreparedMogrt` 5º param `tintHex`, função `applyTintToClip()` no host.jsx
+
+## 4.25.0 — 2026-05-20 — Estilo Global (template + fonte pra TODAS legendas)
+
+### Adicionado
+- **Painel "Estilo Global"** abaixo da tab-bar, sempre acessível. Toggle on/off + 2 controles:
+  - **📐 Template fixo**: força o mesmo template em TODAS as legendas (Auto inteligente vira override absoluto)
+  - **🔤 Fonte global**: substitui `fontEditValue` de cada MOGRT antes da importação. Inclui 13 fontes shipped (Helvetica, Chamberi Display, Mélodrame) + opção custom (PostScript name)
+- Estado persistido em `localStorage("mpl_global_style")` — sobrevive entre sessões
+- Chip de status no header do painel resume o setup ativo (ex: "Texto 16 · Helvetica-Bold")
+- Funciona em todos os fluxos: tab Templates (aplicação single) + Importar SRT (batch) + Criar do roteiro
+
+### Mecânica
+- **Fonte**: extensão do `POWERSHELL_INJECT_SCRIPT` — função `Replace-FontEditValue` substitui todas ocorrências de `fontEditValue` (string + array) no `definition.json` antes do `seq.importMGT`. Render fica nativo, sem hack
+- **Template fixo**: `defaultTplForWc` agora checa `GLOBAL_STYLE.tplName` ANTES de qualquer override existente (prioridade máxima)
+- **Single via inject**: `applySingle` desvia pro inject mode quando GS tem fonte, pra que `fontEditValue` seja aplicado também na aba Templates
+
+### Limitações conhecidas
+- Fonte precisa estar instalada no sistema (PostScript name exato). Banner de fontes faltantes não detecta override global ainda
+- Cor não é manipulável via script — fica no `.aep` binário (ver 4.25.1 acima)
+
+## 4.24.0 — 2026-05-18 — Pack SFX Virais (49 efeitos)
+
+### Adicionado
+- **49 efeitos sonoros virais** extraídos de 2 compilations (sound effects virais.mp4 + 02.mp4) e classificados automaticamente por análise espectral
+  - `whoosh/` — 27 efeitos (swoosh, whoosh, riser, riser-long)
+  - `impact/` — 18 efeitos (boom, hit)
+  - `camera/` — 3 efeitos (snap)
+  - `click/` — 1 efeito (pop)
+- Detecção automática pelo scanner `scanRealSfx()` — sem mexer em catalog.json
+- Padding 50ms/100ms preservando ataque e decaimento, fade in/out 20/50ms
 
 ## 4.23.0 — 2026-05-18 — Aba SFX + layout aprimorado
 

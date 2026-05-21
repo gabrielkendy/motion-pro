@@ -5,9 +5,15 @@ node_modules/
 .env
 .env.local
 .env.production
+.env.development.local
+.env.full
+*.env.full
 backend/.env
 backend/.env.local
 backend/.env.production
+backend/.env.development.local
+backend/.env.full
+tools/.env
 landing/.env
 
 # Build outputs
@@ -69,3 +75,5 @@ plugin-legendas/fonts/
 
 # Exceção: ZIPs da landing precisam ir pro deploy Vercel (downloads pro cliente)
 !landing/installers/*.zip
+
+.vercel

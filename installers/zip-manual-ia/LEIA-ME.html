@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Motion IA — Instalação</title>
+<style>
+    body { font-family: -apple-system, "Segoe UI", Inter, sans-serif; max-width: 720px; margin: 40px auto; padding: 20px; background: #0d0d11; color: #ececf1; line-height: 1.6 }
+    h1 { color: #2563eb; letter-spacing: -1px; margin: 0 }
+    h2 { color: #2563eb; border-bottom: 1px solid #2a2a34; padding-bottom: 4px; margin-top: 30px }
+    code { background: #1c1c25; padding: 2px 6px; border-radius: 3px; color: #2563eb; font: 12px Consolas, monospace }
+    pre  { background: #15151c; border: 1px solid #2a2a34; padding: 12px; border-radius: 6px; overflow-x: auto; color: #b3b3bf }
+    .sub { color: #76767f; letter-spacing: 1.5px; text-transform: uppercase; font-size: 11px }
+    .ok  { color: #2563eb; font-weight: 700 }
+    ul li { margin-bottom: 6px }
+    .box { background: rgba(37, 99, 235,.08); border: 1px solid rgba(37, 99, 235,.3); padding: 14px 18px; border-radius: 7px; margin: 14px 0 }
+</style>
+</head>
+<body>
+
+<h1>Motion Titles <em style="color:#2563eb">IA</em></h1>
+<div class="sub">Agente de Edição IA para Premiere Pro · by PacotesFX</div>
+
+<div class="box">
+    <b class="ok">Como instalar:</b><br>
+    1. Feche o Adobe Premiere Pro<br>
+    2. Clique 2x em <code>INSTALAR.bat</code><br>
+    3. Abra o Premiere → menu <b>Janela → Extensões → Motion IA</b><br>
+    4. Faça login (ou crie conta) — trial de 7 dias liberado automaticamente
+</div>
+
+<h2>O que o plugin faz</h2>
+<p>É um <b>agente de IA dentro do Premiere</b> que enxerga sua timeline e executa edições de verdade — não só dá dica, faz mesmo.</p>
+
+<ul>
+    <li><b>Cortar silêncios</b> — detecta pausas e remove com ripple-delete (ou só silencia se preferir)</li>
+    <li><b>Listar a timeline</b> — snapshot completo de todos os clips em V1/V2/A1/A2/...</li>
+    <li><b>Cortar em pontos específicos</b> — "adiciona corte aos 12s, 28s e 45s"</li>
+    <li><b>Mover o cursor</b> — "vai pros 1:20"</li>
+    <li><b>Selecionar clips por nome</b> — "seleciona tudo que tem 'B-roll' no nome"</li>
+    <li><b>Importar e inserir mídia</b> — IA gera/baixa arquivo e coloca na timeline</li>
+</ul>
+
+<h2>Exemplos de comando</h2>
+<pre>"Corta todos os silêncios maiores que 0.6 segundos"
+"Lista os clips da timeline ativa"
+"Onde estão as pausas longas? Só lista, não corta ainda."
+"Silencia o trecho de 1:20 até 1:35"
+"Adiciona cortes aos 12.4s, 28s, 45.7s e 1:02"
+"Move o cursor pros 2:30"
+"Seleciona todos os clips chamados 'closeup'"</pre>
+
+<h2>Limites por plano</h2>
+<table border="0" cellpadding="6" style="border-collapse:collapse; margin-top:10px">
+    <tr style="border-bottom:1px solid #2a2a34">
+        <th align="left">Plano</th><th align="left">Tokens IA/mês</th><th align="left">Preço</th>
+    </tr>
+    <tr><td>Trial (7 dias)</td><td>50 mil</td><td>Grátis</td></tr>
+    <tr><td>Anual</td><td>500 mil</td><td>R$ 249/ano</td></tr>
+    <tr><td>Vitalício</td><td>1 milhão</td><td>R$ 699 uma vez</td></tr>
+    <tr><td>Pacote Completo</td><td>2 milhões</td><td>≈ R$ 499 (cobre tudo)</td></tr>
+</table>
+
+<h2>Requisitos</h2>
+<ul>
+    <li>Windows 10/11</li>
+    <li>Adobe Premiere Pro 2024 / 2025 / 2026</li>
+    <li>Conexão à internet (validação de licença + chamadas IA)</li>
+</ul>
+
+<h2>Problemas comuns</h2>
+<p><b>"Premiere não respondeu"</b> — feche o painel e abra de novo em Janela → Extensões. Se persistir, rode <code>INSTALAR.bat</code> outra vez (limpa o cache CEP).</p>
+<p><b>Painel branco em cima</b> — Premiere antigo. Atualize pra 2024.4+ pelo Creative Cloud.</p>
+<p><b>"subscription_required"</b> — seu trial expirou ou você não tem o produto IA. Veja o paywall do painel.</p>
+
+<h2>Suporte</h2>
+<p><a href="mailto:suporte@pacotesfx.com" style="color:#2563eb">suporte@pacotesfx.com</a></p>
+
+</body>
+</html>

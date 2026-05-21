@@ -2,7 +2,7 @@
 <ExtensionManifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    ExtensionBundleId="com.motionpro.legendas"
                    ExtensionBundleVersion="3.1.0"
-                   ExtensionBundleName="MotionPro Legendas"
+                   ExtensionBundleName="Motion Legendas"
                    Version="5.0">
     <ExtensionList>
         <Extension Id="com.motionpro.legendas" Version="3.1.0" />
@@ -39,7 +39,7 @@
                 </Lifecycle>
                 <UI>
                     <Type>Panel</Type>
-                    <Menu>MotionPro Legendas</Menu>
+                    <Menu>Motion Legendas</Menu>
                     <Geometry>
                         <Size>
                             <Height>600</Height>

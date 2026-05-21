@@ -6,8 +6,8 @@
  * stays untouched for development.
  *
  * Usage:
- *   node tools/obfuscate.js --src "<path-to-stage>/MotionPro/js"
- *   node tools/obfuscate.js --src "<path-to-stage>/MotionPro/js" --profile aggressive
+ *   node tools/obfuscate.js --src "<path-to-stage>/Motion Titles/js"
+ *   node tools/obfuscate.js --src "<path-to-stage>/Motion Titles/js" --profile aggressive
  *
  * Profiles:
  *   balanced    (default) — safe for CEP runtime, ~3x slower startup
@@ -76,17 +76,24 @@ const OPTIONS = PROFILE === "aggressive" ? AGGRESSIVE : BALANCED;
 OPTIONS.reservedNames = [
     "^CSInterface$",
     "^MotionVault$",
+    "^MotionPro$",
+    "^MPL_",                 // Motion Pro Legendas globals
+    "^MP_",                  // Motion Pro Titles globals
     "^EP_",                  // ExtendScript Legendas helpers (EP_ping, etc)
     "^window$",
     "^document$",
     "^require$",             // Node integration
     "^module$",
     "^exports$",
-    "^process$"
+    "^process$",
+    "^AssetLoader$"
 ];
 
 OPTIONS.reservedStrings = [
-    "MotionVault\\.",        // any string call into MotionVault.xxx (importMogrt, ping)
+    "MotionVault\\.",
+    "MotionPro\\.",
+    "MPL_",
+    "MP_",
     "EP_",
     "\\$\\.global"
 ];

@@ -7,9 +7,9 @@ ALTER TABLE assets
     ADD COLUMN IF NOT EXISTS published    boolean NOT NULL DEFAULT true,
     ADD COLUMN IF NOT EXISTS updated_at   timestamptz NOT NULL DEFAULT now();
 
--- product gating: which product (motionpro / legendas) the asset belongs to
+-- product gating: which product (Motion Titles / legendas) the asset belongs to
 ALTER TABLE assets
-    ADD COLUMN IF NOT EXISTS product_id   text NOT NULL DEFAULT 'motionpro';
+    ADD COLUMN IF NOT EXISTS product_id   text NOT NULL DEFAULT 'Motion Titles';
 
 CREATE INDEX IF NOT EXISTS idx_assets_product   ON assets(product_id);
 CREATE INDEX IF NOT EXISTS idx_assets_kind      ON assets(kind);
@@ -18,7 +18,7 @@ CREATE INDEX IF NOT EXISTS idx_assets_published ON assets(published);
 -- audit table: who downloaded what, when, from where
 CREATE TABLE IF NOT EXISTS asset_download_log (
     id              bigserial PRIMARY KEY,
-    user_id         text REFERENCES users(id) ON DELETE SET NULL,
+    user_id         uuid REFERENCES users(id) ON DELETE SET NULL,
     asset_id        text REFERENCES assets(id) ON DELETE SET NULL,
     fingerprint     text,
     ip              text,

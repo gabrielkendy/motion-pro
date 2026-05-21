@@ -11,7 +11,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$Version    = "1.0.4"
+$Version    = "1.1.1"
 $ScriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot   = Resolve-Path (Join-Path $ScriptDir "..\..")
 $PluginSrc  = Join-Path $RepoRoot "plugin"

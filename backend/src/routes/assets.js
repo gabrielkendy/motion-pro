@@ -34,12 +34,6 @@ router.post("/sign", requireAuth, async (req, res, next) => {
         );
         if (d.rowCount === 0) return res.status(403).json({ error: "device_not_authorized" });
 
-        const s = await pool.query(
-            `SELECT 1 FROM subscriptions WHERE user_id=$1 AND status IN ('active','trialing') LIMIT 1`,
-            [req.user.id]
-        );
-        if (s.rowCount === 0) return res.status(402).json({ error: "no_active_subscription" });
-
         const a = await pool.query(
             "SELECT cdn_key, kind, sha256, size_bytes, product_id, published FROM assets WHERE id=$1",
             [asset_id]
@@ -47,13 +41,30 @@ router.post("/sign", requireAuth, async (req, res, next) => {
         if (a.rowCount === 0)         return res.status(404).json({ error: "asset_not_found" });
         if (!a.rows[0].published)     return res.status(404).json({ error: "asset_not_published" });
 
-        // Optional: enforce product entitlement
-        // (uncomment + adjust once subscription.product_id is wired up)
-        // const ok = await pool.query(
-        //   "SELECT 1 FROM subscriptions WHERE user_id=$1 AND product_id=$2 AND status IN ('active','trialing')",
-        //   [req.user.id, a.rows[0].product_id]
-        // );
-        // if (ok.rowCount === 0) return res.status(403).json({ error: "product_not_entitled" });
+        // Entitlement por produto: precisa de sub ativa/trial NESSE produto OU bundle_all,
+        // OU is_admin=true, OU lifetime_until > now (master accounts).
+        const assetProduct = a.rows[0].product_id || "motionpro";
+        let isMaster = false;
+        try {
+            const u = await pool.query("SELECT is_admin, lifetime_until FROM users WHERE id=$1", [req.user.id]);
+            isMaster = u.rowCount && (u.rows[0].is_admin === true ||
+                (u.rows[0].lifetime_until && new Date(u.rows[0].lifetime_until) > new Date()));
+        } catch (e) {
+            if (!String(e.message).includes("does not exist")) throw e;
+        }
+        if (!isMaster) {
+            const ent = await pool.query(
+                `SELECT 1 FROM subscriptions
+                  WHERE user_id=$1
+                    AND status IN ('active','trialing')
+                    AND (product_id=$2 OR product_id='bundle_all')
+                  LIMIT 1`,
+                [req.user.id, assetProduct]
+            );
+            if (ent.rowCount === 0) {
+                return res.status(402).json({ error: "product_not_entitled", product: assetProduct });
+            }
+        }
 
         // Log download intent
         try {
@@ -92,25 +103,43 @@ router.post("/sign-batch", requireAuth, async (req, res, next) => {
         );
         if (d.rowCount === 0) return res.status(403).json({ error: "device_not_authorized" });
 
-        const s = await pool.query(
-            `SELECT 1 FROM subscriptions WHERE user_id=$1 AND status IN ('active','trialing') LIMIT 1`,
-            [req.user.id]
-        );
-        if (s.rowCount === 0) return res.status(402).json({ error: "no_active_subscription" });
-
         const rows = (await pool.query(
-            "SELECT id, cdn_key, sha256, size_bytes, kind FROM assets WHERE id = ANY($1) AND published=true",
+            "SELECT id, cdn_key, sha256, size_bytes, kind, product_id FROM assets WHERE id = ANY($1) AND published=true",
             [asset_ids]
         )).rows;
 
-        const result = rows.map(r => ({
-            asset_id:   r.id,
-            url:        signCdnUrl(r.cdn_key, fingerprint),
-            expires_in: TTL_MIN * 60,
-            sha256:     r.sha256 || null,
-            size_bytes: r.size_bytes || null,
-            kind:       r.kind || "mogrt",
-        }));
+        // Pega produtos do user + flags master (defensivo se cols não existirem)
+        let isMaster = false;
+        try {
+            const u = await pool.query("SELECT is_admin, lifetime_until FROM users WHERE id=$1", [req.user.id]);
+            isMaster = u.rowCount && (u.rows[0].is_admin === true ||
+                (u.rows[0].lifetime_until && new Date(u.rows[0].lifetime_until) > new Date()));
+        } catch (e) {
+            if (!String(e.message).includes("does not exist")) throw e;
+        }
+        const ent = await pool.query(
+            `SELECT product_id FROM subscriptions
+              WHERE user_id=$1 AND status IN ('active','trialing')`,
+            [req.user.id]
+        );
+        const userProducts = new Set(ent.rows.map(r => r.product_id));
+        const hasBundle = userProducts.has("bundle_all");
+
+        const result = rows.map(r => {
+            const product = r.product_id || "motionpro";
+            const entitled = isMaster || hasBundle || userProducts.has(product);
+            if (!entitled) {
+                return { asset_id: r.id, error: "product_not_entitled", product };
+            }
+            return {
+                asset_id:   r.id,
+                url:        signCdnUrl(r.cdn_key, fingerprint),
+                expires_in: TTL_MIN * 60,
+                sha256:     r.sha256 || null,
+                size_bytes: r.size_bytes || null,
+                kind:       r.kind || "mogrt",
+            };
+        });
 
         res.json({ items: result });
     } catch (e) { next(e); }

@@ -75,7 +75,7 @@ git push -u origin main
    JWT_SECRET=<copia do seu .env>
    LICENSE_SECRET=<copia do seu .env>
    LICENSE_TTL_HOURS=24
-   TRIAL_DAYS=14
+   TRIAL_DAYS=7
    STRIPE_SECRET=rk_live_51S7vqj...
    STRIPE_PRICE_YEARLY=price_1TY6BHBBwmTfpkhYOkVzI0vE
    STRIPE_PRICE_LIFETIME=price_1TY6BJBBwmTfpkhYNYYWFXUb
@@ -135,7 +135,7 @@ apiBaseUrl: "https://seu-backend.vercel.app"
 ```
 
 Reinstalo o plugin local. Você abre Premiere, cria conta com email,
-recebe trial de 14 dias, e tudo funciona com seu backend de verdade.
+recebe trial de 7 dias, e tudo funciona com seu backend de verdade.
 
 ---
 

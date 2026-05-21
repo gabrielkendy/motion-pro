@@ -1,4 +1,4 @@
-# Deploy MotionPro Legendas v4.23 — Checklist
+# Deploy Motion Legendas v4.23 — Checklist
 
 **Build:** `4.23.0-sfx-tab+layout-pills+renumber` · **Bundle:** `3.1.0` · **ZIP:** `1.1.0`
 **Data:** 2026-05-18
@@ -12,13 +12,13 @@
 | Plugin Legendas em dev (Documents/) | ✅ v4.23 |
 | Plugin instalado (APPDATA) | ✅ v4.23 sincronizado |
 | Manifest CEP | ✅ Bundle 3.1.0 |
-| ZIP de distribuição | ✅ `installers/zip-manual-legendas/output/MotionPro-Legendas-1.1.0.zip` (17.9 MB) |
+| ZIP de distribuição | ✅ `installers/zip-manual-legendas/output/Motion Titles-Legendas-1.1.0.zip` (17.9 MB) |
 | Cache CEP | ✅ Limpo |
 | CHANGELOG | ✅ `plugin-legendas/CHANGELOG.md` |
 | README | ✅ `plugin-legendas/README.md` |
 | Memórias atualizadas | ✅ |
 | **Home principal** com seção Família + nav Legendas | ✅ `landing/index.html` |
-| **download.html** unificado (tabs MotionPro/Legendas) | ✅ `landing/download.html` |
+| **download.html** unificado (tabs Motion Titles/Legendas) | ✅ `landing/download.html` |
 | **landing/legendas** atualizada (v1.1.0 + link cruzado) | ✅ `landing/legendas/{index,download}.html` |
 | Dashboard multi-plugin | ✅ já tinha — `dashboard/app.js` mostra `productBadge` e analytics por produto |
 | Backend multi-produto | ✅ migration 004 já tem produto `legendas` cadastrado |
@@ -64,7 +64,7 @@ MotionVault/
 │   ├── INSTALAR.bat, DESINSTALAR.bat
 │   ├── LEIA-ME.html
 │   └── output/
-│       └── MotionPro-Legendas-1.1.0.zip ← 🚀 ZIP pra distribuir
+│       └── Motion Titles-Legendas-1.1.0.zip ← 🚀 ZIP pra distribuir
 │
 ├── landing/legendas/                   ← landing page do produto
 ├── DEPLOY-LEGENDAS-V4.23.md            ← este arquivo
@@ -76,11 +76,11 @@ MotionVault/
 ## Como distribuir pro cliente
 
 ### Opção A — Manual (atual)
-1. Sobe o `MotionPro-Legendas-1.1.0.zip` pro storage de downloads (S3? Google Drive? Vercel static?)
-2. Atualiza link no `landing/legendas/index.html` (procurar por `MotionPro-Legendas-1.0.0.zip` se existir)
+1. Sobe o `Motion Titles-Legendas-1.1.0.zip` pro storage de downloads (S3? Google Drive? Vercel static?)
+2. Atualiza link no `landing/legendas/index.html` (procurar por `Motion Titles-Legendas-1.0.0.zip` se existir)
 3. Cliente baixa, extrai, roda `INSTALAR.bat`
 
-### Opção B — Via dashboard MotionPro (preferido)
+### Opção B — Via dashboard Motion Titles (preferido)
 Se já tem fluxo de download autenticado:
 1. Coloca o ZIP em `landing/api/downloads/legendas-v1.1.0.zip` ou no S3
 2. Endpoint `/api/download/legendas` valida JWT + retorna o ZIP
@@ -104,7 +104,7 @@ Get-Content $manifest | Select-String "ExtensionBundleVersion"
 # → ExtensionBundleVersion="3.1.0"
 
 # 3. Confirmar ZIP existe e tem tamanho saudável
-$zip = "c:\Users\Gabriel\Documents\Motion Bro\MotionVault\installers\zip-manual-legendas\output\MotionPro-Legendas-1.1.0.zip"
+$zip = "c:\Users\Gabriel\Documents\Motion Bro\MotionVault\installers\zip-manual-legendas\output\Motion Titles-Legendas-1.1.0.zip"
 Get-Item $zip | Select-Object Name, @{n='SizeMB';e={[Math]::Round($_.Length/1MB,1)}}, LastWriteTime
 # → ~17.9 MB
 
@@ -141,17 +141,17 @@ Get-Item $zip | Select-Object Name, @{n='SizeMB';e={[Math]::Round($_.Length/1MB,
 
 ### `landing/index.html` (home principal)
 - ✅ Nav: adicionado item **"Família"** apontando pra `#familia`
-- ✅ Nova seção `#familia` entre `#plataforma` e `#fluxo`: 3 cards (MotionPro · MotionPro Legendas · MotionPro IA em breve)
+- ✅ Nova seção `#familia` entre `#plataforma` e `#fluxo`: 3 cards (Motion Titles · Motion Legendas · Motion IA em breve)
 - ✅ Footer: nova coluna "Plugins" com links pros 2 produtos
 
 ### `landing/download.html` (download principal)
-- ✅ Tabs no topo (🎬 MotionPro · 💬 MotionPro Legendas) com smooth scroll
-- ✅ Seção MotionPro Legendas adicionada: card recomendado com ZIP v1.1.0 + card linking pra landing detalhada
+- ✅ Tabs no topo (🎬 Motion Titles · 💬 Motion Legendas) com smooth scroll
+- ✅ Seção Motion Legendas adicionada: card recomendado com ZIP v1.1.0 + card linking pra landing detalhada
 - ✅ Bloco final "Bundle completo" com CTA pros planos
 
 ### `landing/legendas/index.html`
-- ✅ Nav: adicionado "Download" + "Família MotionPro" (linka pra `/#familia`)
-- ✅ Trocou link de "MotionPro completo" pra navegação cruzada estruturada
+- ✅ Nav: adicionado "Download" + "Família Motion Titles" (linka pra `/#familia`)
+- ✅ Trocou link de "Motion Titles completo" pra navegação cruzada estruturada
 
 ### `landing/legendas/download.html`
 - ✅ Bumped pra v1.1.0 · 18 MB · build 4.23.0
@@ -164,7 +164,7 @@ Get-Item $zip | Select-Object Name, @{n='SizeMB';e={[Math]::Round($_.Length/1MB,
 
 1. **Testar o ZIP** instalando do zero numa máquina (ou pelo menos `DESINSTALAR.bat` → `INSTALAR.bat`)
 2. **Subir o ZIP** pra GitHub Releases: tag `legendas-v1.1.0` no repo `gabrielkendy/motion-pro` (URL já tá nos cards)
-3. **Deploy Vercel das landings** (`motionpro-lp`) — auto-trigger se está conectado ao Git, ou `vercel --prod`
+3. **Deploy Vercel das landings** (`Motion Titles-lp`) — auto-trigger se está conectado ao Git, ou `vercel --prod`
 4. **Comunicar a base** (email/WhatsApp) sobre a v4.23 — destacar: SFX library, multi-palavra funcionando, render safety
 5. **Coletar SFX MP3/WAV** pra dropar em `packs/sfx/<categoria>/` e regerar ZIP v1.2.0
 6. **Considerar bump pra v5.0** do bundle quando estabilizar e tiver mais features (atualmente em 3.1.0 internamente)

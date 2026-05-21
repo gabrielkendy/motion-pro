@@ -1,4 +1,4 @@
-# 🔒 Relatório Técnico de Segurança · MotionPro
+# 🔒 Relatório Técnico de Segurança · Motion Titles
 
 📅 **Data:** 2026-05-17
 🔍 **Auditor:** Claude (auditoria automatizada com testes reais em produção)
@@ -275,6 +275,6 @@ Os 2 bugs críticos foram **achados durante esta auditoria e corrigidos no mesmo
 ```
 ─────────────────────────────────────────────────
    BASE · KENDY
-   Audit Report · MotionPro v1.0.4
+   Audit Report · Motion Titles v1.0.4
 ─────────────────────────────────────────────────
 ```

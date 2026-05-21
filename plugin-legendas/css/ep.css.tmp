@@ -1,0 +1,50 @@
+::-webkit-scrollbar-thumb:hover { background: var(--border-hi) }
+
+/* ════════════ MOTION FAMILY GATE (padronizado 2026-05-19) ════════════
+   Visual unificado com Motion Titles e Motion IA — mesmo logo + brand + cores */
+.capture-modal.motion-gate {
+    max-width: 380px;
+    background: rgba(21, 21, 28, .95);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 0;
+    overflow: visible;
+    box-shadow: 0 24px 60px rgba(0,0,0,.6);
+}
+.motion-gate .capture-modal-body { padding: 0 28px 24px }
+.motion-gate-brand {
+    text-align: center;
+    padding: 28px 24px 18px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(37,99,235,0.08) 0%, transparent 100%);
+    border-radius: 14px 14px 0 0;
+}
+.motion-gate-logo {
+    font: 900 22px/1 Inter, system-ui, sans-serif;
+    color: #fff;
+    letter-spacing: -.5px;
+    margin-bottom: 6px;
+}
+.motion-gate-sub {
+    font: 600 10px/1 Inter, sans-serif;
+    color: var(--text-3, #76767f);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+.motion-gate .capture-modal-footer {
+    background: transparent;
+    border-top: none;
+    padding: 0 28px 24px;
+}
+.motion-gate #login-confirm, .motion-gate .btn-modal-primary {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 11px 18px;
+    border-radius: 8px;
+    font: 700 13px Inter, sans-serif;
+    width: 100%;
+}
+.motion-gate #login-confirm:hover, .motion-gate .btn-modal-primary:hover {
+    background: var(--accent-2);
+}

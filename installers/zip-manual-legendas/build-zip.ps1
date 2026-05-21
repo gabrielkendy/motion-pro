@@ -5,7 +5,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$Version    = "1.1.1"
+$Version    = "1.2.1"
 $ScriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot   = Resolve-Path (Join-Path $ScriptDir "..\..")
 $PluginSrc  = Join-Path $RepoRoot "plugin-legendas"

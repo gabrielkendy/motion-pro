@@ -1,6 +1,11 @@
 name = "motionpro-cdn"
 main = "src/index.js"
 compatibility_date = "2026-04-01"
+workers_dev = false
+
+routes = [
+  { pattern = "cdn.kendyproducoes.com.br", zone_name = "kendyproducoes.com.br", custom_domain = true }
+]
 
 # Custom domain — bind via Cloudflare dashboard:
 # kendyproducoes.com → DNS → add CNAME `cdn` pointing to `motionpro-cdn.<sub>.workers.dev`

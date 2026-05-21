@@ -697,7 +697,9 @@ function gateApi(path, body) {
 }
 
 /* Hardware fingerprint — combines several entropy sources, SHA-256 hashed.
- * Stable per machine, hard to spoof from outside. */
+ * FASE 2 hardening 2026-05-18: substituiu FNV (Math.imul) por crypto.createHash
+ * via Node module (disponível em CEP), com fallback SubtleCrypto async-friendly.
+ * Stable per machine, hard to spoof. */
 function computeFingerprint() {
     var os = (typeof require === "function") ? require("os") : null;
     var parts = [];
@@ -720,13 +722,23 @@ function computeFingerprint() {
     parts.push(navigator.userAgent.substr(0, 60));
     parts.push(String(screen.width) + "x" + String(screen.height));
     var s = parts.join("::");
-    // simple sync hash (no Web Crypto async dependency)
+
+    // ── crypto-grade hash (Node crypto, disponível dentro do CEP via require) ──
+    try {
+        var crypto = (typeof require === "function") ? require("crypto") : null;
+        if (crypto && crypto.createHash) {
+            return crypto.createHash("sha256").update(s, "utf8").digest("hex");
+        }
+    } catch (e) { /* fallback abaixo */ }
+
+    // Fallback FNV (mantido como defesa em profundidade — se algum dia rodar
+    // fora do Node, ainda gera fingerprint estável mas marca como WEAK)
     var h1 = 0xdeadbeef >>> 0, h2 = 0x41c6ce57 >>> 0;
     for (var i = 0; i < s.length; i++) {
         h1 = Math.imul(h1 ^ s.charCodeAt(i), 2654435761) >>> 0;
         h2 = Math.imul(h2 ^ s.charCodeAt(i), 1597334677) >>> 0;
     }
-    return h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0") + s.length.toString(16);
+    return "fnv:" + h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0") + s.length.toString(16);
 }
 
 function showGate(initialMode) {
@@ -743,7 +755,7 @@ function setGateMode(mode) {
     var isSignup = mode === "signup";
     document.getElementById("gt-login").classList.toggle("active", !isSignup);
     document.getElementById("gt-signup").classList.toggle("active", isSignup);
-    document.getElementById("g-submit").textContent = isSignup ? "Criar conta · iniciar 14 dias grátis" : "Entrar";
+    document.getElementById("g-submit").textContent = isSignup ? "Criar conta · iniciar 7 dias grátis" : "Entrar";
     document.getElementById("g-msg").textContent = "";
     document.getElementById("g-msg").className = "gate__msg";
     document.getElementById("g-submit").dataset.mode = mode;
@@ -819,7 +831,7 @@ function bindGate() {
                 // No login, busca status atual do banco
                 setTimeout(checkEmailVerified, 800);
             }
-            msg.textContent = "✓ " + (mode === "signup" ? "Conta criada! Verifique seu e-mail. Trial de 14 dias ativo." : "Bem-vindo!");
+            msg.textContent = "✓ " + (mode === "signup" ? "Conta criada! Verifique seu e-mail. trial de 7 dias ativo." : "Bem-vindo!");
             msg.className = "gate__msg ok";
             setTimeout(function () { hideGate(); hideReauthBar(); updateTrialUI(); updateVerifyBar(); }, 500);
         } catch (e) {

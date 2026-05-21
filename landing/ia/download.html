@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Baixar Motion IA v3.1 · Editor IA pro Premiere</title>
+<meta name="description" content="Motion IA v3.1 — 13 features de edição inteligente direto no Premiere Pro. Whisper local, Gemini visão, Casper auto-edit, biblioteca stock multi-fonte.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+<style>
+    .hero-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin:36px 0; }
+    .feat-tile { background:rgba(37,99,235,0.06); border:1px solid rgba(37,99,235,0.2); border-radius:12px; padding:18px; transition:transform .2s, box-shadow .2s; }
+    .feat-tile:hover { transform:translateY(-3px); box-shadow:0 12px 32px -8px rgba(37,99,235,0.25); }
+    .feat-tile__ico { font-size:28px; margin-bottom:8px; line-height:1; }
+    .feat-tile__title { font-weight:800; margin-bottom:6px; font-size:15px; }
+    .feat-tile__desc { color:var(--mut); font-size:13px; line-height:1.45; }
+    .feat-tile.pro::after { content:"PRO"; position:absolute; top:10px; right:10px; background:var(--acc); color:#fff; font-size:10px; padding:2px 6px; border-radius:99px; letter-spacing:1px; font-weight:700; }
+    .feat-tile { position:relative; }
+    .video-frame { aspect-ratio:16/9; background:#000; border-radius:16px; overflow:hidden; border:1px solid var(--line); position:relative; }
+    .video-frame__placeholder { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:12px; color:var(--mut); background:linear-gradient(135deg, rgba(37,99,235,0.12), rgba(10,12,18,0.4)); }
+    .video-frame__play { width:64px; height:64px; border-radius:50%; background:var(--acc); color:#fff; display:grid; place-items:center; font-size:24px; box-shadow:0 16px 40px -8px rgba(37,99,235,0.5); }
+    .diff-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin-top:24px; }
+    .diff-card { padding:20px; border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,0.02); }
+    .diff-card h4 { font-size:15px; margin-bottom:8px; font-weight:800; }
+    .diff-card p { color:var(--mut); font-size:13px; line-height:1.5; }
+    .step-card { padding:18px 20px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,0.02); display:flex; gap:14px; }
+    .step-num { font-weight:900; font-size:22px; color:var(--acc); min-width:42px; }
+    .step-body strong { display:block; margin-bottom:4px; }
+    .step-body { color:var(--mut); font-size:14px; line-height:1.55; }
+    .step-body code { background:var(--bg-soft); padding:2px 6px; border-radius:3px; font-family:ui-monospace,monospace; color:var(--txt); }
+    /* ── Mockups demo animados ── */
+    .demo-card { background:#0f1119; border:1px solid var(--line); border-radius:12px; overflow:hidden; transition:transform .25s, box-shadow .25s; }
+    .demo-card:hover { transform:translateY(-4px); box-shadow:0 18px 40px -10px rgba(37,99,235,0.3); }
+    .demo-card__head { padding:14px 18px; display:flex; align-items:center; gap:10px; font-size:14px; border-bottom:1px solid var(--line); }
+    .demo-card__head span { font-size:18px; }
+    .demo-svg { width:100%; height:auto; display:block; background:#0a0c12; }
+    .demo-card__caption { padding:14px 18px; font-size:12px; color:var(--mut); border-top:1px solid var(--line); }
+    @keyframes cutFlash { 0%, 100% { fill-opacity:0.2 } 50% { fill-opacity:0.8 } }
+    @keyframes shortPop { 0% { opacity:0; transform:translateY(8px) scale(.94) } 40% { opacity:1; transform:translateY(0) scale(1) } 90% { opacity:1; transform:translateY(0) scale(1) } 100% { opacity:0; transform:translateY(0) scale(1) } }
+    @keyframes faceMove { 0%, 100% { transform:translateX(0) } 50% { transform:translateX(-50px) } }
+    @keyframes cropMove { 0%, 100% { transform:translateX(0) } 50% { transform:translateX(-50px) } }
+</style>
+</head>
+<body>
+<header class="nav">
+    <div class="wrap nav__inner">
+        <a href="/ia/" class="brand">Motion<span class="brand-mark">·</span>IA <span style="font-weight:500;color:var(--mut);margin-left:6px;font-size:14px">v3.1</span></a>
+        <div class="nav__actions">
+            <a href="/download.html" class="nav-link" style="margin-right:16px">📦 Todos os plugins</a>
+            <a href="/ia/" class="nav-link">← Voltar</a>
+        </div>
+    </div>
+</header>
+
+<section class="section" style="padding:80px 0 40px">
+    <div class="wrap" style="max-width:960px">
+        <span class="section__tag">Download · v3.1 Phantom-Style Edition</span>
+        <h1 class="section__title" style="margin-bottom:24px;font-size:48px;line-height:1.1">
+            13 features de IA <em>nativas no Premiere</em><span class="period">.</span>
+        </h1>
+        <p style="font-size:18px;color:var(--mut);line-height:1.6;margin-bottom:24px;max-width:760px">
+            Cortar pausas, achar trechos virais, gerar legendas word-by-word animadas, auto-crop com face tracking, capítulos automáticos, multicam IA, biblioteca stock multi-fonte, e <b>Casper · Auto-edit</b> — tudo dentro do Premiere, sem render externo.
+        </p>
+
+        <!-- Vídeo demo real (21s · 6 cenas) -->
+        <div class="video-frame" style="margin:36px 0 12px">
+            <video controls autoplay muted loop preload="metadata" poster="https://cdn.kendyproducoes.com.br/public/img/motionia-poster.jpg" style="width:100%;height:100%;object-fit:cover;display:block">
+                <source src="https://cdn.kendyproducoes.com.br/public/img/motionia-demo.mp4" type="video/mp4">
+                Seu navegador não suporta vídeo HTML5.
+            </video>
+        </div>
+        <p style="color:var(--mut);font-size:13px;text-align:center;margin-bottom:32px">Tour rápido pelas features principais · 21 segundos</p>
+
+        <!-- Mockups animados (3 features-âncora) -->
+        <div class="demos" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin:36px 0 24px">
+
+            <!-- Mockup 1: Cortar Pausas (timeline com cortes vermelhos animados) -->
+            <div class="demo-card">
+                <div class="demo-card__head"><span>🎯</span><strong>Cortar Pausas</strong></div>
+                <svg viewBox="0 0 280 120" class="demo-svg" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="wf" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0" stop-color="#2563eb"/>
+                            <stop offset="1" stop-color="#1d4fd7"/>
+                        </linearGradient>
+                    </defs>
+                    <rect x="0" y="20" width="280" height="40" fill="#0f1119" rx="4"/>
+                    <g class="wave">
+                        <rect x="6" y="32" width="3" height="16" fill="url(#wf)"/><rect x="12" y="28" width="3" height="24" fill="url(#wf)"/><rect x="18" y="34" width="3" height="12" fill="url(#wf)"/><rect x="24" y="26" width="3" height="28" fill="url(#wf)"/><rect x="30" y="30" width="3" height="20" fill="url(#wf)"/><rect x="36" y="35" width="3" height="10" fill="url(#wf)"/>
+                        <rect x="46" y="38" width="3" height="4" fill="#3a3f54"/><rect x="52" y="38" width="3" height="4" fill="#3a3f54"/><rect x="58" y="38" width="3" height="4" fill="#3a3f54"/>
+                        <rect x="68" y="30" width="3" height="20" fill="url(#wf)"/><rect x="74" y="26" width="3" height="28" fill="url(#wf)"/><rect x="80" y="32" width="3" height="16" fill="url(#wf)"/><rect x="86" y="28" width="3" height="24" fill="url(#wf)"/>
+                        <rect x="96" y="38" width="3" height="4" fill="#3a3f54"/><rect x="102" y="38" width="3" height="4" fill="#3a3f54"/>
+                        <rect x="112" y="30" width="3" height="20" fill="url(#wf)"/><rect x="118" y="32" width="3" height="16" fill="url(#wf)"/><rect x="124" y="28" width="3" height="24" fill="url(#wf)"/><rect x="130" y="34" width="3" height="12" fill="url(#wf)"/>
+                        <rect x="140" y="38" width="3" height="4" fill="#3a3f54"/><rect x="146" y="38" width="3" height="4" fill="#3a3f54"/><rect x="152" y="38" width="3" height="4" fill="#3a3f54"/>
+                        <rect x="162" y="30" width="3" height="20" fill="url(#wf)"/><rect x="168" y="28" width="3" height="24" fill="url(#wf)"/><rect x="174" y="34" width="3" height="12" fill="url(#wf)"/><rect x="180" y="32" width="3" height="16" fill="url(#wf)"/><rect x="186" y="30" width="3" height="20" fill="url(#wf)"/>
+                        <rect x="196" y="38" width="3" height="4" fill="#3a3f54"/><rect x="202" y="38" width="3" height="4" fill="#3a3f54"/>
+                        <rect x="212" y="26" width="3" height="28" fill="url(#wf)"/><rect x="218" y="32" width="3" height="16" fill="url(#wf)"/><rect x="224" y="30" width="3" height="20" fill="url(#wf)"/>
+                    </g>
+                    <!-- Cortes vermelhos (silêncios identificados) -->
+                    <g class="cuts">
+                        <rect x="44" y="20" width="20" height="40" fill="#ef4444" fill-opacity="0.3" class="cut" style="animation:cutFlash 3s ease-in-out infinite 0s"/>
+                        <rect x="94" y="20" width="14" height="40" fill="#ef4444" fill-opacity="0.3" class="cut" style="animation:cutFlash 3s ease-in-out infinite 0.5s"/>
+                        <rect x="138" y="20" width="20" height="40" fill="#ef4444" fill-opacity="0.3" class="cut" style="animation:cutFlash 3s ease-in-out infinite 1s"/>
+                        <rect x="194" y="20" width="14" height="40" fill="#ef4444" fill-opacity="0.3" class="cut" style="animation:cutFlash 3s ease-in-out infinite 1.5s"/>
+                    </g>
+                    <text x="140" y="92" text-anchor="middle" fill="#10b981" font-family="ui-monospace" font-size="11" font-weight="700">✓ 4 silêncios removidos · -8.2s</text>
+                </svg>
+                <div class="demo-card__caption">Whisper local detecta pausas → ripple delete automático</div>
+            </div>
+
+            <!-- Mockup 2: Caça-Trechos (gera 3 shorts verticais) -->
+            <div class="demo-card">
+                <div class="demo-card__head"><span>⚡</span><strong>Caça-Trechos</strong></div>
+                <svg viewBox="0 0 280 120" class="demo-svg">
+                    <rect x="6" y="20" width="268" height="22" fill="#0f1119" rx="3"/>
+                    <text x="14" y="35" fill="#8b93a7" font-family="Inter" font-size="10">Vídeo original · 32:45</text>
+                    <!-- Marcações de trechos detectados -->
+                    <rect x="40"  y="22" width="40" height="18" fill="#2563eb" fill-opacity="0.7" rx="2"/>
+                    <rect x="120" y="22" width="30" height="18" fill="#2563eb" fill-opacity="0.7" rx="2"/>
+                    <rect x="200" y="22" width="36" height="18" fill="#2563eb" fill-opacity="0.7" rx="2"/>
+                    <!-- Setas pra Shorts -->
+                    <path d="M60,46 L60,56 M60,56 L58,52 M60,56 L62,52" stroke="#2563eb" stroke-width="1.5" fill="none"/>
+                    <path d="M135,46 L135,56 M135,56 L133,52 M135,56 L137,52" stroke="#2563eb" stroke-width="1.5" fill="none"/>
+                    <path d="M218,46 L218,56 M218,56 L216,52 M218,56 L220,52" stroke="#2563eb" stroke-width="1.5" fill="none"/>
+                    <!-- 3 Shorts verticais -->
+                    <g class="short-1" style="animation:shortPop 2.5s ease-out infinite 0s">
+                        <rect x="40" y="62" width="40" height="50" fill="#1a1d27" stroke="#2563eb" stroke-width="1.5" rx="4"/>
+                        <text x="60" y="92" text-anchor="middle" fill="#fff" font-family="Inter" font-size="14" font-weight="800">9:16</text>
+                    </g>
+                    <g class="short-2" style="animation:shortPop 2.5s ease-out infinite 0.4s">
+                        <rect x="115" y="62" width="40" height="50" fill="#1a1d27" stroke="#2563eb" stroke-width="1.5" rx="4"/>
+                        <text x="135" y="92" text-anchor="middle" fill="#fff" font-family="Inter" font-size="14" font-weight="800">9:16</text>
+                    </g>
+                    <g class="short-3" style="animation:shortPop 2.5s ease-out infinite 0.8s">
+                        <rect x="195" y="62" width="40" height="50" fill="#1a1d27" stroke="#2563eb" stroke-width="1.5" rx="4"/>
+                        <text x="215" y="92" text-anchor="middle" fill="#fff" font-family="Inter" font-size="14" font-weight="800">9:16</text>
+                    </g>
+                </svg>
+                <div class="demo-card__caption">Gemini 2.5 acha trechos virais → gera Shorts verticais</div>
+            </div>
+
+            <!-- Mockup 3: Auto Crop (rosto detectado e moldura ajustando) -->
+            <div class="demo-card">
+                <div class="demo-card__head"><span>📐</span><strong>Auto Crop (Face Track)</strong></div>
+                <svg viewBox="0 0 280 120" class="demo-svg">
+                    <rect x="6" y="10" width="268" height="100" fill="#0f1119" rx="4"/>
+                    <!-- Frame original 16:9 (referência) -->
+                    <rect x="20" y="20" width="240" height="84" fill="#1a1d27" stroke="#3a3f54" stroke-dasharray="3 3" stroke-width="1"/>
+                    <!-- "rosto" mockado -->
+                    <g class="face" style="animation:faceMove 4s ease-in-out infinite">
+                        <circle cx="155" cy="55" r="14" fill="#fbbf24"/>
+                        <circle cx="151" cy="52" r="1.5" fill="#0a0c12"/>
+                        <circle cx="159" cy="52" r="1.5" fill="#0a0c12"/>
+                        <path d="M150,60 Q155,64 160,60" stroke="#0a0c12" stroke-width="1.2" fill="none"/>
+                        <rect x="143" y="68" width="24" height="14" fill="#3b82f6" rx="2"/>
+                    </g>
+                    <!-- Crop 9:16 ajustando -->
+                    <g class="crop-frame" style="animation:cropMove 4s ease-in-out infinite">
+                        <rect x="121" y="22" width="68" height="80" fill="none" stroke="#2563eb" stroke-width="2" rx="3"/>
+                        <rect x="119" y="20" width="6" height="6" fill="#2563eb"/>
+                        <rect x="185" y="20" width="6" height="6" fill="#2563eb"/>
+                        <rect x="119" y="98" width="6" height="6" fill="#2563eb"/>
+                        <rect x="185" y="98" width="6" height="6" fill="#2563eb"/>
+                    </g>
+                    <text x="140" y="115" text-anchor="middle" fill="#10b981" font-family="ui-monospace" font-size="10" font-weight="700">✓ Rosto detectado · 9:16 centrado</text>
+                </svg>
+                <div class="demo-card__caption">Canvas YCbCr analisa frame · ajusta crop seguindo o rosto</div>
+            </div>
+        </div>
+        <p style="color:var(--mut);font-size:13px;text-align:center;margin-bottom:48px">Todas as features rodam <b>nativamente no Premiere</b> — sem export externo, sem render no cloud, sem fricção.</p>
+
+        <!-- Features grid -->
+        <h3 style="font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--acc);margin-bottom:8px">Catálogo completo</h3>
+        <div class="hero-grid">
+            <div class="feat-tile"><div class="feat-tile__ico">🎯</div><div class="feat-tile__title">Cortar Pausas</div><div class="feat-tile__desc">Whisper local detecta silêncios e remove via ripple-delete. Offline.</div></div>
+            <div class="feat-tile pro"><div class="feat-tile__ico">🎬</div><div class="feat-tile__title">Cortar Erros</div><div class="feat-tile__desc">Gemini 2.5 identifica takes ruins / repetições e cria lista de cortes.</div></div>
+            <div class="feat-tile pro"><div class="feat-tile__ico">⚡</div><div class="feat-tile__title">Caça-Trechos</div><div class="feat-tile__desc">Acha 3-5 melhores momentos e gera Shorts verticais automáticos.</div></div>
+            <div class="feat-tile pro"><div class="feat-tile__ico">📖</div><div class="feat-tile__title">Capítulos IA</div><div class="feat-tile__desc">Markers de capítulo no timeline com títulos curtos gerados por IA.</div></div>
+            <div class="feat-tile"><div class="feat-tile__ico">💬</div><div class="feat-tile__title">Legendas IA</div><div class="feat-tile__desc">Word-by-word animado · 5 estilos (Viral · TikTok · Reels · Clássico · Minimal).</div></div>
+            <div class="feat-tile"><div class="feat-tile__ico">✂️</div><div class="feat-tile__title">Copiar Sequência</div><div class="feat-tile__desc">Duplica ou exporta FCP XML pra colar em outro projeto.</div></div>
+            <div class="feat-tile"><div class="feat-tile__ico">🎞️</div><div class="feat-tile__title">Transições IA</div><div class="feat-tile__desc">12 transições nativas com preview visual: Cross Dissolve, Push, Wipe, Zoom Trails, Morph Cut…</div></div>
+            <div class="feat-tile"><div class="feat-tile__ico">📁</div><div class="feat-tile__title">Organizar Bins</div><div class="feat-tile__desc">Cria 4 bins (Vídeos · Áudios · Imagens · Sequências) e move tudo.</div></div>
+            <div class="feat-tile pro"><div class="feat-tile__ico">📹</div><div class="feat-tile__title">MultiCam IA</div><div class="feat-tile__desc">Cria multicam com sync por waveform de áudio.</div></div>
+            <div class="feat-tile"><div class="feat-tile__ico">⬇️</div><div class="feat-tile__title">Baixar Vídeo</div><div class="feat-tile__desc">yt-dlp local · YouTube / Insta / TikTok com progress real.</div></div>
+            <div class="feat-tile pro"><div class="feat-tile__ico">📐</div><div class="feat-tile__title">Auto Crop</div><div class="feat-tile__desc">Face tracking real (Canvas YCbCr) · 9:16 / 1:1 / 4:5 centrado no rosto.</div></div>
+            <div class="feat-tile"><div class="feat-tile__ico">📚</div><div class="feat-tile__title">Biblioteca Stock</div><div class="feat-tile__desc">Pexels HD · Pixabay HD · Giphy GIFs · busca + import 1 click.</div></div>
+            <div class="feat-tile pro"><div class="feat-tile__ico">👻</div><div class="feat-tile__title">Casper · Auto-edit</div><div class="feat-tile__desc">Pipeline customizável: encadeia regras (pausas + bins + transições + capítulos…) e executa tudo.</div></div>
+        </div>
+
+        <!-- Download cards (Windows + macOS) -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;max-width:760px;margin:40px auto 30px">
+            <!-- Windows -->
+            <div style="border:2px solid var(--acc);border-radius:14px;padding:32px;text-align:center;position:relative;background:linear-gradient(180deg,var(--acc-soft),transparent 30%)">
+                <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--acc);color:#fff;padding:4px 14px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:1px">v3.1 · WINDOWS</div>
+                <div style="font-size:36px;margin:12px 0 8px">🪟</div>
+                <h3 style="font-size:20px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px">Windows 10/11</h3>
+                <p style="color:var(--mut);font-size:13px;margin-bottom:22px">Binários bundlados · ~92 MB · zero setup</p>
+                <a href="https://cdn.kendyproducoes.com.br/public/installers/MotionPro-IA-3.1.0.zip" class="btn btn--primary btn--full" download="MotionPro-IA-3.1.0.zip">Baixar Windows <span class="arrow">↓</span></a>
+                <p style="font-size:11px;color:var(--mut);margin-top:12px">CDN global · INSTALAR.bat</p>
+            </div>
+            <!-- macOS -->
+            <div style="border:2px solid var(--line);border-radius:14px;padding:32px;text-align:center;position:relative;background:rgba(255,255,255,0.02)">
+                <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#0a0c12;color:#fff;padding:4px 14px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:1px;border:1px solid var(--line)">v3.1 · MACOS</div>
+                <div style="font-size:36px;margin:12px 0 8px">🍎</div>
+                <h3 style="font-size:20px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px">macOS (Intel + Apple Silicon)</h3>
+                <p style="color:var(--mut);font-size:13px;margin-bottom:22px">Stub installer · binários sob demanda · ~150 KB</p>
+                <a href="https://cdn.kendyproducoes.com.br/public/installers/MotionPro-IA-3.1.0-mac.zip" class="btn btn--full" download="MotionPro-IA-3.1.0-mac.zip" style="background:#0a0c12;border:1px solid var(--acc);color:#fff">Baixar macOS <span class="arrow">↓</span></a>
+                <p style="font-size:11px;color:var(--mut);margin-top:12px">INSTALAR.command auto-baixa ffmpeg/yt-dlp</p>
+            </div>
+        </div>
+        <p style="color:var(--mut);font-size:12px;text-align:center;margin-top:-12px">Premiere Pro CC 2020+ · build 3.1.0</p>
+
+        <!-- Como instalar -->
+        <div style="border-top:1px solid var(--line);padding-top:48px;margin-top:24px">
+            <h3 style="font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--acc);margin-bottom:24px">Como instalar</h3>
+            <div style="display:flex;flex-direction:column;gap:12px">
+                <div class="step-card"><div class="step-num">01</div><div class="step-body"><strong>Baixe o ZIP e extraia</strong>~218 MB (binários inclusos · não precisa instalar nada à parte).</div></div>
+                <div class="step-card"><div class="step-num">02</div><div class="step-body"><strong>Feche o Premiere e dê duplo-clique em <code>INSTALAR.bat</code></strong>Janela preta abre — é normal. Aguarda "INSTALADO".</div></div>
+                <div class="step-card"><div class="step-num">03</div><div class="step-body"><strong>Abra Premiere → Janela → Extensões → Motion IA</strong>O onboarding tour vai te apresentar as features em 30 segundos.</div></div>
+                <div class="step-card"><div class="step-num">04</div><div class="step-body"><strong>Ative sua licença (MIA-XXXX)</strong>Em <b>⚙ Config</b>. Cache offline criptografado, revalidação a cada 24h.</div></div>
+                <div class="step-card"><div class="step-num">05</div><div class="step-body"><strong>(Opcional) Cole suas API keys</strong>Anthropic (chat agentic) · Gemini (vídeo visão) · Pexels/Pixabay/Giphy (stock). Tudo opcional — Whisper offline já cobre 5 features.</div></div>
+                <div class="step-card"><div class="step-num">06</div><div class="step-body"><strong>Selecione um clip no Premiere e roda</strong>Click numa feature da sidebar OU abre o <b>Chat</b> e fala: <i>"corta os silêncios &gt; 0.5s e aplica cross dissolve"</i>.</div></div>
+            </div>
+        </div>
+
+        <!-- Diferencial -->
+        <div style="border-top:1px solid var(--line);padding-top:48px;margin-top:48px">
+            <h3 style="font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--acc);margin-bottom:24px">Por que v3.1 é diferente</h3>
+            <div class="diff-grid">
+                <div class="diff-card"><h4>🚀 100% local quando possível</h4><p>Whisper, ffmpeg, yt-dlp e face tracking rodam offline. Sem upload, sem custo de API por feature básica.</p></div>
+                <div class="diff-card"><h4>👁️ Vê o vídeo de verdade</h4><p>Gemini 2.5 multimodal (Files API >20MB) — IA enxerga o vídeo e decide cortes, capítulos, takes ruins.</p></div>
+                <div class="diff-card"><h4>👻 Casper · pipeline visual</h4><p>Editor de regras encadeadas. Cria seu fluxo (cortar pausas → bins → transições → legendas) e roda num click.</p></div>
+                <div class="diff-card"><h4>📐 Face tracking real</h4><p>Análise Canvas YCbCr frame-by-frame · não é só cropdetect motion · centro de massa do rosto pra Auto Crop preciso.</p></div>
+                <div class="diff-card"><h4>💬 Legendas word-by-word</h4><p>ASS karaoke timing · highlight palavra-por-palavra · 5 estilos prontos (Viral, TikTok, Reels, Clássico, Minimal).</p></div>
+                <div class="diff-card"><h4>🔒 License key offline</h4><p>Ativação por device fingerprint · cache AES-256-GCM · funciona sem internet entre validações.</p></div>
+                <div class="diff-card"><h4>🧭 Onboarding tour</h4><p>Primeira execução abre tour interativo guiado · spotlight em cada feature + dica contextual.</p></div>
+                <div class="diff-card"><h4>📚 Stock multi-fonte</h4><p>Pexels HD + Pixabay HD + Giphy GIFs · busca unificada · auto-import direto no Project Panel.</p></div>
+            </div>
+        </div>
+
+        <!-- Requisitos -->
+        <div style="border-top:1px solid var(--line);padding-top:48px;margin-top:48px">
+            <h3 style="font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--acc);margin-bottom:16px">Requisitos</h3>
+            <ul style="list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;color:var(--mut);font-size:14px">
+                <li>✓ Windows 10/11 (64-bit)</li>
+                <li>✓ Premiere Pro 2020+ (v14+)</li>
+                <li>✓ 8 GB RAM (16 GB recomendado pra Gemini)</li>
+                <li>✓ 500 MB livres em disco</li>
+                <li>✓ Conexão de internet (1ª ativação)</li>
+                <li>○ Anthropic API key (opcional)</li>
+                <li>○ Gemini API key (opcional · grátis)</li>
+                <li>○ Pexels / Pixabay / Giphy keys (opcionais · grátis)</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<footer class="foot">
+    <div class="wrap" style="text-align:center;padding:32px 0;border-top:1px solid var(--line-dark)">
+        <p style="color:var(--mut-inv);font-size:13px">© <span id="yr"></span> Motion IA v3.1 · uma marca PacotesFX</p>
+    </div>
+</footer>
+<script>
+document.getElementById('yr').textContent = new Date().getFullYear();
+// Esconde placeholder quando vídeo carrega
+var vph = document.getElementById('vph');
+var vid = document.querySelector('.video-frame video');
+if (vid && vph) {
+    vid.addEventListener('loadeddata', function () { vph.style.display = 'none'; });
+    vid.addEventListener('error', function () { /* mantém placeholder */ });
+}
+</script>
+</body>
+</html>

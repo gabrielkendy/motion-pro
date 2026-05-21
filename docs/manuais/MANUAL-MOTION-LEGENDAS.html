@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Manual · Motion Legendas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0a0a0d;
+    --surface:   #ffffff;
+    --paper:     #f7f8fa;
+    --text:      #0a0a0d;
+    --text-dim:  #4a4a55;
+    --text-mut:  #76767f;
+    --line:      #e6e6ea;
+    --accent:    #2563eb;
+    --accent-2:  #1d4ed8;
+    --accent-soft: #dbeafe;
+    --warn:      #f59e0b;
+    --ok:        #16a34a;
+    --danger:    #dc2626;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0 }
+  html, body {
+    background: var(--paper);
+    color: var(--text);
+    font: 16px/1.6 Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    max-width: 1280px;
+    margin: 0 auto;
+    min-height: 100vh;
+  }
+  /* ─── SIDEBAR ─── */
+  aside.toc {
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+    padding: 32px 24px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  .brand-logo {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center;
+    color: white;
+    font: 900 16px Inter;
+  }
+  .brand-text {
+    font: 800 16px Inter;
+    letter-spacing: -0.3px;
+  }
+  .brand-text em {
+    color: var(--accent);
+    font-style: normal;
+  }
+  .brand-sub {
+    font: 600 10px Inter;
+    color: var(--text-mut);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  aside h4 {
+    font: 700 10px Inter;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-mut);
+    margin: 24px 0 10px;
+  }
+  aside ol {
+    list-style: none;
+  }
+  aside ol li {
+    margin: 4px 0;
+  }
+  aside ol li a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font: 500 13.5px Inter;
+    display: block;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: all .15s;
+  }
+  aside ol li a:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  aside ol li a.sub {
+    padding-left: 22px;
+    font-size: 12.5px;
+    color: var(--text-mut);
+  }
+  /* ─── MAIN ─── */
+  main {
+    padding: 48px 64px 80px;
+    max-width: 880px;
+  }
+  h1 {
+    font: 900 38px/1.1 Inter;
+    letter-spacing: -1.2px;
+    margin-bottom: 6px;
+  }
+  h1 em {
+    color: var(--accent);
+    font-style: normal;
+  }
+  .lede {
+    font: 400 17px/1.55 Inter;
+    color: var(--text-dim);
+    margin-bottom: 40px;
+    max-width: 600px;
+  }
+  h2 {
+    font: 800 28px/1.2 Inter;
+    letter-spacing: -0.6px;
+    margin: 56px 0 8px;
+    scroll-margin-top: 32px;
+  }
+  h2 .num {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    font: 700 14px Inter;
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    text-align: center;
+    line-height: 28px;
+    margin-right: 12px;
+    vertical-align: middle;
+  }
+  h3 {
+    font: 700 19px/1.3 Inter;
+    margin: 32px 0 12px;
+    color: var(--text);
+    scroll-margin-top: 32px;
+  }
+  h4 {
+    font: 700 15px Inter;
+    margin: 22px 0 8px;
+  }
+  p {
+    margin: 12px 0;
+    color: var(--text-dim);
+  }
+  p strong, li strong { color: var(--text); font-weight: 600 }
+  ul, ol { margin: 12px 0 12px 20px }
+  li { margin: 6px 0; color: var(--text-dim); line-height: 1.55 }
+  code {
+    background: #eef0f4;
+    color: var(--accent);
+    padding: 2px 7px;
+    border-radius: 4px;
+    font: 500 13px JetBrains Mono, ui-monospace, monospace;
+  }
+  pre {
+    background: #f1f3f7;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    margin: 16px 0;
+  }
+  pre code {
+    background: transparent;
+    color: var(--text);
+    padding: 0;
+    font-size: 13px;
+    line-height: 1.65;
+  }
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  thead { background: #f1f3f7 }
+  th, td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  th { font-weight: 700; color: var(--text) }
+  tr:last-child td { border-bottom: none }
+  td { color: var(--text-dim) }
+  /* Callouts */
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 14.5px;
+    color: var(--text);
+  }
+  .callout.warn {
+    border-color: var(--warn);
+    background: #fef3c7;
+  }
+  .callout.ok {
+    border-color: var(--ok);
+    background: #dcfce7;
+  }
+  .callout.danger {
+    border-color: var(--danger);
+    background: #fee2e2;
+  }
+  .callout strong { display: block; margin-bottom: 4px }
+  /* Steps */
+  .steps {
+    counter-reset: step;
+    list-style: none;
+    margin-left: 0;
+  }
+  .steps li {
+    counter-increment: step;
+    padding: 14px 18px 14px 56px;
+    margin: 10px 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    position: relative;
+  }
+  .steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 14px; top: 14px;
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: white;
+    font: 700 13px Inter;
+    display: grid; place-items: center;
+  }
+  .steps li strong { display: block; margin-bottom: 2px; color: var(--text) }
+  .steps li span { font-size: 13.5px; color: var(--text-mut) }
+  /* Hero card */
+  .hero {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: white;
+    padding: 32px 36px;
+    border-radius: 16px;
+    margin: 24px 0 40px;
+    box-shadow: 0 20px 40px rgba(37,99,235,0.20);
+  }
+  .hero h1 {
+    color: white;
+    margin-bottom: 8px;
+  }
+  .hero h1 em { color: rgba(255,255,255,0.85) }
+  .hero p {
+    color: rgba(255,255,255,0.92);
+    font-size: 16px;
+  }
+  /* Print */
+  @media print {
+    aside.toc { display: none }
+    .layout { grid-template-columns: 1fr }
+    main { padding: 24px }
+    .hero { box-shadow: none; -webkit-print-color-adjust: exact; print-color-adjust: exact }
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr }
+    aside.toc { position: static; height: auto }
+    main { padding: 24px }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside class="toc">
+  <div class="brand">
+    <div class="brand-logo">ML</div>
+    <div>
+      <div class="brand-text">Motion <em>Legendas</em></div>
+      <div class="brand-sub">Manual</div>
+    </div>
+  </div>
+
+  <h4>Conteúdo</h4>
+  <ol>
+    <li><a href="#instalacao">1. Instalação</a></li>
+    <li><a href="#primeiro-acesso">2. Primeiro acesso</a></li>
+    <li><a href="#visao-geral">3. Visão geral</a></li>
+    <li><a href="#abas">4. As 5 abas</a>
+      <ol>
+        <li><a href="#templates" class="sub">4.1 Templates</a></li>
+        <li><a href="#criar" class="sub">4.2 Criar</a></li>
+        <li><a href="#importar" class="sub">4.3 Importar</a></li>
+        <li><a href="#editar" class="sub">4.4 Editar</a></li>
+        <li><a href="#sfx" class="sub">4.5 SFX</a></li>
+      </ol>
+    </li>
+    <li><a href="#fluxos">5. Fluxos práticos</a></li>
+    <li><a href="#modos">6. Modos especiais</a></li>
+    <li><a href="#assinatura">7. Assinatura</a></li>
+    <li><a href="#problemas">8. Problemas</a></li>
+    <li><a href="#suporte">9. Suporte</a></li>
+  </ol>
+</aside>
+
+<main>
+
+<div class="hero">
+  <h1>Manual <em>Motion Legendas</em></h1>
+  <p>Plugin oficial do Adobe Premiere Pro pra aplicar legendas animadas em massa. Família MotionPro · by PacotesFX.</p>
+</div>
+
+<!-- ════════════ 1. INSTALAÇÃO ════════════ -->
+<h2 id="instalacao"><span class="num">1</span>Instalação</h2>
+
+<h3>Pré-requisitos</h3>
+<ul>
+  <li>Windows 10 ou 11</li>
+  <li>Adobe Premiere Pro <strong>CC 2019 ou superior</strong></li>
+  <li>Conexão com internet (login + validação de licença)</li>
+</ul>
+
+<h3>Passo a passo (5 minutos)</h3>
+
+<ol class="steps">
+  <li>
+    <strong>Baixe o instalador</strong>
+    <span>No e-mail de boas-vindas, clica em "Baixar plugin" ou acessa <code>motionpro-lp.vercel.app/legendas/download</code>. Arquivo: <code>MotionPro-Legendas-X.Y.Z.zip</code> (~18 MB)</span>
+  </li>
+  <li>
+    <strong>Extraia o ZIP</strong>
+    <span>Botão direito no arquivo → Extrair tudo → Área de Trabalho</span>
+  </li>
+  <li>
+    <strong>Feche o Premiere Pro</strong>
+    <span>Se estiver aberto, feche tudo antes</span>
+  </li>
+  <li>
+    <strong>Duplo-clique em <code>INSTALAR.bat</code></strong>
+    <span>Janela preta de terminal por ~30 segundos. Normal, não é vírus</span>
+  </li>
+  <li>
+    <strong>Aguarde "✅ INSTALADO"</strong>
+    <span>O script copia 549 templates e libera plugins não-assinados no Windows</span>
+  </li>
+  <li>
+    <strong>No Premiere: Janela → Extensões → Motion Legendas</strong>
+    <span>Painel abre à direita. Pronto pra logar</span>
+  </li>
+</ol>
+
+<div class="callout">
+  <strong>💡 Sobre o aviso do Windows</strong>
+  Se aparecer "Você confiou neste app?", clica em <strong>Mais informações → Executar mesmo assim</strong>. É script aberto, você consegue ler o conteúdo — não é executável fechado.
+</div>
+
+<!-- ════════════ 2. PRIMEIRO ACESSO ════════════ -->
+<h2 id="primeiro-acesso"><span class="num">2</span>Primeiro acesso</h2>
+
+<h3>Tela de login</h3>
+<p>Quando o plugin abre pela primeira vez:</p>
+
+<pre><code>   Motion Legendas
+   by PacotesFX
+
+   [ Email             ]
+   [ Senha             ]
+
+   [ Esqueci minha senha ]
+   [ Criar conta · 7 dias grátis ]
+
+   [        ENTRAR        ]</code></pre>
+
+<ul>
+  <li><strong>Já tem conta?</strong> Login com email + senha</li>
+  <li><strong>Primeira vez?</strong> Clica em <strong>"Criar conta · 7 dias grátis"</strong> → preenche dados → trial automático sem cartão</li>
+  <li><strong>Esqueci a senha</strong> → digita email → recebe link no email (válido 1h)</li>
+</ul>
+
+<div class="callout ok">
+  <strong>🔒 Sessão sticky</strong>
+  O plugin LEMBRA do seu login. Mesmo fechando Premiere ou reiniciando PC, você não precisa logar de novo. Só desloga se clicar em "Sair" ou se sua senha for alterada.
+</div>
+
+<!-- ════════════ 3. VISÃO GERAL ════════════ -->
+<h2 id="visao-geral"><span class="num">3</span>Visão geral</h2>
+
+<p>Ao entrar, você vê a barra superior:</p>
+
+<pre><code>🅻 Motion Legendas              [🟢 status]  [🩺 diag]
+─────────────────────────────────────────────────────
+[📚 Templates] [✍️ Criar] [📥 Importar] [📝 Editar] [🔊 SFX]</code></pre>
+
+<h3>Fluxo geral</h3>
+<pre><code>   Você tem o áudio do vídeo
+              │
+              ▼
+   1️⃣  Criar OU Importar legendas
+              │
+              ▼
+   2️⃣  Revisar (aba Editar)
+              │
+              ▼
+   3️⃣  Aplicar na Timeline
+              │
+              ▼
+   ✅ Legendas animadas no vídeo</code></pre>
+
+<!-- ════════════ 4. ABAS ════════════ -->
+<h2 id="abas"><span class="num">4</span>As 5 abas</h2>
+
+<h3 id="templates">4.1 📚 Templates</h3>
+<p>Biblioteca com <strong>549 templates</strong> em 10 categorias:</p>
+<table>
+  <thead><tr><th>Categoria</th><th>Quantidade</th></tr></thead>
+  <tbody>
+    <tr><td>Simple Titles</td><td>50</td></tr>
+    <tr><td>Fashion Titles</td><td>24</td></tr>
+    <tr><td>Urban Titles</td><td>15</td></tr>
+    <tr><td>Glitch Titles</td><td>30</td></tr>
+    <tr><td>Huge Titles</td><td>80</td></tr>
+    <tr><td>Minimal Titles</td><td>60</td></tr>
+    <tr><td>Wedding Titles</td><td>70</td></tr>
+    <tr><td>Elegant Titles</td><td>70</td></tr>
+    <tr><td>Corporate Titles</td><td>50</td></tr>
+    <tr><td>Lower Thirds</td><td>100</td></tr>
+  </tbody>
+</table>
+<p><strong>Como usar:</strong> clica numa pílula de categoria → clica num template pra preview → <strong>⚡ APLICAR</strong> coloca no clip ativo.</p>
+
+<h3 id="criar">4.2 ✍️ Criar</h3>
+<p>Pra quando você <strong>não tem SRT</strong>. Cole o roteiro inteiro, plugin gera as legendas.</p>
+<ol class="steps">
+  <li><strong>Cole o roteiro completo</strong> <span>No textarea da aba Criar</span></li>
+  <li><strong>Define onde começa na timeline</strong> <span>Digite manualmente ou clica em ↺ CTI pra usar o playhead</span></li>
+  <li><strong>⚡ Criar legendas</strong> <span>Plugin gera SRT cortado nas quebras ideais (pontos finais e pausas)</span></li>
+</ol>
+<div class="callout">
+  <strong>💡 Dica</strong>
+  Use pontuação natural. <strong>Pontos finais marcam quebras obrigatórias</strong>, vírgulas e exclamações ajudam o plugin a quebrar onde faz sentido.
+</div>
+
+<h3 id="importar">4.3 📥 Importar</h3>
+
+<h4>Opção A — arquivo SRT externo</h4>
+<p><strong>📂 Carregar SRT</strong> → escolhe <code>.srt</code> → plugin lê e vai pra aba Editar.</p>
+
+<h4>Opção B — Captions do Premiere</h4>
+<p>Se você usou <strong>Texto → Criar legendas → Transcrever sequência</strong> no Premiere, clica em <strong>🎬 Importar do Premiere</strong>.</p>
+<div class="callout warn">
+  <strong>⚠️ Requisito</strong>
+  A sequência precisa estar ativa (selecionada) e ter captions geradas.
+</div>
+
+<h3 id="editar">4.4 📝 Editar</h3>
+<p>Aba principal de revisão. Vê todas as legendas em formato de tabela:</p>
+<pre><code>┌──┬─────────────┬───────────────────┬────────────┐
+│☑ │  Tempo      │  Texto            │  Template  │
+├──┼─────────────┼───────────────────┼────────────┤
+│☑ │ 0:01 → 0:03 │ Bem-vindo ao      │ Glitch 03  │
+│  │             │ canal             │            │
+├──┼─────────────┼───────────────────┼────────────┤
+│☑ │ 0:03 → 0:06 │ Hoje eu vou       │ Simple 12  │
+│  │             │ mostrar           │            │
+└──┴─────────────┴───────────────────┴────────────┘</code></pre>
+
+<h4>Ações disponíveis</h4>
+<table>
+  <thead><tr><th>Ação</th><th>O que faz</th></tr></thead>
+  <tbody>
+    <tr><td><strong>⚡ Distribuição Inteligente</strong></td><td>Re-atribui templates automaticamente baseado em # de palavras</td></tr>
+    <tr><td><strong>✓ Selecionar tudo / Limpar</strong></td><td>Marca/desmarca todas pra aplicar em massa</td></tr>
+    <tr><td><strong>🔄 Trocar template em massa</strong></td><td>Selecionou várias? troca template de todas</td></tr>
+    <tr><td><strong>✏️ Editar inline</strong></td><td>Clica no texto pra editar diretamente</td></tr>
+    <tr><td><strong>🎨 Trocar template individual</strong></td><td>Clica no nome do template pra escolher outro</td></tr>
+  </tbody>
+</table>
+
+<h4>Configurações de corte</h4>
+<ul>
+  <li><strong>Duração mínima</strong>: legendas &lt; X segundos juntam com a seguinte</li>
+  <li><strong>Gap entre legendas</strong>: silêncio mínimo entre uma e outra</li>
+  <li><strong>Modo 1 palavra</strong>: ativa o viral (cada palavra = 1 clip)</li>
+</ul>
+
+<h4>Aplicar</h4>
+<p>Quando tudo OK, clica em <strong>⚡ APLICAR NA TIMELINE</strong>. Plugin cria todos os clips em ~30 segundos pra vídeos de 5 minutos.</p>
+
+<h3 id="sfx">4.5 🔊 SFX</h3>
+<p>Aba de efeitos sonoros pra dar impacto (estilo Submagic, TikTok).</p>
+<ul>
+  <li><strong>10 SFX shipados</strong>: click, pop, camera shutter, whoosh, impact, typing…</li>
+  <li><strong>Seus arquivos</strong>: cole <code>.mp3</code>/<code>.wav</code>/<code>.ogg</code> em <code>%APPDATA%\Adobe\CEP\extensions\com.motionpro.legendas\packs\sfx\&lt;categoria&gt;\</code></li>
+</ul>
+<p><strong>Aplicar:</strong></p>
+<ul>
+  <li><strong>⚡ No CTI</strong>: 1 SFX no playhead</li>
+  <li><strong>🎬 Em todas legendas</strong>: 1 SFX no início de cada legenda (último track de vídeo)</li>
+</ul>
+
+<!-- ════════════ 5. FLUXOS ════════════ -->
+<h2 id="fluxos"><span class="num">5</span>Fluxos práticos</h2>
+
+<h3>Cenário 1 — já tenho SRT pronto (mais comum)</h3>
+<ol>
+  <li>Aba <strong>Importar</strong></li>
+  <li>📂 Carregar SRT → escolhe arquivo</li>
+  <li>Aba <strong>Editar</strong> abre automaticamente</li>
+  <li>(opcional) ⚡ Distribuição Inteligente</li>
+  <li>(opcional) revisa textos individuais</li>
+  <li>⚡ APLICAR NA TIMELINE</li>
+</ol>
+
+<h3>Cenário 2 — só áudio/vídeo (zero roteiro)</h3>
+<ol>
+  <li>No Premiere: <strong>Texto → Criar legendas → Transcrever sequência</strong></li>
+  <li>No plugin: aba <strong>Importar</strong> → 🎬 Importar do Premiere</li>
+  <li>Aba Editar abre automaticamente</li>
+  <li>⚡ Distribuição Inteligente</li>
+  <li>Revisa a transcrição (às vezes erra palavras)</li>
+  <li>⚡ APLICAR NA TIMELINE</li>
+</ol>
+
+<h3>Cenário 3 — já escrevi o roteiro</h3>
+<ol>
+  <li>Aba <strong>Criar</strong></li>
+  <li>Cola o roteiro completo</li>
+  <li>↺ CTI ou digita tempo</li>
+  <li>⚡ Criar legendas</li>
+  <li>Revisa timing na aba Editar</li>
+  <li>⚡ APLICAR NA TIMELINE</li>
+</ol>
+
+<!-- ════════════ 6. MODOS ════════════ -->
+<h2 id="modos"><span class="num">6</span>Modos especiais</h2>
+
+<h3>🎯 1 palavra por legenda (modo viral)</h3>
+<p>Ative em <strong>Editar → "Modo 1 palavra"</strong>. Cada palavra vira 1 clip.</p>
+<p><strong>Quando usar:</strong> TikTok / Reels / Shorts.</p>
+<div class="callout warn">
+  <strong>⚠️ Atenção no export</strong>
+  Vídeos longos com modo 1-palavra geram 100+ MOGRTs. Pode estourar GPU. <strong>SEMPRE use Pre-render Preview antes de exportar</strong>.
+</div>
+
+<h3>Multi-palavra (padrão)</h3>
+<p>Plugin escolhe templates 2/3/4+ palavras. Cada legenda vira 1 clip único. Mais leve.</p>
+
+<h3>🎬 Pre-render Preview</h3>
+<p>Botão <strong>🎬 Renderizar preview</strong> aparece automaticamente após ≥ 50 legendas.</p>
+<p><strong>O que faz:</strong> "queima" as legendas em vídeo H.264 único. Resultado: export 10× mais rápido + zero crash.</p>
+<div class="callout">
+  <strong>Trade-off</strong>
+  Depois do pre-render, não dá pra editar legendas individuais sem refazer. Use só no finalização.
+</div>
+
+<h3>📦 Nesting automático</h3>
+<p>Botão <strong>📦 Aninhar clips</strong> agrupa todas legendas em 1 sequência aninhada. Organiza a timeline.</p>
+
+<!-- ════════════ 7. ASSINATURA ════════════ -->
+<h2 id="assinatura"><span class="num">7</span>Assinatura</h2>
+
+<h3>Trial gratuito</h3>
+<p><strong>7 dias automáticos</strong> no signup, sem cartão. Depois disso:</p>
+<ul>
+  <li>Você ainda loga e vê o painel</li>
+  <li><strong>Não aplica legendas</strong> até renovar</li>
+  <li>Banner azul "Renovar plano" aparece</li>
+</ul>
+
+<h3>Planos</h3>
+<table>
+  <thead><tr><th>Plano</th><th>Valor</th><th>Renovação</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Anual</strong></td><td>R$ 199</td><td>1× por ano</td></tr>
+    <tr><td><strong>Vitalício</strong></td><td>R$ 499</td><td>pagamento único</td></tr>
+  </tbody>
+</table>
+
+<h3>Como renovar</h3>
+<ol class="steps">
+  <li><strong>Clica no banner "Renovar plano"</strong> <span>Ou no botão "Assinar"</span></li>
+  <li><strong>Página de pagamento abre no navegador</strong> <span>Pix, cartão ou boleto via Stripe</span></li>
+  <li><strong>Volta pro plugin</strong> <span>Em até 1 minuto o paywall some sozinho (heartbeat detecta pagamento)</span></li>
+</ol>
+
+<h3>Cancelar</h3>
+<p>Acessa <code>motionpro.vercel.app/account</code> → login → Cancelar assinatura. Continua usando até o fim do período pago.</p>
+
+<!-- ════════════ 8. PROBLEMAS ════════════ -->
+<h2 id="problemas"><span class="num">8</span>Resolução de problemas</h2>
+
+<h3>"O plugin não aparece em Janela → Extensões"</h3>
+<p><strong>Causa:</strong> instalador não liberou plugins não-assinados no registro.<br>
+<strong>Solução:</strong> feche Premiere, rode <code>INSTALAR.bat</code> de novo (admin se possível), reabra.</p>
+
+<h3>"Tela preta no plugin"</h3>
+<p><strong>Causa:</strong> cache antigo do CEP.<br>
+<strong>Solução:</strong> feche Premiere, apaga <code>%LOCALAPPDATA%\Temp\cep_cache</code>, reabra.</p>
+
+<h3>"Erro: device_limit_reached"</h3>
+<p>Mais de 2 dispositivos ativos (trial/anual) ou 3 (vitalício).<br>
+<strong>Solução:</strong> revoga um dispositivo antigo em <code>motionpro.vercel.app/account/devices</code>.</p>
+
+<h3>"Premiere crasha no export"</h3>
+<p><strong>Causa:</strong> muitos MOGRTs simultâneos (modo 1-palavra).<br>
+<strong>Solução:</strong> rode <strong>🎬 Renderizar preview</strong> antes de exportar.</p>
+
+<h3>"Banner azul de renovar"</h3>
+<p>Sua assinatura ou trial venceu. Renove no botão "Assinar".</p>
+
+<h3>"🩺 Diagnóstico Premiere"</h3>
+<p>Botão no canto superior do plugin. Roda checks automáticos: plugin conectado? sequência ativa? track de vídeo? caminho dos templates? Use sempre que algo "não funciona" antes de pedir suporte.</p>
+
+<!-- ════════════ 9. SUPORTE ════════════ -->
+<h2 id="suporte"><span class="num">9</span>Suporte</h2>
+
+<ul>
+  <li><strong>Email</strong>: suporte@pacotesfx.com</li>
+  <li><strong>Tempo de resposta</strong>: 24h em dias úteis</li>
+  <li><strong>Site</strong>: <a href="https://motionpro-lp.vercel.app">motionpro-lp.vercel.app</a></li>
+</ul>
+
+<p>Ao entrar em contato, envia junto:</p>
+<ul>
+  <li>Seu email cadastrado</li>
+  <li>Print do erro (se aparecer)</li>
+  <li>Saída do botão <strong>🩺 Diagnóstico Premiere</strong> (copia o texto)</li>
+</ul>
+
+<div style="margin-top: 80px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--text-mut); font-size: 13px;">
+  <strong>Versão do manual:</strong> 1.0 · 2026-05-19<br>
+  <strong>Compatível com:</strong> Motion Legendas 3.1.3 ou superior<br>
+  © PacotesFX · Família MotionPro
+</div>
+
+</main>
+</div>
+</body>
+</html>

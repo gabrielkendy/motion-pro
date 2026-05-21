@@ -1,4 +1,4 @@
-/* MotionPro Legendas v4.0 — auth.js (JWT MotionPro)
+/* Motion Legendas v4.0 — auth.js (JWT MotionVault)
  * Substitui o login Firebase do EP Legendas.
  * Roda ANTES de main.js. Expõe window.MPLAuth.
  */
@@ -64,7 +64,7 @@ function toggleSignupMode(toSignup) {
     show.forEach(function (el) { el.style.display = toSignup ? "" : "none"; });
     var btn = $("login-confirm"); if (btn) btn.textContent = toSignup ? "Criar conta" : "Entrar";
     var hdr = document.querySelector("#login-overlay .capture-modal-header span");
-    if (hdr) hdr.textContent = toSignup ? "Criar conta · 14 dias grátis" : "Entrar no MotionPro Legendas";
+    if (hdr) hdr.textContent = toSignup ? "Criar conta · 7 dias grátis" : "Entrar no Motion Legendas";
     window.__MPL_SIGNUP = toSignup;
 }
 

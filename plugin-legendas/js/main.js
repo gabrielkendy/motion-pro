@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════
-   MotionPro Legendas v4.0 — main.js
+   Motion Legendas v4.0 — main.js
    Pipeline funcional inspirado no EP Legendas:
    - Load catalog local (com 549 .mogrt)
    - Render grid + categorias + preview
@@ -11,7 +11,140 @@
 (function () {
 "use strict";
 
-var BUILD = "4.23.0-sfx-tab+layout-pills+renumber";
+var BUILD = "4.25.1-global-style-no-color";
+
+// ────────────────────────────────────────────────  ESTILO GLOBAL
+// { enabled, tplName, font, fontCustom }
+// Persistido em localStorage("mpl_global_style").
+// Quando enabled=true:
+//   - tplName não-vazio → força esse template em TODAS legendas (override determinístico)
+//   - font não-vazio    → injeta no fontEditValue do definition.json (PowerShell)
+// Cor não é exposta no .mogrt (vive hardcoded no .aep binário) — feature removida na 4.25.1
+var GLOBAL_STYLE = { enabled: false, tplName: "", font: "", fontCustom: "" };
+function loadGlobalStyle() {
+    try {
+        var raw = localStorage.getItem("mpl_global_style");
+        if (!raw) return;
+        var d = JSON.parse(raw);
+        if (d && typeof d === "object") {
+            for (var k in d) if (d.hasOwnProperty(k) && GLOBAL_STYLE.hasOwnProperty(k)) GLOBAL_STYLE[k] = d[k];
+        }
+    } catch (e) {}
+}
+function saveGlobalStyle() {
+    try { localStorage.setItem("mpl_global_style", JSON.stringify(GLOBAL_STYLE)); } catch (e) {}
+}
+function getActiveGlobalStyle() {
+    if (!GLOBAL_STYLE.enabled) return null;
+    var hasAnything = GLOBAL_STYLE.tplName || GLOBAL_STYLE.font || GLOBAL_STYLE.fontCustom;
+    if (!hasAnything) return null;
+    return {
+        tplName: GLOBAL_STYLE.tplName || "",
+        font: (GLOBAL_STYLE.font === "__custom__" ? (GLOBAL_STYLE.fontCustom || "") : (GLOBAL_STYLE.font || ""))
+    };
+}
+function updateGlobalStyleSummary() {
+    var chip = $("gs-summary-chip");
+    var panel = $("global-style-panel");
+    if (!chip || !panel) return;
+    var active = getActiveGlobalStyle();
+    if (!GLOBAL_STYLE.enabled) {
+        chip.textContent = "desligado";
+        panel.classList.remove("active");
+        return;
+    }
+    panel.classList.add("active");
+    if (!active) { chip.textContent = "ligado · sem overrides"; return; }
+    var parts = [];
+    if (active.tplName) parts.push(active.tplName);
+    if (active.font)    parts.push(active.font);
+    chip.textContent = parts.join(" · ") || "ligado";
+}
+function populateGlobalStyleTemplates() {
+    var sel = $("gs-template");
+    if (!sel || !ALL_TEMPLATES.length) return;
+    var current = GLOBAL_STYLE.tplName || "";
+    // Preserva primeiro option (auto), limpa resto
+    while (sel.options.length > 1) sel.remove(1);
+    // Agrupa por wc
+    var byWc = {};
+    ALL_TEMPLATES.forEach(function (t) {
+        var wc = t.wc || 0;
+        (byWc[wc] = byWc[wc] || []).push(t);
+    });
+    Object.keys(byWc).sort(function (a,b) { return Number(a)-Number(b); }).forEach(function (wc) {
+        var grp = document.createElement("optgroup");
+        grp.label = wc + " palavra" + (wc == "1" ? "" : "s");
+        byWc[wc].forEach(function (t) {
+            var opt = document.createElement("option");
+            opt.value = t.name; opt.textContent = t.name;
+            grp.appendChild(opt);
+        });
+        sel.appendChild(grp);
+    });
+    sel.value = current;
+}
+function bindGlobalStyleUI() {
+    var cb     = $("gs-enabled");
+    var tplSel = $("gs-template");
+    var fontSel = $("gs-font");
+    var fontCustom = $("gs-font-custom");
+    var resetBtn = $("gs-reset");
+    var panel = $("global-style-panel");
+    if (!cb) return;
+
+    // Hidrata UI com state salvo
+    cb.checked = !!GLOBAL_STYLE.enabled;
+    if (panel) {
+        if (GLOBAL_STYLE.enabled) panel.setAttribute("open", "");
+    }
+    if (tplSel) tplSel.value = GLOBAL_STYLE.tplName || "";
+    if (fontSel) {
+        // Se font não bate com nenhuma option, marca custom
+        var opts = Array.prototype.slice.call(fontSel.options).map(function (o) { return o.value; });
+        if (GLOBAL_STYLE.font && opts.indexOf(GLOBAL_STYLE.font) === -1 && GLOBAL_STYLE.font !== "__custom__") {
+            GLOBAL_STYLE.fontCustom = GLOBAL_STYLE.font;
+            GLOBAL_STYLE.font = "__custom__";
+        }
+        fontSel.value = GLOBAL_STYLE.font || "";
+    }
+    if (fontCustom) {
+        fontCustom.value = GLOBAL_STYLE.fontCustom || "";
+        fontCustom.classList.toggle("hidden", GLOBAL_STYLE.font !== "__custom__");
+    }
+
+    cb.onchange = function () {
+        GLOBAL_STYLE.enabled = cb.checked;
+        saveGlobalStyle(); updateGlobalStyleSummary();
+        // Abre painel automaticamente se ligando
+        if (panel && cb.checked) panel.setAttribute("open", "");
+    };
+    if (tplSel) tplSel.onchange = function () {
+        GLOBAL_STYLE.tplName = tplSel.value || "";
+        saveGlobalStyle(); updateGlobalStyleSummary();
+    };
+    if (fontSel) fontSel.onchange = function () {
+        GLOBAL_STYLE.font = fontSel.value || "";
+        if (fontCustom) fontCustom.classList.toggle("hidden", GLOBAL_STYLE.font !== "__custom__");
+        saveGlobalStyle(); updateGlobalStyleSummary();
+    };
+    if (fontCustom) fontCustom.oninput = function () {
+        GLOBAL_STYLE.fontCustom = fontCustom.value.trim();
+        saveGlobalStyle(); updateGlobalStyleSummary();
+    };
+    if (resetBtn) resetBtn.onclick = function () {
+        GLOBAL_STYLE = { enabled: false, tplName: "", font: "", fontCustom: "" };
+        saveGlobalStyle();
+        cb.checked = false;
+        if (tplSel) tplSel.value = "";
+        if (fontSel) fontSel.value = "";
+        if (fontCustom) { fontCustom.value = ""; fontCustom.classList.add("hidden"); }
+        updateGlobalStyleSummary();
+        toast("Estilo Global resetado", "info");
+    };
+
+    updateGlobalStyleSummary();
+}
 
 var nodePath = typeof require === "function" ? require("path") : null;
 var nodeFs   = typeof require === "function" ? require("fs") : null;
@@ -120,9 +253,29 @@ function getSlotIndicesFor(tplName) {
     return info.slotIndices || null;
 }
 
+// ─────────────────────────────────────────────────────────────────
+// MOGRT path resolver — CDN-first (v1.2+) com fallback pra local (legacy)
+// Retorna Promise<string> com path absoluto no disco pronto pra usar.
+// ─────────────────────────────────────────────────────────────────
+function resolveMogrtPath(item) {
+    if (!item) return Promise.reject(new Error("no_item"));
+    // Modo CDN: tem cdn_key → usa AssetLoader (baixa/cacheia)
+    if (item.cdn_key && window.MPL_AssetLoader) {
+        return window.MPL_AssetLoader.get(item);
+    }
+    // Modo legacy: usa path local relativo ao EXT_PATH/packs
+    if (item.mogrt) {
+        var abs = nodePath.join(EXT_PATH, "packs", item.mogrt);
+        if (nodeFs && nodeFs.existsSync(abs)) return Promise.resolve(abs);
+    }
+    return Promise.reject(new Error("mogrt_unavailable"));
+}
+
 function loadCatalog() {
     if (!nodeFs || !nodePath) { log("Node FS indisponível", "err"); openLog(); return; }
     log("EXT_PATH = " + EXT_PATH, "info");
+    // Expõe pro asset-loader.js usar como fallback de path
+    window.MPL_EXT_PATH = EXT_PATH;
     var path = nodePath.join(EXT_PATH, "packs", "catalog.json");
     log("catalog path = " + path, "info");
     try {
@@ -144,6 +297,7 @@ function loadCatalog() {
         renderTplPickerOptions();
         renderAutoSrtTemplateOptions();
         populateSfxTracks();
+        populateGlobalStyleTemplates();
     } catch (e) {
         log("Catalog FAIL: " + e.message, "err"); openLog();
         toast("Catálogo não carregou — veja LOG", "err", 5000);
@@ -158,6 +312,11 @@ function flatten(catalog) {
                 out.push({
                     name: it.name,
                     mogrt: it.mogrt,
+                    // CDN fields (v1.2+: populados pelo upload-legendas-r2.js)
+                    id: it.id || null,
+                    cdn_key: it.cdn_key || null,
+                    sha256: it.sha256 || null,
+                    size_bytes: it.size_bytes || null,
                     preview: it.preview || null,
                     wc: (it.wc != null) ? it.wc : deriveWordCount(it.name, c.name),
                     cat: c.name || p.name || "Geral",
@@ -322,7 +481,7 @@ function styleFor(cat) {
     cat = String(cat || "").toLowerCase();
     if (cat.indexOf("lower") >= 0) return { bg: "#1c1c25", fg: "#fff", font: "Inter", weight: 600, size: 9 };
     if (cat.indexOf("title") >= 0 || cat.indexOf("simple") >= 0) return { bg: "#0d0d11", fg: "#fff", font: "Inter", weight: 700, size: 11 };
-    return { bg: "#15151c", fg: "#38e287", font: "Inter", weight: 800, size: 11, tracking: 1 };
+    return { bg: "#15151c", fg: "#2563eb", font: "Inter", weight: 800, size: 11, tracking: 1 };
 }
 
 function showPreview(t) {
@@ -410,12 +569,30 @@ function onTplPicked(t) {
 // ────────────────────────────────────────────────  APLICAR SINGLE
 function applySingle() {
     if (!SELECTED) { toast("Selecione um template", "warn"); return; }
-    if (!SELECTED.mogrt) { toast("Template sem .mogrt", "err"); return; }
-    var abs = nodePath.join(EXT_PATH, "packs", SELECTED.mogrt);
+    if (!SELECTED.mogrt && !SELECTED.cdn_key) { toast("Template sem .mogrt", "err"); return; }
     log("Aplicando: " + SELECTED.name);
+    if (SELECTED.cdn_key) toast("⬇ Baixando do CDN…", "info", 1500);
+    resolveMogrtPath(SELECTED).then(function (abs) { _applySingleWithPath(abs); })
+        .catch(function (e) {
+            log("✗ resolveMogrt: " + e.message, "err");
+            toast("Falha ao obter template: " + e.message, "err", 5000);
+        });
+}
+function _applySingleWithPath(abs) {
+    if (!SELECTED) return;
     var withSfx = $("tpl-with-sfx") && $("tpl-with-sfx").checked && SFX_SELECTED;
     var audioTrack = withSfx ? ($("tpl-sfx-track-select") && $("tpl-sfx-track-select").value) : null;
 
+    var gs = getActiveGlobalStyle();
+
+    // Caminho A: Estilo Global com fonte → usa inject mode mesmo pra single,
+    //   pra que fontEditValue seja aplicado igual ao batch SRT.
+    if (gs && gs.font) {
+        _applySingleViaInject(abs, gs, withSfx, audioTrack);
+        return;
+    }
+
+    // Caminho B: clássico (setValue API) — sem GS, sem font, sem cor
     // Pega slot indices pré-computados (override determinístico)
     var slotIndices = getSlotIndicesFor(SELECTED.name);
     var slotIdxJson = slotIndices ? JSON.stringify(slotIndices) : "null";
@@ -441,6 +618,49 @@ function applySingle() {
             }
             toast("✓ " + SELECTED.name + " · V" + (d.track + 1), "ok");
             if (withSfx && audioTrack) placeSfxAt(ticks, audioTrack);
+        });
+    });
+}
+
+// Aplica single template via inject mode (mogrt customizado com fonte global injetada)
+function _applySingleViaInject(abs, gs, withSfx, audioTrack) {
+    if (!nodeOs || !nodeFs || !nodePath) {
+        log("Inject mode indisponível (Node.js)", "warn");
+        toast("Node.js indisponível pra inject mode", "err"); return;
+    }
+    log("Aplicando com Estilo Global (inject mode) · font=" + (gs.font || "—"), "info");
+    var tmpDir = nodeOs.tmpdir().replace(/\\/g, "/") + "/_mpl_inject";
+    try { if (!nodeFs.existsSync(tmpDir)) nodeFs.mkdirSync(tmpDir, { recursive: true }); } catch (e) {}
+    var job = {
+        id: "single",
+        srcMogrt: abs,
+        dstMogrt: tmpDir + "/inject_single_" + Date.now() + ".mogrt",
+        words: []   // sem substituir texto — mantém placeholders do template
+    };
+    if (gs.font) job.font = gs.font;
+
+    prepareInjectMogrtsNode([job], function (err, res) {
+        if (err) { log("✗ Prepare single: " + err, "err"); toast("Falha ao preparar template", "err"); return; }
+        var pj = (res && res.jobs && res.jobs[0]) || null;
+        if (!pj || !pj.success) {
+            log("✗ Prepare single failed: " + (pj && pj.error || "?"), "err");
+            toast("Falha ao preparar template", "err"); return;
+        }
+        jsx("$.global.EP_getCTI();", function (cti) {
+            var ticks = (cti && cti.ticks) ? cti.ticks : "0";
+            var call = "$.global.EP_importPreparedMogrt(" +
+                JSON.stringify(pj.outPath) + "," +
+                JSON.stringify(ticks) + ",\"last\",2.0);";
+            cs.evalScript(call, function (raw) {
+                var d; try { d = JSON.parse(raw || "{}"); } catch (e) { d = { error: "parse:" + String(raw||"").slice(0,120) }; }
+                if (d.error) {
+                    log("✗ Import: " + d.error, "err"); openLog();
+                    toast("Erro: " + d.error, "err", 4500); return;
+                }
+                log("✓ V" + (d.track + 1) + " · " + SELECTED.name + " (Estilo Global · fonte=" + gs.font + ")", "info");
+                toast("✓ " + SELECTED.name + " · V" + (d.track + 1), "ok");
+                if (withSfx && audioTrack) placeSfxAt(ticks, audioTrack);
+            });
         });
     });
 }
@@ -1318,6 +1538,14 @@ function defaultTplForWc(wc) {
     // No modo 1-palavra: FORÇA wc=1 (ignora overrides, ignora qualquer wc != 1)
     if (oneWord) wc = 1;
 
+    // 0) Estilo Global ligado com template fixo? Force absoluto (independente do wc do grupo).
+    //    Usuário pediu explicitamente esse template pra TODAS legendas — respeita.
+    var gs = getActiveGlobalStyle();
+    if (gs && gs.tplName) {
+        var gsTpl = ALL_TEMPLATES.find(function (t) { return t.name === gs.tplName; });
+        if (gsTpl) return gs.tplName;
+    }
+
     // 1) Se user escolheu template fixo no dropdown E ele bate com o wc do grupo, usa
     //    (no modo 1-palavra, só aceita se o template fixo também for 1p)
     if (fixedName && !oneWord) {
@@ -1558,6 +1786,12 @@ function prepareInjectMogrtsNode(jobs, cb) {
 
 // Script PowerShell — gera mogrt customizado por job (mesma lógica do host.jsx,
 // mas aqui usado direto via child_process do Node).
+//
+// Job shape: { id, srcMogrt, dstMogrt, words[], font? }
+//   - font: PostScript name opcional. Quando setado, substitui TODOS os
+//     fontEditValue do definition.json (string e array). Mexe só em fontes
+//     editáveis (capPropType=6 / TEXT_FONT) — não toca em fontes embutidas
+//     no .aep binário.
 var POWERSHELL_INJECT_SCRIPT =
     "param([string]$JobsFile, [string]$ResultFile)\n" +
     "Add-Type -AssemblyName System.IO.Compression.FileSystem\n" +
@@ -1585,6 +1819,25 @@ var POWERSHELL_INJECT_SCRIPT =
     "  return $sb.ToString()\n" +
     "}\n" +
     "\n" +
+    "function Replace-FontEditValue {\n" +
+    "  # Substitui TODAS as ocorrencias de fontEditValue (string ou array) pelo PostScript name escolhido.\n" +
+    "  param([string]$json, [string]$font)\n" +
+    "  if (-not $font) { return $json }\n" +
+    "  $fEsc = $font.Replace('\\','\\\\').Replace('\"','\\\"')\n" +
+    "  # Forma A: \"fontEditValue\":\"X\"\n" +
+    "  $json = [regex]::Replace($json, '\"fontEditValue\"\\s*:\\s*\"[^\"]*\"', '\"fontEditValue\":\"' + $fEsc + '\"')\n" +
+    "  # Forma B: \"fontEditValue\":[\"X\"] (pode ter varios items)\n" +
+    "  $json = [regex]::Replace($json, '\"fontEditValue\"\\s*:\\s*\\[\\s*(\"[^\"]*\"(\\s*,\\s*\"[^\"]*\")*)\\s*\\]', {\n" +
+    "    param($m)\n" +
+    "    $inner = $m.Groups[1].Value\n" +
+    "    $items = [regex]::Matches($inner, '\"[^\"]*\"')\n" +
+    "    $newItems = @()\n" +
+    "    for ($k=0; $k -lt $items.Count; $k++) { $newItems += '\"' + $fEsc + '\"' }\n" +
+    "    return '\"fontEditValue\":[' + ($newItems -join ',') + ']'\n" +
+    "  })\n" +
+    "  return $json\n" +
+    "}\n" +
+    "\n" +
     "foreach ($j in $jobs) {\n" +
     "  $r = @{ id=$j.id; success=$false; error=$null; outPath=$null }\n" +
     "  try {\n" +
@@ -1601,6 +1854,7 @@ var POWERSHELL_INJECT_SCRIPT =
     "    $words = @($j.words)\n" +
     "    $json = Replace-OrderedTextFields -json $json -pattern '\"textEditValue\"\\s*:\\s*\"([^\"]*)\"' -replaceTemplate '\"textEditValue\":\"{TEXT}\"' -words $words\n" +
     "    $json = Replace-OrderedTextFields -json $json -pattern '\"capPropDefault\"\\s*:\\s*\"([^\"]*)\"\\s*,\\s*\"capPropFontEdit\"\\s*:\\s*true' -replaceTemplate '\"capPropDefault\":\"{TEXT}\",\"capPropFontEdit\":true' -words $words\n" +
+    "    if ($j.font) { $json = Replace-FontEditValue -json $json -font ([string]$j.font) }\n" +
     "    $entry.Delete()\n" +
     "    $newEntry = $zip.CreateEntry('definition.json')\n" +
     "    $writer = New-Object System.IO.StreamWriter($newEntry.Open())\n" +
@@ -1611,6 +1865,7 @@ var POWERSHELL_INJECT_SCRIPT =
     "    $r.success = $true\n" +
     "    $r.outPath = $j.dstMogrt\n" +
     "    $r.wordsUsed = $words.Count\n" +
+    "    if ($j.font) { $r.fontInjected = [string]$j.font }\n" +
     "  } catch {\n" +
     "    $r.error = $_.Exception.Message\n" +
     "  }\n" +
@@ -1641,24 +1896,35 @@ function applySrtBatch() {
     var groups = SRT_GROUPS.filter(function (g) { return g.tplName && g.text; });
     if (!groups.length) { toast("Nenhum grupo tem template. Use 'Aplicar template...'", "warn"); return; }
 
-    var payload = groups.map(function (g, gi) {
+    // CDN-aware: resolve cada template (baixa do R2 se necessário) em paralelo
+    var resolutions = groups.map(function (g, gi) {
         var tpl = ALL_TEMPLATES.find(function (t) { return t.name === g.tplName; });
-        if (!tpl || !tpl.mogrt) return null;
-        return {
-            id: "g" + gi,
-            mogrtPath: nodePath.join(EXT_PATH, "packs", tpl.mogrt),
-            start: g.start, end: g.end, text: g.text, tplName: g.tplName
-        };
-    }).filter(Boolean);
+        if (!tpl || (!tpl.mogrt && !tpl.cdn_key)) return Promise.resolve(null);
+        return resolveMogrtPath(tpl).then(function (abs) {
+            return { id: "g" + gi, mogrtPath: abs, start: g.start, end: g.end, text: g.text, tplName: g.tplName };
+        }).catch(function (e) {
+            log("✗ resolve " + tpl.name + ": " + e.message, "err");
+            return null;
+        });
+    });
 
-    if (!payload.length) { toast("Templates não encontrados", "err"); return; }
+    toast("⬇ Preparando templates (CDN)…", "info", 1500);
+    Promise.all(resolutions).then(function (resolved) {
+        var payload = resolved.filter(Boolean);
+        if (!payload.length) { toast("Templates não encontrados", "err"); return; }
+        _applySrtBatchWithPayload(payload);
+    });
+}
+function _applySrtBatchWithPayload(payload) {
 
     var trackMode = ($("auto-srt-track") && $("auto-srt-track").value) || "-1";
     var policy = (document.querySelector('input[name="postApplyPolicy"]:checked') || {}).value || "keep";
 
     APPLY_CANCELED = false;
     openLog();
-    log("► Batch APLY: " + payload.length + " grupos · track=" + trackMode);
+    var gs = getActiveGlobalStyle();
+    var gsLog = gs ? " · GS:" + [gs.tplName && "tpl=" + gs.tplName, gs.font && "font=" + gs.font].filter(Boolean).join(",") : "";
+    log("► Batch APLY: " + payload.length + " grupos · track=" + trackMode + gsLog);
 
     var btn = $("btn-auto-srt-apply");
     var orig = btn.textContent;
@@ -1672,12 +1938,14 @@ function applySrtBatch() {
     var tmpDir = (nodeOs ? nodeOs.tmpdir() : "C:/Windows/Temp").replace(/\\/g, "/") + "/_mpl_inject";
     var jobs = payload.map(function (g, i) {
         var words = String(g.text).split(/\s+/).filter(Boolean);
-        return {
+        var job = {
             id: g.id,
             srcMogrt: g.mogrtPath,
             dstMogrt: tmpDir + "/inject_" + i + "_" + Date.now() + ".mogrt",
             words: words
         };
+        if (gs && gs.font) job.font = gs.font;
+        return job;
     });
     // Marca dstMogrt no payload pra usar depois
     jobs.forEach(function (j, i) { payload[i].customMogrt = j.dstMogrt; });
@@ -2438,10 +2706,10 @@ function runDiag() {
                     return;
                 }
 
-                // [6] Se um template está selecionado, INSPECIONA pra ver props
-                if (SELECTED && SELECTED.mogrt) {
-                    var abs = nodePath.join(EXT_PATH, "packs", SELECTED.mogrt);
+                // [6] Se um template está selecionado, INSPECIONA pra ver props (CDN-aware)
+                if (SELECTED && (SELECTED.mogrt || SELECTED.cdn_key)) {
                     log("[6] Inspecionando MOGRT: " + SELECTED.name);
+                    resolveMogrtPath(SELECTED).then(function (abs) {
                     jsx("$.global.EP_inspectMogrt(" + JSON.stringify(abs) + ");", function (r2) {
                         if (r2.error) { log("✗ inspect: " + r2.error, "err"); }
                         else {
@@ -2455,6 +2723,10 @@ function runDiag() {
                         }
                         if (btn) { btn.className = "btn-diag ok"; btn.textContent = "✓"; }
                         log("════════ DIAG DONE ════════", "info");
+                    });
+                    }).catch(function (e) {
+                        log("✗ resolveMogrt inspect: " + e.message, "err");
+                        if (btn) { btn.className = "btn-diag err"; btn.textContent = "✗"; }
                     });
                 } else {
                     log("[6] Pra inspecionar MOGRT, selecione um template e clique 🩺 de novo");
@@ -2513,11 +2785,11 @@ function bind() {
     // 🔍 DIAGNOSE template selecionado (importa, lista slots detectados, remove)
     var diag = $("btn-tpl-diagnose");
     if (diag) diag.onclick = function () {
-        if (!SELECTED || !SELECTED.mogrt) { toast("Selecione um template", "warn"); return; }
-        var abs = nodePath.join(EXT_PATH, "packs", SELECTED.mogrt);
+        if (!SELECTED || (!SELECTED.mogrt && !SELECTED.cdn_key)) { toast("Selecione um template", "warn"); return; }
         openLog();
         log("🔍 Diagnosticando template: " + SELECTED.name, "info");
         diag.disabled = true;
+        resolveMogrtPath(SELECTED).then(function (abs) {
         jsx("$.global.EP_diagnoseTemplateSlots(" + JSON.stringify(abs) + ");", function (d) {
             diag.disabled = false;
             if (d.error) { log("✗ " + d.error, "err"); toast("Erro: " + d.error, "err"); return; }
@@ -2537,6 +2809,11 @@ function bind() {
                 });
             }
             toast("✓ " + d.slotsDetected + " slots detectados — veja LOG", "ok", 4000);
+        });
+        }).catch(function (e) {
+            diag.disabled = false;
+            log("✗ resolveMogrt diagnose: " + e.message, "err");
+            toast("Falha ao obter MOGRT: " + e.message, "err", 5000);
         });
     };
 
@@ -2624,6 +2901,10 @@ function bind() {
 
     // APLICAR NA TIMELINE
     var btnApply = $("btn-auto-srt-apply"); if (btnApply) btnApply.onclick = applySrtBatch;
+
+    // ── ESTILO GLOBAL: hidrata UI + wire eventos (templates populados depois do catálogo)
+    loadGlobalStyle();
+    bindGlobalStyleUI();
 
     // LOG toggle
     var togLog = $("toggle-log"); if (togLog) togLog.onclick = function () {

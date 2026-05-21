@@ -1,4 +1,4 @@
-# 🔌 Guia técnico — Integrar novos plugins na infra MotionPro
+# 🔌 Guia técnico — Integrar novos plugins na infra Motion Titles
 
 > Como reusar o backend, auth, licenciamento, Stripe e dashboard pra criar novos produtos (ex: **Legendas**) que vão pra mesma gestão centralizada.
 
@@ -18,16 +18,16 @@
               ┌───────────┴──┐      ┌────┴────────────┐
               │              │      │                 │
               ▼              ▼      ▼                 ▼
-       MotionPro Plugin   Legendas Plugin   Plugin 3 (futuro)
+       Motion Titles Plugin   Legendas Plugin   Plugin 3 (futuro)
        (Premiere CEP)     (Premiere CEP)    (qualquer SDK)
-       product=motionpro  product=legendas  product=...
+       product=Motion Titles  product=legendas  product=...
 ```
 
 **Por que 1 backend só?**
 - ✅ Cliente faz **1 conta** que serve pra todos os plugins (UX top)
 - ✅ Vê **tudo no mesmo dashboard** (você gerencia 1 painel só)
 - ✅ Compartilha Stripe customer (compra Anual+Legendas com mesmo cartão)
-- ✅ Pode oferecer **bundles** ("Compre MotionPro + Legendas e ganhe 30%")
+- ✅ Pode oferecer **bundles** ("Compre Motion Titles + Legendas e ganhe 30%")
 - ✅ Custo de infra continua R$ 0/mês (mesmo Vercel/Neon/Resend)
 
 ---
@@ -65,7 +65,7 @@ O backend já tem TODOS esses endpoints prontos pra qualquer plugin chamar:
 -- backend/migrations/004_multi_product.sql
 
 CREATE TABLE IF NOT EXISTS products (
-    id          TEXT PRIMARY KEY,             -- 'motionpro' | 'legendas' | 'bundle_all'
+    id          TEXT PRIMARY KEY,             -- 'Motion Titles' | 'legendas' | 'bundle_all'
     name        TEXT NOT NULL,
     description TEXT,
     is_active   BOOLEAN NOT NULL DEFAULT true,
@@ -73,19 +73,19 @@ CREATE TABLE IF NOT EXISTS products (
 );
 
 INSERT INTO products(id, name, description) VALUES
-    ('motionpro', 'MotionPro', '7.906 templates de motion graphics'),
+    ('Motion Titles', 'Motion Titles', '7.906 templates de motion graphics'),
     ('legendas',  'Legendas Pro', 'Plugin de geração e estilização de legendas'),
-    ('bundle_all','Bundle Completo', 'Acesso a todos os plugins MotionPro')
+    ('bundle_all','Bundle Completo', 'Acesso a todos os plugins Motion Titles')
 ON CONFLICT (id) DO NOTHING;
 
 -- Subscription agora pertence a um produto específico
 ALTER TABLE subscriptions
-    ADD COLUMN IF NOT EXISTS product_id TEXT REFERENCES products(id) DEFAULT 'motionpro';
+    ADD COLUMN IF NOT EXISTS product_id TEXT REFERENCES products(id) DEFAULT 'Motion Titles';
 
 CREATE INDEX IF NOT EXISTS idx_subs_user_product ON subscriptions(user_id, product_id, status);
 
--- Backfill: todas as subs existentes pertencem ao MotionPro
-UPDATE subscriptions SET product_id='motionpro' WHERE product_id IS NULL;
+-- Backfill: todas as subs existentes pertencem ao Motion Titles
+UPDATE subscriptions SET product_id='Motion Titles' WHERE product_id IS NULL;
 
 -- Stripe Price IDs por produto (substitui as env vars STRIPE_PRICE_*)
 CREATE TABLE IF NOT EXISTS product_prices (
@@ -99,8 +99,8 @@ CREATE TABLE IF NOT EXISTS product_prices (
 );
 
 INSERT INTO product_prices(product_id, plan, stripe_price_id, amount_cents) VALUES
-    ('motionpro', 'yearly',   'price_1TY6BHBBwmTfpkhYOkVzI0vE', 19900),
-    ('motionpro', 'lifetime', 'price_1TY6BJBBwmTfpkhYNYYWFXUb', 49900)
+    ('Motion Titles', 'yearly',   'price_1TY6BHBBwmTfpkhYOkVzI0vE', 19900),
+    ('Motion Titles', 'lifetime', 'price_1TY6BJBBwmTfpkhYNYYWFXUb', 49900)
 ON CONFLICT (stripe_price_id) DO NOTHING;
 ```
 
@@ -156,7 +156,7 @@ async function getActiveSubscriptionForProduct(userId, productId) {
 
 ```js
 router.post("/checkout", async (req, res, next) => {
-    const product_id = req.query.product || req.body?.product || "motionpro";
+    const product_id = req.query.product || req.body?.product || "Motion Titles";
     const plan       = (req.query.plan   || req.body?.plan   || "yearly").toLowerCase();
 
     // Busca price ID no banco (em vez de env var)
@@ -173,7 +173,7 @@ router.post("/checkout", async (req, res, next) => {
 
 E no **webhook**, quando processa `checkout.session.completed`:
 ```js
-const product_id = cs.metadata?.product_id || "motionpro";
+const product_id = cs.metadata?.product_id || "Motion Titles";
 await upsertSubscription({ userId, product_id, plan, status, ... });
 ```
 
@@ -181,7 +181,7 @@ await upsertSubscription({ userId, product_id, plan, status, ... });
 
 ## 🔌 Como o NOVO plugin (Legendas) deve se conectar
 
-### A. `js/config.js` (igual o MotionPro)
+### A. `js/config.js` (igual o Motion Titles)
 
 ```js
 window.MV_CONFIG = {
@@ -192,7 +192,7 @@ window.MV_CONFIG = {
 };
 ```
 
-### B. `js/api.js` — chamadas igual o MotionPro
+### B. `js/api.js` — chamadas igual o Motion Titles
 
 ```js
 const API = (function () {
@@ -234,7 +234,7 @@ const API = (function () {
 })();
 ```
 
-### C. Trial bar + paywall idêntico ao MotionPro
+### C. Trial bar + paywall idêntico ao Motion Titles
 
 Copie de `plugin/index.html` + `plugin/css/app.css` + `plugin/js/app.js` os blocos:
 - `<div id="gate">` (login/signup)
@@ -244,7 +244,7 @@ Copie de `plugin/index.html` + `plugin/css/app.css` + `plugin/js/app.js` os bloc
 - Funções `bindGate()`, `updateTrialUI()`, `showPaywall()`, `checkEmailVerified()`
 
 Mude só:
-- O brand text de "MotionPro" pra "Legendas Pro"
+- O brand text de "Motion Titles" pra "Legendas Pro"
 - O paywall mostra preços do produto Legendas
 - A URL do botão "Assinar" vai pra `motionpro-lp.vercel.app/legendas/#pricing` (página específica)
 
@@ -259,14 +259,14 @@ Mude só:
 </ExtensionManifest>
 ```
 
-> Importante: ID **diferente** do MotionPro pra ambos coexistirem no mesmo Premiere.
+> Importante: ID **diferente** do Motion Titles pra ambos coexistirem no mesmo Premiere.
 
 ### E. Fingerprint compartilhado (IMPORTANTE)
 
-Use **a mesma função `computeFingerprint()`** do MotionPro. Razão: se cliente tem MotionPro + Legendas no mesmo PC, queremos que o backend conte como **1 dispositivo** pros limites (não 2).
+Use **a mesma função `computeFingerprint()`** do Motion Titles. Razão: se cliente tem Motion Titles + Legendas no mesmo PC, queremos que o backend conte como **1 dispositivo** pros limites (não 2).
 
 ```js
-// js/app.js — copia direto do MotionPro
+// js/app.js — copia direto do Motion Titles
 function computeFingerprint() {
     var os = (typeof require === "function") ? require("os") : null;
     // ... mesma implementação
@@ -281,8 +281,8 @@ O dashboard já está preparado pra mostrar múltiplas subs por usuário. Vai ap
 
 ```
 Cliente: Gabriel Kendy
-├── 📦 MotionPro      · Vitalício · ativo · 3 dispositivos
-├── 📦 Legendas Pro   · Anual     · trial · expira em 14 dias
+├── 📦 Motion Titles      · Vitalício · ativo · 3 dispositivos
+├── 📦 Legendas Pro   · Anual     · trial · expira em 7 dias
 └── 📦 Bundle         · ❌ não tem
 ```
 
@@ -301,7 +301,7 @@ Filtro novo:
 ```html
 <select id="users-product">
     <option value="all">Todos produtos</option>
-    <option value="motionpro">MotionPro</option>
+    <option value="Motion Titles">Motion Titles</option>
     <option value="legendas">Legendas Pro</option>
 </select>
 ```
@@ -322,7 +322,7 @@ Roda o script `tools/stripe-bootstrap.js` adaptado:
 
 ```js
 const PRODUCTS = [
-    // ... os 2 do MotionPro já existem
+    // ... os 2 do Motion Titles já existem
     {
         mv_id: "legendas_yearly",
         name: "Legendas Pro · Anual",
@@ -339,7 +339,7 @@ const PRODUCTS = [
     {
         mv_id: "bundle_yearly",
         name: "Bundle Completo · Anual",
-        description: "MotionPro + Legendas Pro",
+        description: "Motion Titles + Legendas Pro",
         unit_amount: 29900,   // R$ 299/ano (vs R$ 348 separados)
         recurring: { interval: "year" }
     }
@@ -357,7 +357,7 @@ Atualize `backend/src/utils/email.js → welcomeEmail({...})` pra receber `produ
 ```js
 function welcomeEmail({ email, password, plan, productName, downloadUrl }) {
     const html = `...
-    <h1>Bem-vindo ao ${productName || 'MotionPro'}</h1>
+    <h1>Bem-vindo ao ${productName || 'Motion Titles'}</h1>
     ...
     <a href="${downloadUrl}">Baixar ${productName}</a>
     `;
@@ -368,7 +368,7 @@ E no webhook do checkout passa o nome certo:
 ```js
 const productName = product_id === "legendas" ? "Legendas Pro"
                   : product_id === "bundle_all" ? "Bundle Completo"
-                  : "MotionPro";
+                  : "Motion Titles";
 await welcomeEmail({ email, password, plan, productName, downloadUrl });
 ```
 
@@ -384,22 +384,22 @@ await welcomeEmail({ email, password, plan, productName, downloadUrl });
 5. ✅ Atualizar `welcomeEmail` pra mostrar nome do produto
 
 ### Fase 2 — Plugin Legendas (paralelo, 1-3 semanas)
-1. Cria pasta `legendas-plugin/` na mesma estrutura do MotionPro
-2. Copia `js/config.js`, `js/api.js`, `js/app.js` do MotionPro
+1. Cria pasta `legendas-plugin/` na mesma estrutura do Motion Titles
+2. Copia `js/config.js`, `js/api.js`, `js/app.js` do Motion Titles
 3. Muda `productId: "legendas"` no config
 4. Implementa a UI específica do plugin (lista de estilos de legenda, presets, etc)
-5. Reusa `gate`, `trial-bar`, `verify-bar`, `paywall` da MotionPro (copy/paste)
+5. Reusa `gate`, `trial-bar`, `verify-bar`, `paywall` da Motion Titles (copy/paste)
 6. Bumpa CSXS ID pra `com.legendaspro.panel`
 
 ### Fase 3 — Dashboard multi-produto (1-2 dias)
 1. Adiciona coluna "Produtos" na lista de users
 2. Filtro por produto
-3. KPIs separados (MRR MotionPro vs MRR Legendas vs MRR Bundle)
+3. KPIs separados (MRR Motion Titles vs MRR Legendas vs MRR Bundle)
 4. Grant admin escolhe produto
 
 ### Fase 4 — Landing Legendas (paralelo, designer)
 1. Cria `landing/legendas/index.html` (ou subdomínio próprio)
-2. Reusa header/footer/modal do MotionPro
+2. Reusa header/footer/modal do Motion Titles
 3. Botões "Assinar" enviam `product=legendas` ao checkout
 
 ### Fase 5 — Bundle (opcional, depois)
@@ -427,21 +427,21 @@ Quando for adicionar QUALQUER plugin futuro, segue esse roteiro:
 
 ## 🔐 Decisões de design importantes (já tomadas)
 
-1. **1 conta MotionPro = acesso a múltiplos produtos**
+1. **1 conta Motion Titles = acesso a múltiplos produtos**
    - User cria conta uma vez
    - Compra cada plugin separado OU bundle
-   - Login no plugin Legendas usa as mesmas credenciais do MotionPro
+   - Login no plugin Legendas usa as mesmas credenciais do Motion Titles
 
 2. **License JWT carrega `product` no payload**
    - Plugin valida que `payload.product === window.MV_CONFIG.productId`
-   - Evita usar license do MotionPro pra rodar Legendas
+   - Evita usar license do Motion Titles pra rodar Legendas
 
 3. **Fingerprint compartilhado**
    - 1 dispositivo conta como 1, mesmo rodando 2 plugins
    - Tabela `devices` já é por user, não por plugin
 
 4. **Trial isolado por produto**
-   - Cliente pode ter trial do MotionPro expirado MAS trial do Legendas ativo
+   - Cliente pode ter trial do Motion Titles expirado MAS trial do Legendas ativo
    - Cada produto tem sua própria entrada em `subscriptions`
 
 5. **Stripe Customer compartilhado**
@@ -456,9 +456,9 @@ Quando for adicionar QUALQUER plugin futuro, segue esse roteiro:
 | Pergunta | Opção A | Opção B |
 |---|---|---|
 | Bundle agressivo? | R$ 299 cobre os 2 (-14% vs separado) | R$ 349 cobre os 2 (-5% vs separado) |
-| Trial separado ou compartilhado? | 14 dias por produto | 14 dias cobrindo tudo |
-| Cliente MotionPro ganha desconto no Legendas? | -30% pra existente | sem desconto |
-| Plugin Legendas tem catálogo próprio? | Sim, /v1/catalog?product=legendas | Compartilha estilos com MotionPro |
+| Trial separado ou compartilhado? | 7 dias por produto | 7 dias cobrindo tudo |
+| Cliente Motion Titles ganha desconto no Legendas? | -30% pra existente | sem desconto |
+| Plugin Legendas tem catálogo próprio? | Sim, /v1/catalog?product=legendas | Compartilha estilos com Motion Titles |
 
 Quando você decidir essas 4, ajusto o backend pra refletir.
 
@@ -474,9 +474,9 @@ Quando você decidir essas 4, ajusto o backend pra refletir.
 
 ---
 
-## 📚 Arquivos do MotionPro pra usar como REFERÊNCIA
+## 📚 Arquivos do Motion Titles pra usar como REFERÊNCIA
 
-| O que você precisa | Arquivo MotionPro |
+| O que você precisa | Arquivo Motion Titles |
 |---|---|
 | Tela de login/signup | `plugin/index.html` (linhas 11-44) |
 | CSS do gate + paywall | `plugin/css/app.css` (busque `.gate__`, `.paywall`, `.trialbar`, `.verifybar`) |
@@ -496,7 +496,7 @@ Me passa essas infos que eu já preparo a Fase 1 (backend multi-produto):
 2. **Preços decididos** (anual R$ X, vitalício R$ Y)
 3. **Quer bundle?** (qual preço)
 4. **ID interno** (sugiro `legendas` — curto e claro)
-5. **Trial 14 dias separado ou compartilhado** com MotionPro
+5. **Trial 7 dias separado ou compartilhado** com Motion Titles
 
 Aí em ~2h o backend tá multi-produto e você foca 100% em fazer o plugin novo. 🚀
 
@@ -506,5 +506,68 @@ Aí em ~2h o backend tá multi-produto e você foca 100% em fazer o plugin novo.
 ─────────────────────────────────────────────────
    BASE · KENDY
    Multi-product integration guide
+─────────────────────────────────────────────────
+```
+
+---
+
+## ✅ STATUS 2026-05-17 — Família completa de 3 plugins
+
+A infra agora está rodando 3 produtos sobre o mesmo backend:
+
+| Plugin | ID interno | Pasta | ExtensionBundleId |
+|---|---|---|---|
+| **Motion Titles** (templates) | `Motion Titles` | `plugin/` | `com.motionvault.panel` |
+| **Motion Legendas** | `legendas` | `plugin-legendas/` | `com.motionpro.legendas` |
+| **Motion IA** | `ia` | `plugin-ia/` | `com.motionpro.ia` |
+
+### Como o IA difere dos outros dois
+
+Os outros dois são **biblioteca + insert** (catálogo de templates → importMGT
+no Premiere). O IA é **agente conversacional com tool-use**:
+
+```
+Usuário escreve no chat
+     ↓
+ia-client.js empacota mensagens + tools
+     ↓
+POST /v1/ia/chat (backend valida sub + quota → proxy Anthropic)
+     ↓
+IA responde com tool_use → host-bridge.js executa via host.jsx
+     ↓
+Resultado vira tool_result → IA continua → texto final
+```
+
+### Novos arquivos backend (Fase IA)
+
+- `migrations/006_ia_product.sql` — produto `ia` + tabela `ia_usage` (quota)
+- `routes/ia.js` — `/v1/ia/chat`, `/v1/ia/usage`, `/v1/ia/health`
+- env nova: `ANTHROPIC_API_KEY` na Vercel
+- rate limit dedicado: 30 req/min em `/v1/ia/chat`
+
+### Quotas por plano (mensais, input+output)
+
+```
+trial      50 000 tokens
+yearly    500 000 tokens
+lifetime  1 000 000 tokens
+bundle    2 000 000 tokens
+```
+
+Reset automático no dia 1 de cada mês (chave composta `user_id + month`).
+
+### Próximos passos (não bloqueantes)
+
+1. Criar prices reais no Stripe Dashboard pro produto `ia` (yearly R$ 249,
+   lifetime R$ 699) e fazer UPDATE em `product_prices`.
+2. Rodar `npm run migrate` (ou redeploy automático na Vercel).
+3. Setar `ANTHROPIC_API_KEY` em Vercel env vars.
+4. Empacotar com `installers/zip-manual-ia/build-zip.ps1` e disponibilizar
+   `Motion Titles-IA-installer-windows.zip` no checkout/painel.
+
+```
+─────────────────────────────────────────────────
+   3 plugins · 1 backend · 1 conta · 1 dashboard
+   Família MotionVault completa
 ─────────────────────────────────────────────────
 ```

@@ -3,11 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src *; img-src * data: blob: file: filesystem:; style-src 'self' 'unsafe-inline'; media-src * data: blob: file: filesystem:;">
-<title>MotionPro Legendas — Premiere</title>
-<link rel="stylesheet" href="css/ep.css?v=423a">
+<title>Motion Legendas — Premiere</title>
+<link rel="stylesheet" href="css/ep.css?v=425b">
 </head>
 <body>
-
 <!-- ════════════ HEADER (PacotesFX) ════════════ -->
 <header id="header">
     <div id="header-logo">
@@ -15,11 +14,11 @@
             <circle cx="16" cy="16" r="14" fill="url(#gradH)"/>
             <path d="M10 11h6c2 0 4 1.4 4 4s-2 4-4 4h-2v3h-4z M14 14v2h2c.6 0 1-.4 1-1s-.4-1-1-1z" fill="#000"/>
             <defs><linearGradient id="gradH" x1="0" y1="0" x2="32" y2="32">
-                <stop offset="0" stop-color="#38e287"/><stop offset="1" stop-color="#22c573"/>
+                <stop offset="0" stop-color="#2563eb"/><stop offset="1" stop-color="#1d4ed8"/>
             </linearGradient></defs>
         </svg>
         <div>
-            <div id="header-title">MotionPro <span class="accent">Legendas</span></div>
+            <div id="header-title">Motion <span class="accent">Legendas</span></div>
             <div id="header-subtitle">by PacotesFX</div>
         </div>
     </div>
@@ -76,6 +75,68 @@
     <span class="wiz-arrow">→</span>
     <div class="wiz-step" data-step="apply">3. Aplique</div>
 </div>
+
+<!-- ════════════ ESTILO GLOBAL (template + fonte pra TODAS as legendas) ════════════ -->
+<details id="global-style-panel">
+    <summary id="global-style-summary">
+        <span class="gs-toggle">
+            <input type="checkbox" id="gs-enabled" onclick="event.stopPropagation()">
+            <span class="gs-label">🎨 <b>Estilo Global</b></span>
+        </span>
+        <span class="gs-summary-chip" id="gs-summary-chip">desligado</span>
+        <span class="gs-chevron">▾</span>
+    </summary>
+    <div class="gs-body">
+        <div class="gs-help">
+            Defina <b>template e fonte uma vez</b> — aplica em TODAS as legendas (templates, importação SRT e roteiro).
+        </div>
+
+        <!-- TEMPLATE -->
+        <div class="gs-row">
+            <label class="gs-row-label">📐 Template fixo</label>
+            <select id="gs-template">
+                <option value="">— Auto inteligente (por palavras) —</option>
+            </select>
+        </div>
+        <div class="gs-hint">Auto = grupo de 3p usa template de 3p · Fixo = força um template pra TODAS legendas</div>
+
+        <!-- FONTE -->
+        <div class="gs-row">
+            <label class="gs-row-label">🔤 Fonte global</label>
+            <select id="gs-font">
+                <option value="">— Manter original do template —</option>
+                <optgroup label="Helvetica (default)">
+                    <option value="Helvetica-Bold">Helvetica Bold</option>
+                    <option value="Helvetica">Helvetica Regular</option>
+                    <option value="Helvetica-Oblique">Helvetica Italic</option>
+                    <option value="Helvetica-BoldOblique">Helvetica Bold Italic</option>
+                </optgroup>
+                <optgroup label="Chamberi Display">
+                    <option value="ChamberiDisplay-Black">Chamberi Display Black</option>
+                    <option value="ChamberiDisplay-ExtraBold">Chamberi Display ExtraBold</option>
+                    <option value="ChamberiDisplay-Bold">Chamberi Display Bold</option>
+                    <option value="ChamberiDisplay-SemiBold">Chamberi Display SemiBold</option>
+                    <option value="ChamberiDisplay-Regular">Chamberi Display Regular</option>
+                    <option value="ChamberiDisplay-Light">Chamberi Display Light</option>
+                </optgroup>
+                <optgroup label="Outras shipped">
+                    <option value="HelveticaCompressed">Helvetica Compressed</option>
+                    <option value="Helvetica-Light">Helvetica Light</option>
+                    <option value="RelationshipofMelodrame">Mélodrame (manuscrita)</option>
+                </optgroup>
+                <option value="__custom__">✍️ Digitar PostScript name…</option>
+            </select>
+        </div>
+        <input type="text" id="gs-font-custom" class="hidden" placeholder="Ex: Montserrat-Bold (PostScript name exato)">
+        <div class="gs-hint">PostScript name (ex: <code>Helvetica-Bold</code>). Fonte precisa estar instalada no sistema.</div>
+
+        <!-- AÇÕES -->
+        <div class="gs-actions">
+            <button id="gs-reset" class="btn-util">Resetar</button>
+            <span id="gs-preview-status" class="gs-status"></span>
+        </div>
+    </div>
+</details>
 
 <!-- ════════════ TAB: TEMPLATES ════════════ -->
 <div id="tab-templates" class="tab-panel active">
@@ -420,11 +481,12 @@
     <span id="status-user">—</span>
 </div>
 
-<!-- ════════════ LOGIN OVERLAY (JWT MotionPro) ════════════ -->
+<!-- ════════════ LOGIN OVERLAY (JWT MotionVault — visual padronizado família Motion) ════════════ -->
 <div id="login-overlay" class="hidden">
-    <div class="capture-modal">
-        <div class="capture-modal-header">
-            <span>Entrar no MotionPro Legendas</span>
+    <div class="capture-modal motion-gate">
+        <div class="motion-gate-brand">
+            <div class="motion-gate-logo">Motion Legendas</div>
+            <div class="motion-gate-sub">by PacotesFX</div>
         </div>
         <div class="capture-modal-body">
             <div id="login-view">
@@ -438,7 +500,7 @@
                 </div>
                 <div class="login-extras signup-hide">
                     <button id="login-forgot" class="btn-link">Esqueci minha senha</button>
-                    <button id="login-toggle-signup" class="btn-link">Criar conta · 14 dias grátis</button>
+                    <button id="login-toggle-signup" class="btn-link">Criar conta · 7 dias grátis</button>
                 </div>
                 <div class="signup-show" style="display:none">
                     <div class="capture-field">
@@ -472,7 +534,7 @@
                     <div style="font-size:9px;color:var(--text-dim);letter-spacing:1px">ANUAL</div>
                     <div style="font:800 18px Inter">R$ 149<small style="font:500 10px Inter">/ano</small></div>
                 </div>
-                <div style="background:rgba(56,226,135,.1);border:1px solid var(--accent);padding:12px;border-radius:6px">
+                <div style="background:rgba(37, 99, 235,.1);border:1px solid var(--accent);padding:12px;border-radius:6px">
                     <div style="font-size:9px;color:var(--text-dim);letter-spacing:1px">VITALÍCIO</div>
                     <div style="font:800 18px Inter">R$ 399<small style="font:500 10px Inter">once</small></div>
                 </div>
@@ -588,9 +650,10 @@
     <div id="side"></div>
 </div>
 
-<script src="js/lib/CSInterface.js?v=423a"></script>
-<script src="js/config.js?v=423a"></script>
-<script src="js/auth.js?v=423a"></script>
-<script src="js/main.js?v=423a"></script>
+<script src="js/lib/CSInterface.js?v=425b"></script>
+<script src="js/config.js?v=425b"></script>
+<script src="js/asset-loader.js?v=425b"></script>
+<script src="js/auth.js?v=425b"></script>
+<script src="js/main.js?v=425b"></script>
 </body>
 </html>

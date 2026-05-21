@@ -26,7 +26,7 @@
 6. Resultado: vídeo com 50-200 títulos animados + sons sincronizados, sem fazer manual
 ```
 
-**Esse é o "MotionPro Legendas FODA" do futuro.** Atual nosso plugin é "biblioteca passiva" — esse é "automação ativa".
+**Esse é o "Motion Legendas FODA" do futuro.** Atual nosso plugin é "biblioteca passiva" — esse é "automação ativa".
 
 ---
 
@@ -76,13 +76,13 @@
 
 ## 💰 Posicionamento comercial
 
-Se você quer construir esse **MotionPro Editor SRT**, é um produto separado do MotionPro Legendas atual:
+Se você quer construir esse **Motion Titles Editor SRT**, é um produto separado do Motion Legendas atual:
 
 | Produto | Plano | Preço sugerido | Pra quem |
 |---|---|---|---|
-| MotionPro Legendas (atual) | Anual / Vitalício | R$ 149 / R$ 399 | Editor básico que quer templates prontos |
-| **MotionPro Editor SRT (futuro)** | Anual / Vitalício | **R$ 399 / R$ 999** | Editor profissional que processa muito vídeo (youtubers, agências) |
-| Bundle Completo | Anual | R$ 599 | MotionPro + Legendas + Editor SRT |
+| Motion Legendas (atual) | Anual / Vitalício | R$ 149 / R$ 399 | Editor básico que quer templates prontos |
+| **Motion Titles Editor SRT (futuro)** | Anual / Vitalício | **R$ 399 / R$ 999** | Editor profissional que processa muito vídeo (youtubers, agências) |
+| Bundle Completo | Anual | R$ 599 | Motion Titles + Legendas + Editor SRT |
 
 Editor SRT é **3-5x mais valor percebido** porque economiza HORAS de trabalho manual. Cliente vai querer pagar mais.
 

@@ -89,7 +89,7 @@ function build() {
             id: packId,
             name: json.packName || path.basename(d),
             badge: json.badgeText || "MOTIONVAULT",
-            color: json.badgeBackgroundColor || "#38E287",
+            color: json.badgeBackgroundColor || "#2563EB",
             author: json.author || "PacotesFX",
             version: json.version || "1.0.0",
             host: json.apps || "PP",

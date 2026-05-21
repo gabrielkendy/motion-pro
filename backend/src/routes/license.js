@@ -18,8 +18,23 @@ const ACTIVE_STATUSES = new Set(["active", "trialing"]);
 const DEFAULT_PRODUCT = "motionpro";
 
 /* Retorna sub ativa do usuário PRO PRODUTO especificado.
- * Bundle 'bundle_all' cobre todos os produtos automaticamente. */
+ * Bundle 'bundle_all' cobre todos os produtos automaticamente.
+ * Master accounts (is_admin OU lifetime_until>now) cobrem tudo como "lifetime active". */
 async function getActiveSubscription(userId, productId = DEFAULT_PRODUCT) {
+    // 0. Master account? (try/catch — colunas podem não existir antes da migration 007)
+    try {
+        const u = await pool.query("SELECT is_admin, lifetime_until FROM users WHERE id=$1", [userId]);
+        if (u.rowCount) {
+            const isAdmin = u.rows[0].is_admin === true;
+            const lifetime = u.rows[0].lifetime_until && new Date(u.rows[0].lifetime_until) > new Date();
+            if (isAdmin || lifetime) {
+                return { plan: "lifetime", status: "active", expiresAt: u.rows[0].lifetime_until || null, product: productId, master: true };
+            }
+        }
+    } catch (e) {
+        if (!String(e.message).includes("does not exist")) throw e;
+    }
+
     // 1. Bundle ativo cobre TUDO
     const bundle = await pool.query(
         `SELECT plan, status, current_period_end FROM subscriptions
@@ -82,9 +97,11 @@ async function audit(userId, deviceId, action, detail) {
 
 router.post("/issue", requireAuth, async (req, res, next) => {
     try {
-        const { fingerprint, product_id } = req.body || {};
+        const body = req.body || {};
+        const { fingerprint } = body;
         if (!fingerprint) return res.status(400).json({ error: "fingerprint_required" });
-        const product = product_id || DEFAULT_PRODUCT;
+        // Aceita product_id (snake) OU productId (camel) — bug histórico: plugins enviam camelCase
+        const product = (body.product_id || body.productId || DEFAULT_PRODUCT).toString().toLowerCase();
 
         let sub = await getActiveSubscription(req.user.id, product);
 
@@ -232,8 +249,9 @@ router.post("/issue", requireAuth, async (req, res, next) => {
 
 router.post("/heartbeat", requireAuth, async (req, res, next) => {
     try {
-        const { fingerprint, product_id } = req.body || {};
-        const product = product_id || DEFAULT_PRODUCT;
+        const body = req.body || {};
+        const { fingerprint } = body;
+        const product = (body.product_id || body.productId || DEFAULT_PRODUCT).toString().toLowerCase();
         const d = await pool.query(
             "SELECT id, revoked FROM devices WHERE user_id=$1 AND fingerprint=$2",
             [req.user.id, fingerprint]
@@ -241,7 +259,34 @@ router.post("/heartbeat", requireAuth, async (req, res, next) => {
         if (d.rowCount === 0) return res.status(404).json({ error: "device_unknown" });
         if (d.rows[0].revoked) return res.json({ revoked: true });
 
-        await pool.query("UPDATE devices SET last_seen=now() WHERE id=$1", [d.rows[0].id]);
+        // Update device com IP/UA atuais + geo (caso o user esteja em outro local)
+        const ip = clientIp(req);
+        const ua = clientUa(req);
+        const geo = await geoLookup(ip, req).catch(() => ({}));
+        await pool.query(`
+            UPDATE devices SET
+              last_seen = now(),
+              last_ip   = COALESCE($2, last_ip),
+              last_ua   = COALESCE($3, last_ua),
+              country   = COALESCE($4, country),
+              region    = COALESCE($5, region),
+              city      = COALESCE($6, city)
+            WHERE id=$1
+        `, [d.rows[0].id, ip, ua, geo.country, geo.region, geo.city]).catch(() => {});
+
+        // Atualiza last_seen_at na session ativa correspondente ao token desse request
+        try {
+            const auth = (req.headers.authorization || "").match(/^Bearer (.+)$/);
+            if (auth) {
+                const tokenHash = require("crypto").createHash("sha256").update(auth[1]).digest("hex");
+                await pool.query(
+                    `UPDATE sessions SET last_seen_at=now(), last_ip=$1, last_ua=$2
+                      WHERE token_hash=$3 AND revoked=false`,
+                    [ip, ua, tokenHash]
+                );
+            }
+        } catch (e) { /* tabela talvez não exista ainda */ }
+
         const sub = await getActiveSubscription(req.user.id, product);
 
         // 🔒 GATE: se sub inativa, sinaliza pro plugin (não emite nova license)

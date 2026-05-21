@@ -7,7 +7,7 @@
  *   4. if item.mogrt is a local absolute path (legacy / dev mode) → return it directly
  *
  * Cache layout:
- *   %LOCALAPPDATA%\MotionPro\cache\<first 2 chars>\<sha256>.mogrt
+ *   %LOCALAPPDATA%\Motion Titles\cache\<first 2 chars>\<sha256>.mogrt
  *
  * Globals:
  *   window.AssetLoader.get(item)         → Promise<string>  // absolute path on disk
@@ -33,7 +33,7 @@
     var CACHE_ROOT = null;
     if (fs && path && os) {
         var localAppData = process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local");
-        CACHE_ROOT = path.join(localAppData, "MotionPro", "cache");
+        CACHE_ROOT = path.join(localAppData, "Motion Titles", "cache");
         try { fs.mkdirSync(CACHE_ROOT, { recursive: true }); } catch (_) {}
     }
 

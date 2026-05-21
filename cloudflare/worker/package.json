@@ -1,5 +1,5 @@
 {
-  "name": "motionpro-cdn-worker",
+  "name": "Motion Titles-cdn-worker",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -9,6 +9,6 @@
     "secret:set": "wrangler secret put CDN_SIGN_SECRET"
   },
   "devDependencies": {
-    "wrangler": "^3.78.0"
+    "wrangler": "^4.92.0"
   }
 }

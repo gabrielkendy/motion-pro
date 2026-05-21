@@ -131,6 +131,9 @@ router.get("/users", requireAdmin, async (req, res, next) => {
               u.created_at,
               u.is_admin,
               u.stripe_customer,
+              u.blocked_at,
+              u.blocked_reason,
+              u.lifetime_until,
               (SELECT json_agg(json_build_object(
                   'id', s.id,
                   'product_id', s.product_id,
@@ -144,7 +147,11 @@ router.get("/users", requireAdmin, async (req, res, next) => {
               ) ORDER BY s.created_at DESC)
                  FROM subscriptions s WHERE s.user_id = u.id) AS subscriptions,
               (SELECT COUNT(*) FROM devices d WHERE d.user_id=u.id AND NOT d.revoked) AS active_devices,
-              (SELECT COUNT(*) FROM devices d WHERE d.user_id=u.id) AS total_devices
+              (SELECT COUNT(*) FROM devices d WHERE d.user_id=u.id) AS total_devices,
+              (SELECT MAX(d.last_seen) FROM devices d WHERE d.user_id=u.id) AS last_seen,
+              (SELECT json_build_object('ip', d.last_ip, 'country', d.country, 'city', d.city, 'os', d.os_name, 'last_seen', d.last_seen)
+                 FROM devices d WHERE d.user_id=u.id ORDER BY d.last_seen DESC NULLS LAST LIMIT 1) AS last_device,
+              (SELECT COUNT(*) FROM sessions s WHERE s.user_id=u.id AND NOT s.revoked AND s.expires_at > now()) AS active_sessions
             FROM users u
             ${where.length ? "WHERE " + where.join(" AND ") : ""}
             ORDER BY u.created_at DESC
@@ -469,7 +476,9 @@ router.post("/users/:id/extend-trial", requireAdmin, async (req, res, next) => {
 router.post("/users/:id/block", requireAdmin, async (req, res, next) => {
     try {
         const reason = (req.body?.reason || "admin_block").slice(0, 200);
-        const r = await pool.query("BEGIN");
+        await pool.query("BEGIN");
+        await pool.query("UPDATE users SET blocked_at=now(), blocked_reason=$2 WHERE id=$1",
+            [req.params.id, reason]).catch(() => {});
         await pool.query("UPDATE subscriptions SET status='revoked' WHERE user_id=$1 AND status IN ('active','trialing','past_due')", [req.params.id]);
         await pool.query("UPDATE devices SET revoked=true, revoked_at=now(), revoked_by=$2, revoke_reason=$3 WHERE user_id=$1 AND revoked=false",
             [req.params.id, req.user.id, reason]).catch(() => {});
@@ -490,7 +499,13 @@ router.post("/users/:id/block", requireAdmin, async (req, res, next) => {
 // === DESBLOQUEAR usuário (volta subs revoked → active, libera devices) ===
 router.post("/users/:id/unblock", requireAdmin, async (req, res, next) => {
     try {
-        await pool.query("UPDATE subscriptions SET status='active' WHERE user_id=$1 AND status='revoked'", [req.params.id]);
+        await pool.query("UPDATE users SET blocked_at=NULL, blocked_reason=NULL WHERE id=$1", [req.params.id]).catch(() => {});
+        // Restaura status real: plan=trial → trialing, demais → active
+        await pool.query(`
+            UPDATE subscriptions
+               SET status = CASE WHEN plan='trial' THEN 'trialing' ELSE 'active' END
+             WHERE user_id=$1 AND status='revoked'
+        `, [req.params.id]);
         await pool.query("UPDATE devices SET revoked=false, revoked_at=NULL, revoked_by=NULL, revoke_reason=NULL WHERE user_id=$1 AND revoke_reason LIKE 'admin_%'",
             [req.params.id]).catch(() => {});
         await pool.query(
@@ -585,25 +600,63 @@ router.post("/users/:id/send-email", requireAdmin, async (req, res, next) => {
 // === DASHBOARD SUMMARY — KPIs ricos pra overview ===
 router.get("/dashboard-summary", requireAdmin, async (_req, res, next) => {
     try {
-        const summary = await pool.query(`
-            SELECT
-              (SELECT COUNT(*) FROM users) AS total_users,
-              (SELECT COUNT(*) FROM users WHERE created_at > now() - interval '24 hours') AS new_users_24h,
-              (SELECT COUNT(*) FROM users WHERE created_at > now() - interval '7 days') AS new_users_7d,
-              (SELECT COUNT(*) FROM users WHERE created_at > now() - interval '30 days') AS new_users_30d,
-              (SELECT COUNT(DISTINCT user_id) FROM subscriptions WHERE status='active') AS paying_users,
-              (SELECT COUNT(DISTINCT user_id) FROM subscriptions WHERE status='trialing') AS trial_users,
-              (SELECT COUNT(DISTINCT user_id) FROM subscriptions WHERE status='revoked') AS blocked_users,
-              (SELECT COUNT(DISTINCT user_id) FROM subscriptions WHERE status='canceled' AND canceled_at > now() - interval '30 days') AS churned_30d
-        `).catch(() => ({ rows: [{}] }));
+        // Executa cada KPI em query separada — se uma falhar, retorna 0 e continua
+        const oneNum = (sql, params) => pool.query(sql, params || []).then(r => Number(r.rows[0]?.n || 0)).catch(() => 0);
+        const [
+            total_users, new_users_24h, new_users_7d, new_users_30d, blocked_users,
+            paying_users, trial_users, churned_30d,
+            online_now, active_24h, total_devices, active_sessions
+        ] = await Promise.all([
+            oneNum("SELECT COUNT(*)::int AS n FROM users"),
+            oneNum("SELECT COUNT(*)::int AS n FROM users WHERE created_at > now() - interval '24 hours'"),
+            oneNum("SELECT COUNT(*)::int AS n FROM users WHERE created_at > now() - interval '7 days'"),
+            oneNum("SELECT COUNT(*)::int AS n FROM users WHERE created_at > now() - interval '30 days'"),
+            oneNum("SELECT COUNT(*)::int AS n FROM users WHERE blocked_at IS NOT NULL"),
+            oneNum("SELECT COUNT(DISTINCT user_id)::int AS n FROM subscriptions WHERE status='active'"),
+            oneNum("SELECT COUNT(DISTINCT user_id)::int AS n FROM subscriptions WHERE status='trialing'"),
+            oneNum("SELECT COUNT(DISTINCT user_id)::int AS n FROM subscriptions WHERE status='canceled' AND canceled_at > now() - interval '30 days'"),
+            oneNum("SELECT COUNT(*)::int AS n FROM devices WHERE last_seen > now() - interval '10 minutes' AND NOT revoked"),
+            oneNum("SELECT COUNT(*)::int AS n FROM devices WHERE last_seen > now() - interval '24 hours' AND NOT revoked"),
+            oneNum("SELECT COUNT(*)::int AS n FROM devices WHERE NOT revoked"),
+            oneNum("SELECT COUNT(*)::int AS n FROM sessions WHERE NOT revoked AND expires_at > now()"),
+        ]);
+        const summary = { rows: [{ total_users, new_users_24h, new_users_7d, new_users_30d, blocked_users, paying_users, trial_users, churned_30d, online_now, active_24h, total_devices, active_sessions }] };
+
+        // Breakdown por produto
+        const byProduct = await pool.query(`
+            SELECT product_id, status, COUNT(*)::int AS n
+              FROM subscriptions
+             WHERE product_id IS NOT NULL
+             GROUP BY product_id, status
+             ORDER BY product_id, status
+        `).catch(() => ({ rows: [] }));
+
+        // Top 5 países (devices)
+        const topCountries = await pool.query(`
+            SELECT country, COUNT(*)::int AS n
+              FROM devices
+             WHERE country IS NOT NULL AND country <> 'LOCAL' AND NOT revoked
+             GROUP BY country ORDER BY n DESC LIMIT 5
+        `).catch(() => ({ rows: [] }));
 
         // Receita estimada (last 30d via Stripe)
         let revenue30d = 0;
+        let revenueAllTime = 0;
         try {
             const since = Math.floor((Date.now() - 30 * 24 * 60 * 60 * 1000) / 1000);
             const charges = await stripe.charges.list({ created: { gte: since }, limit: 100 });
             revenue30d = charges.data.filter(c => c.paid && !c.refunded).reduce((sum, c) => sum + c.amount / 100, 0);
+            const allCharges = await stripe.charges.list({ limit: 100 });
+            revenueAllTime = allCharges.data.filter(c => c.paid && !c.refunded).reduce((sum, c) => sum + c.amount / 100, 0);
         } catch (e) { /* ignora */ }
+
+        // MRR estimado de subs ativas
+        const mrr = await pool.query(`
+            SELECT
+              (SELECT COUNT(*) FROM subscriptions WHERE status='active' AND plan='yearly') AS yearly,
+              (SELECT COUNT(*) FROM subscriptions WHERE status='active' AND plan='lifetime') AS lifetime
+        `).catch(() => ({ rows: [{ yearly: 0, lifetime: 0 }] }));
+        const mrrBrl = Number(mrr.rows[0].yearly) * (199 / 12);
 
         // Activity recente
         const recent = await pool.query(`
@@ -611,13 +664,18 @@ router.get("/dashboard-summary", requireAdmin, async (_req, res, next) => {
               FROM license_audit a
               LEFT JOIN users u ON u.id = a.user_id
              ORDER BY a.created_at DESC
-             LIMIT 15
+             LIMIT 20
         `).catch(() => ({ rows: [] }));
 
         res.json({
             ...summary.rows[0],
+            mrr_brl: Math.round(mrrBrl * 100) / 100,
             revenue_30d_brl: Number(revenue30d.toFixed(2)),
+            revenue_all_time_brl: Number(revenueAllTime.toFixed(2)),
+            by_product: byProduct.rows,
+            top_countries: topCountries.rows,
             recent_activity: recent.rows,
+            generated_at: new Date().toISOString(),
         });
     } catch (e) { next(e); }
 });
@@ -626,15 +684,38 @@ router.get("/dashboard-summary", requireAdmin, async (_req, res, next) => {
 router.get("/users/:id/full", requireAdmin, async (req, res, next) => {
     try {
         const uid = req.params.id;
-        const [user, subs, devs, sessions, audit, downloads] = await Promise.all([
-            pool.query("SELECT id, email, name, phone, created_at, email_verified, is_admin, stripe_customer FROM users WHERE id=$1", [uid]),
-            pool.query("SELECT id, product_id, plan, status, current_period_end, started_at, stripe_sub_id FROM subscriptions WHERE user_id=$1 ORDER BY started_at DESC", [uid]),
-            pool.query("SELECT id, fingerprint, label, hostname, os_name, first_seen, last_seen, last_ip, country, region, city, revoked FROM devices WHERE user_id=$1 ORDER BY last_seen DESC", [uid]).catch(() => ({ rows: [] })),
-            pool.query("SELECT id, device_id, issued_at, expires_at, last_seen_at, last_ip, country, revoked FROM sessions WHERE user_id=$1 ORDER BY last_seen_at DESC LIMIT 50", [uid]).catch(() => ({ rows: [] })),
-            pool.query("SELECT action, detail, created_at FROM license_audit WHERE user_id=$1 ORDER BY created_at DESC LIMIT 50", [uid]),
-            pool.query("SELECT created_at, ip FROM asset_download_log WHERE user_id=$1 ORDER BY created_at DESC LIMIT 20", [uid]).catch(() => ({ rows: [] })),
+        const [user, subs, devs, sessions, audit, downloads, payments] = await Promise.all([
+            pool.query(`SELECT id, email, name, phone, created_at, email_verified, email_verified_at,
+                               phone_verified, marketing_optin, is_admin, stripe_customer,
+                               blocked_at, blocked_reason, lifetime_until
+                          FROM users WHERE id=$1`, [uid]),
+            pool.query(`SELECT id, product_id, plan, status, current_period_end, started_at, stripe_sub_id, cancel_at, NULL::timestamptz AS canceled_at
+                          FROM subscriptions WHERE user_id=$1 ORDER BY started_at DESC`, [uid]),
+            pool.query(`SELECT id, fingerprint, label, hostname, os_name, first_seen, last_seen,
+                               last_ip, first_ip, last_ua, country, region, city, revoked, revoked_at, revoke_reason
+                          FROM devices WHERE user_id=$1 ORDER BY last_seen DESC NULLS LAST`, [uid]).catch(() => ({ rows: [] })),
+            pool.query(`SELECT s.id, s.device_id, s.issued_at, s.expires_at, s.last_seen_at,
+                               s.last_ip, s.last_ua, s.country, s.revoked, s.revoked_at,
+                               d.fingerprint AS device_fingerprint, d.os_name AS device_os
+                          FROM sessions s
+                          LEFT JOIN devices d ON d.id = s.device_id
+                         WHERE s.user_id=$1 ORDER BY s.last_seen_at DESC LIMIT 100`, [uid]).catch(() => ({ rows: [] })),
+            pool.query(`SELECT a.action, a.detail, a.created_at, a.device_id
+                          FROM license_audit a WHERE a.user_id=$1 ORDER BY a.created_at DESC LIMIT 100`, [uid]),
+            pool.query(`SELECT created_at, ip FROM asset_download_log WHERE user_id=$1 ORDER BY created_at DESC LIMIT 50`, [uid]).catch(() => ({ rows: [] })),
+            // Pagamentos vêm de license_audit action='checkout_completed' (criados pelo webhook Stripe)
+            pool.query(`SELECT detail, created_at FROM license_audit
+                         WHERE user_id=$1 AND action IN ('checkout_completed','invoice_paid','invoice_payment_failed','refund')
+                         ORDER BY created_at DESC LIMIT 50`, [uid]).catch(() => ({ rows: [] })),
         ]);
         if (user.rowCount === 0) return res.status(404).json({ error: "user_not_found" });
+
+        // Total gasto = soma de payments
+        const totalSpent = payments.rows.reduce((s, p) => {
+            const amt = Number(p.detail?.amount) || 0;
+            return s + (amt / 100); // Stripe envia em centavos
+        }, 0);
+
         res.json({
             user:          user.rows[0],
             subscriptions: subs.rows,
@@ -642,7 +723,175 @@ router.get("/users/:id/full", requireAdmin, async (req, res, next) => {
             sessions:      sessions.rows,
             audit:         audit.rows,
             downloads:     downloads.rows,
+            payments:      payments.rows,
+            stats: {
+                total_spent_brl: Number(totalSpent.toFixed(2)),
+                active_devices:  devs.rows.filter(d => !d.revoked).length,
+                online_now:      devs.rows.filter(d => !d.revoked && d.last_seen && (Date.now() - new Date(d.last_seen).getTime()) < 600000).length,
+                active_sessions: sessions.rows.filter(s => !s.revoked && new Date(s.expires_at) > new Date()).length,
+                countries_seen:  [...new Set(devs.rows.map(d => d.country).filter(c => c && c !== 'LOCAL'))],
+            }
         });
+    } catch (e) { next(e); }
+});
+
+// ============================================================
+// MAINTENANCE — rodar migration 006 (idempotente) via dashboard
+// ============================================================
+router.post("/maintenance/run-migration-006", requireAdmin, async (_req, res, next) => {
+    try {
+        const fs = require("fs");
+        const path = require("path");
+        const sqlPath = path.join(__dirname, "..", "..", "migrations", "006_sessions_devices_v2.sql");
+        const sql = fs.readFileSync(sqlPath, "utf8");
+        await pool.query(sql);
+        res.json({ ok: true, migration: "006_sessions_devices_v2", executed_at: new Date().toISOString() });
+    } catch (e) {
+        console.error("[migration-006]", e.message);
+        res.status(500).json({ error: "migration_failed", message: e.message });
+    }
+});
+
+router.post("/maintenance/run-migration-008", requireAdmin, async (_req, res, next) => {
+    try {
+        const fs = require("fs"); const path = require("path");
+        const sqlPath = path.join(__dirname, "..", "..", "migrations", "008_user_ai_settings.sql");
+        await pool.query(fs.readFileSync(sqlPath, "utf8"));
+        res.json({ ok: true, migration: "008_user_ai_settings", executed_at: new Date().toISOString() });
+    } catch (e) {
+        console.error("[migration-008]", e.message);
+        res.status(500).json({ error: "migration_failed", message: e.message });
+    }
+});
+
+router.post("/maintenance/run-migration-007", requireAdmin, async (_req, res, next) => {
+    try {
+        const fs = require("fs");
+        const path = require("path");
+        const sqlPath = path.join(__dirname, "..", "..", "migrations", "007_user_blocking_lifetime.sql");
+        const sql = fs.readFileSync(sqlPath, "utf8");
+        await pool.query(sql);
+        res.json({ ok: true, migration: "007_user_blocking_lifetime", executed_at: new Date().toISOString() });
+    } catch (e) {
+        console.error("[migration-007]", e.message);
+        res.status(500).json({ error: "migration_failed", message: e.message });
+    }
+});
+
+// Bootstrap master account: garante gabriel.kend@gmail.com é admin + lifetime tudo
+router.post("/maintenance/ensure-master", requireAdmin, async (_req, res, next) => {
+    try {
+        const email = "gabriel.kend@gmail.com";
+        const u = await pool.query("SELECT id FROM users WHERE email=$1", [email]);
+        if (u.rowCount === 0) return res.status(404).json({ error: "master_not_found" });
+        const uid = u.rows[0].id;
+        const farFuture = new Date(Date.now() + 100 * 365 * 86400000); // +100 anos
+        await pool.query(
+            "UPDATE users SET is_admin=true, lifetime_until=$1 WHERE id=$2",
+            [farFuture, uid]
+        );
+        await pool.query(
+            "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'admin_master_bootstrap', $2)",
+            [uid, { by: _req.user.id }]
+        );
+        res.json({ ok: true, user_id: uid, is_admin: true, lifetime_until: farFuture });
+    } catch (e) {
+        console.error("[ensure-master]", e.message);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// ============================================================
+// GRANT TRIAL — cria sub trial pra um produto específico
+// Body: { product: "legendas" | "ia" | "motionpro" | "bundle_all", days?: 7 }
+// ============================================================
+router.post("/users/:id/grant-trial", requireAdmin, async (req, res, next) => {
+    try {
+        const uid = req.params.id;
+        const product = (req.body?.product || "motionpro").toLowerCase();
+        const days = Number(req.body?.days || 7);
+        if (!["motionpro", "legendas", "ia", "bundle_all"].includes(product)) {
+            return res.status(400).json({ error: "invalid_product" });
+        }
+        const expiresAt = new Date(Date.now() + days * 86400000);
+        const ins = await pool.query(
+            `INSERT INTO subscriptions(user_id, product_id, plan, status, current_period_end)
+             VALUES($1, $2, 'trial', 'trialing', $3)
+             ON CONFLICT DO NOTHING
+             RETURNING id, product_id, current_period_end`,
+            [uid, product, expiresAt]
+        );
+        await pool.query(
+            "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'admin_grant_trial', $2)",
+            [uid, { product, days, by: req.user.id }]
+        );
+        res.json({ ok: true, granted: ins.rows[0] || null, expires_at: expiresAt });
+    } catch (e) { next(e); }
+});
+
+// ============================================================
+// MERGE USERS — move tudo do source pro target, deleta source
+// Body: { source_id: "uuid" } — keeps :id como master
+// ============================================================
+router.post("/users/:id/merge", requireAdmin, async (req, res, next) => {
+    const client = await pool.connect();
+    try {
+        const target = req.params.id;
+        const source = req.body?.source_id;
+        if (!source || source === target) return res.status(400).json({ error: "invalid_source" });
+
+        await client.query("BEGIN");
+        const moved = {};
+        for (const table of ["subscriptions", "devices", "license_audit", "asset_download_log"]) {
+            const r = await client.query(
+                `UPDATE ${table} SET user_id=$1 WHERE user_id=$2`,
+                [target, source]
+            ).catch(() => ({ rowCount: 0 }));
+            moved[table] = r.rowCount;
+        }
+        // Sessions/oauth/magic_links se existirem
+        for (const table of ["sessions", "oauth_accounts"]) {
+            await client.query(
+                `UPDATE ${table} SET user_id=$1 WHERE user_id=$2`,
+                [target, source]
+            ).catch(() => {});
+        }
+        await client.query("DELETE FROM users WHERE id=$1", [source]);
+        await client.query(
+            "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'admin_user_merged', $2)",
+            [target, { merged_from: source, moved, by: req.user.id }]
+        );
+        await client.query("COMMIT");
+        res.json({ ok: true, merged_from: source, moved });
+    } catch (e) {
+        await client.query("ROLLBACK").catch(() => {});
+        next(e);
+    } finally {
+        client.release();
+    }
+});
+
+// ============================================================
+// DUPLICATES — detecta emails com mesmo prefixo (jmr.andrade vs jmr.andrade11)
+// ============================================================
+router.get("/duplicates", requireAdmin, async (_req, res, next) => {
+    try {
+        // Agrupa por prefixo (parte antes de @ removendo dígitos finais e separadores)
+        const r = await pool.query(`
+            WITH normalized AS (
+              SELECT id, email, created_at,
+                     LOWER(regexp_replace(split_part(email, '@', 1), '[._+0-9-]', '', 'g')) AS prefix,
+                     split_part(email, '@', 2) AS domain
+                FROM users
+            )
+            SELECT prefix, domain, json_agg(json_build_object('id', id, 'email', email, 'created_at', created_at) ORDER BY created_at) AS users, COUNT(*)::int AS n
+              FROM normalized
+             WHERE prefix <> ''
+             GROUP BY prefix, domain
+            HAVING COUNT(*) > 1
+             ORDER BY n DESC, prefix
+        `);
+        res.json({ groups: r.rows });
     } catch (e) { next(e); }
 });
 

@@ -13,6 +13,10 @@ const catalog = require("./routes/catalog");
 const assets = require("./routes/assets");
 const admin = require("./routes/admin");
 const cron = require("./routes/cron");
+const oauth = require("./routes/oauth");
+const aiSettings = require("./routes/ai-settings");
+const licenseKeys = require("./routes/license-keys");
+const usage = require("./routes/usage");
 
 const app = express();
 
@@ -71,10 +75,14 @@ app.use("/v1/auth", auth.router);
 app.use("/v1/license", license.router);
 app.use("/v1/billing", billing.router);
 app.use("/v1/me", me.router);
+app.use("/v1", aiSettings.router);          // /v1/me/ai-settings/* — Motion IA config por user
+app.use("/v1", licenseKeys.router);         // /v1/license-keys/* + /v1/admin/license-keys/*
+app.use("/v1", usage.router);                // /v1/usage/* + créditos
 app.use("/v1/catalog", catalog.router);
 app.use("/v1/assets", assets.router);
 app.use("/v1/admin", admin.router);
 app.use("/v1/cron", cron.router);
+app.use("/v1/oauth", oauth);
 
 // Error handler: NÃO loga senhas, tokens nem PII completa
 app.use((err, req, res, _next) => {

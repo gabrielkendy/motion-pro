@@ -1,4 +1,4 @@
-# MotionPro Legendas
+# Motion Legendas
 
 Plugin CEP do Premiere Pro pra aplicar legendas animadas em massa a partir de SRT, captions nativas ou roteiro digitado. Parte da família **MotionVault** by PacotesFX.
 
@@ -46,11 +46,11 @@ Aplicar:
 
 ## Instalação (cliente final)
 
-Use o ZIP de distribuição em `installers/zip-manual-legendas/output/MotionPro-Legendas-X.Y.Z.zip`:
+Use o ZIP de distribuição em `installers/zip-manual-legendas/output/Motion Titles-Legendas-X.Y.Z.zip`:
 
 1. Extrai o ZIP
 2. Duplo clique em `INSTALAR.bat`
-3. Abre Premiere → `Window > Extensions > MotionPro Legendas`
+3. Abre Premiere → `Window > Extensions > Motion Legendas`
 
 Pra fechar/atualizar: `DESINSTALAR.bat` na mesma pasta.
 
@@ -98,7 +98,7 @@ plugin-legendas/
 
 ## Backend & licenciamento
 
-Plugin autentica via JWT no backend MotionPro (`motionpro.vercel.app`). Funciona em modo **trial 14 dias** + planos pagos via Stripe.
+Plugin autentica via JWT no backend Motion Titles (`motionpro.vercel.app`). Funciona em modo **Trial 7 dias** + planos pagos via Stripe.
 
 - Login: aba interna do plugin (gera modal se não estiver logado)
 - Validação: ping no boot + a cada operação sensível

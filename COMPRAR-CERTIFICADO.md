@@ -48,7 +48,7 @@ Se quiser começar barato e migrar pra EV depois:
 
 ⚠️ **Problema do OV:** O aviso continua aparecendo nas primeiras instalações até o Windows acumular "reputação" do seu certificado (geralmente entre **500 a 3.000 downloads**). Pode levar **semanas ou meses** pra parar de aparecer.
 
-Pra MotionPro vendendo R$ 199/199 = 1 conversão paga o cert em uma venda. Vale a pena começar com OV.
+Pra Motion Titles vendendo R$ 199/199 = 1 conversão paga o cert em uma venda. Vale a pena começar com OV.
 
 ---
 
@@ -81,7 +81,7 @@ SignedUninstaller=yes
 
 ## 🛡️ Enquanto não tem certificado (mitigações que JÁ fizemos)
 
-Implementado no MotionPro v1.0.3:
+Implementado no Motion Titles v1.0.3:
 
 1. ✅ **VersionInfo completo** (Publisher, Copyright, Description, Product) — Windows reconhece como app sério
 2. ✅ **AppId fixo** entre versões — SmartScreen rastreia reputação cumulativa
@@ -145,7 +145,7 @@ Sem comprar certificado, você pode **submeter o .exe direto pra Microsoft anali
 
 ⚠️ **Caveat:** vale só pra ESSE hash específico. Toda nova versão precisa nova submissão.
 
-Vou fazer isso pro `MotionPro-Setup-1.0.2.exe` agora pra ver se Microsoft adiciona à whitelist sem custar nada.
+Vou fazer isso pro `Motion Titles-Setup-1.0.2.exe` agora pra ver se Microsoft adiciona à whitelist sem custar nada.
 
 ---
 

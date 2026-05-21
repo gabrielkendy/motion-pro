@@ -2,8 +2,27 @@
 const router = require("express").Router();
 const bcrypt = require("bcrypt");
 const { pool } = require("../db");
+const crypto = require("crypto");
 const { signSession, signResetToken, verifyResetToken, signEmailVerifyToken, verifyEmailToken } = require("../utils/jwt");
 const { resetPasswordEmail, verifyEmailMessage } = require("../utils/email");
+const { clientIp, clientUa, geoLookup, parseUaToOs } = require("../utils/ipgeo");
+
+// Cria registro em sessions (idempotente — usa hash do token como chave de revogação)
+async function recordSession(req, userId, sessionToken) {
+    try {
+        const tokenHash = crypto.createHash("sha256").update(sessionToken).digest("hex");
+        const ip = clientIp(req);
+        const ua = clientUa(req);
+        const geo = await geoLookup(ip, req).catch(() => ({}));
+        const expiresAt = new Date(Date.now() + 30 * 86400000); // 30d
+        await pool.query(
+            `INSERT INTO sessions(user_id, token_hash, expires_at, last_ip, last_ua, country)
+             VALUES($1,$2,$3,$4,$5,$6)
+             ON CONFLICT DO NOTHING`,
+            [userId, tokenHash, expiresAt, ip, ua, geo.country || null]
+        );
+    } catch (e) { /* tabela pode não existir antes da migration; ignora */ }
+}
 
 const PUBLIC_URL = process.env.PUBLIC_URL || "https://motionpro-lp.vercel.app";
 
@@ -18,7 +37,10 @@ function normalizePhone(p) {
 
 router.post("/signup", async (req, res, next) => {
     try {
-        const { email, password, name, phone, marketing_optin } = req.body || {};
+        const body = req.body || {};
+        const { email, password, name, phone, marketing_optin } = body;
+        // Produto de origem do signup — plugins enviam camelCase (productId)
+        const product = (body.product_id || body.productId || "motionpro").toString().toLowerCase();
         if (!email || !password || password.length < 8) {
             return res.status(400).json({ error: "email_and_password_required" });
         }
@@ -38,13 +60,13 @@ router.post("/signup", async (req, res, next) => {
         if (r.rowCount === 0) return res.status(409).json({ error: "email_taken" });
         const u = r.rows[0];
 
-        // Auto-grant 14-day trial with full access (no card required)
-        const trialDays = Number(process.env.TRIAL_DAYS || 14);
+        // Auto-grant 7-day trial DO PRODUTO QUE FEZ O SIGNUP
+        const trialDays = Number(process.env.TRIAL_DAYS || 7);
         const expiresAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
         await pool.query(
-            `INSERT INTO subscriptions(user_id, plan, status, current_period_end)
-             VALUES($1, 'trial', 'trialing', $2)`,
-            [u.id, expiresAt]
+            `INSERT INTO subscriptions(user_id, product_id, plan, status, current_period_end)
+             VALUES($1, $2, 'trial', 'trialing', $3)`,
+            [u.id, product, expiresAt]
         );
 
         // Manda email de verificação (não bloqueia signup se falhar)
@@ -57,11 +79,13 @@ router.post("/signup", async (req, res, next) => {
         // Log no audit
         await pool.query(
             "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'signup', $2)",
-            [u.id, { has_name: !!normName, has_phone: !!normPhone, trial_days: trialDays }]
+            [u.id, { has_name: !!normName, has_phone: !!normPhone, trial_days: trialDays, product }]
         );
 
+        const sessionToken = signSession(u.id, u.email);
+        await recordSession(req, u.id, sessionToken);
         res.json({
-            session_token: signSession(u.id, u.email),
+            session_token: sessionToken,
             user: u,
             trial: { active: true, expires_at: expiresAt, days_remaining: trialDays },
             email_verification_sent: true
@@ -79,15 +103,44 @@ router.post("/login", async (req, res, next) => {
         const ok = await bcrypt.compare(password, u.password_hash);
         if (!ok) return res.status(401).json({ error: "invalid_credentials" });
 
-        // register device fingerprint upfront (gated by MAX_DEVICES below in /license/issue)
+        // 🚫 Bloqueio admin: se user.blocked_at não é null, recusa login
+        // (try/catch defensivo — coluna pode não existir antes da migration 007)
+        try {
+            const blocked = await pool.query("SELECT blocked_at, blocked_reason FROM users WHERE id=$1", [u.id]);
+            if (blocked.rowCount && blocked.rows[0].blocked_at) {
+                return res.status(403).json({
+                    error: "account_blocked",
+                    reason: blocked.rows[0].blocked_reason || "Conta bloqueada pelo administrador"
+                });
+            }
+        } catch (e) {
+            if (!String(e.message).includes("does not exist")) throw e;
+        }
+
+        // register device fingerprint upfront com IP/UA/geo
         if (fingerprint) {
+            const ip = clientIp(req);
+            const ua = clientUa(req);
+            const geo = await geoLookup(ip, req).catch(() => ({}));
+            const osName = parseUaToOs(ua);
             await pool.query(
-                `INSERT INTO devices(user_id, fingerprint) VALUES($1,$2)
-                 ON CONFLICT (user_id, fingerprint) DO UPDATE SET last_seen=now(), revoked=false`,
-                [u.id, fingerprint]
+                `INSERT INTO devices(user_id, fingerprint, last_ip, first_ip, last_ua, country, region, city, os_name)
+                 VALUES($1,$2,$3,$3,$4,$5,$6,$7,$8)
+                 ON CONFLICT (user_id, fingerprint) DO UPDATE SET
+                   last_seen = now(),
+                   revoked = false,
+                   last_ip = EXCLUDED.last_ip,
+                   last_ua = EXCLUDED.last_ua,
+                   country = COALESCE(EXCLUDED.country, devices.country),
+                   region  = COALESCE(EXCLUDED.region, devices.region),
+                   city    = COALESCE(EXCLUDED.city, devices.city),
+                   os_name = COALESCE(EXCLUDED.os_name, devices.os_name)`,
+                [u.id, fingerprint, ip, ua, geo.country || null, geo.region || null, geo.city || null, osName]
             );
         }
-        res.json({ session_token: signSession(u.id, u.email), user: { id: u.id, email: u.email } });
+        const sessionToken = signSession(u.id, u.email);
+        await recordSession(req, u.id, sessionToken);
+        res.json({ session_token: sessionToken, user: { id: u.id, email: u.email } });
     } catch (e) { next(e); }
 });
 

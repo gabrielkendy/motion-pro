@@ -12,7 +12,7 @@
  *        b. derive a stable cdn_key e.g. "mogrt/<pack>/<category>/<file>.mogrt"
  *        c. upload to R2 if missing or size/hash changed
  *        d. UPSERT row in assets(id, pack_id, name, cdn_key, sha256, size_bytes, kind, product_id)
- *   3. Same for previews (.mp4) under kind='preview', product_id='motionpro'
+ *   3. Same for previews (.mp4) under kind='preview', product_id='Motion Titles'
  *   4. Print summary + write a new catalog-v2.json that uses asset ids/cdn_keys
  *      instead of absolute local paths.
  *
@@ -20,7 +20,7 @@
  *   R2_ACCOUNT_ID
  *   R2_ACCESS_KEY_ID
  *   R2_SECRET_ACCESS_KEY
- *   R2_BUCKET          (default: motionpro-assets)
+ *   R2_BUCKET          (default: Motion Titles-assets)
  *   DATABASE_URL       (Neon prod connection string)
  *   SOURCE_ROOT        (default: C:\Users\Gabriel\Documents\Motion Bro)
  *
@@ -32,6 +32,8 @@
  *   node tools/upload-to-r2.js --concurrency 4    # parallel uploads
  */
 "use strict";
+
+require("dotenv").config({ path: require("path").join(__dirname, ".env") });
 
 const fs   = require("fs");
 const path = require("path");
@@ -52,7 +54,7 @@ const CONCURRENCY = Number(arg("concurrency", 4));
 
 // ---------- config ----------
 const SOURCE_ROOT = process.env.SOURCE_ROOT || "C:\\Users\\Gabriel\\Documents\\Motion Bro";
-const BUCKET = process.env.R2_BUCKET || "motionpro-assets";
+const BUCKET = process.env.R2_BUCKET || "Motion Titles-assets";
 const REQUIRED_ENV = ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "DATABASE_URL"];
 for (const k of REQUIRED_ENV) {
     if (!process.env[k]) {
@@ -203,7 +205,7 @@ async function processFile(absPath, kind, state) {
         sha256: sha,
         size_bytes: stat.size,
         kind: kind,
-        product_id: "motionpro",
+        product_id: "Motion Titles",
     };
     await upsertAsset(row);
 

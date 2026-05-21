@@ -10,8 +10,8 @@
     --txt-0: #ececf1;
     --txt-1: #b3b3bf;
     --txt-2: #76767f;
-    --acc:   #38e287;
-    --acc-2: #22c573;
+    --acc:   #2563eb;
+    --acc-2: #1d4ed8;
     --warn:  #ffb84a;
     --danger:#ff5566;
     --radius: 6px;
@@ -64,7 +64,7 @@ body {
 .headbar__logo {
     width: 32px; height: 32px;
     display: flex; align-items: center; justify-content: center;
-    background: rgba(56,226,135,0.08);
+    background: rgba(37, 99, 235,0.08);
     border-radius: 8px;
 }
 .headbar__text { display: flex; flex-direction: column; }
@@ -116,7 +116,7 @@ body {
 .headbar__search:focus-within {
     border-color: var(--acc);
     color: var(--acc);
-    box-shadow: 0 0 0 3px rgba(56,226,135,0.08);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235,0.08);
 }
 .headbar__search input {
     flex: 1;
@@ -181,7 +181,7 @@ body {
     font-size: 9.5px;
     font-weight: 600;
 }
-.tab.on .tab__count { background: rgba(56,226,135,0.2); color: var(--acc); }
+.tab.on .tab__count { background: rgba(37, 99, 235,0.2); color: var(--acc); }
 
 /* ============ BREADCRUMB ============ */
 .breadcrumb {
@@ -219,7 +219,7 @@ body {
 }
 .cat:hover { background: var(--bg-2); color: var(--txt-0); }
 .cat.on {
-    background: rgba(56,226,135,0.1);
+    background: rgba(37, 99, 235,0.1);
     color: var(--acc);
     border-left-color: var(--acc);
 }
@@ -276,7 +276,7 @@ body.wide  .card { width: 320px; flex: 0 0 320px; }
 .card:hover {
     transform: translateY(-2px);
     border-color: var(--acc);
-    box-shadow: 0 8px 28px rgba(0,0,0,0.5), 0 0 0 1px rgba(56,226,135,0.12);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.5), 0 0 0 1px rgba(37, 99, 235,0.12);
     z-index: 1;
 }
 
@@ -315,9 +315,11 @@ body.wide  .card__thumb { min-height: 180px; }
     background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.55) 100%);
     transition: opacity 0.15s;
     pointer-events: none;
-    z-index: 2;
+    cursor: pointer;
+    z-index: 5;
 }
-.card:hover .card__thumb .playicon { opacity: 1; }
+.card:hover .card__thumb .playicon { opacity: 1; pointer-events: auto; }
+.card__thumb .playicon:hover svg { transform: scale(1.15); transition: transform 0.12s; }
 .card__thumb .badge {
     position: absolute;
     top: 7px; left: 7px;
@@ -464,6 +466,9 @@ body.wide  .card__thumb { min-height: 180px; }
 }
 .log__body .err { color: var(--danger); }
 .log__body .warn { color: var(--warn); }
+.log__line { white-space: pre-wrap; word-break: break-all; }
+.log__line--err { color: var(--danger); }
+.log__line--warn { color: var(--warn); }
 
 /* ============ SCROLLBARS ============ */
 ::-webkit-scrollbar { width: 9px; height: 9px; }
@@ -706,3 +711,24 @@ body.wide  .card__thumb { min-height: 180px; }
     opacity:.7;flex-shrink:0;
 }
 .verifybar__dismiss:hover{opacity:1;background:rgba(0,0,0,.15)}
+
+/* ============ REAUTH BAR (sessão expirou no backend — não desloga, só reconecta) ============ */
+.reauthbar{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:linear-gradient(90deg,#3b82f6,#1d4ed8);
+    color:#fff;padding:7px 14px;
+    font:600 11px/1.2 'Inter',sans-serif;
+    border-bottom:1px solid #1e40af;
+    flex-shrink:0;
+}
+.reauthbar.hidden{display:none !important}
+.reauthbar__info{flex:1}
+.reauthbar__cta{
+    background:#fff;color:#1d4ed8;
+    border:none;border-radius:4px;
+    padding:5px 11px;font:700 10.5px/1 'Inter',sans-serif;
+    cursor:pointer;letter-spacing:.3px;
+    transition:transform .12s,box-shadow .15s;
+    flex-shrink:0;
+}
+.reauthbar__cta:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.25)}

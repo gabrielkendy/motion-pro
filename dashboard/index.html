@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MotionPro Admin</title>
+<title>Motion Pro · Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -22,12 +22,10 @@
       <input id="login-email" type="email" autocomplete="username" required>
       <label>Senha</label>
       <input id="login-pass" type="password" autocomplete="current-password" required>
-      <button class="btn btn--primary btn--full" type="submit">Entrar</button>
+      <button class="btn btn--primary btn--full" type="submit" style="margin-top:24px">Entrar</button>
       <div id="login-error" class="error-msg"></div>
     </form>
-    <div class="login-foot">
-      API: <code id="api-url-display"></code>
-    </div>
+    <div class="login-foot">API: <code id="api-url-display"></code></div>
   </div>
 </div>
 
@@ -37,11 +35,13 @@
     <div class="brand">Motion<span>Pro</span><em>admin</em></div>
     <nav>
       <a href="#" class="nav-item active" data-view="overview">📊 Visão geral</a>
-      <a href="#" class="nav-item" data-view="analytics">📈 Analytics</a>
       <a href="#" class="nav-item" data-view="users">👥 Usuários</a>
-      <a href="#" class="nav-item" data-view="subscriptions">🔁 Assinaturas</a>
+      <a href="#" class="nav-item" data-view="subscriptions">💳 Assinaturas</a>
       <a href="#" class="nav-item" data-view="devices">💻 Dispositivos</a>
+      <a href="#" class="nav-item" data-view="sessions">🔐 Sessões</a>
+      <a href="#" class="nav-item" data-view="duplicates">⚠️ Duplicatas</a>
       <a href="#" class="nav-item" data-view="audit">📜 Auditoria</a>
+      <a href="#" class="nav-item" data-view="maintenance">🔧 Manutenção</a>
     </nav>
     <div class="sidebar-foot">
       <div id="me-email" class="me-email"></div>
@@ -49,184 +49,271 @@
     </div>
   </aside>
 
-  <main class="main">
-    <!-- OVERVIEW -->
-    <section id="view-overview" class="view active">
-      <header class="view-head">
-        <h2>Visão geral</h2>
-        <button id="refresh-stats" class="btn btn--ghost btn--sm">🔄 Atualizar</button>
-      </header>
-      <div id="kpis" class="kpi-grid"></div>
-      <div class="row2">
+  <main>
+    <!-- ===== OVERVIEW ===== -->
+    <section class="view active" id="view-overview">
+      <div class="view-head">
+        <div>
+          <h2>Visão geral</h2>
+          <div class="sub" id="overview-sub">Atualizando…</div>
+        </div>
+        <div class="view-actions">
+          <button class="btn btn--sm" id="refresh-overview">↻ Atualizar</button>
+        </div>
+      </div>
+
+      <div class="kpi-grid" id="kpi-grid">
+        <!-- KPIs injetados aqui -->
+      </div>
+
+      <div class="grid-2">
         <div class="card">
-          <h3>Distribuição de planos</h3>
-          <div id="plan-distribution"></div>
+          <div class="card__head"><div class="card__title">Por produto</div></div>
+          <div id="by-product-list"></div>
         </div>
         <div class="card">
-          <h3>Últimos 7 dias</h3>
-          <div id="recent-stats"></div>
+          <div class="card__head"><div class="card__title">Top países (dispositivos)</div></div>
+          <div id="top-countries-list"></div>
         </div>
+      </div>
+
+      <div class="card">
+        <div class="card__head"><div class="card__title">Atividade recente</div></div>
+        <ul class="timeline" id="recent-activity"></ul>
       </div>
     </section>
 
-    <!-- ANALYTICS -->
-    <section id="view-analytics" class="view">
-      <header class="view-head">
-        <h2>Analytics</h2>
-        <div class="filters">
-          <select id="analytics-range">
-            <option value="7">Últimos 7 dias</option>
-            <option value="30" selected>Últimos 30 dias</option>
-            <option value="90">Últimos 90 dias</option>
-            <option value="180">Últimos 180 dias</option>
-          </select>
-          <button id="refresh-analytics" class="btn btn--ghost btn--sm">🔄 Atualizar</button>
-        </div>
-      </header>
-
-      <div id="conv-cards" class="kpi-grid" style="margin-bottom:28px"></div>
-
-      <div class="card" style="margin-bottom:20px">
-        <h3>📈 Novos usuários por dia</h3>
-        <div style="position:relative;height:280px"><canvas id="chart-signups"></canvas></div>
-      </div>
-
-      <div class="row2">
-        <div class="card">
-          <h3>💰 Receita por dia</h3>
-          <div style="position:relative;height:240px"><canvas id="chart-revenue"></canvas></div>
-        </div>
-        <div class="card">
-          <h3>📦 Assinaturas por produto</h3>
-          <div style="position:relative;height:240px"><canvas id="chart-products"></canvas></div>
+    <!-- ===== USERS ===== -->
+    <section class="view" id="view-users">
+      <div class="view-head">
+        <div>
+          <h2>Usuários</h2>
+          <div class="sub"><span id="users-count">0</span> contas registradas</div>
         </div>
       </div>
-    </section>
 
-    <!-- USERS -->
-    <section id="view-users" class="view">
-      <header class="view-head">
-        <h2>Usuários</h2>
-        <div class="filters">
-          <input id="users-search" placeholder="🔍 buscar email..." />
-          <select id="users-status">
-            <option value="all">Todos status</option>
-            <option value="active">Ativos</option>
-            <option value="trialing">Em trial</option>
-            <option value="canceled">Cancelados</option>
-            <option value="revoked">Revogados</option>
-          </select>
-          <button id="refresh-users" class="btn btn--ghost btn--sm">🔄</button>
-        </div>
-      </header>
+      <div class="filters">
+        <input id="users-search" placeholder="🔍 Buscar por e-mail…">
+        <select id="users-status">
+          <option value="all">Todos os status</option>
+          <option value="active">Pagantes (active)</option>
+          <option value="trialing">Trial</option>
+          <option value="canceled">Cancelados</option>
+        </select>
+        <select id="users-product">
+          <option value="all">Todos os produtos</option>
+          <option value="motionpro">Motion Titles</option>
+          <option value="ia">Motion IA</option>
+          <option value="legendas">Motion Legendas</option>
+          <option value="bundle_all">Bundle</option>
+        </select>
+        <button class="btn btn--sm" id="refresh-users">↻</button>
+      </div>
+
       <div class="table-wrap">
         <table id="users-table">
-          <thead>
-            <tr>
-              <th>Cliente</th>
-              <th>Produtos</th>
-              <th>Plano</th>
-              <th>Status</th>
-              <th>Cadastro</th>
-              <th>Vence</th>
-              <th>Dispositivos</th>
-              <th>Stripe</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
+          <thead><tr>
+            <th>E-mail</th>
+            <th>Produtos</th>
+            <th>Status</th>
+            <th>Dispositivos</th>
+            <th>Último acesso</th>
+            <th>Localização</th>
+            <th>Criado</th>
+          </tr></thead>
           <tbody id="users-tbody"></tbody>
         </table>
-        <div id="users-empty" class="empty" hidden>Nenhum usuário encontrado</div>
       </div>
     </section>
 
-    <!-- SUBSCRIPTIONS -->
-    <section id="view-subscriptions" class="view">
-      <header class="view-head">
-        <h2>Assinaturas ativas</h2>
-        <button id="refresh-subs" class="btn btn--ghost btn--sm">🔄</button>
-      </header>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Cliente</th>
-              <th>Produtos</th>
-              <th>Plano</th>
-              <th>Status</th>
-              <th>Início</th>
-              <th>Próxima cobrança</th>
-              <th>Stripe Sub</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody id="subs-tbody"></tbody>
-        </table>
+    <!-- ===== SUBSCRIPTIONS ===== -->
+    <section class="view" id="view-subscriptions">
+      <div class="view-head">
+        <div>
+          <h2>Assinaturas</h2>
+          <div class="sub" id="subs-sub">Todas as subs ativas/trial/expiradas por produto</div>
+        </div>
+      </div>
+
+      <div class="kpi-grid" id="subs-kpis"></div>
+
+      <div class="card">
+        <div class="card__head"><div class="card__title">Por produto × plano × status</div></div>
+        <div class="table-wrap" style="border:0">
+          <table id="subs-breakdown">
+            <thead><tr><th>Produto</th><th>Plano</th><th>Status</th><th>Total</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
-    <!-- DEVICES -->
-    <section id="view-devices" class="view">
-      <header class="view-head">
-        <h2>Dispositivos</h2>
-      </header>
+    <!-- ===== DEVICES ===== -->
+    <section class="view" id="view-devices">
+      <div class="view-head">
+        <div>
+          <h2>Dispositivos</h2>
+          <div class="sub"><span id="devices-count">0</span> registrados · <span id="devices-online">0</span> online agora</div>
+        </div>
+      </div>
+
+      <div class="filters">
+        <input id="devices-search" placeholder="🔍 Buscar e-mail/fingerprint/IP…">
+        <select id="devices-status">
+          <option value="all">Todos</option>
+          <option value="online">Online agora (&lt;10min)</option>
+          <option value="active">Ativos (&lt;24h)</option>
+          <option value="revoked">Revogados</option>
+        </select>
+        <button class="btn btn--sm" id="refresh-devices">↻</button>
+      </div>
+
       <div class="table-wrap">
         <table>
-          <thead>
-            <tr>
-              <th>Usuário</th>
-              <th>Fingerprint</th>
-              <th>Label</th>
-              <th>Primeiro acesso</th>
-              <th>Último acesso</th>
-              <th>Status</th>
-              <th>Ação</th>
-            </tr>
-          </thead>
+          <thead><tr>
+            <th>Status</th>
+            <th>Usuário</th>
+            <th>OS</th>
+            <th>IP</th>
+            <th>Localização</th>
+            <th>Último acesso</th>
+            <th>Fingerprint</th>
+            <th></th>
+          </tr></thead>
           <tbody id="devices-tbody"></tbody>
         </table>
       </div>
     </section>
 
-    <!-- AUDIT -->
-    <section id="view-audit" class="view">
-      <header class="view-head">
-        <h2>Auditoria</h2>
-        <button id="refresh-audit" class="btn btn--ghost btn--sm">🔄</button>
-      </header>
+    <!-- ===== SESSIONS ===== -->
+    <section class="view" id="view-sessions">
+      <div class="view-head">
+        <div>
+          <h2>Sessões ativas</h2>
+          <div class="sub"><span id="sessions-count">0</span> sessões logadas (não-revogadas e válidas)</div>
+        </div>
+      </div>
+
+      <div class="filters">
+        <input id="sessions-search" placeholder="🔍 Buscar e-mail/IP…">
+        <button class="btn btn--sm" id="refresh-sessions">↻</button>
+      </div>
+
       <div class="table-wrap">
         <table>
-          <thead>
-            <tr>
-              <th>Quando</th>
-              <th>Usuário</th>
-              <th>Ação</th>
-              <th>Detalhe</th>
-            </tr>
-          </thead>
-          <tbody id="audit-tbody"></tbody>
+          <thead><tr>
+            <th>Usuário</th>
+            <th>IP</th>
+            <th>Localização</th>
+            <th>OS / UA</th>
+            <th>Iniciada</th>
+            <th>Último heartbeat</th>
+            <th>Expira</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="sessions-tbody"></tbody>
         </table>
+      </div>
+    </section>
+
+    <!-- ===== DUPLICATES ===== -->
+    <section class="view" id="view-duplicates">
+      <div class="view-head">
+        <div>
+          <h2>Contas duplicadas</h2>
+          <div class="sub">Grupos de e-mails com mesmo prefixo (jmr.andrade, jmrandrade11) — merge mantém o mais antigo</div>
+        </div>
+        <button class="btn btn--sm" id="refresh-duplicates">↻</button>
+      </div>
+      <div id="duplicates-list"></div>
+    </section>
+
+    <!-- ===== AUDIT ===== -->
+    <section class="view" id="view-audit">
+      <div class="view-head">
+        <div>
+          <h2>Auditoria global</h2>
+          <div class="sub">Últimos 200 eventos · login, signup, checkout, block, grant, etc.</div>
+        </div>
+        <button class="btn btn--sm" id="refresh-audit">↻</button>
+      </div>
+      <ul class="timeline" id="global-audit"></ul>
+    </section>
+
+    <!-- ===== MAINTENANCE ===== -->
+    <section class="view" id="view-maintenance">
+      <div class="view-head">
+        <div>
+          <h2>Manutenção</h2>
+          <div class="sub">Operações que mexem direto no banco — use com cuidado</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__head"><div class="card__title">Migrations</div></div>
+        <p class="muted small" style="margin-bottom:12px">Rodar idempotente — não duplica nada se já foi executado.</p>
+        <button class="btn btn--primary btn--sm" id="run-migration-006">Rodar migration 006 (sessions/devices v2)</button>
+        <pre id="migration-result" class="mono" style="font-size:12px;color:var(--mut);margin-top:12px;display:none"></pre>
+      </div>
+
+      <div class="card">
+        <div class="card__head"><div class="card__title">Master account</div></div>
+        <div class="detail-grid">
+          <div class="k">Admin</div><div class="v"><code>gabriel.kend@gmail.com</code></div>
+          <div class="k">Lifetime</div><div class="v">✅ Todos os produtos</div>
+          <div class="k">Dashboard URL</div><div class="v"><code id="dashboard-url"></code></div>
+          <div class="k">API URL</div><div class="v"><code id="api-url-display-2"></code></div>
+        </div>
       </div>
     </section>
   </main>
 </div>
 
-<!-- USER DETAIL DRAWER -->
-<div id="drawer" class="drawer" hidden>
-  <div class="drawer-overlay"></div>
-  <div class="drawer-panel">
-    <header class="drawer-head">
-      <h3 id="drawer-title">Detalhes</h3>
-      <button id="drawer-close" class="btn btn--ghost btn--sm">✕</button>
-    </header>
-    <div id="drawer-body" class="drawer-body"></div>
+<!-- ===== DRAWER (user detail) ===== -->
+<div class="drawer-backdrop" id="drawer-backdrop"></div>
+<aside class="drawer" id="user-drawer">
+  <div class="drawer__head">
+    <div>
+      <h2 id="drawer-email">—</h2>
+      <div class="small" id="drawer-id">—</div>
+    </div>
+    <button class="drawer__close" id="drawer-close">×</button>
   </div>
+  <div class="drawer__tabs">
+    <button class="drawer__tab active" data-tab="profile">Perfil</button>
+    <button class="drawer__tab" data-tab="subs">Assinaturas</button>
+    <button class="drawer__tab" data-tab="devices">Dispositivos</button>
+    <button class="drawer__tab" data-tab="sessions">Sessões</button>
+    <button class="drawer__tab" data-tab="payments">Pagamentos</button>
+    <button class="drawer__tab" data-tab="audit">Auditoria</button>
+  </div>
+  <div class="drawer__body">
+    <div class="drawer__panel active" data-panel="profile" id="panel-profile"></div>
+    <div class="drawer__panel" data-panel="subs" id="panel-subs"></div>
+    <div class="drawer__panel" data-panel="devices" id="panel-devices"></div>
+    <div class="drawer__panel" data-panel="sessions" id="panel-sessions"></div>
+    <div class="drawer__panel" data-panel="payments" id="panel-payments"></div>
+    <div class="drawer__panel" data-panel="audit" id="panel-audit"></div>
+  </div>
+  <div class="drawer__actions">
+    <button class="btn btn--sm btn--ok" data-action="grant-trial">🎁 Trial p/ produto</button>
+    <button class="btn btn--sm" data-action="extend-trial">⏰ +7 dias</button>
+    <button class="btn btn--sm" data-action="send-email">✉️ Enviar email</button>
+    <button class="btn btn--sm btn--warn" data-action="kill-sessions">💀 Matar sessões</button>
+    <button class="btn btn--sm btn--danger" data-action="block">🚫 Bloquear</button>
+    <button class="btn btn--sm btn--ok" data-action="unblock" hidden>✅ Desbloquear</button>
+    <button class="btn btn--sm btn--danger" data-action="delete">🗑️ Deletar</button>
+  </div>
+</aside>
+
+<!-- ===== TOASTS ===== -->
+<div class="toast-area" id="toast-area"></div>
+
+<!-- ===== MODAL ===== -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal" id="modal-content"></div>
 </div>
 
-<!-- TOAST -->
-<div id="toast" class="toast" hidden></div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
 <script src="/app.js"></script>
 </body>
 </html>

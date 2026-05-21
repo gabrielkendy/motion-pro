@@ -3,8 +3,8 @@
   "total_items": 61,
   "packs": [
     {
-      "id": "motionpro-legendas",
-      "name": "MotionPro Legendas",
+      "id": "Motion Titles-legendas",
+      "name": "Motion Legendas",
       "categories": [
         {
           "name": "1 Palavra",
@@ -14,56 +14,88 @@
               "mogrt": "ep-texto/Texto 13.mogrt",
               "preview": "ep-texto/previews/ts_1773022547844_31256.gif",
               "wc": 1,
-              "ep_id": "ts_1773022547844_31256"
+              "ep_id": "ts_1773022547844_31256",
+              "id": "legendas_4e2e34d7b6ef",
+              "cdn_key": "legendas/ep-texto/texto-13-mogrt",
+              "sha256": "86c397594cebb8e1c91eabcfe9da72cd27918701e665a878a774dd721e11f93b",
+              "size_bytes": 42690
             },
             {
               "name": "Texto 14",
               "mogrt": "ep-texto/Texto 14.mogrt",
               "preview": "ep-texto/previews/ts_1773022729789_34851.gif",
               "wc": 1,
-              "ep_id": "ts_1773022729789_34851"
+              "ep_id": "ts_1773022729789_34851",
+              "id": "legendas_7a1c657ab7c2",
+              "cdn_key": "legendas/ep-texto/texto-14-mogrt",
+              "sha256": "cd0f5051262496cdd62eab5e13d4e380d71dc1dd1c91ed36cefaefb5aac0943b",
+              "size_bytes": 17915
             },
             {
               "name": "Texto 15",
               "mogrt": "ep-texto/Texto 15.mogrt",
               "preview": "ep-texto/previews/ts_1773023570858_13967.gif",
               "wc": 1,
-              "ep_id": "ts_1773023570858_13967"
+              "ep_id": "ts_1773023570858_13967",
+              "id": "legendas_984adfbb00a1",
+              "cdn_key": "legendas/ep-texto/texto-15-mogrt",
+              "sha256": "9e320b9d26fade3bb1a3af2b6a494dc99920ddcfac3d94392be2b56baf65ad4f",
+              "size_bytes": 74553
             },
             {
               "name": "Texto 19",
               "mogrt": "ep-texto/Texto 19.mogrt",
               "preview": "ep-texto/previews/mogrt_1773751443830.gif",
               "wc": 1,
-              "ep_id": "mogrt_1773751443830"
+              "ep_id": "mogrt_1773751443830",
+              "id": "legendas_f0887c5acacf",
+              "cdn_key": "legendas/ep-texto/texto-19-mogrt",
+              "sha256": "968877e22ae7ee914f3e32067abc79bdd0ee200860dbb79e6e5167afb42ff148",
+              "size_bytes": 34826
             },
             {
               "name": "Texto 22",
               "mogrt": "ep-texto/Texto 22.mogrt",
               "preview": "ep-texto/previews/mogrt_1773712390073.gif",
               "wc": 1,
-              "ep_id": "mogrt_1773712390073"
+              "ep_id": "mogrt_1773712390073",
+              "id": "legendas_233955bfb3b0",
+              "cdn_key": "legendas/ep-texto/texto-22-mogrt",
+              "sha256": "c913c95e78ae22156901afcf4b1305d3ab917094f8113c7d3265a4ea7926e5b8",
+              "size_bytes": 36883
             },
             {
               "name": "Texto 23",
               "mogrt": "ep-texto/Texto 23.mogrt",
               "preview": "ep-texto/previews/mogrt_1773712431810.gif",
               "wc": 1,
-              "ep_id": "mogrt_1773712431810"
+              "ep_id": "mogrt_1773712431810",
+              "id": "legendas_09f2c684d8f8",
+              "cdn_key": "legendas/ep-texto/texto-23-mogrt",
+              "sha256": "cdf461670f0d07d30ccf795c5176c6703b70bf508264794481902105a9d8775d",
+              "size_bytes": 32919
             },
             {
               "name": "Texto 24",
               "mogrt": "ep-texto/Texto 24.mogrt",
               "preview": "ep-texto/previews/mogrt_1773716233881.gif",
               "wc": 1,
-              "ep_id": "mogrt_1773716233881"
+              "ep_id": "mogrt_1773716233881",
+              "id": "legendas_b877c9cd019e",
+              "cdn_key": "legendas/ep-texto/texto-24-mogrt",
+              "sha256": "be3405f8b7de65da8e345fa0a4f77870ed23fe4da139febc8aef4a34bca0b434",
+              "size_bytes": 49265
             },
             {
               "name": "Texto 59",
               "mogrt": "ep-texto/Texto 59.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-59.gif",
               "wc": 1,
-              "ep_id": "mogrt_texto-59"
+              "ep_id": "mogrt_texto-59",
+              "id": "legendas_916c8e131532",
+              "cdn_key": "legendas/ep-texto/texto-59-mogrt",
+              "sha256": "b477ecf412bc72a8c157c45dacc99ae68f573b802d845d28345db2a81ffd3fe0",
+              "size_bytes": 47506
             }
           ]
         },
@@ -75,49 +107,77 @@
               "mogrt": "ep-texto/Texto 03.mogrt",
               "preview": "ep-texto/previews/ts_1772981613794_38110.gif",
               "wc": 2,
-              "ep_id": "ts_1772981613794_38110"
+              "ep_id": "ts_1772981613794_38110",
+              "id": "legendas_c3521577df8a",
+              "cdn_key": "legendas/ep-texto/texto-03-mogrt",
+              "sha256": "5809cd6081926df3c9c21a130531eeda7ac9de3dc4d0f0d2ae3dcd7aa4273a9c",
+              "size_bytes": 42547
             },
             {
               "name": "Texto 10",
               "mogrt": "ep-texto/Texto 10.mogrt",
               "preview": "ep-texto/previews/ts_1772982987072_76226.gif",
               "wc": 2,
-              "ep_id": "ts_1772982987072_76226"
+              "ep_id": "ts_1772982987072_76226",
+              "id": "legendas_b4230c0339d6",
+              "cdn_key": "legendas/ep-texto/texto-10-mogrt",
+              "sha256": "e0353e6c94a13286c939bca7e20c07ee2ad9c4cba76ef1c1ec36e321606dd39f",
+              "size_bytes": 50636
             },
             {
               "name": "Texto 29",
               "mogrt": "ep-texto/Texto 29.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-29.gif",
               "wc": 2,
-              "ep_id": "mogrt_texto-29"
+              "ep_id": "mogrt_texto-29",
+              "id": "legendas_18f5e6befd91",
+              "cdn_key": "legendas/ep-texto/texto-29-mogrt",
+              "sha256": "a9b69ff13e5a6a2fbc522ae6bb7f902f60e49ff9153c5e1027f75c377c163467",
+              "size_bytes": 110144
             },
             {
               "name": "Texto 30",
               "mogrt": "ep-texto/Texto 30.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-30.gif",
               "wc": 2,
-              "ep_id": "mogrt_texto-30"
+              "ep_id": "mogrt_texto-30",
+              "id": "legendas_3ba5441a4083",
+              "cdn_key": "legendas/ep-texto/texto-30-mogrt",
+              "sha256": "b2414f144f0a5ff3c0e32ee368c53c84ef294d339705ca1664fa6dd38b49e90f",
+              "size_bytes": 95263
             },
             {
               "name": "Texto 43",
               "mogrt": "ep-texto/Texto 43.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-43.gif",
               "wc": 2,
-              "ep_id": "mogrt_texto-43"
+              "ep_id": "mogrt_texto-43",
+              "id": "legendas_c048402f7768",
+              "cdn_key": "legendas/ep-texto/texto-43-mogrt",
+              "sha256": "051960d35db551a8d75a5918d51a957e541a0494dc469d5defb3e0d369ee9c97",
+              "size_bytes": 55707
             },
             {
               "name": "Texto 44",
               "mogrt": "ep-texto/Texto 44.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-44.gif",
               "wc": 2,
-              "ep_id": "mogrt_texto-44"
+              "ep_id": "mogrt_texto-44",
+              "id": "legendas_9e711822ce25",
+              "cdn_key": "legendas/ep-texto/texto-44-mogrt",
+              "sha256": "945c6d0923f973e07d431998b095fe55ec5d267f30cff2287c6bee81f55c3731",
+              "size_bytes": 54261
             },
             {
               "name": "Texto 48",
               "mogrt": "ep-texto/Texto 48.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-48.gif",
               "wc": 2,
-              "ep_id": "mogrt_texto-48"
+              "ep_id": "mogrt_texto-48",
+              "id": "legendas_df04fdedf502",
+              "cdn_key": "legendas/ep-texto/texto-48-mogrt",
+              "sha256": "b293edb39a61a6f162ca853b24c1df5357ea573f24f7723cef5cca1e8b90e191",
+              "size_bytes": 96671
             }
           ]
         },
@@ -129,140 +189,220 @@
               "mogrt": "ep-texto/Texto 02.mogrt",
               "preview": "ep-texto/previews/mogrt_1773591790824.gif",
               "wc": 3,
-              "ep_id": "mogrt_1773591790824"
+              "ep_id": "mogrt_1773591790824",
+              "id": "legendas_6d91e652611c",
+              "cdn_key": "legendas/ep-texto/texto-02-mogrt",
+              "sha256": "180c9f154aabab4c0cb659b67ad3ac8d5120a1e460995b9436ef2fb115957fd7",
+              "size_bytes": 53268
             },
             {
               "name": "Texto 11",
               "mogrt": "ep-texto/Texto 11.mogrt",
               "preview": "ep-texto/previews/ts_1772983036486_95742.gif",
               "wc": 3,
-              "ep_id": "ts_1772983036486_95742"
+              "ep_id": "ts_1772983036486_95742",
+              "id": "legendas_a192371ee9d6",
+              "cdn_key": "legendas/ep-texto/texto-11-mogrt",
+              "sha256": "92741d70fa305d81a88974b16140ff8e53b12e71adfd1f00a399cd059b451158",
+              "size_bytes": 60038
             },
             {
               "name": "Texto 16",
               "mogrt": "ep-texto/Texto 16.mogrt",
               "preview": "ep-texto/previews/mogrt_1773711771082.gif",
               "wc": 3,
-              "ep_id": "mogrt_1773711771082"
+              "ep_id": "mogrt_1773711771082",
+              "id": "legendas_2792f378edd1",
+              "cdn_key": "legendas/ep-texto/texto-16-mogrt",
+              "sha256": "d1743e3e11565113135c911c2d25e3a27e8c394cddf96ff885aae1da7db157f0",
+              "size_bytes": 68074
             },
             {
               "name": "Texto 20",
               "mogrt": "ep-texto/Texto 20.mogrt",
               "preview": "ep-texto/previews/mogrt_1773712210427.gif",
               "wc": 3,
-              "ep_id": "mogrt_1773712210427"
+              "ep_id": "mogrt_1773712210427",
+              "id": "legendas_a9fdcde98eae",
+              "cdn_key": "legendas/ep-texto/texto-20-mogrt",
+              "sha256": "7383784e5c8ab49c21fd9185359c2d5f523584fa50aa9082aaa4158eb4ab8243",
+              "size_bytes": 59765
             },
             {
               "name": "Texto 28",
               "mogrt": "ep-texto/Texto 28.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-28.gif",
               "wc": 3,
-              "ep_id": "mogrt_texto-28"
+              "ep_id": "mogrt_texto-28",
+              "id": "legendas_a983df95df58",
+              "cdn_key": "legendas/ep-texto/texto-28-mogrt",
+              "sha256": "f0e7faebad7b647b9fcf5a01ca01737de1931972ee1e44d10ad1fda1e3fc0619",
+              "size_bytes": 122462
             },
             {
               "name": "Texto 31",
               "mogrt": "ep-texto/Texto 31.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-31.gif",
               "wc": 3,
-              "ep_id": "mogrt_texto-31"
+              "ep_id": "mogrt_texto-31",
+              "id": "legendas_015e2968b261",
+              "cdn_key": "legendas/ep-texto/texto-31-mogrt",
+              "sha256": "6ed35a7da14b3d126ca973b2b702eda8cd3042a975a503735c482cb537ef9ad6",
+              "size_bytes": 99884
             },
             {
               "name": "Texto 38",
               "mogrt": "ep-texto/Texto 38.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-38.gif",
               "wc": 3,
-              "ep_id": "mogrt_texto-38"
+              "ep_id": "mogrt_texto-38",
+              "id": "legendas_0c2ce82305c5",
+              "cdn_key": "legendas/ep-texto/texto-38-mogrt",
+              "sha256": "789c7a3fb535f05d6885e893ab08b869f6ef8afacc8b1650358befb906f5ed7d",
+              "size_bytes": 111352
             },
             {
               "name": "Texto 39",
               "mogrt": "ep-texto/Texto 39.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-39.gif",
               "wc": 3,
-              "ep_id": "mogrt_texto-39"
+              "ep_id": "mogrt_texto-39",
+              "id": "legendas_70b6f9d98502",
+              "cdn_key": "legendas/ep-texto/texto-39-mogrt",
+              "sha256": "3f5d866cb847a480ea2d40718201e9d4fef14f051efb59020a690c2c2f84d394",
+              "size_bytes": 112783
             },
             {
               "name": "Texto 40",
               "mogrt": "ep-texto/Texto 40.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-40.gif",
               "wc": 3,
-              "ep_id": "mogrt_texto-40"
+              "ep_id": "mogrt_texto-40",
+              "id": "legendas_e76ffc0c1575",
+              "cdn_key": "legendas/ep-texto/texto-40-mogrt",
+              "sha256": "bdf4a542cd487b778e9d5191012645d51253d4a21cdfe93a931fd2ed946d946b",
+              "size_bytes": 127771
             },
             {
               "name": "Texto 41",
               "mogrt": "ep-texto/Texto 41.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-41.gif",
               "wc": 3,
-              "ep_id": "mogrt_texto-41"
+              "ep_id": "mogrt_texto-41",
+              "id": "legendas_eee495dc6a9b",
+              "cdn_key": "legendas/ep-texto/texto-41-mogrt",
+              "sha256": "a2ae5c040acc3f40e366006a4c3f28dad1a133ee6f898a970c844018245078a6",
+              "size_bytes": 55627
             },
             {
               "name": "Texto 42",
               "mogrt": "ep-texto/Texto 42.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-42.gif",
               "wc": 3,
-              "ep_id": "mogrt_texto-42"
+              "ep_id": "mogrt_texto-42",
+              "id": "legendas_92dde94405fb",
+              "cdn_key": "legendas/ep-texto/texto-42-mogrt",
+              "sha256": "89d249fe901ce531463b651e83cc35419440798fa68adb8806e3a6a3f3583382",
+              "size_bytes": 80495
             },
             {
               "name": "Texto 47",
               "mogrt": "ep-texto/Texto 47.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-47.gif",
               "wc": 3,
-              "ep_id": "mogrt_texto-47"
+              "ep_id": "mogrt_texto-47",
+              "id": "legendas_dd6c8969d9e2",
+              "cdn_key": "legendas/ep-texto/texto-47-mogrt",
+              "sha256": "3d37ce1a48eeb517d2c92bc58ab16ae77815f20d0286dbbf52663dbf03376194",
+              "size_bytes": 193317
             },
             {
               "name": "Texto 50",
               "mogrt": "ep-texto/Texto 50.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-50.gif",
               "wc": 3,
-              "ep_id": "mogrt_texto-50"
+              "ep_id": "mogrt_texto-50",
+              "id": "legendas_ab8b51d17eaf",
+              "cdn_key": "legendas/ep-texto/texto-50-mogrt",
+              "sha256": "b6202adfb3d82b9fa1f7fd8a531eeabc285bd3518c102f1cc7c0efb50f0cfd50",
+              "size_bytes": 130699
             },
             {
               "name": "Texto 53",
               "mogrt": "ep-texto/Texto 53.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-53.gif",
               "wc": 3,
-              "ep_id": "mogrt_texto-53"
+              "ep_id": "mogrt_texto-53",
+              "id": "legendas_772d4ff2ad15",
+              "cdn_key": "legendas/ep-texto/texto-53-mogrt",
+              "sha256": "72438407032ff9e857df9eeed976a033f6cbbbb11ff92f36f6dfc0faf36dd7f3",
+              "size_bytes": 70643
             },
             {
               "name": "Texto 54",
               "mogrt": "ep-texto/Texto 54.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-54.gif",
               "wc": 3,
-              "ep_id": "mogrt_texto-54"
+              "ep_id": "mogrt_texto-54",
+              "id": "legendas_440fe31253ae",
+              "cdn_key": "legendas/ep-texto/texto-54-mogrt",
+              "sha256": "6617975f976201205223da208069b559bc9e5d5f9b171d0343c95591cebd72a1",
+              "size_bytes": 78130
             },
             {
               "name": "Texto 56",
               "mogrt": "ep-texto/Texto 56.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-56.gif",
               "wc": 3,
-              "ep_id": "mogrt_texto-56"
+              "ep_id": "mogrt_texto-56",
+              "id": "legendas_b9056fd23ad0",
+              "cdn_key": "legendas/ep-texto/texto-56-mogrt",
+              "sha256": "9a8bc2852ca6ec333ad21226b54d3d9deb0fcc226b339ba564016fa0ccd0f7c6",
+              "size_bytes": 28071
             },
             {
               "name": "Texto 57",
               "mogrt": "ep-texto/Texto 57.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-57.gif",
               "wc": 3,
-              "ep_id": "mogrt_texto-57"
+              "ep_id": "mogrt_texto-57",
+              "id": "legendas_51240f6e5f14",
+              "cdn_key": "legendas/ep-texto/texto-57-mogrt",
+              "sha256": "481c52ba6e0a3109d743fd4588ba29d6a041b06abeca99c0fe80f5ed222bef23",
+              "size_bytes": 60278
             },
             {
               "name": "Texto 58",
               "mogrt": "ep-texto/Texto 58.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-58.gif",
               "wc": 3,
-              "ep_id": "mogrt_texto-58"
+              "ep_id": "mogrt_texto-58",
+              "id": "legendas_b75d7f84f275",
+              "cdn_key": "legendas/ep-texto/texto-58-mogrt",
+              "sha256": "d61d129722ac019b874ed0cd31ecef4f101197d15a2aac687b789fe66129f51a",
+              "size_bytes": 95433
             },
             {
               "name": "Texto 60",
               "mogrt": "ep-texto/Texto 60.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-60.gif",
               "wc": 3,
-              "ep_id": "mogrt_texto-60"
+              "ep_id": "mogrt_texto-60",
+              "id": "legendas_279e57316426",
+              "cdn_key": "legendas/ep-texto/texto-60-mogrt",
+              "sha256": "7682e45318f40925a3076d76ea20dcc7c31fabd5e4c2d0eb7c16a14cc5c019a1",
+              "size_bytes": 32416
             },
             {
               "name": "Texto 61",
               "mogrt": "ep-texto/Texto 61.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-61.gif",
               "wc": 3,
-              "ep_id": "mogrt_texto-61"
+              "ep_id": "mogrt_texto-61",
+              "id": "legendas_d663de52052c",
+              "cdn_key": "legendas/ep-texto/texto-61-mogrt",
+              "sha256": "fcf1e21e4b667471a013f3c0c6cd97a896ce2218f3468635879048118f92e8e9",
+              "size_bytes": 57875
             }
           ]
         },
@@ -274,112 +414,176 @@
               "mogrt": "ep-texto/Texto 04.mogrt",
               "preview": "ep-texto/previews/ts_1772982712214_29800.gif",
               "wc": 4,
-              "ep_id": "ts_1772982712214_29800"
+              "ep_id": "ts_1772982712214_29800",
+              "id": "legendas_b92b7ccdcb58",
+              "cdn_key": "legendas/ep-texto/texto-04-mogrt",
+              "sha256": "ec2ff2772c65f0b3b304adea3db0eef98fe6fa4d3b6023eedf5b9831bdf26010",
+              "size_bytes": 37421
             },
             {
               "name": "Texto 05",
               "mogrt": "ep-texto/Texto 05.mogrt",
               "preview": "ep-texto/previews/ts_1772982736585_1873.gif",
               "wc": 4,
-              "ep_id": "ts_1772982736585_1873"
+              "ep_id": "ts_1772982736585_1873",
+              "id": "legendas_57432180db06",
+              "cdn_key": "legendas/ep-texto/texto-05-mogrt",
+              "sha256": "dece882ef2c2ec6517f0face427e532790860b794d318fa9226f0276cbcfa1fe",
+              "size_bytes": 61433
             },
             {
               "name": "Texto 07",
               "mogrt": "ep-texto/Texto 07.mogrt",
               "preview": "ep-texto/previews/ts_1772982773388_9127.gif",
               "wc": 4,
-              "ep_id": "ts_1772982773388_9127"
+              "ep_id": "ts_1772982773388_9127",
+              "id": "legendas_7826255794d4",
+              "cdn_key": "legendas/ep-texto/texto-07-mogrt",
+              "sha256": "3bef0de7925971ea037f4b7846a8c44d9d5ab80f2fde73cfe6605b32748346b0",
+              "size_bytes": 38944
             },
             {
               "name": "Texto 12",
               "mogrt": "ep-texto/Texto 12.mogrt",
               "preview": "ep-texto/previews/ts_1772983095186_73767.gif",
               "wc": 4,
-              "ep_id": "ts_1772983095186_73767"
+              "ep_id": "ts_1772983095186_73767",
+              "id": "legendas_03d6faace301",
+              "cdn_key": "legendas/ep-texto/texto-12-mogrt",
+              "sha256": "7eeffa8e03fed2f42449f7905ee8849c4c8e8b8846acdee6eee4549c8916ef44",
+              "size_bytes": 72421
             },
             {
               "name": "Texto 17",
               "mogrt": "ep-texto/Texto 17.mogrt",
               "preview": "ep-texto/previews/mogrt_1773711890800.gif",
               "wc": 4,
-              "ep_id": "mogrt_1773711890800"
+              "ep_id": "mogrt_1773711890800",
+              "id": "legendas_a1c8a4b2727b",
+              "cdn_key": "legendas/ep-texto/texto-17-mogrt",
+              "sha256": "25e9fdf20c72e788e4da2bb0d080a3825a684edfdf52be69d8c65cad3c4b7ccf",
+              "size_bytes": 53747
             },
             {
               "name": "Texto 18",
               "mogrt": "ep-texto/Texto 18.mogrt",
               "preview": "ep-texto/previews/mogrt_1773711974002.gif",
               "wc": 4,
-              "ep_id": "mogrt_1773711974002"
+              "ep_id": "mogrt_1773711974002",
+              "id": "legendas_43e54892c253",
+              "cdn_key": "legendas/ep-texto/texto-18-mogrt",
+              "sha256": "b14f6c05562531189ce59f31a6dd33adaa9c9644d732c504088ab55fada464a6",
+              "size_bytes": 60994
             },
             {
               "name": "Texto 27",
               "mogrt": "ep-texto/Texto 27.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-27.gif",
               "wc": 4,
-              "ep_id": "mogrt_texto-27"
+              "ep_id": "mogrt_texto-27",
+              "id": "legendas_623389ef2240",
+              "cdn_key": "legendas/ep-texto/texto-27-mogrt",
+              "sha256": "a674e0149bded9c50068c22d77430bc9e3a91260dcc8dcfa866b82a9045ba8e1",
+              "size_bytes": 90909
             },
             {
               "name": "Texto 32",
               "mogrt": "ep-texto/Texto 32.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-32.gif",
               "wc": 4,
-              "ep_id": "mogrt_texto-32"
+              "ep_id": "mogrt_texto-32",
+              "id": "legendas_fa7a8dc9500a",
+              "cdn_key": "legendas/ep-texto/texto-32-mogrt",
+              "sha256": "4a925f585d74d72cef807f40358991ebee01c78a698f78d145ed9cca7ee4301a",
+              "size_bytes": 57552
             },
             {
               "name": "Texto 34",
               "mogrt": "ep-texto/Texto 34.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-34.gif",
               "wc": 4,
-              "ep_id": "mogrt_texto-34"
+              "ep_id": "mogrt_texto-34",
+              "id": "legendas_b778b8586e72",
+              "cdn_key": "legendas/ep-texto/texto-34-mogrt",
+              "sha256": "04f1ab11ca63a0c185ded9e438be0c6c3ab9596cb36d80c71412515ccafcc580",
+              "size_bytes": 72260
             },
             {
               "name": "Texto 36",
               "mogrt": "ep-texto/Texto 36.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-36.gif",
               "wc": 4,
-              "ep_id": "mogrt_texto-36"
+              "ep_id": "mogrt_texto-36",
+              "id": "legendas_60e4d8e89f45",
+              "cdn_key": "legendas/ep-texto/texto-36-mogrt",
+              "sha256": "748a7a8380ef8b7d654d0a84fbec8928730f28a0a03f141bd0508a29d2dc1961",
+              "size_bytes": 77165
             },
             {
               "name": "Texto 37",
               "mogrt": "ep-texto/Texto 37.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-37.gif",
               "wc": 4,
-              "ep_id": "mogrt_texto-37"
+              "ep_id": "mogrt_texto-37",
+              "id": "legendas_cd6579d8ad00",
+              "cdn_key": "legendas/ep-texto/texto-37-mogrt",
+              "sha256": "3607cb68f7e27064e0417a425d0f279a1f1931bd4d3f047bd5ad316052fcc8a1",
+              "size_bytes": 59695
             },
             {
               "name": "Texto 46",
               "mogrt": "ep-texto/Texto 46.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-46.gif",
               "wc": 4,
-              "ep_id": "mogrt_texto-46"
+              "ep_id": "mogrt_texto-46",
+              "id": "legendas_1b0498977bdc",
+              "cdn_key": "legendas/ep-texto/texto-46-mogrt",
+              "sha256": "1a333af46321fb8f7cc0951c8a67182010500d0e3c0ae3b4000fb849a56f9981",
+              "size_bytes": 194888
             },
             {
               "name": "Texto 49",
               "mogrt": "ep-texto/Texto 49.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-49.gif",
               "wc": 4,
-              "ep_id": "mogrt_texto-49"
+              "ep_id": "mogrt_texto-49",
+              "id": "legendas_09c687ad7389",
+              "cdn_key": "legendas/ep-texto/texto-49-mogrt",
+              "sha256": "8cb8904a0f251b63e8234c5063e2441471d3708fa58650f4ca9aafe2811b6143",
+              "size_bytes": 136518
             },
             {
               "name": "Texto 51",
               "mogrt": "ep-texto/Texto 51.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-51.gif",
               "wc": 4,
-              "ep_id": "mogrt_texto-51"
+              "ep_id": "mogrt_texto-51",
+              "id": "legendas_87daa5419dbb",
+              "cdn_key": "legendas/ep-texto/texto-51-mogrt",
+              "sha256": "902377e09a509a36dae8bb68042d3e8a09f01e8e0bba61fd7a92b112c09f78c8",
+              "size_bytes": 84562
             },
             {
               "name": "Texto 52",
               "mogrt": "ep-texto/Texto 52.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-52.gif",
               "wc": 4,
-              "ep_id": "mogrt_texto-52"
+              "ep_id": "mogrt_texto-52",
+              "id": "legendas_8e9c10df4817",
+              "cdn_key": "legendas/ep-texto/texto-52-mogrt",
+              "sha256": "e3443e391960e1fde9695d05cd7b9cdd3a7096ffb1bbf50b250bc6a53b25dc70",
+              "size_bytes": 82031
             },
             {
               "name": "Texto 55",
               "mogrt": "ep-texto/Texto 55.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-55.gif",
               "wc": 4,
-              "ep_id": "mogrt_texto-55"
+              "ep_id": "mogrt_texto-55",
+              "id": "legendas_f5d010014235",
+              "cdn_key": "legendas/ep-texto/texto-55-mogrt",
+              "sha256": "4323616d4e3861e5f796af3983af08ed4f9dc50e3a6a9d60ade8c2bf15ac3322",
+              "size_bytes": 88991
             }
           ]
         },
@@ -391,35 +595,55 @@
               "mogrt": "ep-texto/Texto 01.mogrt",
               "preview": "ep-texto/previews/ts_1772981534625_30773.gif",
               "wc": 5,
-              "ep_id": "ts_1772981534625_30773"
+              "ep_id": "ts_1772981534625_30773",
+              "id": "legendas_3a35708088e6",
+              "cdn_key": "legendas/ep-texto/texto-01-mogrt",
+              "sha256": "d1009690837d753a1959ffd34b650f208d840cdc077ba7356cb40156ad5b4ee2",
+              "size_bytes": 96482
             },
             {
               "name": "Texto 08",
               "mogrt": "ep-texto/Texto 08.mogrt",
               "preview": "ep-texto/previews/ts_1772994430822_70651.gif",
               "wc": 5,
-              "ep_id": "ts_1772994430822_70651"
+              "ep_id": "ts_1772994430822_70651",
+              "id": "legendas_2232da7afccd",
+              "cdn_key": "legendas/ep-texto/texto-08-mogrt",
+              "sha256": "64c120538bd5ab013b07f3d3dd6067ec4f57fa0a95628442d027579dee07b5f7",
+              "size_bytes": 50461
             },
             {
               "name": "Texto 33",
               "mogrt": "ep-texto/Texto 33.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-33.gif",
               "wc": 5,
-              "ep_id": "mogrt_texto-33"
+              "ep_id": "mogrt_texto-33",
+              "id": "legendas_fea93a4db281",
+              "cdn_key": "legendas/ep-texto/texto-33-mogrt",
+              "sha256": "c144c40221fd4abdd1500423e5108c11133b45a047919078a8a30c7f25c497cb",
+              "size_bytes": 130859
             },
             {
               "name": "Texto 35",
               "mogrt": "ep-texto/Texto 35.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-35.gif",
               "wc": 5,
-              "ep_id": "mogrt_texto-35"
+              "ep_id": "mogrt_texto-35",
+              "id": "legendas_95c50be17f33",
+              "cdn_key": "legendas/ep-texto/texto-35-mogrt",
+              "sha256": "79784d2975a76da4fe3f2f5ba93a8699e7fe4e966f40a528699fe307d7f5995e",
+              "size_bytes": 77066
             },
             {
               "name": "Texto 45",
               "mogrt": "ep-texto/Texto 45.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-45.gif",
               "wc": 5,
-              "ep_id": "mogrt_texto-45"
+              "ep_id": "mogrt_texto-45",
+              "id": "legendas_abe6dc18f6ca",
+              "cdn_key": "legendas/ep-texto/texto-45-mogrt",
+              "sha256": "9cade164a00c3b13fc380ec3c2591be30fe5c58d979051dc62f14a54240af465",
+              "size_bytes": 160957
             }
           ]
         },
@@ -431,14 +655,22 @@
               "mogrt": "ep-texto/Texto 21.mogrt",
               "preview": "ep-texto/previews/mogrt_1773712333152.gif",
               "wc": 6,
-              "ep_id": "mogrt_1773712333152"
+              "ep_id": "mogrt_1773712333152",
+              "id": "legendas_4269184980ab",
+              "cdn_key": "legendas/ep-texto/texto-21-mogrt",
+              "sha256": "2e31c8e5ddcb757a4821f1fa86f59623fe6db0703005d462f8ca51cbf81ee2fe",
+              "size_bytes": 79051
             },
             {
               "name": "Texto 25",
               "mogrt": "ep-texto/Texto 25.mogrt",
               "preview": "ep-texto/previews/texto_25.gif",
               "wc": 6,
-              "ep_id": "texto_25"
+              "ep_id": "texto_25",
+              "id": "legendas_dd639eabba44",
+              "cdn_key": "legendas/ep-texto/texto-25-mogrt",
+              "sha256": "f0da6deabee190685b82d30011f68d8ee4e244139b284008c0ee9669b14d4b52",
+              "size_bytes": 84547
             }
           ]
         },
@@ -450,25 +682,39 @@
               "mogrt": "ep-texto/Texto 06.mogrt",
               "preview": "ep-texto/previews/ts_1772982759110_29507.gif",
               "wc": 7,
-              "ep_id": "ts_1772982759110_29507"
+              "ep_id": "ts_1772982759110_29507",
+              "id": "legendas_d549843eaa79",
+              "cdn_key": "legendas/ep-texto/texto-06-mogrt",
+              "sha256": "0efcbd08a21966d500ac7681d0af9912a9d13999bff5b9a8df29e1864fa7cdbc",
+              "size_bytes": 103434
             },
             {
               "name": "Texto 09",
               "mogrt": "ep-texto/Texto 09.mogrt",
               "preview": "ep-texto/previews/ts_1772982947647_32827.gif",
               "wc": 7,
-              "ep_id": "ts_1772982947647_32827"
+              "ep_id": "ts_1772982947647_32827",
+              "id": "legendas_0ea1a52b8037",
+              "cdn_key": "legendas/ep-texto/texto-09-mogrt",
+              "sha256": "104521251c1fe663e8f60f574868e58bd3fa445fc026e2b1a04a685f63e47c4e",
+              "size_bytes": 140079
             },
             {
               "name": "Texto 26",
               "mogrt": "ep-texto/Texto 26.mogrt",
               "preview": "ep-texto/previews/mogrt_texto-26.gif",
               "wc": 7,
-              "ep_id": "mogrt_texto-26"
+              "ep_id": "mogrt_texto-26",
+              "id": "legendas_c8bf38626e8a",
+              "cdn_key": "legendas/ep-texto/texto-26-mogrt",
+              "sha256": "9cfaf756cdde40f6835a8370065adc5fcd8be9d8e669ee63f967f96f38442592",
+              "size_bytes": 55048
             }
           ]
         }
       ]
     }
-  ]
+  ],
+  "cdn_migration_at": "2026-05-19T23:10:59.228Z",
+  "cdn_enabled": true
 }

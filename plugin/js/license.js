@@ -113,11 +113,24 @@ const License = (function () {
                         rawToken = res.license; current = payload;
                         API.state.set("license_jwt", res.license);
                         API.state.set("license_issued_at", Date.now());
+                        // sub voltou: dispara evento pro UI tirar paywall
+                        document.dispatchEvent(new CustomEvent("subscription-active", { detail: payload }));
                     }
                 }
                 if (res.revoked) {
                     logout();
                     document.dispatchEvent(new CustomEvent("license-revoked"));
+                } else if (res.subscription_inactive) {
+                    // SOFT-BLOCK: assinatura vencida, mas user continua logado.
+                    // UI deve mostrar paywall + banner "Renovar". Plugin não desloga.
+                    document.dispatchEvent(new CustomEvent("subscription-inactive", {
+                        detail: {
+                            reason: res.reason || "expired",
+                            plan: res.plan,
+                            expired_at: res.expired_at,
+                            pricing_url: res.pricing_url || (window.MV_CONFIG && window.MV_CONFIG.pricingUrl)
+                        }
+                    }));
                 }
             } catch (e) { /* network down, keep using cached */ }
         }, 6 * 60 * 60 * 1000); // 6h

@@ -4,7 +4,7 @@
  * Resend free tier: 3000 emails/mês, dominio padrão onboarding@resend.dev
  * (depois você configura motionvault.app via DNS).
  */
-const FROM      = process.env.EMAIL_FROM || "MotionPro <onboarding@resend.dev>";
+const FROM      = process.env.EMAIL_FROM || "Motion Titles <onboarding@resend.dev>";
 const RESEND    = process.env.RESEND_API_KEY;
 const PUBLIC_URL = process.env.PUBLIC_URL || "https://motionpro-lp.vercel.app";
 
@@ -63,16 +63,16 @@ const BRAND_HEADER = `
 const BRAND_FOOTER = `
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0a;padding:24px;margin-top:32px">
   <tr><td align="center" style="color:#888;font:400 12px Inter,Arial,sans-serif">
-    © ${new Date().getFullYear()} MotionPro · uma marca PacotesFX<br>
+    © ${new Date().getFullYear()} Motion Titles · uma marca PacotesFX<br>
     Se você não esperava este e-mail, ignore.
   </td></tr>
 </table>`;
 
-function welcomeEmail({ email, password, plan, downloadUrl, productName }) {
+function welcomeEmail({ email, password, plan, downloadUrl, productName, miaLicenseKey }) {
     const planName = plan === "lifetime" ? "Vitalício" : plan === "yearly" ? "Anual" : plan;
-    const pName = productName || "MotionPro";
+    const pName = productName || "Motion Titles";
     const html = `
-<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MotionPro</title></head><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Motion Titles</title></head><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
 ${BRAND_HEADER}
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#fff;max-width:560px;margin:0 auto">
   <tr><td style="padding:48px 40px 32px">
@@ -94,7 +94,7 @@ ${BRAND_HEADER}
       </p>
     </div>
 
-    <div style="background:#f6f6f8;border:1px solid #e6e6ea;border-radius:8px;padding:20px;margin-bottom:32px">
+    <div style="background:#f6f6f8;border:1px solid #e6e6ea;border-radius:8px;padding:20px;margin-bottom:24px">
       <div style="font:600 11px Inter,Arial,sans-serif;color:#2563EB;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px">02 · Baixe e instale o plugin</div>
       <p style="color:#444;font:400 14px/1.6 Inter,Arial,sans-serif;margin:0 0 18px">
         Recomendamos a versão <strong>.ZIP</strong>: você extrai, dá duplo-clique em <code style="background:#fff;padding:2px 5px;border-radius:3px;font-size:13px">INSTALAR.bat</code> e pronto. <strong>Sem aviso do Windows.</strong>
@@ -105,6 +105,41 @@ ${BRAND_HEADER}
       <p style="color:#666;font:400 12px Inter,Arial,sans-serif;margin:14px 0 0">
         Premiere Pro CC 2019+, Windows 10/11. Versão macOS em breve.
       </p>
+    </div>
+
+    ${miaLicenseKey ? `
+    <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:2px solid #2563EB;border-radius:8px;padding:24px;margin-bottom:24px">
+      <div style="font:600 11px Inter,Arial,sans-serif;color:#2563EB;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px">🔑 Sua chave de licença Motion IA</div>
+      <p style="color:#444;font:400 14px/1.6 Inter,Arial,sans-serif;margin:0 0 14px">
+        Use essa chave em <strong>⚙ Config → Ativar Licença</strong> dentro do Motion IA:
+      </p>
+      <div style="background:#fff;padding:18px;border-radius:6px;border:1px solid #bfdbfe;text-align:center">
+        <code style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:16px;font-weight:700;color:#2563EB;letter-spacing:1px">${miaLicenseKey}</code>
+      </div>
+      <p style="color:#666;font:400 12px Inter,Arial,sans-serif;margin:14px 0 0">
+        ⚠️ Guarde essa chave em local seguro. Ela é única e libera todas as features do seu tier.
+      </p>
+    </div>` : ""}
+
+    ${process.env.TUTORIAL_VIDEO_URL ? `
+    <div style="background:linear-gradient(135deg,#fff7ed,#ffedd5);border:1px solid #fed7aa;border-radius:8px;padding:20px;margin-bottom:24px">
+      <div style="font:600 11px Inter,Arial,sans-serif;color:#c2410c;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px">🎬 Tutorial em 3 minutos</div>
+      <p style="color:#444;font:400 14px/1.6 Inter,Arial,sans-serif;margin:0 0 18px">
+        Tem dúvida na instalação ou no primeiro uso? Vídeo curto mostrando tudo:
+      </p>
+      <a href="${process.env.TUTORIAL_VIDEO_URL}" style="display:inline-block;background:#dc2626;color:#fff;padding:14px 24px;border-radius:6px;text-decoration:none;font:600 14px Inter,Arial,sans-serif">
+        ▶ Assistir tutorial →
+      </a>
+    </div>` : ""}
+
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:20px;margin-bottom:32px">
+      <div style="font:600 11px Inter,Arial,sans-serif;color:#2563EB;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px">📖 Manual completo</div>
+      <p style="color:#444;font:400 14px/1.6 Inter,Arial,sans-serif;margin:0 0 18px">
+        Documentação oficial — instalação, primeira vez, fluxos práticos e troubleshooting.
+      </p>
+      <a href="https://motionpro-lp.vercel.app/docs/" style="display:inline-block;background:#2563EB;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font:600 14px Inter,Arial,sans-serif">
+        📚 Acessar manuais →
+      </a>
     </div>
 
     <div style="background:#f6f6f8;border:1px solid #e6e6ea;border-radius:8px;padding:20px">
@@ -125,13 +160,13 @@ ${BRAND_FOOTER}
         to: email,
         subject: `✅ Bem-vindo ao ${pName} · suas credenciais + download`,
         html,
-        text: `Bem-vindo ao ${pName}!\n\nSeu plano ${planName} está ativo.\n\nE-mail: ${email}\nSenha temporária: ${password}\n\nBaixe o plugin: ${downloadUrl}\n\nDepois abra o Premiere em Janela > Extensões > ${pName} e faça login.\n\nDúvidas: suporte@pacotesfx.com`
+        text: `Bem-vindo ao ${pName}!\n\nSeu plano ${planName} está ativo.\n\nE-mail: ${email}\nSenha temporária: ${password}${miaLicenseKey ? `\n\nChave Motion IA: ${miaLicenseKey}` : ""}\n\nBaixe o plugin: ${downloadUrl}\n\nDepois abra o Premiere em Janela > Extensões > ${pName} e faça login.\n\nDúvidas: suporte@pacotesfx.com`
     });
 }
 
 function resetPasswordEmail({ email, resetUrl }) {
     const html = `
-<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MotionPro</title></head><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Motion Titles</title></head><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
 ${BRAND_HEADER}
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#fff;max-width:560px;margin:0 auto">
   <tr><td style="padding:48px 40px 32px">
@@ -139,7 +174,7 @@ ${BRAND_HEADER}
       Recuperação de senha
     </h1>
     <p style="color:#444;font:400 15px/1.6 Inter,Arial,sans-serif;margin:0 0 24px">
-      Recebemos uma solicitação pra redefinir a senha da sua conta MotionPro. Clique no botão abaixo pra criar uma nova senha. <strong>O link expira em 1 hora.</strong>
+      Recebemos uma solicitação pra redefinir a senha da sua conta Motion Titles. Clique no botão abaixo pra criar uma nova senha. <strong>O link expira em 1 hora.</strong>
     </p>
     <a href="${resetUrl}" style="display:inline-block;background:#2563EB;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font:600 15px Inter,Arial,sans-serif">
       Redefinir minha senha →
@@ -153,7 +188,7 @@ ${BRAND_FOOTER}
 </body></html>`;
     return sendEmail({
         to: email,
-        subject: "🔐 Recuperação de senha · MotionPro",
+        subject: "🔐 Recuperação de senha · Motion Titles",
         html,
         text: `Pra redefinir sua senha, abra: ${resetUrl}\n\nLink válido por 1 hora. Se não foi você, ignore.`
     });
@@ -161,7 +196,7 @@ ${BRAND_FOOTER}
 
 function paymentFailedEmail({ email, retryUrl }) {
     const html = `
-<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MotionPro</title></head><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Motion Titles</title></head><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
 ${BRAND_HEADER}
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#fff;max-width:560px;margin:0 auto">
   <tr><td style="padding:48px 40px 32px">
@@ -169,7 +204,7 @@ ${BRAND_HEADER}
       Tivemos problema com o pagamento
     </h1>
     <p style="color:#444;font:400 15px/1.6 Inter,Arial,sans-serif;margin:0 0 24px">
-      A cobrança da sua assinatura MotionPro não foi processada. Pode ser cartão expirado, sem limite, ou bloqueio do banco. Atualize seu método de pagamento pra continuar com acesso.
+      A cobrança da sua assinatura Motion Titles não foi processada. Pode ser cartão expirado, sem limite, ou bloqueio do banco. Atualize seu método de pagamento pra continuar com acesso.
     </p>
     <a href="${retryUrl || PUBLIC_URL + '/account.html'}" style="display:inline-block;background:#dc2626;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font:600 14px Inter,Arial,sans-serif">
       Atualizar pagamento →
@@ -180,7 +215,7 @@ ${BRAND_FOOTER}
 </body></html>`;
     return sendEmail({
         to: email,
-        subject: "⚠️ Pagamento da sua assinatura MotionPro falhou",
+        subject: "⚠️ Pagamento da sua assinatura Motion Titles falhou",
         html,
         text: `Não conseguimos processar o pagamento da sua assinatura. Atualize seu cartão em ${retryUrl || PUBLIC_URL + '/account.html'}`
     });
@@ -189,7 +224,7 @@ ${BRAND_FOOTER}
 function verifyEmailMessage({ email, name, verifyUrl }) {
     const greet = name ? `Olá, ${name}!` : "Olá!";
     const html = `
-<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MotionPro</title></head><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Motion Titles</title></head><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
 ${BRAND_HEADER}
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#fff;max-width:560px;margin:0 auto">
   <tr><td style="padding:48px 40px 32px">
@@ -197,13 +232,13 @@ ${BRAND_HEADER}
       Confirme seu e-mail
     </h1>
     <p style="color:#444;font:400 15px/1.6 Inter,Arial,sans-serif;margin:0 0 24px">
-      ${greet} Bem-vindo ao MotionPro. Pra ativar seu trial de 14 dias e garantir que você receba comunicados importantes, confirme seu e-mail clicando no botão abaixo.
+      ${greet} Bem-vindo ao Motion Titles. Pra ativar seu trial de 7 dias e garantir que você receba comunicados importantes, confirme seu e-mail clicando no botão abaixo.
     </p>
     <a href="${verifyUrl}" style="display:inline-block;background:#2563EB;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font:600 15px Inter,Arial,sans-serif">
       Confirmar meu e-mail →
     </a>
     <p style="color:#888;font:400 13px/1.6 Inter,Arial,sans-serif;margin:28px 0 0">
-      O link é válido por 7 dias. Se você não criou conta no MotionPro, ignore este e-mail.
+      O link é válido por 7 dias. Se você não criou conta no Motion Titles, ignore este e-mail.
     </p>
     <p style="color:#888;font:400 12px/1.5 Inter,Arial,sans-serif;margin:18px 0 0;word-break:break-all">
       Se o botão não funcionar, cole no navegador:<br><span style="color:#2563EB">${verifyUrl}</span>
@@ -214,7 +249,7 @@ ${BRAND_FOOTER}
 </body></html>`;
     return sendEmail({
         to: email,
-        subject: "✉️ Confirme seu e-mail · MotionPro",
+        subject: "✉️ Confirme seu e-mail · Motion Titles",
         html,
         text: `${greet} Confirme seu e-mail abrindo: ${verifyUrl}\n\nVálido por 7 dias.`
     });
@@ -290,4 +325,125 @@ ${BRAND_FOOTER}
     });
 }
 
-module.exports = { sendEmail, welcomeEmail, resetPasswordEmail, paymentFailedEmail, verifyEmailMessage, trialReminderEmail, trialExpiredEmail };
+// ─────────────────────────────────────────────────────────────────────────────
+// novos templates 2026-05-18
+
+function newDeviceLoginEmail({ email, name, productName, deviceLabel, ip, country, city, ua, when, manageUrl }) {
+    const pName = productName || "Motion Titles";
+    const greet = name ? `Olá, ${name}!` : "Olá!";
+    const loc = [city, country].filter(Boolean).join(", ") || "localização desconhecida";
+    const html = `
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
+${BRAND_HEADER}
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#fff;max-width:560px;margin:0 auto">
+  <tr><td style="padding:48px 40px 32px">
+    <h1 style="font:800 24px Inter,Arial,sans-serif;color:#0a0a0a;margin:0 0 14px;letter-spacing:-.5px">
+      🔐 Novo dispositivo conectado
+    </h1>
+    <p style="color:#444;font:400 15px/1.6 Inter,Arial,sans-serif;margin:0 0 22px">
+      ${greet} Detectamos um login novo na sua conta ${pName}.
+    </p>
+    <div style="background:#f6f6f8;border:1px solid #e6e6ea;border-radius:8px;padding:20px;margin-bottom:24px">
+      <div style="font:500 13px/1.9 Inter,Arial,sans-serif;color:#0a0a0a">
+        <strong>Dispositivo:</strong> ${deviceLabel || "—"}<br>
+        <strong>Local:</strong> ${loc}<br>
+        <strong>IP:</strong> ${ip || "—"}<br>
+        <strong>Quando:</strong> ${when || new Date().toISOString()}<br>
+        <strong>Browser/Sistema:</strong> <span style="font-size:11px;color:#666">${(ua || "—").slice(0,80)}</span>
+      </div>
+    </div>
+    <p style="color:#444;font:400 14px/1.6 Inter,Arial,sans-serif;margin:0 0 18px">
+      <strong>Foi você?</strong> Pode ignorar este e-mail.<br>
+      <strong>Não reconhece?</strong> Revogue acesso imediatamente:
+    </p>
+    <a href="${manageUrl}" style="display:inline-block;background:#dc2626;color:#fff;padding:14px 24px;border-radius:6px;text-decoration:none;font:600 14px Inter,Arial,sans-serif">
+      Revogar este dispositivo →
+    </a>
+    <p style="color:#888;font:400 12px Inter,Arial,sans-serif;margin:24px 0 0">
+      Se não foi você, sua senha pode estar comprometida. Troque ela em <a href="${manageUrl}" style="color:#2563EB">${manageUrl}</a>.
+    </p>
+  </td></tr>
+</table>
+${BRAND_FOOTER}
+</body></html>`;
+    return sendEmail({
+        to: email,
+        subject: `🔐 Novo dispositivo conectado ao ${pName}`,
+        html,
+        text: `${greet} Novo login: ${deviceLabel} em ${loc} (IP ${ip}). Se não foi você, revogue em ${manageUrl}`
+    });
+}
+
+function paymentSuccessEmail({ email, name, productName, plan, amount, invoiceUrl, manageUrl }) {
+    const pName = productName || "Motion Titles";
+    const greet = name ? `Olá, ${name}!` : "Olá!";
+    const planName = plan === "lifetime" ? "Vitalício" : plan === "yearly" ? "Anual" : plan;
+    const amountStr = typeof amount === "number" ? `R$ ${amount.toFixed(2).replace(".", ",")}` : "—";
+    const html = `
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
+${BRAND_HEADER}
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#fff;max-width:560px;margin:0 auto">
+  <tr><td style="padding:48px 40px 32px">
+    <h1 style="font:800 28px Inter,Arial,sans-serif;color:#0a0a0a;margin:0 0 14px;letter-spacing:-.7px">
+      ✅ Pagamento confirmado
+    </h1>
+    <p style="color:#444;font:400 15px/1.6 Inter,Arial,sans-serif;margin:0 0 22px">
+      ${greet} Tudo certo com sua assinatura do <strong>${pName}</strong>.
+    </p>
+    <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:20px;margin-bottom:24px">
+      <div style="font:500 14px/1.8 Inter,Arial,sans-serif;color:#0a0a0a">
+        <strong>Plano:</strong> ${planName}<br>
+        <strong>Valor:</strong> ${amountStr}<br>
+        ${invoiceUrl ? `<a href="${invoiceUrl}" style="color:#1d4ed8;text-decoration:underline;font-size:13px">Ver nota fiscal →</a>` : ""}
+      </div>
+    </div>
+    <a href="${manageUrl}" style="display:inline-block;background:#2563EB;color:#fff;padding:14px 24px;border-radius:6px;text-decoration:none;font:600 14px Inter,Arial,sans-serif">
+      Gerenciar minha assinatura →
+    </a>
+  </td></tr>
+</table>
+${BRAND_FOOTER}
+</body></html>`;
+    return sendEmail({
+        to: email,
+        subject: `✅ Pagamento confirmado · ${pName}`,
+        html,
+        text: `${greet} Pagamento ${amountStr} ${pName} ${planName} confirmado.`
+    });
+}
+
+function magicLinkEmail({ email, magicUrl, ip, expires_in_min }) {
+    const minutes = expires_in_min || 15;
+    const html = `
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
+${BRAND_HEADER}
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#fff;max-width:560px;margin:0 auto">
+  <tr><td style="padding:48px 40px 32px">
+    <h1 style="font:800 24px Inter,Arial,sans-serif;color:#0a0a0a;margin:0 0 14px">🔑 Entre com 1 clique</h1>
+    <p style="color:#444;font:400 15px/1.6 Inter,Arial,sans-serif;margin:0 0 22px">
+      Clique no botão abaixo pra entrar. Link válido por <strong>${minutes} minutos</strong>.
+    </p>
+    <a href="${magicUrl}" style="display:inline-block;background:#2563EB;color:#fff;padding:16px 28px;border-radius:6px;text-decoration:none;font:700 15px Inter,Arial,sans-serif;margin-bottom:24px">
+      Entrar agora →
+    </a>
+    <p style="color:#888;font:400 12px Inter,Arial,sans-serif;margin:24px 0 0">
+      Se não foi você que pediu, ignore este e-mail (IP: ${ip || "?"}).<br>
+      Link não funciona após ${minutes}min ou se outro link mais recente for solicitado.
+    </p>
+  </td></tr>
+</table>
+${BRAND_FOOTER}
+</body></html>`;
+    return sendEmail({
+        to: email,
+        subject: `🔑 Seu link de acesso Motion Titles`,
+        html,
+        text: `Entre em ${minutes} min: ${magicUrl}`
+    });
+}
+
+module.exports = {
+    sendEmail, welcomeEmail, resetPasswordEmail, paymentFailedEmail,
+    verifyEmailMessage, trialReminderEmail, trialExpiredEmail,
+    newDeviceLoginEmail, paymentSuccessEmail, magicLinkEmail,
+};

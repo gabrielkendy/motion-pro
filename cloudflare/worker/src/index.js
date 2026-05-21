@@ -1,5 +1,5 @@
 /**
- * MotionPro CDN Worker
+ * Motion Titles CDN Worker
  *
  * Validates HMAC-signed URLs and serves assets from Cloudflare R2.
  *
@@ -80,7 +80,7 @@ export default {
 
         // ---- health ----
         if (pathname === "/health") {
-            return Response.json({ ok: true, service: "motionpro-cdn", time: new Date().toISOString() });
+            return Response.json({ ok: true, service: "Motion Titles-cdn", time: new Date().toISOString() });
         }
 
         // ---- CORS preflight ----

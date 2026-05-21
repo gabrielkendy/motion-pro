@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Login Motion IA · Sucesso</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#0a0c12; --bg-2:#11131c; --txt:#e7e9ee; --mut:#8b93a7; --acc:#2563eb; --ok:#10b981; --line:#1f2330; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:Inter,system-ui,sans-serif; background:var(--bg); color:var(--txt); min-height:100vh; display:grid; place-items:center; padding:32px; line-height:1.5; }
+.card { background:var(--bg-2); border:1px solid var(--line); border-radius:16px; padding:40px; max-width:560px; width:100%; }
+.icon { font-size:48px; margin-bottom:16px; }
+h1 { font-size:24px; font-weight:800; margin-bottom:8px; letter-spacing:-.3px; }
+.sub { color:var(--mut); margin-bottom:28px; font-size:14px; }
+.token-box { background:var(--bg); border:2px dashed var(--acc); border-radius:10px; padding:16px; font-family:ui-monospace,monospace; font-size:11px; word-break:break-all; line-height:1.5; max-height:220px; overflow:auto; user-select:all; cursor:pointer; transition:background .15s; }
+.token-box:hover { background:#0d0f17; }
+.copy-btn { display:flex; align-items:center; gap:8px; background:var(--acc); color:#fff; border:none; padding:14px 24px; border-radius:10px; font-weight:700; font-size:15px; cursor:pointer; margin-top:20px; transition:transform .15s, background .15s; }
+.copy-btn:hover { background:#1d4fd7; transform:translateY(-1px); }
+.copy-btn.ok { background:var(--ok); }
+.steps { margin-top:28px; padding-top:24px; border-top:1px solid var(--line); }
+.steps li { color:var(--mut); font-size:13px; margin:6px 0 6px 16px; }
+.steps li strong { color:var(--txt); }
+.err { color:#ef4444; background:rgba(239,68,68,.08); padding:14px 18px; border-radius:10px; }
+</style>
+</head>
+<body>
+<div class="card">
+    <div id="ok-state" style="display:none">
+        <div class="icon">✓</div>
+        <h1>Login realizado!</h1>
+        <p class="sub">Copie o código abaixo e cole no Motion IA dentro do Premiere.</p>
+        <div id="tk" class="token-box" title="Clique pra copiar"></div>
+        <button class="copy-btn" id="copy">📋 Copiar código</button>
+        <ol class="steps">
+            <li><strong>1.</strong> Volte ao Premiere Pro</li>
+            <li><strong>2.</strong> Na tela de login, clique em <strong>"Tenho código"</strong></li>
+            <li><strong>3.</strong> Cole o código copiado e clique em Entrar</li>
+            <li><strong>4.</strong> Pronto! Pode fechar essa página.</li>
+        </ol>
+    </div>
+    <div id="err-state" style="display:none">
+        <div class="icon">❌</div>
+        <h1>Erro no login</h1>
+        <p class="sub">Não foi possível concluir o login com Google.</p>
+        <div class="err" id="errmsg">Token não recebido.</div>
+        <p class="sub" style="margin-top:18px">Volte ao Premiere e tente novamente, ou use email/senha.</p>
+    </div>
+</div>
+<script>
+(function () {
+    var hash = location.hash || "";
+    var m = hash.match(/token=([^&]+)/);
+    if (!m) {
+        document.getElementById("err-state").style.display = "block";
+        return;
+    }
+    var token = decodeURIComponent(m[1]);
+    document.getElementById("ok-state").style.display = "block";
+    document.getElementById("tk").textContent = token;
+
+    var btn = document.getElementById("copy");
+    btn.onclick = function () {
+        var ok = false;
+        try {
+            navigator.clipboard.writeText(token).then(function () {
+                btn.classList.add("ok");
+                btn.textContent = "✓ Copiado!";
+                setTimeout(function () { btn.textContent = "📋 Copiar código"; btn.classList.remove("ok"); }, 2200);
+            });
+            ok = true;
+        } catch (_) {}
+        if (!ok) {
+            // Fallback: seleciona o token
+            var range = document.createRange();
+            range.selectNodeContents(document.getElementById("tk"));
+            var sel = window.getSelection();
+            sel.removeAllRanges(); sel.addRange(range);
+            document.execCommand("copy");
+            btn.classList.add("ok"); btn.textContent = "✓ Copiado!";
+        }
+    };
+})();
+</script>
+</body>
+</html>
