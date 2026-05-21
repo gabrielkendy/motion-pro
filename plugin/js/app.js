@@ -323,6 +323,8 @@ function appendPage() {
         el.appendChild(b);
     }
     $("status").textContent = end.toLocaleString("pt-BR") + " / " + STATE.items.length.toLocaleString("pt-BR") + " exibidos";
+    // Chunk 5: avisa o tier-gating pra (re)aplicar .is-locked nos cards novos
+    document.dispatchEvent(new CustomEvent("grid:rendered"));
 }
 
 // ============================================================ cards
@@ -485,6 +487,20 @@ function importMogrt(item) {
     if (!item || (!item.mogrt && !item.cdn_key)) {
         toast("Item sem caminho .mogrt", "err", 3000);
         logLine("ABORT: item sem .mogrt/cdn_key: " + JSON.stringify(item), "err");
+        return;
+    }
+
+    // Chunk 5: tier-gating. Bloqueia o import quando o plano não cobre o template.
+    if (window.Features && !window.Features.canImportTemplate(item)) {
+        var u  = window.Features.userTier();
+        var mt = window.Features.minTierFor(item);
+        var msg = u === "free"
+            ? "🔒 Sem plano ativo — ative uma licença pra importar templates"
+            : "🔒 Este template requer plano " + window.Features.tierLabel(mt) +
+              " (você tem " + window.Features.tierLabel(u) + ")";
+        toast(msg, "warn", 5000);
+        logLine("BLOCKED by tier-gating: item=" + item.name + " user=" + u + " min=" + mt, "warn");
+        if (window.LicenseUI && window.LicenseUI.open) window.LicenseUI.open();
         return;
     }
 
@@ -1070,6 +1086,11 @@ if (loadCatalog()) {
     // Chunk 4: drawer "⚙ Licença & Config" (slide-over no headbar).
     if (window.LicenseUI && typeof window.LicenseUI.init === "function") {
         window.LicenseUI.init();
+    }
+
+    // Chunk 5: tier-gating + tier badge no statusbar.
+    if (window.Features && typeof window.Features.init === "function") {
+        window.Features.init();
     }
 }
 
