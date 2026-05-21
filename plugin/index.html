@@ -2,43 +2,71 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src *; img-src * data: blob: file: filesystem:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; media-src * data: blob: file: filesystem:;">
 <title>Motion Titles</title>
-<link rel="stylesheet" href="css/app.css?v=251">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css?v=301">
 </head>
 <body>
 
-<!-- ============ LOGIN GATE (overlay when not authenticated) ============ -->
+<!-- ════════════════ GATE (login · Motion IA-style · Chunk 1) ════════════════ -->
 <div id="gate" class="gate hidden">
     <div class="gate__box">
-        <div class="gate__logo">Motion Titles</div>
-        <div class="gate__sub">by PacotesFX</div>
-
-        <div id="gate-tabs" class="gate__tabs">
-            <button id="gt-login" class="gt active">Entrar</button>
-            <button id="gt-signup" class="gt">Criar conta · 7 dias grátis</button>
+        <div class="gate__brand">Motion <span>Titles</span></div>
+        <div class="gate__tagline">by PacotesFX</div>
+        <div class="gate__tabs">
+            <button id="gt-login" class="gate__tab active">Entrar</button>
+            <button id="gt-signup" class="gate__tab">Criar conta</button>
         </div>
-
-        <div class="gate__form">
-            <input id="g-name" type="text" placeholder="Nome completo" autocomplete="name" class="signup-only" hidden>
-            <input id="g-phone" type="tel" placeholder="Telefone (opcional) — ex: +55 11 98765-4321" autocomplete="tel" class="signup-only" hidden>
+        <div class="field signup-only" id="f-name" hidden>
+            <label for="g-name">Nome</label>
+            <input id="g-name" type="text" placeholder="Seu nome" autocomplete="name">
+        </div>
+        <div class="field signup-only" id="f-phone" hidden>
+            <label for="g-phone">Telefone (opcional)</label>
+            <input id="g-phone" type="tel" placeholder="+55 11 98765-4321" autocomplete="tel">
+        </div>
+        <div class="field">
+            <label for="g-email">E-mail</label>
             <input id="g-email" type="email" placeholder="seu@email.com" autocomplete="email">
-            <input id="g-password" type="password" placeholder="Senha (mín 8 caracteres)" autocomplete="current-password">
-            <label class="signup-only g-optin" id="g-optin-wrap" hidden>
-                <input id="g-optin" type="checkbox" checked> Quero receber novidades e ofertas no e-mail
-            </label>
-            <button id="g-submit" class="g-btn">Entrar</button>
-            <div id="g-msg" class="gate__msg"></div>
         </div>
-
-        <div class="gate__plans" id="g-plans">
-            <div class="gate__plans-title">Planos disponíveis</div>
-            <div class="g-plan"><b>Trial 7 dias</b><span>Grátis</span></div>
-            <div class="g-plan"><b>Anual</b><span>R$ 199</span></div>
-            <div class="g-plan"><b>Vitalício</b><span>R$ 499</span></div>
+        <div class="field">
+            <label for="g-password">Senha</label>
+            <input id="g-password" type="password" placeholder="Mínimo 8 caracteres" autocomplete="current-password">
         </div>
+        <label class="signup-only" id="g-optin-wrap" hidden style="display:flex;align-items:flex-start;gap:8px;font-size:11.5px;color:var(--mut);padding:6px 2px;cursor:pointer;margin-bottom:10px">
+            <input id="g-optin" type="checkbox" checked style="margin-top:2px;accent-color:var(--acc)">
+            Quero receber novidades e ofertas no e-mail
+        </label>
+        <button id="g-submit" class="btn btn--primary btn--full">Entrar</button>
+        <div id="g-msg" class="gate__msg"></div>
 
-        <div class="gate__footer">
+        <div class="gate__sep"><span>ou</span></div>
+        <button id="g-google" class="btn btn--ghost btn--full" type="button">
+            <svg viewBox="0 0 18 18" width="16" height="16" style="vertical-align:-3px;margin-right:8px">
+                <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+                <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
+                <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/>
+                <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+            </svg>
+            Continuar com Google
+        </button>
+        <div class="gate__foot">
+            <a id="g-have-code" href="#">Já tenho código de login</a>
+            <span style="margin:0 8px;color:var(--mut)">·</span>
             <a id="g-forgot" href="#">Esqueci minha senha</a>
+        </div>
+
+        <!-- Modal "Tenho código" (oculto por default) -->
+        <div id="g-code-box" class="field" style="display:none;margin-top:14px;padding:14px;background:#11141d;border-radius:10px;border:1px solid #232838">
+            <label style="font-size:12px;color:var(--mut);margin-bottom:6px;display:block">Cole o código gerado após login no navegador:</label>
+            <textarea id="g-code-input" rows="3" placeholder="ey…" style="width:100%;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;resize:vertical;background:var(--bg);color:var(--txt);border:1px solid #232838;border-radius:6px;padding:8px"></textarea>
+            <div style="display:flex;gap:8px;margin-top:8px">
+                <button id="g-code-submit" class="btn btn--primary" style="flex:1">Entrar com código</button>
+                <button id="g-code-cancel" class="btn btn--ghost" type="button">Cancelar</button>
+            </div>
         </div>
     </div>
 </div>
@@ -113,6 +141,9 @@
         <button id="q-clear" class="q-clear hidden">×</button>
     </div>
     <div class="headbar__actions">
+        <button id="btn-config" class="iconbtn" title="Licença & Config (⚙)" aria-label="Licença & Config">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
         <button id="btn-density" class="iconbtn" title="Densidade (compacto/normal/grande)">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         </button>
@@ -132,10 +163,17 @@
 <aside id="side" class="sidebar"></aside>
 <main id="grid" class="grid"></main>
 
-<!-- ============ STATUS BAR ============ -->
+<!-- ============ STATUS BAR (Chunk 7: 4 dots + status + count + tier badge) ============ -->
 <footer class="statusbar">
+    <div class="statusbar__dots" id="statusbar-dots">
+        <span class="dot off" id="dot-premiere" title="Premiere host.jsx"></span><span class="dot-label">Premiere</span>
+        <span class="dot off" id="dot-auth"     title="Sessão"></span><span class="dot-label">Auth</span>
+        <span class="dot off" id="dot-license"  title="Licença"></span><span class="dot-label">Licença</span>
+        <span class="dot off" id="dot-cdn"      title="CDN R2"></span><span class="dot-label">CDN</span>
+    </div>
     <span id="status">Carregando...</span>
     <span id="count" class="muted"></span>
+    <button id="suite-pill" class="suite-pill" title="Motion Suite · conheça os 3 plugins">✨ Suite</button>
 </footer>
 
 <!-- ============ DEBUG LOG (hidden) ============ -->
@@ -147,9 +185,112 @@
     <div id="log-body" class="log__body"></div>
 </div>
 
-<script src="js/lib/CSInterface.js?v=251"></script>
-<script src="js/config.js?v=251"></script>
-<script src="js/asset-loader.js?v=251"></script>
-<script src="js/app.js?v=251"></script>
+<!-- ════════════════ CONFIG DRAWER (slide-over · Chunk 4) ════════════════ -->
+<div id="cfg-backdrop" class="cfg-backdrop"></div>
+<aside id="config-drawer" class="cfg-drawer" role="dialog" aria-labelledby="cfg-title" aria-hidden="true">
+    <header class="cfg-drawer__head">
+        <div>
+            <div id="cfg-title" class="cfg-drawer__title">⚙ Licença & Config</div>
+            <div class="cfg-drawer__sub" id="cfg-email">—</div>
+        </div>
+        <button id="cfg-close" class="cfg-drawer__close" title="Fechar (Esc)" aria-label="Fechar painel">×</button>
+    </header>
+    <div class="cfg-drawer__body">
+
+        <div class="card__title" style="margin-bottom:8px">🔑 Licença Motion Titles</div>
+        <div id="lic-card" class="license-card inactive">
+            <div class="license-card__row">
+                <span class="license-card__label">Status</span>
+                <span><span id="lic-status" class="license-card__status inactive">Não ativada</span></span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Chave</span>
+                <span id="lic-key" class="license-card__value">—</span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Última validação</span>
+                <span id="lic-validated" class="license-card__value">—</span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Produto(s)</span>
+                <span id="lic-product" class="license-card__value">—</span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Plano</span>
+                <span id="lic-tier" class="license-card__value">—</span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Devices ativos</span>
+                <span id="lic-devices" class="license-card__value">—</span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Expira em</span>
+                <span id="lic-expires" class="license-card__value">—</span>
+            </div>
+        </div>
+
+        <div class="field">
+            <label for="lic-input">Inserir / trocar chave de licença</label>
+            <input id="lic-input" placeholder="MTI-PRO-XXXX-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false">
+            <div class="hint">
+                Comprou pelo site? A chave foi enviada no seu e-mail.<br>
+                Aceita <b>MTI-</b> (Motion Titles) e <b>MTS-</b> (Bundle Motion Suite — vale pros 3 plugins).
+            </div>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px">
+            <button id="lic-activate" class="btn btn--primary">Ativar Licença</button>
+            <button id="lic-validate" class="btn btn--sm">↻ Revalidar</button>
+            <button id="lic-deactivate" class="btn btn--danger btn--sm">Desativar</button>
+        </div>
+        <div id="lic-msg" class="gate__msg" style="text-align:left;min-height:18px"></div>
+
+        <hr style="border:0;border-top:1px solid #232838;margin:24px 0">
+
+        <div class="card__title" style="margin-bottom:8px">✨ Motion Suite</div>
+        <div id="cfg-cross-sell" class="cross-sell">
+            <div class="cross-sell__default">
+                Motion Titles é o <b>Plugin 01</b> da Motion Suite.
+                Conheça também:
+                <div class="cross-sell__row">
+                    <a href="#" data-suite-plugin="legendas" class="cross-sell__link">📝 Motion Legendas</a>
+                    <a href="#" data-suite-plugin="ia"       class="cross-sell__link">🤖 Motion IA</a>
+                </div>
+                <div class="hint" style="margin-top:10px">
+                    Compre o <b>Bundle Motion Suite (MTS-)</b> e libere os 3 plugins com uma chave só.
+                </div>
+            </div>
+        </div>
+
+        <hr style="border:0;border-top:1px solid #232838;margin:24px 0">
+
+        <div class="card__title" style="margin-bottom:8px">👤 Conta</div>
+        <div class="hint" style="margin-bottom:12px">
+            Logout não desativa a licença neste device — você pode entrar de novo sem perder ativação.
+        </div>
+        <button id="cfg-logout" class="btn btn--ghost">Sair desta conta</button>
+
+        <hr style="border:0;border-top:1px solid #232838;margin:24px 0">
+
+        <div class="card__title" style="margin-bottom:8px">🩺 Diagnóstico técnico</div>
+        <div class="hint" style="margin-bottom:10px">
+            Roda 5 testes (paths · license cache · /v1/me · host.jsx · CDN R2).
+            Use quando algo não funcionar — cole o output no suporte.
+        </div>
+        <button id="btn-diagnose" class="btn btn--sm">Rodar diagnóstico</button>
+        <pre id="diag-output" class="diag-output hidden"></pre>
+
+    </div>
+</aside>
+
+<script src="js/lib/CSInterface.js?v=301"></script>
+<script src="js/config.js?v=301"></script>
+<script src="js/asset-loader.js?v=301"></script>
+<script src="js/license-cache.js?v=301"></script>
+<script src="js/license-client.js?v=301"></script>
+<script src="js/auth.js?v=301"></script>
+<script src="js/license-ui.js?v=301"></script>
+<script src="js/features.js?v=301"></script>
+<script src="js/status-bar.js?v=301"></script>
+<script src="js/app.js?v=301"></script>
 </body>
 </html>

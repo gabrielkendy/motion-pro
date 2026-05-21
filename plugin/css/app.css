@@ -15,6 +15,22 @@
     --warn:  #ffb84a;
     --danger:#ff5566;
     --radius: 6px;
+
+    /* === Motion IA design tokens (Chunk 1 — Motion Suite unified) === */
+    --bg:        #0a0c12;
+    --bg-hover:  #1c2130;
+    --line-soft: #1a1e2a;
+    --txt:       #e8ecf3;
+    --mut:       #8590a8;
+    --mut-2:     #5d6678;
+    --acc-bright:#3b82f6;
+    --acc-soft:  rgba(37, 99, 235, 0.12);
+    --acc-line:  rgba(37, 99, 235, 0.35);
+    --ok:        #10b981;
+    --ok-soft:   rgba(16, 185, 129, 0.12);
+    --err:       #ef4444;
+    --err-soft:  rgba(239, 68, 68, 0.12);
+    --radius-lg: 12px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -409,8 +425,119 @@ body.wide  .card__thumb { min-height: 180px; }
     padding: 0 14px;
     font-size: 10.5px;
     color: var(--txt-1);
+    gap: 14px;
+    overflow: hidden;
 }
 .muted { color: var(--txt-2); }
+
+/* ════════════════ STATUS BAR DOTS (Chunk 7) ════════════════ */
+.statusbar__dots {
+    display: flex; align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    font-size: 10px;
+    color: var(--txt-2);
+    letter-spacing: 0.4px;
+}
+.statusbar__dots .dot-label {
+    margin-right: 10px;
+    margin-left: 1px;
+}
+.statusbar__dots .dot-label:last-of-type { margin-right: 0; }
+.statusbar .dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--mut-2);
+    flex-shrink: 0;
+    transition: background 0.2s, box-shadow 0.2s;
+}
+.statusbar .dot.ok   { background: var(--ok);   box-shadow: 0 0 6px var(--ok); }
+.statusbar .dot.warn { background: var(--warn); box-shadow: 0 0 5px var(--warn); }
+.statusbar .dot.err  { background: var(--err);  box-shadow: 0 0 5px var(--err); }
+.statusbar .dot.off  { background: var(--mut-2); box-shadow: none; }
+
+/* ════════════════ SUITE PILL no statusbar (Chunk 8) ════════════════ */
+.suite-pill {
+    display: inline-flex; align-items: center;
+    padding: 2px 9px;
+    border-radius: 99px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    background: var(--acc-soft);
+    color: var(--acc-bright);
+    border: 1px solid var(--acc-line);
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-left: 8px;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+.suite-pill:hover { background: var(--acc); color: #fff; transform: translateY(-1px); }
+
+/* ════════════════ CROSS-SELL SUITE (Chunk 8) ════════════════ */
+.cross-sell { font-size: 12.5px; color: var(--txt-2); line-height: 1.5; }
+.cross-sell__default { padding: 14px 16px; background: #11141d; border: 1px solid #232838; border-radius: var(--radius); }
+.cross-sell__row { display: flex; gap: 14px; margin-top: 10px; flex-wrap: wrap; }
+.cross-sell__link {
+    color: var(--acc-bright);
+    text-decoration: none;
+    font-weight: 600;
+    padding: 6px 12px;
+    background: var(--acc-soft);
+    border: 1px solid var(--acc-line);
+    border-radius: var(--radius);
+    transition: all 0.15s;
+}
+.cross-sell__link:hover {
+    background: var(--acc);
+    color: #fff;
+    border-color: var(--acc);
+    transform: translateY(-1px);
+}
+.cross-sell__owned-list {
+    background: linear-gradient(135deg, rgba(16,185,129,0.06), rgba(37,99,235,0.06));
+    border: 1px solid var(--ok-soft);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+}
+.cross-sell__owned-hd {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ok);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+}
+.cross-sell__owned {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-top: 1px solid var(--line-soft);
+}
+.cross-sell__owned:first-of-type { border-top: 0; padding-top: 4px; }
+.cross-sell__owned-icon { font-size: 26px; flex-shrink: 0; }
+.cross-sell__owned-body { flex: 1; min-width: 0; }
+.cross-sell__owned-name { font-weight: 700; color: var(--txt); font-size: 13px; }
+.cross-sell__owned-sub  { font-size: 11px; color: var(--mut); margin-top: 2px; }
+
+/* ════════════════ DIAGNÓSTICO OUTPUT (Chunk 7) ════════════════ */
+.diag-output {
+    margin-top: 14px;
+    background: #0a0c12;
+    border: 1px solid #232838;
+    border-radius: var(--radius);
+    padding: 12px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
+    color: var(--txt);
+    white-space: pre-wrap;
+    max-height: 420px;
+    overflow: auto;
+    line-height: 1.5;
+}
 
 /* ============ TOAST ============ */
 .toast {
@@ -479,124 +606,146 @@ body.wide  .card__thumb { min-height: 180px; }
 /* ============ MISC ============ */
 .hidden { display: none !important; }
 
-/* ============ LOGIN GATE ============ */
+/* ============ LOGIN GATE (Motion IA-style · Chunk 1) ============ */
 .gate {
-    position: fixed;
-    inset: 0;
-    background: linear-gradient(135deg, #0a0a0d 0%, #15151c 100%);
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at top, rgba(37,99,235,0.10), transparent 60%), var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; padding: 24px;
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 .gate__box {
-    width: 100%;
-    max-width: 360px;
-    background: var(--bg-2);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 28px 24px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    background: #11141d;
+    border: 1px solid #232838;
+    border-radius: var(--radius-lg);
+    padding: 36px;
+    width: 100%; max-width: 380px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.5);
 }
-.gate__logo {
+.gate__brand {
     text-align: center;
-    font-size: 26px;
-    font-weight: 900;
+    margin-bottom: 6px;
+    font-weight: 800;
+    font-size: 22px;
     letter-spacing: -0.5px;
-    background: linear-gradient(90deg, var(--acc), #7afbb4);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 2px;
+    color: var(--txt);
 }
-.gate__sub {
+.gate__brand span { color: var(--acc); }
+.gate__tagline {
     text-align: center;
-    color: var(--txt-2);
-    font-size: 10px;
-    letter-spacing: 1px;
+    font-size: 11px;
+    color: var(--mut);
     text-transform: uppercase;
-    margin-bottom: 22px;
+    letter-spacing: 2px;
+    margin-bottom: 28px;
 }
 .gate__tabs {
     display: flex;
-    background: var(--bg-1);
-    border-radius: 8px;
-    padding: 3px;
-    gap: 2px;
-    margin-bottom: 16px;
+    background: var(--bg);
+    border-radius: var(--radius);
+    padding: 4px;
+    margin-bottom: 22px;
 }
-.gt {
+.gate__tab {
     flex: 1;
-    padding: 8px 6px;
-    color: var(--txt-2);
-    font-size: 11px;
+    background: transparent;
+    border: 0;
+    color: var(--mut);
+    padding: 9px;
     border-radius: 6px;
-    transition: background 0.12s, color 0.12s;
-}
-.gt:hover { color: var(--txt-1); }
-.gt.active { background: var(--bg-3); color: var(--acc); font-weight: 600; }
-.gate__form { display: flex; flex-direction: column; gap: 8px; }
-.gate__form input {
-    background: var(--bg-1);
-    border: 1px solid var(--line);
-    color: var(--txt-0);
-    padding: 10px 12px;
-    border-radius: 7px;
-    font-size: 12.5px;
-    outline: none;
-}
-.gate__form input:focus { border-color: var(--acc); }
-.g-btn {
-    background: var(--acc);
-    color: #000;
-    font-weight: 700;
-    padding: 11px;
-    border-radius: 7px;
-    font-size: 12.5px;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.15s;
     cursor: pointer;
-    margin-top: 4px;
 }
-.g-btn:hover { background: var(--acc-2); }
-.g-btn:disabled { opacity: 0.6; cursor: wait; }
+.gate__tab.active { background: var(--acc); color: #fff; }
 .gate__msg {
+    margin-top: 12px;
+    font-size: 12px;
+    text-align: center;
     min-height: 18px;
+    color: var(--mut);
+}
+.gate__msg.err { color: var(--err); }
+.gate__msg.ok  { color: var(--ok); }
+.gate__foot {
     text-align: center;
-    color: var(--danger);
+    margin-top: 16px;
     font-size: 11px;
-    padding: 4px 0;
+    color: var(--mut);
 }
-.gate__msg.ok { color: var(--acc); }
-.gate__plans {
-    margin-top: 18px;
-    padding-top: 16px;
-    border-top: 1px solid var(--line);
-}
-.gate__plans-title {
-    color: var(--txt-2);
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 8px;
-}
-.g-plan {
-    display: flex;
-    justify-content: space-between;
-    padding: 5px 0;
-    color: var(--txt-1);
-    font-size: 11.5px;
-}
-.g-plan b { color: var(--txt-0); font-weight: 500; }
-.g-plan span { color: var(--acc); font-weight: 700; }
-.gate__footer {
-    text-align: center;
-    margin-top: 18px;
-}
-.gate__footer a {
-    color: var(--txt-2);
-    font-size: 10.5px;
+.gate__foot a {
+    color: var(--mut);
     text-decoration: none;
+    transition: color 0.15s;
 }
-.gate__footer a:hover { color: var(--acc); }
+.gate__foot a:hover { color: var(--acc-bright); }
+.gate__sep {
+    display: flex; align-items: center; gap: 10px;
+    margin: 18px 0 14px;
+    font-size: 10px; color: var(--mut);
+    text-transform: uppercase; letter-spacing: 1px;
+}
+.gate__sep::before, .gate__sep::after {
+    content: ""; flex: 1; height: 1px; background: #232838;
+}
+
+/* ============ FIELDS (Motion IA-style) ============ */
+.field { margin-bottom: 14px; }
+.field label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--mut);
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+.field input, .field select, .field textarea {
+    width: 100%;
+    background: #11141d;
+    border: 1px solid #232838;
+    color: var(--txt);
+    padding: 10px 13px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    transition: border 0.15s, box-shadow 0.15s;
+    font-family: inherit;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+    outline: none;
+    border-color: var(--acc);
+    box-shadow: 0 0 0 3px var(--acc-soft);
+}
+.field .hint { font-size: 11px; color: var(--mut); margin-top: 6px; }
+
+/* ============ BUTTONS (Motion IA-style) ============ */
+.btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 6px;
+    background: transparent;
+    border: 1px solid #232838;
+    color: var(--txt);
+    padding: 9px 16px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.15s;
+    white-space: nowrap;
+    cursor: pointer;
+    font-family: inherit;
+}
+.btn:hover { background: #161a26; border-color: var(--mut-2); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn--primary { background: var(--acc); border-color: var(--acc); color: #fff; }
+.btn--primary:hover { background: var(--acc-bright); border-color: var(--acc-bright); }
+.btn--full { width: 100%; padding: 12px; }
+.btn--sm { padding: 6px 12px; font-size: 12px; }
+.btn--danger { background: var(--err-soft); border-color: var(--err); color: var(--err); }
+.btn--danger:hover { background: var(--err); color: #fff; }
+.btn--ok { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
+.btn--ghost { border-color: transparent; color: var(--mut); }
+.btn--ghost:hover { background: #161a26; color: var(--txt); }
 
 /* ========== TRIAL BAR (header strip) ========== */
 .trialbar{
@@ -732,3 +881,166 @@ body.wide  .card__thumb { min-height: 180px; }
     flex-shrink:0;
 }
 .reauthbar__cta:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.25)}
+
+/* ════════════════ CONFIG DRAWER (slide-over · Chunk 4) ════════════════ */
+.cfg-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(2px);
+    z-index: 8999;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+.cfg-backdrop.open { opacity: 1; pointer-events: auto; }
+
+.cfg-drawer {
+    position: fixed;
+    top: 0; right: -460px;
+    width: 100%; max-width: 440px;
+    height: 100vh;
+    background: var(--bg);
+    border-left: 1px solid #232838;
+    box-shadow: -16px 0 48px rgba(0,0,0,0.55);
+    z-index: 9000;
+    transition: right 0.25s ease;
+    display: flex; flex-direction: column;
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    color: var(--txt);
+}
+.cfg-drawer.open { right: 0; }
+
+.cfg-drawer__head {
+    padding: 20px 22px 16px;
+    border-bottom: 1px solid #232838;
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 14px;
+    flex-shrink: 0;
+}
+.cfg-drawer__title {
+    font-size: 16px; font-weight: 800;
+    letter-spacing: -0.3px;
+    color: var(--txt);
+}
+.cfg-drawer__sub {
+    font-size: 11px; color: var(--mut);
+    margin-top: 4px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    word-break: break-all;
+}
+.cfg-drawer__close {
+    background: transparent; border: 0;
+    color: var(--mut);
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 20px; line-height: 1;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+}
+.cfg-drawer__close:hover { background: #161a26; color: var(--txt); }
+
+.cfg-drawer__body {
+    padding: 20px 22px 32px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* ── License card (porta do plugin-ia) ── */
+.card__title {
+    font-size: 12px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1.2px;
+    color: var(--mut);
+}
+.license-card {
+    background: linear-gradient(135deg, #11141d, #161a26);
+    border: 1px solid #232838;
+    border-left: 4px solid var(--ok);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    margin-bottom: 18px;
+}
+.license-card.inactive,
+.license-card.not_activated { border-left-color: var(--mut-2); }
+.license-card.expired,
+.license-card.revoked,
+.license-card.suspended,
+.license-card.invalid,
+.license-card.wrong_product { border-left-color: var(--err); }
+.license-card__row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 7px 0;
+    font-size: 13px;
+    border-bottom: 1px solid var(--line-soft);
+    gap: 12px;
+}
+.license-card__row:last-child { border-bottom: none; }
+.license-card__label {
+    color: var(--mut);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.license-card__value {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 12px;
+    color: var(--txt);
+    text-align: right;
+    word-break: break-all;
+}
+.license-card__status {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.license-card__status.active    { background: var(--ok-soft); color: var(--ok); }
+.license-card__status.inactive,
+.license-card__status.not_activated { background: rgba(133,144,168,0.15); color: var(--mut); }
+.license-card__status.expired,
+.license-card__status.revoked,
+.license-card__status.suspended,
+.license-card__status.invalid,
+.license-card__status.wrong_product { background: var(--err-soft); color: var(--err); }
+
+/* ════════════════ TIER GATING (Chunk 5) ════════════════ */
+.tier-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 9px;
+    border-radius: 99px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-left: 8px;
+    transition: all 0.15s;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+.tier-badge:hover { transform: translateY(-1px); }
+.tier-badge.tier-free     { background: rgba(133,144,168,0.15); color: var(--mut); }
+.tier-badge.tier-basic    { background: rgba(245,158,11,0.15); color: #f59e0b; }
+.tier-badge.tier-pro      { background: var(--acc-soft); color: var(--acc-bright); }
+.tier-badge.tier-lifetime { background: var(--ok-soft); color: var(--ok); }
+
+/* Visual lock nos cards quando tier não cobre */
+.card.is-locked { position: relative; opacity: 0.62; }
+.card.is-locked::after {
+    content: "🔒";
+    position: absolute;
+    top: 8px; left: 8px;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    font-size: 12px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 4;
+    pointer-events: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.card.is-locked:hover { opacity: 0.85; }
+.card.is-locked .playicon { background: rgba(245,158,11,0.18); }

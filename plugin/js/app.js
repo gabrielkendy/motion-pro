@@ -323,6 +323,8 @@ function appendPage() {
         el.appendChild(b);
     }
     $("status").textContent = end.toLocaleString("pt-BR") + " / " + STATE.items.length.toLocaleString("pt-BR") + " exibidos";
+    // Chunk 5: avisa o tier-gating pra (re)aplicar .is-locked nos cards novos
+    document.dispatchEvent(new CustomEvent("grid:rendered"));
 }
 
 // ============================================================ cards
@@ -488,6 +490,20 @@ function importMogrt(item) {
         return;
     }
 
+    // Chunk 5: tier-gating. Bloqueia o import quando o plano não cobre o template.
+    if (window.Features && !window.Features.canImportTemplate(item)) {
+        var u  = window.Features.userTier();
+        var mt = window.Features.minTierFor(item);
+        var msg = u === "free"
+            ? "🔒 Sem plano ativo — ative uma licença pra importar templates"
+            : "🔒 Este template requer plano " + window.Features.tierLabel(mt) +
+              " (você tem " + window.Features.tierLabel(u) + ")";
+        toast(msg, "warn", 5000);
+        logLine("BLOCKED by tier-gating: item=" + item.name + " user=" + u + " min=" + mt, "warn");
+        if (window.LicenseUI && window.LicenseUI.open) window.LicenseUI.open();
+        return;
+    }
+
     $("status").textContent = "Preparando " + item.name + "...";
     logLine("→ importMogrt: " + item.name);
 
@@ -559,20 +575,24 @@ function importMogrt(item) {
     }, function () { /* resolvePath rejected — toast já mostrado */ }); // close resolvePath.then
 }
 
-/* Pinga o host.jsx no boot pra confirmar que carregou. Mostra toast se falhar. */
+/* Pinga o host.jsx no boot pra confirmar que carregou. Mostra toast se falhar.
+ * Chunk 7: também publica window._hostOk pro StatusBar.checkPremiere. */
 function hostPing() {
     cs.evalScript("(typeof $.global.MotionVault === 'object') ? MotionVault.ping() : 'undefined'", function (res) {
         logLine("ping host: " + (res || "(vazio)"));
-        if (!res || res === "undefined" || res === "EvalScript error.") {
+        var bad = !res || res === "undefined" || res === "EvalScript error.";
+        window._hostOk = !bad;
+        if (bad) {
             toast("⚠ host.jsx não carregou. Reabra o painel.", "err", 6000);
             logLine("HOST AUSENTE — verifique manifest e jsx/host.jsx", "err");
-            return;
+        } else {
+            try {
+                var j = JSON.parse(res);
+                if (j && j.error) { window._hostOk = false; logLine("ping error: " + j.error, "err"); }
+                else logLine("host ok: " + j.host + " " + j.version + " seq=" + j.hasSequence);
+            } catch (e) {}
         }
-        try {
-            var j = JSON.parse(res);
-            if (j && j.error) logLine("ping error: " + j.error, "err");
-            else logLine("host ok: " + j.host + " " + j.version + " seq=" + j.hasSequence);
-        } catch (e) {}
+        if (window.StatusBar && window.StatusBar.updateAll) window.StatusBar.updateAll();
     });
 }
 
@@ -741,105 +761,27 @@ function computeFingerprint() {
     return "fnv:" + h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0") + s.length.toString(16);
 }
 
+/* Gate UI + bindings delegados ao window.Auth (plugin/js/auth.js · Chunk 2).
+ * Stubs abaixo mantém a API antiga viva pro código legacy de paywall/heartbeat
+ * (será unificado no Chunk 6). */
 function showGate(initialMode) {
-    var gate = document.getElementById("gate");
-    if (!gate) return;
-    gate.classList.remove("hidden");
-    setGateMode(initialMode || "login");
+    if (window.Auth) return window.Auth.showGate(initialMode);
+    var gate = document.getElementById("gate"); if (gate) gate.classList.remove("hidden");
 }
 function hideGate() {
-    var gate = document.getElementById("gate");
-    if (gate) gate.classList.add("hidden");
+    if (window.Auth) return window.Auth.hideGate();
+    var gate = document.getElementById("gate"); if (gate) gate.classList.add("hidden");
 }
-function setGateMode(mode) {
-    var isSignup = mode === "signup";
-    document.getElementById("gt-login").classList.toggle("active", !isSignup);
-    document.getElementById("gt-signup").classList.toggle("active", isSignup);
-    document.getElementById("g-submit").textContent = isSignup ? "Criar conta · iniciar 7 dias grátis" : "Entrar";
-    document.getElementById("g-msg").textContent = "";
-    document.getElementById("g-msg").className = "gate__msg";
-    document.getElementById("g-submit").dataset.mode = mode;
-    // Mostra/esconde campos extras do signup
-    [].forEach.call(document.querySelectorAll(".signup-only"), function (el) {
-        el.hidden = !isSignup;
-    });
-    // autocomplete da senha
-    document.getElementById("g-password").autocomplete = isSignup ? "new-password" : "current-password";
-}
-
+function setGateMode(_mode) { /* delegado ao window.Auth.init() */ }
 function bindGate() {
-    var gtL = document.getElementById("gt-login");
-    var gtS = document.getElementById("gt-signup");
-    var sub = document.getElementById("g-submit");
-    var msg = document.getElementById("g-msg");
-    var forgot = document.getElementById("g-forgot");
-    if (!gtL) return;
-
-    gtL.onclick = function () { setGateMode("login"); };
-    gtS.onclick = function () { setGateMode("signup"); };
-
-    // Esqueci minha senha → abre browser na página de reset
-    if (forgot) {
-        forgot.onclick = function (e) {
-            e.preventDefault();
-            var email = document.getElementById("g-email").value.trim();
-            var url = LANDING_URL + "/reset-password.html";
-            if (email) url += "?email=" + encodeURIComponent(email);
-            openInBrowser(url);
-            msg.textContent = "✓ Página de recuperação aberta no navegador";
-            msg.className = "gate__msg ok";
-        };
-    }
-
-    sub.onclick = async function () {
-        var mode = sub.dataset.mode || "login";
-        var email = document.getElementById("g-email").value.trim().toLowerCase();
-        var password = document.getElementById("g-password").value;
-        var name = document.getElementById("g-name").value.trim();
-        var phone = document.getElementById("g-phone").value.trim();
-        var optin = document.getElementById("g-optin").checked;
-        if (!email || password.length < 8) {
-            msg.textContent = "Email e senha (mín 8) obrigatórios"; return;
-        }
-        if (mode === "signup" && name.length < 2) {
-            msg.textContent = "Digite seu nome completo"; return;
-        }
-        sub.disabled = true; msg.textContent = "Conectando..."; msg.className = "gate__msg";
-        try {
-            var fp = computeFingerprint();
-            var payload = { email: email, password: password, fingerprint: fp };
-            if (mode === "signup") {
-                payload.name = name;
-                payload.phone = phone || null;
-                payload.marketing_optin = optin;
-            }
-            var data = await gateApi("/v1/auth/" + mode, payload);
-            localStorage.setItem("mv_session", data.session_token);
-            localStorage.setItem("mv_email", email);
-            // issue license
-            var lic = await gateApi("/v1/license/issue", { fingerprint: fp });
-            localStorage.setItem("mv_license", lic.license);
-            localStorage.setItem("mv_plan", lic.plan);
-            localStorage.setItem("mv_status", lic.status || "");
-            localStorage.setItem("mv_expires", lic.expires_at || "");
-            // Marca email como não verificado no signup (vai mostrar banner)
-            if (mode === "signup") {
-                localStorage.setItem("mv_email_verified", "false");
-                localStorage.removeItem("mv_verify_dismissed_until");
-                if (name) localStorage.setItem("mv_name", name);
-            } else {
-                // No login, busca status atual do banco
-                setTimeout(checkEmailVerified, 800);
-            }
-            msg.textContent = "✓ " + (mode === "signup" ? "Conta criada! Verifique seu e-mail. trial de 7 dias ativo." : "Bem-vindo!");
-            msg.className = "gate__msg ok";
-            setTimeout(function () { hideGate(); hideReauthBar(); updateTrialUI(); updateVerifyBar(); }, 500);
-        } catch (e) {
-            msg.textContent = "Erro: " + (typeof e === "string" ? e : (e.message || "falha"));
-            msg.className = "gate__msg";
-        }
-        sub.disabled = false;
-    };
+    // Auth.init() já chama bindGate internamente. Listener pós-login pra
+    // atualizar trial/verify bars legacy.
+    document.addEventListener("auth:ready", function () {
+        try { hideReauthBar(); } catch (_) {}
+        try { updateTrialUI(); } catch (_) {}
+        try { updateVerifyBar(); } catch (_) {}
+        try { checkEmailVerified(); } catch (_) {}
+    }, { once: false });
 }
 
 /* ============================================================
@@ -860,6 +802,24 @@ function updateTrialUI() {
     var info = document.getElementById("trial-info");
     var paywall = document.getElementById("paywall");
     if (!bar) return;
+
+    // Chunk 6: license-key novo (MTI-/MTS-) tem prioridade sobre o sistema legacy.
+    // Se a chave estiver válida offline, esconde paywall + trial-bar e sai.
+    if (window.LicenseCache && window.LicenseCache.isValidForOfflineUse && window.LicenseCache.isValidForOfflineUse()) {
+        bar.className = "trialbar hidden";
+        if (paywall) paywall.classList.add("hidden");
+        return;
+    }
+
+    // Chunk 6: admin verificado bypassa paywall (mia_user_meta compartilhado pela Suite)
+    try {
+        var meta = JSON.parse(localStorage.getItem("mia_user_meta") || "{}");
+        if (meta && meta.is_admin_verified) {
+            bar.className = "trialbar hidden";
+            if (paywall) paywall.classList.add("hidden");
+            return;
+        }
+    } catch (_) {}
 
     // Plano pago — esconde tudo
     if (plan === "yearly" || plan === "lifetime") {
@@ -906,30 +866,29 @@ function showPaywall(title) {
 }
 
 function bindTrialUI() {
+    // Chunk 6: URL de pricing centralizada em Auth.PRICING_URL (config.js)
+    var pricingUrl = (window.Auth && window.Auth.PRICING_URL)
+        || (window.MV_CONFIG && window.MV_CONFIG.pricingUrl)
+        || (LANDING_URL + "/titles/#pricing");
+
     var btnUpgrade = document.getElementById("btn-upgrade");
     if (btnUpgrade) {
-        btnUpgrade.onclick = function () {
-            openInBrowser(LANDING_URL + "/#pricing");
-        };
+        btnUpgrade.onclick = function () { openInBrowser(pricingUrl); };
     }
     var pwCta = document.getElementById("paywall-cta");
     if (pwCta) {
-        pwCta.onclick = function () {
-            openInBrowser(LANDING_URL + "/#pricing");
-        };
+        pwCta.textContent = "Renovar / assinar agora →";
+        pwCta.onclick = function () { openInBrowser(pricingUrl); };
     }
     var pwLogout = document.getElementById("paywall-logout");
     if (pwLogout) {
         pwLogout.onclick = function () {
-            localStorage.removeItem("mv_session");
-            localStorage.removeItem("mv_license");
-            localStorage.removeItem("mv_plan");
-            localStorage.removeItem("mv_status");
-            localStorage.removeItem("mv_expires");
-            localStorage.removeItem("mv_email_verified");
+            // Chunk 6: logout unificado via Auth.logout() (limpa mv_* + mvt_* + mia_user_meta)
+            if (window.Auth && window.Auth.logout) window.Auth.logout();
             var pw = document.getElementById("paywall");
             if (pw) pw.classList.add("hidden");
-            showGate("login");
+            if (window.Auth && window.Auth.showGate) window.Auth.showGate("login");
+            else showGate("login");
         };
     }
 
@@ -1019,16 +978,31 @@ function updateVerifyBar() {
 function startHeartbeat() {
     if (DEV_BYPASS) return;
     var fp = computeFingerprint();
+    var PRODUCT_ID = (window.Auth && window.Auth.PRODUCT_ID)
+        || (window.MV_CONFIG && window.MV_CONFIG.productId)
+        || "titles";
     var tick = async function () {
+        // Chunk 6: paralelamente revalida a chave MTI-/MTS- (sistema novo).
+        // Se admin revogou no dashboard, o validate({silent:true}) atualiza o
+        // LicenseCache pra status revoked → updateTrialUI vai mostrar paywall.
+        if (window.LicenseClient && window.LicenseCache) {
+            var cached = window.LicenseCache.load && window.LicenseCache.load();
+            if (cached && cached.license_key) {
+                window.LicenseClient.validate({ silent: true })
+                    .then(function () { updateTrialUI(); if (window.Features) window.Features.updateUI(); })
+                    .catch(function () { /* offline tolerado */ });
+            }
+        }
         try {
-            var r = await gateApi("/v1/license/heartbeat", { fingerprint: fp });
-            // Heartbeat OK → esconde banner de reconexão se estava aparecendo
+            // Backend β unified contract: product_id="titles" no heartbeat
+            var r = await gateApi("/v1/license/heartbeat", { fingerprint: fp, product_id: PRODUCT_ID });
             hideReauthBar();
             if (r.revoked || r.subscription_inactive) {
                 localStorage.setItem("mv_plan", r.plan || "free");
                 localStorage.setItem("mv_status", r.status || "revoked");
                 if (r.expires_at) localStorage.setItem("mv_expires", r.expires_at);
                 updateTrialUI();
+                if (window.Features) window.Features.updateUI();
                 return;
             }
             if (r.license) {
@@ -1037,15 +1011,16 @@ function startHeartbeat() {
                 localStorage.setItem("mv_status", r.status || "");
                 localStorage.setItem("mv_expires", r.expires_at || "");
                 updateTrialUI();
+                if (window.Features) window.Features.updateUI();
             }
         } catch (e) {
             var msg = (typeof e === "string" ? e : (e && e.message)) || "";
             if (msg === "invalid_token" || msg === "missing_token") {
-                // Sessão expirou no servidor. NÃO apaga nada do localStorage.
-                // Mostra banner pedindo pra reconectar; cara segue usando offline com license cached.
+                // Sessão expirou no servidor. NÃO apaga localStorage nem cache.
+                // Banner reauth mantém o user logado (re-login só atualiza JWT).
                 showReauthBar();
             }
-            // Outros erros (offline, 500, timeout): mantém license cached, continua usando
+            // Offline / 500 / timeout: mantém cache + license-cache, continua usando
         }
     };
     tick();
@@ -1123,14 +1098,42 @@ if (loadCatalog()) {
     if (CATALOG.packs.length) selectPack(CATALOG.packs[0].id);
     $("count").textContent = CATALOG.total_items.toLocaleString("pt-BR") + " templates · " + CATALOG.packs.length + " packs · build " + BUILD;
     $("status").textContent = "Pronto · build " + BUILD;
-    bindGate();
+    // Chunk 2: Auth gate (incl. Google OAuth + "Tenho código") delegado ao window.Auth.
+    // Trial/paywall/heartbeat continuam legacy até Chunk 6 unificar.
+    if (window.Auth && typeof window.Auth.init === "function") {
+        window.Auth.init();
+    } else {
+        // Fallback defensivo caso auth.js falhe ao carregar (não deveria acontecer)
+        showGate("login");
+    }
+    bindGate();             // só ativa listener auth:ready (stub)
     bindTrialUI();
-    tryRestoreSession();
     updateTrialUI();
     updateVerifyBar();
     checkEmailVerified();
     startHeartbeat();
     hostPing();   // confirma que host.jsx carregou e logga status
+
+    // Chunk 3: auto-revalida chave MTI-/MTS- a cada 24h em background.
+    // Funciona offline entre validações (LicenseCache valida via cache cifrado).
+    if (window.LicenseClient && typeof window.LicenseClient.startAutoValidate === "function") {
+        window.LicenseClient.startAutoValidate(24);
+    }
+
+    // Chunk 4: drawer "⚙ Licença & Config" (slide-over no headbar).
+    if (window.LicenseUI && typeof window.LicenseUI.init === "function") {
+        window.LicenseUI.init();
+    }
+
+    // Chunk 5: tier-gating + tier badge no statusbar.
+    if (window.Features && typeof window.Features.init === "function") {
+        window.Features.init();
+    }
+
+    // Chunk 7: status bar 4 dots + diagnóstico técnico.
+    if (window.StatusBar && typeof window.StatusBar.init === "function") {
+        window.StatusBar.init();
+    }
 }
 
 })();
