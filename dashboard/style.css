@@ -232,6 +232,13 @@ tbody tr.clickable { cursor: pointer; }
 .modal textarea { resize: vertical; min-height: 100px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
 
+/* ============= SORTABLE TABLES ============= */
+thead th.sortable { cursor: pointer; user-select: none; position: relative; padding-right: 22px; }
+thead th.sortable:hover { color: var(--txt); }
+thead th.sortable::after { content: ''; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: 4px solid transparent; opacity: 0.4; }
+thead th.sortable[data-dir="asc"]::after  { border-bottom-color: var(--acc-2); border-top: 0; opacity: 1; margin-top: -2px; }
+thead th.sortable[data-dir="desc"]::after { border-top-color: var(--acc-2); border-bottom: 0; opacity: 1; margin-top: 2px; }
+
 /* ============= MISC ============= */
 .muted { color: var(--mut); }
 .small { font-size: 12px; }

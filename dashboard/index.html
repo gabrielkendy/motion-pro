@@ -110,18 +110,19 @@
           <option value="bundle_all">Bundle</option>
         </select>
         <button class="btn btn--sm" id="refresh-users">↻</button>
+        <button class="btn btn--sm" id="export-users-csv" title="Download CSV com os filtros atuais">📥 Export CSV</button>
       </div>
 
       <div class="table-wrap">
         <table id="users-table">
           <thead><tr>
-            <th>E-mail</th>
+            <th class="sortable" data-sort="email">E-mail</th>
             <th>Produtos</th>
             <th>Status</th>
-            <th>Dispositivos</th>
-            <th>Último acesso</th>
+            <th class="sortable" data-sort="devices">Dispositivos</th>
+            <th class="sortable" data-sort="last_seen">Último acesso</th>
             <th>Localização</th>
-            <th>Criado</th>
+            <th class="sortable" data-sort="created_at">Criado</th>
           </tr></thead>
           <tbody id="users-tbody"></tbody>
         </table>
@@ -339,7 +340,10 @@
           <h2>Auditoria global</h2>
           <div class="sub">Últimos 200 eventos · login, signup, checkout, block, grant, etc.</div>
         </div>
-        <button class="btn btn--sm" id="refresh-audit">↻</button>
+        <div class="view-actions">
+          <button class="btn btn--sm" id="refresh-audit">↻</button>
+          <button class="btn btn--sm" id="export-audit-csv">📥 Export CSV</button>
+        </div>
       </div>
       <ul class="timeline" id="global-audit"></ul>
     </section>

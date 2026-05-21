@@ -323,6 +323,7 @@ async function loadUsers() {
         if (product !== "all") {
             filtered = filtered.filter(u => (u.subscriptions || []).some(s => s.product_id === product));
         }
+        filtered = sortUsers(filtered);
         renderUsers(filtered);
         document.getElementById("users-count").textContent = filtered.length;
     } catch (e) { toast("Falha ao carregar usuários: " + e.message, "err"); }
@@ -331,6 +332,43 @@ document.getElementById("users-search").addEventListener("input", () => { clearT
 document.getElementById("users-status").addEventListener("change", loadUsers);
 document.getElementById("users-product").addEventListener("change", loadUsers);
 document.getElementById("refresh-users").onclick = loadUsers;
+
+// Sort state pra tabela de users
+STATE.userSort = { col: null, dir: "asc" };
+
+function sortUsers(list) {
+    const { col, dir } = STATE.userSort;
+    if (!col) return list;
+    const getVal = (u) => {
+        if (col === "email") return (u.email || "").toLowerCase();
+        if (col === "devices") return Number(u.active_devices || 0);
+        if (col === "last_seen") return u.last_seen ? new Date(u.last_seen).getTime() : 0;
+        if (col === "created_at") return new Date(u.created_at || 0).getTime();
+        return 0;
+    };
+    const mul = dir === "asc" ? 1 : -1;
+    return list.slice().sort((a, b) => {
+        const va = getVal(a), vb = getVal(b);
+        return va < vb ? -mul : va > vb ? mul : 0;
+    });
+}
+
+// Bind sort handlers nos TH sortable da tabela de users
+(function attachUserSort() {
+    document.querySelectorAll("#users-table th.sortable").forEach(th => {
+        th.addEventListener("click", () => {
+            const col = th.dataset.sort;
+            if (STATE.userSort.col === col) {
+                STATE.userSort.dir = STATE.userSort.dir === "asc" ? "desc" : "asc";
+            } else {
+                STATE.userSort = { col, dir: "asc" };
+            }
+            document.querySelectorAll("#users-table th.sortable").forEach(x => x.removeAttribute("data-dir"));
+            th.setAttribute("data-dir", STATE.userSort.dir);
+            loadUsers();
+        });
+    });
+})();
 
 function renderUsers(users) {
     const tb = document.getElementById("users-tbody");
@@ -755,11 +793,20 @@ function renderDrawer(d) {
         <h3>${d.payments.length} evento(s) de pagamento</h3>
         ${d.payments.length === 0 ? `<div class="muted">Sem pagamentos</div>` : `
           <ul class="timeline">
-            ${d.payments.map(p => `<li>
-              <div class="ts">${fmtDate(p.created_at)}</div>
-              <div class="ev ev--ok">${p.detail?.amount ? fmtBrl(p.detail.amount / 100) : "—"} <span class="muted small">${p.detail?.product_id || ""} ${p.detail?.plan || ""}</span></div>
-              <div class="det">${JSON.stringify(p.detail || {}).slice(0, 200)}</div>
-            </li>`).join("")}
+            ${d.payments.map(p => {
+                const chargeId = p.detail?.charge_id || p.detail?.id || null;
+                const amt = p.detail?.amount ? p.detail.amount / 100 : null;
+                const canRefund = chargeId && amt && !["refund", "invoice_payment_failed"].includes(p.detail?.event_type || "")
+                                  && p.action === "checkout_completed";
+                return `<li>
+                  <div class="ts">${fmtDate(p.created_at)}</div>
+                  <div class="ev ev--ok">${amt !== null ? fmtBrl(amt) : "—"}
+                    <span class="muted small">${p.detail?.product_id || ""} ${p.detail?.plan || ""} · ${p.action}</span>
+                  </div>
+                  <div class="det">${JSON.stringify(p.detail || {}).slice(0, 200)}</div>
+                  ${canRefund ? `<div style="margin-top:6px"><button class="btn btn--sm btn--warn" data-refund-charge="${chargeId}" data-refund-amount="${amt}">💸 Reembolsar</button></div>` : ""}
+                </li>`;
+            }).join("")}
           </ul>
         `}
       </div>
@@ -1293,6 +1340,89 @@ document.querySelectorAll(".drawer__tab").forEach(t => {
             const uid = STATE.selectedUser?.user?.id;
             if (uid) renderDrawerLicenses(uid);
         });
+    }
+});
+
+// ===========================================================
+// CSV DOWNLOAD HELPER (fetch + blob, mantém auth header)
+// ===========================================================
+async function downloadCsv(path, filename) {
+    try {
+        const r = await fetch(API + path, { headers: { Authorization: "Bearer " + TOKEN } });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename || "export.csv";
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+        toast("CSV baixado: " + a.download, "ok");
+    } catch (e) {
+        toast("Falha no download: " + e.message, "err");
+    }
+}
+
+const _exportUsersBtn = document.getElementById("export-users-csv");
+if (_exportUsersBtn) _exportUsersBtn.onclick = () => {
+    const q = document.getElementById("users-search").value.trim();
+    const status = document.getElementById("users-status").value;
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (status !== "all") params.set("status", status);
+    const stamp = new Date().toISOString().slice(0, 10);
+    downloadCsv("/v1/admin/users.csv?" + params.toString(), `motionpro-customers-${stamp}.csv`);
+};
+
+const _exportAuditBtn = document.getElementById("export-audit-csv");
+if (_exportAuditBtn) _exportAuditBtn.onclick = () => {
+    const stamp = new Date().toISOString().slice(0, 10);
+    downloadCsv("/v1/admin/audit.csv?limit=5000", `motionpro-audit-${stamp}.csv`);
+};
+
+// ===========================================================
+// REFUND INLINE em panel-payments do drawer
+// (Stripe charges aparecem no full() do user via license_audit checkout_completed.
+//  Pagamentos com charge_id no detail expõem botão refund.)
+// ===========================================================
+function bindDrawerPaymentRefunds() {
+    document.querySelectorAll("#panel-payments [data-refund-charge]").forEach(b => {
+        b.onclick = () => modalRefund(b.dataset.refundCharge, Number(b.dataset.refundAmount));
+    });
+}
+
+// Patcheia renderDrawer pra reanexar refund buttons depois (chamado de openUserDrawer indirectly)
+// Idempotente — usa MutationObserver leve no panel-payments.
+(function observePayments() {
+    const tgt = document.getElementById("panel-payments");
+    if (!tgt) return;
+    const mo = new MutationObserver(() => bindDrawerPaymentRefunds());
+    mo.observe(tgt, { childList: true, subtree: true });
+})();
+
+// ===========================================================
+// KEYBOARD SHORTCUTS
+// ===========================================================
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+        const modalEl = document.getElementById("modal-backdrop");
+        const drawerEl = document.getElementById("drawer-backdrop");
+        if (modalEl?.classList.contains("open")) {
+            modalEl.classList.remove("open");
+            return;
+        }
+        if (drawerEl?.classList.contains("open")) {
+            closeDrawer();
+            return;
+        }
+    }
+    // Cmd/Ctrl+K — foca o search da view atual
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        const activeView = document.querySelector(".view.active");
+        const input = activeView?.querySelector("input[id$='-search'], input[id='users-search']");
+        if (input) input.focus();
     }
 });
 
