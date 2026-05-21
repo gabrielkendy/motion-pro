@@ -232,6 +232,8 @@ function loadView(view) {
     if (view === "subscriptions") loadSubs();
     if (view === "devices") loadDevices();
     if (view === "sessions") loadSessions();
+    if (view === "licenses") loadLicenses();
+    if (view === "transactions") loadTransactions();
     if (view === "duplicates") loadDuplicates();
     if (view === "audit") loadAudit();
 }
@@ -804,6 +806,8 @@ document.querySelectorAll("[data-action]").forEach(b => {
                 toast("Todas sessões encerradas", "ok");
                 openUserDrawer(uid);
             });
+        } else if (act === "revoke-all-licenses") {
+            modalRevokeAllLicenses(uid);
         } else if (act === "block") {
             modalBlock(uid);
         } else if (act === "unblock") {
@@ -864,6 +868,22 @@ function modalSendEmail(uid) {
     }, { okText: "Enviar" });
 }
 
+function modalRevokeAllLicenses(uid) {
+    const body = document.createElement("div");
+    body.innerHTML = `
+      <p>Kill switch: revoga TODAS as license_keys vinculadas ao email desse user.</p>
+      <p>Inclui todas as ativações de devices (MIA/MTI/MTL/MTS). Reversível só via reissue manual.</p>
+      <label>Motivo</label>
+      <input id="ra-reason" placeholder="Ex: chargeback total, fraude confirmada">
+    `;
+    modal("🔑 Revogar TODAS licenças do user", body, async () => {
+        const reason = document.getElementById("ra-reason").value.trim() || "admin_kill_switch";
+        const r = await post(`/v1/admin/users/${uid}/licenses/revoke-all`, { reason });
+        toast(`${r.revoked} licença(s) revogadas`, "warn");
+        openUserDrawer(uid);
+    }, { danger: true, okText: "Revogar tudo" });
+}
+
 function modalBlock(uid) {
     const body = document.createElement("div");
     body.innerHTML = `
@@ -878,6 +898,403 @@ function modalBlock(uid) {
         openUserDrawer(uid);
     }, { danger: true, okText: "Bloquear" });
 }
+
+// ===========================================================
+// LICENSES (license_keys MIA-/MTI-/MTL-/MTS-)
+// ===========================================================
+STATE.licenses = [];
+
+async function loadLicenses() {
+    try {
+        const r = await get("/v1/admin/license-keys?limit=500");
+        STATE.licenses = r.keys || [];
+        renderLicenses();
+    } catch (e) { toast("Falha ao carregar licenças: " + e.message, "err"); }
+}
+function attachLicenseFilters() {
+    const ids = ["licenses-search", "licenses-tier", "licenses-product", "licenses-status"];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el || el._bound) return;
+        el._bound = true;
+        const ev = el.tagName === "INPUT" ? "input" : "change";
+        el.addEventListener(ev, () => { clearTimeout(window._lsSearch); window._lsSearch = setTimeout(renderLicenses, 200); });
+    });
+}
+function licenseStatusOf(k) {
+    if (k.revoked_at) return "revoked";
+    if (k.expires_at && new Date(k.expires_at) < new Date()) return "expired";
+    return "active";
+}
+function renderLicenses() {
+    attachLicenseFilters();
+    const q = (document.getElementById("licenses-search")?.value || "").toLowerCase().trim();
+    const tier = document.getElementById("licenses-tier")?.value || "all";
+    const prod = document.getElementById("licenses-product")?.value || "all";
+    const stat = document.getElementById("licenses-status")?.value || "all";
+
+    let list = STATE.licenses.slice();
+    if (q)    list = list.filter(k => [k.key_prefix, k.customer_email, k.notes].some(x => (x || "").toLowerCase().includes(q)));
+    if (tier !== "all") list = list.filter(k => (k.tier || "").toUpperCase().startsWith(tier));
+    if (prod !== "all") list = list.filter(k => (k.products || []).includes(prod));
+    if (stat !== "all") list = list.filter(k => licenseStatusOf(k) === stat);
+
+    document.getElementById("licenses-count").textContent = STATE.licenses.length;
+    document.getElementById("licenses-active").textContent = STATE.licenses.filter(k => licenseStatusOf(k) === "active").length;
+
+    const tb = document.getElementById("licenses-tbody");
+    if (list.length === 0) {
+        tb.innerHTML = `<tr><td colspan="9" class="tbl-empty">Nenhuma licença encontrada</td></tr>`;
+        return;
+    }
+    tb.innerHTML = list.map(k => {
+        const s = licenseStatusOf(k);
+        const stBadge = s === "active"  ? `<span class="badge badge--ok">ATIVA</span>`
+                     : s === "revoked" ? `<span class="badge badge--err">REVOGADA</span>`
+                     :                    `<span class="badge badge--warn">EXPIRADA</span>`;
+        const products = (k.products || []).map(p => productBadge(p)).join(" ") || `<span class="muted small">—</span>`;
+        const validade = k.expires_at ? fmtDate(k.expires_at) : `<span class="badge badge--ok" title="lifetime">∞</span>`;
+        return `<tr>
+            <td class="mono small"><b>${k.key_prefix}…</b></td>
+            <td><span class="badge badge--mut">${(k.tier || "").toUpperCase()}</span></td>
+            <td>${products}</td>
+            <td>${k.active_devices || 0}/${k.max_devices}<br><span class="muted small">${k.total_activations || 0} total</span></td>
+            <td>${k.customer_email || `<span class="muted small">—</span>`}</td>
+            <td>${validade}</td>
+            <td>${stBadge}</td>
+            <td><span class="muted small">${fmtDate(k.created_at)}</span></td>
+            <td>
+              ${s === "active" ? `<button class="btn btn--sm btn--warn" data-reissue="${k.id}">Reemitir</button>
+              <button class="btn btn--sm btn--danger" data-revoke-key="${k.id}">Revogar</button>` : ""}
+            </td>
+        </tr>`;
+    }).join("");
+    tb.querySelectorAll("[data-revoke-key]").forEach(b => b.onclick = () => modalRevokeKey(b.dataset.revokeKey));
+    tb.querySelectorAll("[data-reissue]").forEach(b => b.onclick = () => modalReissueKey(b.dataset.reissue));
+}
+const _refLicBtn = document.getElementById("refresh-licenses");
+if (_refLicBtn) _refLicBtn.onclick = loadLicenses;
+
+function modalRevokeKey(id) {
+    const body = document.createElement("div");
+    body.innerHTML = `
+      <p>Revoga a license_key e desativa TODOS os devices associados. Reversível só via reissue.</p>
+      <label>Motivo</label>
+      <input id="rk-reason" placeholder="Ex: chargeback, fraude, abuso">
+    `;
+    modal("🚫 Revogar license", body, async () => {
+        const reason = document.getElementById("rk-reason").value.trim() || "admin_revoked";
+        await post(`/v1/admin/license-keys/${id}/revoke`, { reason });
+        toast("License revogada", "warn");
+        loadLicenses();
+    }, { danger: true, okText: "Revogar" });
+}
+
+function modalReissueKey(id) {
+    const body = document.createElement("div");
+    body.innerHTML = `
+      <p>Revoga a key antiga e gera uma nova mantendo tier/produtos/max_devices/expires.</p>
+      <p><b>A nova key aparece UMA VEZ.</b> Copie e envie pro cliente.</p>
+      <label>Motivo</label>
+      <input id="ri-reason" placeholder="Ex: cliente perdeu a key, troca de máquina">
+    `;
+    modal("♻️ Reemitir license", body, async () => {
+        const reason = document.getElementById("ri-reason").value.trim() || "admin_reissue";
+        const r = await post(`/v1/admin/license-keys/${id}/reissue`, { reason });
+        modalShowKey(r.new_key, r.old_key_prefix);
+        loadLicenses();
+        return true;
+    }, { okText: "Reemitir" });
+}
+
+function modalShowKey(plaintext, oldPrefix) {
+    const body = document.createElement("div");
+    body.innerHTML = `
+      <p>Nova license emitida (antiga <code>${oldPrefix}</code> revogada). <b>Aparece UMA VEZ.</b></p>
+      <textarea readonly id="show-key" style="font-family:monospace;font-size:14px;font-weight:700;color:var(--ok);background:var(--bg);min-height:50px">${plaintext}</textarea>
+      <button class="btn btn--primary btn--sm" id="copy-key" style="margin-top:8px">📋 Copiar</button>
+    `;
+    modal("✅ Key gerada", body, async () => true, { okText: "Fechar" });
+    setTimeout(() => {
+        const btn = document.getElementById("copy-key");
+        if (!btn) return;
+        btn.onclick = () => {
+            const ta = document.getElementById("show-key");
+            ta.select();
+            try { navigator.clipboard.writeText(plaintext); toast("Key copiada", "ok"); } catch (_) { document.execCommand("copy"); }
+        };
+    }, 50);
+}
+
+function modalGenerateKey() {
+    const body = document.createElement("div");
+    body.innerHTML = `
+      <p>Gera license_key avulsa pra entrega manual (cliente comprou fora do Stripe, parceiro, etc).</p>
+      <label>Tier</label>
+      <select id="gk-tier">
+        <option value="PRO" selected>PRO (validade)</option>
+        <option value="LIFE">LIFETIME</option>
+        <option value="BASIC">BASIC</option>
+        <option value="FREE">FREE (trial)</option>
+      </select>
+      <label>Produtos (multi)</label>
+      <select id="gk-products" multiple size="4" style="height:auto">
+        <option value="motionpro" selected>Motion Titles</option>
+        <option value="ia" selected>Motion IA</option>
+        <option value="legendas" selected>Motion Legendas</option>
+        <option value="bundle_all">Bundle</option>
+      </select>
+      <label>Max devices</label>
+      <input id="gk-max" type="number" value="3" min="1" max="50">
+      <label>Email do cliente (opcional)</label>
+      <input id="gk-email" type="email" placeholder="cliente@email.com">
+      <label>Validade (dias · 0 = lifetime)</label>
+      <input id="gk-days" type="number" value="0" min="0" max="3650">
+      <label>Notas internas</label>
+      <input id="gk-notes" placeholder="Ex: Gumroad #12345, parceiro X">
+    `;
+    modal("🔑 Gerar license_key", body, async () => {
+        const tier = document.getElementById("gk-tier").value;
+        const products = [...document.getElementById("gk-products").selectedOptions].map(o => o.value);
+        const max_devices = Number(document.getElementById("gk-max").value || 3);
+        const customer_email = document.getElementById("gk-email").value.trim() || null;
+        const days = Number(document.getElementById("gk-days").value || 0);
+        const notes = document.getElementById("gk-notes").value.trim() || null;
+        const expires_at = days > 0 ? new Date(Date.now() + days * 86400000).toISOString() : null;
+        const r = await post("/v1/admin/license-keys/generate", { tier, products, max_devices, customer_email, expires_at, notes });
+        modalShowKey(r.key, "—");
+        loadLicenses();
+        return true;
+    }, { okText: "Gerar" });
+}
+const _genBtn = document.getElementById("generate-key-btn");
+if (_genBtn) _genBtn.onclick = modalGenerateKey;
+
+// ===========================================================
+// TRANSACTIONS (Stripe charges + refund)
+// ===========================================================
+STATE.transactions = [];
+STATE.txTotals = null;
+
+async function loadTransactions() {
+    const days = document.getElementById("transactions-days")?.value || 30;
+    const status = document.getElementById("transactions-status")?.value || "all";
+    try {
+        document.getElementById("transactions-sub").textContent = "Buscando charges no Stripe…";
+        const r = await get(`/v1/admin/transactions?days=${days}&status=${status === "all" ? "" : status}&limit=100`);
+        STATE.transactions = r.transactions || [];
+        STATE.txTotals = r.totals;
+        renderTransactions();
+        document.getElementById("transactions-sub").textContent =
+            `${r.transactions.length} charge(s) · janela: ${r.filter.days}d · ${fmtRelative(r.generated_at)}`;
+    } catch (e) {
+        toast("Falha ao carregar transações: " + e.message, "err");
+        document.getElementById("transactions-sub").textContent = "Erro ao buscar (Stripe indisponível?)";
+    }
+}
+function attachTxFilters() {
+    ["transactions-days", "transactions-status"].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el || el._bound) return;
+        el._bound = true;
+        el.addEventListener("change", loadTransactions);
+    });
+    const s = document.getElementById("transactions-search");
+    if (s && !s._bound) {
+        s._bound = true;
+        s.addEventListener("input", () => { clearTimeout(window._txSearch); window._txSearch = setTimeout(renderTransactions, 200); });
+    }
+}
+function renderTransactions() {
+    attachTxFilters();
+    const q = (document.getElementById("transactions-search")?.value || "").toLowerCase().trim();
+    let list = STATE.transactions.slice();
+    if (q) list = list.filter(t => [t.user_email, t.customer_id, t.id, t.description].some(x => (x || "").toLowerCase().includes(q)));
+
+    const t = STATE.txTotals || {};
+    document.getElementById("transactions-kpis").innerHTML = [
+        { label: "Bruto (período)",  value: fmtBrl(t.gross_brl || 0), cls: "kpi--ok" },
+        { label: "Reembolsado",      value: fmtBrl(t.refunded_brl || 0), cls: (t.refunded_brl > 0 ? "kpi--warn" : "") },
+        { label: "Líquido",          value: fmtBrl(t.net_brl || 0), cls: "kpi--accent" },
+        { label: "Charges",          value: t.count || 0 },
+    ].map(k => `<div class="kpi ${k.cls || ""}"><div class="kpi__label">${k.label}</div><div class="kpi__value">${k.value}</div></div>`).join("");
+
+    const tb = document.getElementById("transactions-tbody");
+    if (list.length === 0) {
+        tb.innerHTML = `<tr><td colspan="7" class="tbl-empty">Nenhuma transação encontrada</td></tr>`;
+        return;
+    }
+    tb.innerHTML = list.map(c => {
+        let stBadge;
+        if (c.refunded || c.amount_refunded >= c.amount) stBadge = `<span class="badge badge--warn">REEMBOLSADO</span>`;
+        else if (c.amount_refunded > 0)                  stBadge = `<span class="badge badge--warn">PARCIAL</span>`;
+        else if (c.disputed)                              stBadge = `<span class="badge badge--err">DISPUTADO</span>`;
+        else if (c.paid && c.status === "succeeded")     stBadge = `<span class="badge badge--ok">PAGA</span>`;
+        else if (c.status === "pending")                  stBadge = `<span class="badge badge--mut">PENDENTE</span>`;
+        else                                              stBadge = `<span class="badge badge--err">FALHOU</span>`;
+
+        const canRefund = c.paid && !c.refunded && c.amount_refunded < c.amount;
+        return `<tr>
+          <td>${fmtDate(c.created)}<br><span class="muted small">${fmtRelative(c.created)}</span></td>
+          <td>${c.user_id
+              ? `<a href="#" class="user-link" data-uid="${c.user_id}"><b>${c.user_email}</b></a>`
+              : (c.user_email ? `<b>${c.user_email}</b>` : `<span class="muted small">—</span>`)}<br>
+              <span class="muted small mono">${c.customer_id || "—"}</span></td>
+          <td><b>${fmtBrl(c.amount)}</b>${c.amount_refunded > 0 ? `<br><span class="small" style="color:var(--warn)">-${fmtBrl(c.amount_refunded)} reemb.</span>` : ""}</td>
+          <td>${stBadge}</td>
+          <td><span class="small">${c.description || "—"}</span></td>
+          <td class="mono small">${(c.id || "").slice(0, 18)}…</td>
+          <td>
+              ${c.receipt_url ? `<a href="${c.receipt_url}" target="_blank" class="btn btn--sm">Recibo ↗</a> ` : ""}
+              ${canRefund ? `<button class="btn btn--sm btn--warn" data-refund="${c.id}" data-amt="${c.amount}">Reembolsar</button>` : ""}
+          </td>
+        </tr>`;
+    }).join("");
+    tb.querySelectorAll(".user-link").forEach(a => a.onclick = (e) => { e.preventDefault(); openUserDrawer(a.dataset.uid); });
+    tb.querySelectorAll("[data-refund]").forEach(b => b.onclick = () => modalRefund(b.dataset.refund, Number(b.dataset.amt)));
+}
+const _refTxBtn = document.getElementById("refresh-transactions");
+if (_refTxBtn) _refTxBtn.onclick = loadTransactions;
+
+function modalRefund(chargeId, maxAmount) {
+    const body = document.createElement("div");
+    body.innerHTML = `
+      <p>Refund via Stripe. Total ou parcial. Após confirmação, é IRREVERSÍVEL.</p>
+      <p>Charge: <code>${chargeId}</code> · Valor original: <b>${fmtBrl(maxAmount)}</b></p>
+      <label>Valor a reembolsar (deixe 0 = TOTAL)</label>
+      <input id="rf-amount" type="number" step="0.01" min="0" max="${maxAmount}" value="0">
+      <label>Motivo</label>
+      <select id="rf-reason">
+        <option value="requested_by_customer" selected>Solicitado pelo cliente</option>
+        <option value="duplicate">Cobrança duplicada</option>
+        <option value="fraudulent">Fraude</option>
+        <option value="">—</option>
+      </select>
+    `;
+    modal("💸 Reembolsar Stripe", body, async () => {
+        const amount_brl = Number(document.getElementById("rf-amount").value || 0);
+        const reason = document.getElementById("rf-reason").value || null;
+        const r = await post(`/v1/admin/transactions/${chargeId}/refund`, {
+            amount_brl: amount_brl > 0 ? amount_brl : null,
+            reason
+        });
+        toast(`Refund OK: ${fmtBrl(r.refund.amount)} (${r.refund.status})`, "ok");
+        loadTransactions();
+    }, { danger: true, okText: "Reembolsar" });
+}
+
+// ===========================================================
+// DRAWER · LICENSES PANEL (license_keys do user)
+// ===========================================================
+async function renderDrawerLicenses(uid) {
+    const panel = document.getElementById("panel-licenses");
+    panel.innerHTML = `<div class="skel"></div>`;
+    try {
+        const r = await get(`/v1/admin/users/${uid}/licenses`);
+        const ls = r.licenses || [];
+        if (ls.length === 0) {
+            panel.innerHTML = `
+              <div class="drawer-section">
+                <h3>Sem licenças vinculadas</h3>
+                <div class="muted small">Nenhuma license_key com customer_email = <code>${r.user_email}</code>.</div>
+              </div>`;
+            return;
+        }
+        panel.innerHTML = `
+          <div class="drawer-section">
+            <h3>${ls.length} licença(s) · ${ls.filter(k => !k.revoked_at).length} ativa(s)</h3>
+            ${ls.map(k => {
+                const s = licenseStatusOf(k);
+                const stBadge = s === "active"  ? `<span class="badge badge--ok">ATIVA</span>`
+                             : s === "revoked" ? `<span class="badge badge--err">REVOGADA</span>`
+                             :                    `<span class="badge badge--warn">EXPIRADA</span>`;
+                const products = (k.products || []).map(p => productBadge(p)).join(" ");
+                const activations = (k.activations || []).filter(a => !a.deactivated_at);
+                return `
+                  <div class="card" style="margin-bottom:12px">
+                    <div class="card__head" style="margin-bottom:8px">
+                      <div>
+                        <div class="mono" style="font-weight:700">${k.key_prefix}…</div>
+                        <div class="small muted">Tier <b>${k.tier}</b> · ${products} · ${k.active_devices}/${k.max_devices} devices · ${k.expires_at ? "expira " + fmtDate(k.expires_at) : "lifetime"}</div>
+                      </div>
+                      <div>${stBadge}</div>
+                    </div>
+                    ${activations.length > 0 ? `
+                      <table style="width:100%;font-size:12px">
+                        <thead><tr><th>Device</th><th>OS</th><th>IP</th><th>Última validação</th><th></th></tr></thead>
+                        <tbody>
+                          ${activations.map(a => `<tr>
+                            <td class="mono small">${shortFp(a.device_fingerprint)}<br><span class="muted">${a.device_name || "—"}</span></td>
+                            <td>${osIcon(a.device_os)} <span class="small">${a.device_os || "—"}</span></td>
+                            <td class="mono small">${a.ip_address || "—"}</td>
+                            <td>${fmtRelative(a.last_validation_at)}</td>
+                            <td>${!k.revoked_at ? `<button class="btn btn--sm" data-transfer-key="${k.id}" data-from="${a.device_fingerprint}">↔ Transferir</button>` : ""}</td>
+                          </tr>`).join("")}
+                        </tbody>
+                      </table>
+                    ` : `<div class="muted small">Nenhum device ativado</div>`}
+                    ${s === "active" ? `
+                      <div style="margin-top:10px;display:flex;gap:6px">
+                        <button class="btn btn--sm btn--warn" data-drawer-reissue="${k.id}">♻️ Reemitir</button>
+                        <button class="btn btn--sm btn--danger" data-drawer-revoke-key="${k.id}">🚫 Revogar</button>
+                      </div>` : ""}
+                  </div>
+                `;
+            }).join("")}
+          </div>
+        `;
+        panel.querySelectorAll("[data-drawer-revoke-key]").forEach(b => b.onclick = () => {
+            modalRevokeKey(b.dataset.drawerRevokeKey);
+            // Após confirmar, vai recarregar via loadLicenses — recarrega tb o painel
+            setTimeout(() => renderDrawerLicenses(uid), 800);
+        });
+        panel.querySelectorAll("[data-drawer-reissue]").forEach(b => b.onclick = () => {
+            modalReissueKey(b.dataset.drawerReissue);
+            setTimeout(() => renderDrawerLicenses(uid), 800);
+        });
+        panel.querySelectorAll("[data-transfer-key]").forEach(b => b.onclick = () => {
+            modalTransferDevice(b.dataset.transferKey, b.dataset.from, () => renderDrawerLicenses(uid));
+        });
+    } catch (e) {
+        panel.innerHTML = `<div class="muted">Erro ao carregar licenças: ${e.message}</div>`;
+    }
+}
+
+function modalTransferDevice(keyId, fromFp, after) {
+    const body = document.createElement("div");
+    body.innerHTML = `
+      <p>Desativa o device de origem e ativa o destino na mesma license_key. Útil quando o cliente troca de máquina.</p>
+      <label>Fingerprint de origem</label>
+      <input id="td-from" value="${fromFp}" readonly class="mono">
+      <label>Fingerprint de destino</label>
+      <input id="td-to" placeholder="abc123...">
+      <label>Nome do device destino (opcional)</label>
+      <input id="td-name" placeholder="Workstation cliente">
+      <label>OS destino (opcional)</label>
+      <input id="td-os" placeholder="Windows 11">
+    `;
+    modal("↔ Transferir device", body, async () => {
+        const to_fingerprint = document.getElementById("td-to").value.trim();
+        if (!to_fingerprint) return false;
+        const to_name = document.getElementById("td-name").value.trim() || null;
+        const to_os = document.getElementById("td-os").value.trim() || null;
+        await post(`/v1/admin/license-keys/${keyId}/transfer-device`, {
+            from_fingerprint: fromFp, to_fingerprint, to_name, to_os
+        });
+        toast("Device transferido", "ok");
+        if (after) after();
+    }, { okText: "Transferir" });
+}
+
+// Intercepta o click nas tabs do drawer pra carregar Licenses sob demanda
+document.querySelectorAll(".drawer__tab").forEach(t => {
+    if (t.dataset.tab === "licenses") {
+        t.addEventListener("click", () => {
+            const uid = STATE.selectedUser?.user?.id;
+            if (uid) renderDrawerLicenses(uid);
+        });
+    }
+});
 
 // ===========================================================
 // BOOT

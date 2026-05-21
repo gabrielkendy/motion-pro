@@ -39,6 +39,8 @@
       <a href="#" class="nav-item" data-view="subscriptions">💳 Assinaturas</a>
       <a href="#" class="nav-item" data-view="devices">💻 Dispositivos</a>
       <a href="#" class="nav-item" data-view="sessions">🔐 Sessões</a>
+      <a href="#" class="nav-item" data-view="licenses">🔑 Licenças</a>
+      <a href="#" class="nav-item" data-view="transactions">💰 Transações</a>
       <a href="#" class="nav-item" data-view="duplicates">⚠️ Duplicatas</a>
       <a href="#" class="nav-item" data-view="audit">📜 Auditoria</a>
       <a href="#" class="nav-item" data-view="maintenance">🔧 Manutenção</a>
@@ -216,6 +218,108 @@
       </div>
     </section>
 
+    <!-- ===== LICENSES ===== -->
+    <section class="view" id="view-licenses">
+      <div class="view-head">
+        <div>
+          <h2>Licenças</h2>
+          <div class="sub"><span id="licenses-count">0</span> chaves emitidas · <span id="licenses-active">0</span> ativas</div>
+        </div>
+        <div class="view-actions">
+          <button class="btn btn--primary btn--sm" id="generate-key-btn">+ Gerar key</button>
+          <button class="btn btn--sm" id="refresh-licenses">↻</button>
+        </div>
+      </div>
+
+      <div class="filters">
+        <input id="licenses-search" placeholder="🔍 Buscar prefixo / email cliente / notes…">
+        <select id="licenses-tier">
+          <option value="all">Todos os tiers</option>
+          <option value="PRO">PRO</option>
+          <option value="LIFE">LIFETIME</option>
+          <option value="BASIC">BASIC</option>
+          <option value="FREE">FREE</option>
+        </select>
+        <select id="licenses-product">
+          <option value="all">Todos os produtos</option>
+          <option value="motionpro">Motion Titles</option>
+          <option value="ia">Motion IA</option>
+          <option value="legendas">Motion Legendas</option>
+          <option value="bundle_all">Bundle</option>
+        </select>
+        <select id="licenses-status">
+          <option value="all">Todos status</option>
+          <option value="active">Ativas</option>
+          <option value="revoked">Revogadas</option>
+          <option value="expired">Expiradas</option>
+        </select>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Prefixo</th>
+            <th>Tier</th>
+            <th>Produtos</th>
+            <th>Devices</th>
+            <th>Cliente</th>
+            <th>Validade</th>
+            <th>Status</th>
+            <th>Criada</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="licenses-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===== TRANSACTIONS (Stripe charges) ===== -->
+    <section class="view" id="view-transactions">
+      <div class="view-head">
+        <div>
+          <h2>Transações</h2>
+          <div class="sub" id="transactions-sub">Charges do Stripe · refund inline</div>
+        </div>
+        <div class="view-actions">
+          <button class="btn btn--sm" id="refresh-transactions">↻</button>
+        </div>
+      </div>
+
+      <div class="kpi-grid" id="transactions-kpis"></div>
+
+      <div class="filters">
+        <select id="transactions-days">
+          <option value="7">Últimos 7 dias</option>
+          <option value="30" selected>Últimos 30 dias</option>
+          <option value="90">Últimos 90 dias</option>
+          <option value="365">Último ano</option>
+        </select>
+        <select id="transactions-status">
+          <option value="all">Todos</option>
+          <option value="succeeded">Pagas</option>
+          <option value="refunded">Reembolsadas</option>
+          <option value="failed">Falharam</option>
+          <option value="disputed">Disputadas</option>
+        </select>
+        <input id="transactions-search" placeholder="🔍 Buscar email/customer/charge_id…">
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Data</th>
+            <th>Cliente</th>
+            <th>Valor</th>
+            <th>Status</th>
+            <th>Descrição</th>
+            <th>Charge ID</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="transactions-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
     <!-- ===== DUPLICATES ===== -->
     <section class="view" id="view-duplicates">
       <div class="view-head">
@@ -284,6 +388,7 @@
     <button class="drawer__tab" data-tab="subs">Assinaturas</button>
     <button class="drawer__tab" data-tab="devices">Dispositivos</button>
     <button class="drawer__tab" data-tab="sessions">Sessões</button>
+    <button class="drawer__tab" data-tab="licenses">Licenças</button>
     <button class="drawer__tab" data-tab="payments">Pagamentos</button>
     <button class="drawer__tab" data-tab="audit">Auditoria</button>
   </div>
@@ -292,6 +397,7 @@
     <div class="drawer__panel" data-panel="subs" id="panel-subs"></div>
     <div class="drawer__panel" data-panel="devices" id="panel-devices"></div>
     <div class="drawer__panel" data-panel="sessions" id="panel-sessions"></div>
+    <div class="drawer__panel" data-panel="licenses" id="panel-licenses"></div>
     <div class="drawer__panel" data-panel="payments" id="panel-payments"></div>
     <div class="drawer__panel" data-panel="audit" id="panel-audit"></div>
   </div>
@@ -300,6 +406,7 @@
     <button class="btn btn--sm" data-action="extend-trial">⏰ +7 dias</button>
     <button class="btn btn--sm" data-action="send-email">✉️ Enviar email</button>
     <button class="btn btn--sm btn--warn" data-action="kill-sessions">💀 Matar sessões</button>
+    <button class="btn btn--sm btn--danger" data-action="revoke-all-licenses">🔑 Revogar TODAS licenças</button>
     <button class="btn btn--sm btn--danger" data-action="block">🚫 Bloquear</button>
     <button class="btn btn--sm btn--ok" data-action="unblock" hidden>✅ Desbloquear</button>
     <button class="btn btn--sm btn--danger" data-action="delete">🗑️ Deletar</button>
