@@ -565,7 +565,7 @@
                             "    var hasGlobal = ($.global.MotionProIA && typeof $.global.MotionProIA.ping === 'function');" +
                             "    var hasLocal = (typeof MotionProIA !== 'undefined' && typeof MotionProIA.ping === 'function');" +
                             "    return 'evalfile=' + r + '|global=' + hasGlobal + '|local=' + hasLocal;" +
-                            "  } catch(e) { return 'exception:' + (e.message || e); }" +
+                            "  } catch(e) { return 'exception:line=' + (e.line || '?') + ' source=' + (e.source ? String(e.source).substring(0,80).replace(/\\n/g,' ') : '?') + ' msg=' + (e.message || e); }" +
                             "})()";
                         cs.evalScript(s, function (r) { res(r); });
                     });
