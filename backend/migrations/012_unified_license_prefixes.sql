@@ -185,11 +185,42 @@ SELECT DISTINCT ON (user_id, product_id)
           expires_at DESC NULLS FIRST;
 
 -- ============================================================
--- 7) Comentários documentando a tabela license_keys (operacional)
+-- 7) Índices funcionais LOWER(email) — /v1/me/products é chamado no
+--    boot de TODOS os plugins CEP, precisa ser <50ms. A view faz
+--    JOIN case-insensitive entre users.email e license_keys.customer_email.
+-- ============================================================
+CREATE INDEX IF NOT EXISTS idx_users_lower_email
+    ON users (LOWER(email));
+CREATE INDEX IF NOT EXISTS idx_lk_lower_email
+    ON license_keys (LOWER(customer_email))
+    WHERE customer_email IS NOT NULL;
+
+-- ============================================================
+-- 8) Dedup por Stripe session_id — protege contra duplo-issuance se
+--    Stripe re-disparar checkout.session.completed com event.id novo
+--    (retry manual no Dashboard, por exemplo).
+--    Unique index parcial: só registros stripe-auto, pra não conflitar
+--    com chaves admin/manuais que podem ter notes arbitrários.
+-- ============================================================
+CREATE UNIQUE INDEX IF NOT EXISTS idx_lk_stripe_auto_unique
+    ON license_keys (notes)
+    WHERE notes LIKE 'stripe-auto-%';
+
+-- ============================================================
+-- 9) Comentários documentando a tabela license_keys (operacional)
 -- ============================================================
 COMMENT ON COLUMN license_keys.key_prefix_type IS
     'Prefixo curto da key (MTI/MTL/MIA/MTS). Gerado automaticamente.';
 COMMENT ON COLUMN license_keys.products IS
     'Array de product_ids canônicos (titles/legendas/ia). Chaves MTS- contêm os 3.';
 
-COMMIT;
+-- NB: sem COMMIT; explícito — node-pg roda autocommit por statement.
+-- ROLLBACK manual (se necessário):
+--   DROP VIEW IF EXISTS user_active_products;
+--   DROP INDEX IF EXISTS idx_lk_stripe_auto_unique, idx_lk_lower_email,
+--                        idx_users_lower_email, idx_license_keys_prefix_type;
+--   DROP FUNCTION IF EXISTS resolve_product_id(TEXT);
+--   DROP TABLE IF EXISTS product_aliases;
+--   ALTER TABLE license_keys DROP COLUMN IF EXISTS key_prefix_type;
+--   DELETE FROM products WHERE id IN ('titles','legendas','ia','suite');
+--   DELETE FROM product_prices WHERE product_id='suite';
