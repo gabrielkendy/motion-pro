@@ -125,6 +125,9 @@
     <button class="tab-btn" data-tab="tab-sfx" title="Biblioteca de efeitos sonoros">
         <span class="tab-ico">🔊</span><span class="tab-lbl">SFX</span>
     </button>
+    <button class="tab-btn" data-tab="tab-config" title="Licença + Configurações">
+        <span class="tab-ico">⚙️</span><span class="tab-lbl">Config</span>
+    </button>
 </div>
 
 <!-- Wizard breadcrumb (aparece nas tabs de legenda) -->
@@ -497,6 +500,81 @@
     </div>
 </div>
 
+<!-- ════════════ TAB: CONFIG (Licença & Settings) ════════════ -->
+<div id="tab-config" class="tab-panel">
+    <div id="config-body" style="padding:16px 14px 60px;font-family:'Inter',sans-serif">
+        <div style="font:700 13px Inter;color:var(--txt);margin-bottom:4px">🔑 Licença</div>
+        <div style="font:500 11px Inter;color:var(--mut);margin-bottom:14px">
+            Comprou pelo site? Sua chave foi enviada por e-mail.
+        </div>
+
+        <div id="lic-card" class="license-card inactive">
+            <div class="license-card__row">
+                <span class="license-card__label">Status</span>
+                <span><span id="lic-status" class="license-card__status inactive">Não ativada</span></span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Chave</span>
+                <span id="lic-key" class="license-card__value">—</span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Plano</span>
+                <span id="lic-tier" class="license-card__value">—</span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Produto</span>
+                <span id="lic-product" class="license-card__value">—</span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Devices</span>
+                <span id="lic-devices" class="license-card__value">—</span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Última validação</span>
+                <span id="lic-validated" class="license-card__value">—</span>
+            </div>
+        </div>
+
+        <div class="field">
+            <label for="lic-input">Inserir chave de licença</label>
+            <input id="lic-input" placeholder="MTL-XXXX-XXXX-XXXX  ou  MTS-XXXX-XXXX-XXXX" autocomplete="off"
+                   style="text-transform:uppercase;font-family:'JetBrains Mono',Consolas,monospace;letter-spacing:.5px">
+            <div class="hint">
+                <b>MTL-</b> = Motion Legendas standalone · <b>MTS-</b> = Bundle Motion Suite (Titles+Legendas+IA)
+            </div>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap">
+            <button id="lic-activate" class="btn btn--primary" type="button">Ativar Licença</button>
+            <button id="lic-validate" class="btn btn--sm" type="button">↻ Revalidar</button>
+            <button id="lic-deactivate" class="btn btn--danger btn--sm" type="button">Desativar</button>
+            <button id="lic-buy" class="btn btn--ghost btn--sm" type="button">Comprar →</button>
+        </div>
+
+        <div id="lic-msg" class="gate__msg" style="text-align:left;font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;min-height:0;margin-bottom:18px"></div>
+
+        <!-- Cross-sell banner (Chunk 8 preenche) -->
+        <div id="suite-cross-sell" class="hidden" style="background:linear-gradient(135deg,var(--bg-2),var(--bg-3));border:1px solid var(--acc-line);border-radius:var(--radius-lg);padding:16px 18px;margin-bottom:18px;font-family:'Inter',sans-serif">
+            <!-- conteúdo populado por config-tab.js dependendo de covers_via_bundle -->
+        </div>
+
+        <hr style="border:0;border-top:1px solid var(--line);margin:24px 0">
+
+        <div style="font:700 13px Inter;color:var(--txt);margin-bottom:14px">🔐 Sessão</div>
+        <div id="session-card" style="background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius-lg);padding:16px 18px;margin-bottom:14px">
+            <div class="license-card__row">
+                <span class="license-card__label">Usuário</span>
+                <span id="sess-email" class="license-card__value">—</span>
+            </div>
+            <div class="license-card__row">
+                <span class="license-card__label">Build</span>
+                <span class="license-card__value">v4.25.1</span>
+            </div>
+        </div>
+        <button id="sess-logout" class="btn btn--danger btn--sm" type="button">Sair da conta</button>
+    </div>
+</div>
+
 <!-- ════════════ STICKY APPLY FOOTER (só visível em tabs de legenda) ════════════ -->
 <div id="apply-footer" class="hidden">
     <div class="apply-footer-info">
@@ -675,6 +753,7 @@
 <script src="js/license-cache.js?v=425b"></script>
 <script src="js/license-client.js?v=425b"></script>
 <script src="js/auth.js?v=425b"></script>
+<script src="js/config-tab.js?v=425b"></script>
 <script src="js/main.js?v=425b"></script>
 </body>
 </html>
