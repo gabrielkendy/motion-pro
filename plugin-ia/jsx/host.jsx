@@ -635,7 +635,9 @@ $.global.MotionProIA = (function () {
             if (!seq) return err("Sem sequência");
             if (typeof inSec === "number" && seq.setInPoint)  seq.setInPoint(secondsToTicks(inSec));
             if (typeof outSec === "number" && seq.setOutPoint) seq.setOutPoint(secondsToTicks(outSec));
-            return ok({ in: inSec, out: outSec });
+            // "in" precisa de aspas: é reserved word ES3, ExtendScript rejeita
+            // como property name sem quoting (ES5+ permite, jshint --esversion=3 pega).
+            return ok({ "in": inSec, "out": outSec });
         } catch (e) { return err(e.message); }
     }
 
