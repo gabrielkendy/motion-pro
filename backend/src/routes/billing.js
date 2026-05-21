@@ -8,34 +8,16 @@ const { requireAuth } = require("../middleware/auth");
 const { welcomeEmail, paymentFailedEmail } = require("../utils/email");
 // M4: reusa gerador de keys já existente em license-keys.js (DRY)
 const { genKey: generateLicenseKey } = require("./license-keys");
+// A7: tabela canônica de produtos + aliases — fonte única
+const { resolveProduct, normalizeProductId } = require("../utils/product-aliases");
 
 const stripe = Stripe(process.env.STRIPE_SECRET || "sk_test_xxx");
 
-// Mapa: product_id (canônico ou alias) → { prefix, products[], productName, downloadUrl }
-function resolveProduct(productId) {
-    const id = String(productId || "").toLowerCase().trim();
-    const TABLE = {
-        // Motion IA
-        "ia":             { prefix: "MIA", products: ["ia"],       name: "Motion IA",       download: "/ia/download.html" },
-        "motionia":       { prefix: "MIA", products: ["ia"],       name: "Motion IA",       download: "/ia/download.html" },
-        "motion_ia":      { prefix: "MIA", products: ["ia"],       name: "Motion IA",       download: "/ia/download.html" },
-        // Motion Titles
-        "titles":         { prefix: "MTI", products: ["titles"],   name: "Motion Titles",   download: "/download.html" },
-        "motionpro":      { prefix: "MTI", products: ["titles"],   name: "Motion Titles",   download: "/download.html" },
-        "motion titles":  { prefix: "MTI", products: ["titles"],   name: "Motion Titles",   download: "/download.html" },
-        // Motion Legendas
-        "legendas":       { prefix: "MTL", products: ["legendas"], name: "Motion Legendas", download: "/legendas/download.html" },
-        // Bundle Motion Suite (todos os 3)
-        "suite":          { prefix: "MTS", products: ["titles", "legendas", "ia"], name: "Motion Suite",       download: "/download.html" },
-        "bundle_all":     { prefix: "MTS", products: ["titles", "legendas", "ia"], name: "Pacote Motion Suite", download: "/download.html" },
-        "motion_suite":   { prefix: "MTS", products: ["titles", "legendas", "ia"], name: "Motion Suite",       download: "/download.html" }
-    };
-    return TABLE[id] || null;
-}
-
-// Fallback caso DB esteja indisponível — só pro Motion Titles
+// Fallback caso DB esteja indisponível — só pro Motion Titles.
+// Mantemos `motionpro` aqui porque é o id legacy de envs antigas e o
+// FALLBACK lookup é só pra prices, não pra issuance de chave.
 const FALLBACK_PRICES = {
-    motionpro: {
+    titles: {
         yearly:   process.env.STRIPE_PRICE_YEARLY,
         lifetime: process.env.STRIPE_PRICE_LIFETIME
     }
@@ -45,14 +27,20 @@ const PUBLIC_URL = process.env.PUBLIC_URL || "https://motionpro-lp.vercel.app";
 
 // Busca price_id do produto+plano no banco
 async function getStripePriceId(productId, plan) {
+    // Normaliza pra canônico antes de bater no DB (DB tem product_id canônico
+    // pra registros recentes >= 2026-05-01; antigos têm alias). Tenta ambos.
+    const canonical = normalizeProductId(productId);
+    const candidates = canonical && canonical !== productId
+        ? [canonical, productId]
+        : [productId];
     try {
         const r = await pool.query(
-            "SELECT stripe_price_id FROM product_prices WHERE product_id=$1 AND plan=$2 AND is_active=true",
-            [productId, plan]
+            "SELECT stripe_price_id FROM product_prices WHERE product_id = ANY($1) AND plan=$2 AND is_active=true LIMIT 1",
+            [candidates, plan]
         );
         if (r.rowCount) return r.rows[0].stripe_price_id;
     } catch (_) {}
-    return FALLBACK_PRICES[productId]?.[plan] || null;
+    return FALLBACK_PRICES[canonical]?.[plan] || null;
 }
 
 // Resolve plan a partir do priceId (pro webhook)
@@ -64,11 +52,11 @@ async function planAndProductFromPriceId(priceId) {
         );
         if (r.rowCount) return r.rows[0];
     } catch (_) {}
-    // Fallback: motionpro
-    for (const [plan, pid] of Object.entries(FALLBACK_PRICES.motionpro)) {
-        if (pid === priceId) return { product_id: "motionpro", plan };
+    // M1: fallback default é 'titles' (canônico), não 'motionpro' (alias legacy)
+    for (const [plan, pid] of Object.entries(FALLBACK_PRICES.titles)) {
+        if (pid === priceId) return { product_id: "titles", plan };
     }
-    return { product_id: "motionpro", plan: "yearly" };
+    return { product_id: "titles", plan: "yearly" };
 }
 
 // ============================================================
@@ -79,7 +67,7 @@ async function planAndProductFromPriceId(priceId) {
 router.post("/checkout", async (req, res, next) => {
     try {
         const plan = (req.query.plan || req.body?.plan || "yearly").toLowerCase();
-        const product_id = (req.query.product || req.body?.product || "motionpro").toLowerCase();
+        const product_id = (req.query.product || req.body?.product || "titles").toLowerCase();
         const price = await getStripePriceId(product_id, plan);
         if (!price) return res.status(400).json({
             error: "unknown_product_or_plan",
@@ -187,7 +175,7 @@ async function findOrCreateUser({ email, stripeCustomerId }) {
 }
 
 async function upsertSubscription({ userId, productId, plan, status, stripeSubId, periodEnd, cancelAt }) {
-    const product = productId || "motionpro";
+    const product = normalizeProductId(productId) || "titles";
     if (stripeSubId) {
         const upd = await pool.query(
             `UPDATE subscriptions
@@ -246,7 +234,7 @@ async function webhook(req, res) {
                 const customerId = cs.customer;
                 const email = cs.customer_details?.email || cs.customer_email;
                 const plan = cs.metadata?.plan || "yearly";
-                const product_id = cs.metadata?.product_id || "motionpro";
+                const product_id = cs.metadata?.product_id || "titles";
 
                 if (!email) { console.warn("[webhook] checkout sem email", cs.id); break; }
 
@@ -352,9 +340,8 @@ async function webhook(req, res) {
                         plan,
                         productName,
                         downloadUrl,
-                        // miaLicenseKey: nome legado mantido pra compat com email template;
-                        // contém qualquer chave (MTI/MTL/MIA/MTS) gerada nesse checkout.
-                        miaLicenseKey: licenseKeyPlaintext
+                        // Chave canônica — qualquer prefix (MTI/MTL/MIA/MTS).
+                        licenseKey: licenseKeyPlaintext
                     });
                 } catch (e) { console.error("[webhook] welcome email fail", e.message); }
                 break;
