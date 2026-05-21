@@ -77,3 +77,4 @@ plugin-legendas/fonts/
 !landing/installers/*.zip
 
 .vercel
+.devswarm-temp/

@@ -15,6 +15,22 @@
     --warn:  #ffb84a;
     --danger:#ff5566;
     --radius: 6px;
+
+    /* === Motion IA design tokens (Chunk 1 — Motion Suite unified) === */
+    --bg:        #0a0c12;
+    --bg-hover:  #1c2130;
+    --line-soft: #1a1e2a;
+    --txt:       #e8ecf3;
+    --mut:       #8590a8;
+    --mut-2:     #5d6678;
+    --acc-bright:#3b82f6;
+    --acc-soft:  rgba(37, 99, 235, 0.12);
+    --acc-line:  rgba(37, 99, 235, 0.35);
+    --ok:        #10b981;
+    --ok-soft:   rgba(16, 185, 129, 0.12);
+    --err:       #ef4444;
+    --err-soft:  rgba(239, 68, 68, 0.12);
+    --radius-lg: 12px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -479,124 +495,146 @@ body.wide  .card__thumb { min-height: 180px; }
 /* ============ MISC ============ */
 .hidden { display: none !important; }
 
-/* ============ LOGIN GATE ============ */
+/* ============ LOGIN GATE (Motion IA-style · Chunk 1) ============ */
 .gate {
-    position: fixed;
-    inset: 0;
-    background: linear-gradient(135deg, #0a0a0d 0%, #15151c 100%);
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at top, rgba(37,99,235,0.10), transparent 60%), var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; padding: 24px;
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 .gate__box {
-    width: 100%;
-    max-width: 360px;
-    background: var(--bg-2);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 28px 24px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    background: #11141d;
+    border: 1px solid #232838;
+    border-radius: var(--radius-lg);
+    padding: 36px;
+    width: 100%; max-width: 380px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.5);
 }
-.gate__logo {
+.gate__brand {
     text-align: center;
-    font-size: 26px;
-    font-weight: 900;
+    margin-bottom: 6px;
+    font-weight: 800;
+    font-size: 22px;
     letter-spacing: -0.5px;
-    background: linear-gradient(90deg, var(--acc), #7afbb4);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 2px;
+    color: var(--txt);
 }
-.gate__sub {
+.gate__brand span { color: var(--acc); }
+.gate__tagline {
     text-align: center;
-    color: var(--txt-2);
-    font-size: 10px;
-    letter-spacing: 1px;
+    font-size: 11px;
+    color: var(--mut);
     text-transform: uppercase;
-    margin-bottom: 22px;
+    letter-spacing: 2px;
+    margin-bottom: 28px;
 }
 .gate__tabs {
     display: flex;
-    background: var(--bg-1);
-    border-radius: 8px;
-    padding: 3px;
-    gap: 2px;
-    margin-bottom: 16px;
+    background: var(--bg);
+    border-radius: var(--radius);
+    padding: 4px;
+    margin-bottom: 22px;
 }
-.gt {
+.gate__tab {
     flex: 1;
-    padding: 8px 6px;
-    color: var(--txt-2);
-    font-size: 11px;
+    background: transparent;
+    border: 0;
+    color: var(--mut);
+    padding: 9px;
     border-radius: 6px;
-    transition: background 0.12s, color 0.12s;
-}
-.gt:hover { color: var(--txt-1); }
-.gt.active { background: var(--bg-3); color: var(--acc); font-weight: 600; }
-.gate__form { display: flex; flex-direction: column; gap: 8px; }
-.gate__form input {
-    background: var(--bg-1);
-    border: 1px solid var(--line);
-    color: var(--txt-0);
-    padding: 10px 12px;
-    border-radius: 7px;
-    font-size: 12.5px;
-    outline: none;
-}
-.gate__form input:focus { border-color: var(--acc); }
-.g-btn {
-    background: var(--acc);
-    color: #000;
-    font-weight: 700;
-    padding: 11px;
-    border-radius: 7px;
-    font-size: 12.5px;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.15s;
     cursor: pointer;
-    margin-top: 4px;
 }
-.g-btn:hover { background: var(--acc-2); }
-.g-btn:disabled { opacity: 0.6; cursor: wait; }
+.gate__tab.active { background: var(--acc); color: #fff; }
 .gate__msg {
+    margin-top: 12px;
+    font-size: 12px;
+    text-align: center;
     min-height: 18px;
+    color: var(--mut);
+}
+.gate__msg.err { color: var(--err); }
+.gate__msg.ok  { color: var(--ok); }
+.gate__foot {
     text-align: center;
-    color: var(--danger);
+    margin-top: 16px;
     font-size: 11px;
-    padding: 4px 0;
+    color: var(--mut);
 }
-.gate__msg.ok { color: var(--acc); }
-.gate__plans {
-    margin-top: 18px;
-    padding-top: 16px;
-    border-top: 1px solid var(--line);
-}
-.gate__plans-title {
-    color: var(--txt-2);
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 8px;
-}
-.g-plan {
-    display: flex;
-    justify-content: space-between;
-    padding: 5px 0;
-    color: var(--txt-1);
-    font-size: 11.5px;
-}
-.g-plan b { color: var(--txt-0); font-weight: 500; }
-.g-plan span { color: var(--acc); font-weight: 700; }
-.gate__footer {
-    text-align: center;
-    margin-top: 18px;
-}
-.gate__footer a {
-    color: var(--txt-2);
-    font-size: 10.5px;
+.gate__foot a {
+    color: var(--mut);
     text-decoration: none;
+    transition: color 0.15s;
 }
-.gate__footer a:hover { color: var(--acc); }
+.gate__foot a:hover { color: var(--acc-bright); }
+.gate__sep {
+    display: flex; align-items: center; gap: 10px;
+    margin: 18px 0 14px;
+    font-size: 10px; color: var(--mut);
+    text-transform: uppercase; letter-spacing: 1px;
+}
+.gate__sep::before, .gate__sep::after {
+    content: ""; flex: 1; height: 1px; background: #232838;
+}
+
+/* ============ FIELDS (Motion IA-style) ============ */
+.field { margin-bottom: 14px; }
+.field label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--mut);
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+.field input, .field select, .field textarea {
+    width: 100%;
+    background: #11141d;
+    border: 1px solid #232838;
+    color: var(--txt);
+    padding: 10px 13px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    transition: border 0.15s, box-shadow 0.15s;
+    font-family: inherit;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+    outline: none;
+    border-color: var(--acc);
+    box-shadow: 0 0 0 3px var(--acc-soft);
+}
+.field .hint { font-size: 11px; color: var(--mut); margin-top: 6px; }
+
+/* ============ BUTTONS (Motion IA-style) ============ */
+.btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 6px;
+    background: transparent;
+    border: 1px solid #232838;
+    color: var(--txt);
+    padding: 9px 16px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.15s;
+    white-space: nowrap;
+    cursor: pointer;
+    font-family: inherit;
+}
+.btn:hover { background: #161a26; border-color: var(--mut-2); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn--primary { background: var(--acc); border-color: var(--acc); color: #fff; }
+.btn--primary:hover { background: var(--acc-bright); border-color: var(--acc-bright); }
+.btn--full { width: 100%; padding: 12px; }
+.btn--sm { padding: 6px 12px; font-size: 12px; }
+.btn--danger { background: var(--err-soft); border-color: var(--err); color: var(--err); }
+.btn--danger:hover { background: var(--err); color: #fff; }
+.btn--ok { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
+.btn--ghost { border-color: transparent; color: var(--mut); }
+.btn--ghost:hover { background: #161a26; color: var(--txt); }
 
 /* ========== TRIAL BAR (header strip) ========== */
 .trialbar{
