@@ -485,9 +485,207 @@
 
 /* ── CONTENT-VISIBILITY (otimiza renderização de seções offscreen) ── */
 .problem, .custom, .styles, .cats, .usecases, .editorial-banner, .flux, .compare-table,
-.pricing, .manifesto, .faq, .cta-final {
+.pricing, .manifesto, .faq, .cta-final, .demo-strip, .ba-section, .compat-strip {
   content-visibility: auto;
   contain-intrinsic-size: auto 900px;
+}
+
+/* ── PRICING 3-COL OVERRIDE (Solo / Duo / Total) ── */
+@media (min-width: 1000px) {
+  .price-grid { grid-template-columns: repeat(3, 1fr); max-width: 1200px; }
+  .price-card { padding: 38px 32px; }
+  .price-card h3 { font-size: clamp(1.4rem, 2vw, 1.8rem); }
+  .price-amount .num { font-size: clamp(2.6rem, 4.5vw, 3.6rem); }
+}
+
+/* ── 5 ESTILOS DEMO LADO-A-LADO ── */
+.demo-strip { background: var(--bg); }
+.demo-strip__head { text-align: center; max-width: 760px; margin: 0 auto 64px; }
+.demo-strip__head .lede { margin: 24px auto 0; }
+.demo-strip__grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;
+  max-width: 1200px; margin: 0 auto;
+}
+@media (max-width: 1100px) { .demo-strip__grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 700px)  { .demo-strip__grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px)  { .demo-strip__grid { grid-template-columns: 1fr; } }
+
+.demo-card {
+  position: relative;
+  background: #0a0a0a;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: transform .35s var(--ease-out), box-shadow .35s, border-color .35s;
+}
+.demo-card:hover { transform: translateY(-6px); box-shadow: 0 22px 50px -18px rgba(37,99,235,.22); border-color: var(--accent); }
+.demo-card__preview {
+  position: relative;
+  aspect-ratio: 9 / 12;
+  background: linear-gradient(135deg, #1a1d29 0%, #0a0c12 100%);
+  overflow: hidden;
+}
+.demo-card__preview::before {
+  content: "";
+  position: absolute; inset: 12% 18% 28% 18%;
+  background: rgba(255,255,255,.04);
+  border-radius: 8px;
+}
+.demo-card__preview::after {
+  content: "";
+  position: absolute; top: 18%; left: 24%; right: 24%; bottom: 32%;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(255,255,255,.08), transparent 50%),
+    linear-gradient(180deg, rgba(255,255,255,.04), transparent 70%);
+}
+.demo-card__caption {
+  position: absolute; left: 14px; right: 14px; bottom: 14px;
+  text-align: center;
+  z-index: 2;
+}
+.demo-card__legenda {
+  display: inline-block;
+  padding: 6px 12px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
+  letter-spacing: -.01em;
+  font-size: 14px; line-height: 1.15;
+  white-space: nowrap;
+}
+.demo-card__meta {
+  background: white;
+  padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.demo-card__name {
+  font-size: 14px; font-weight: 700; color: var(--fg); letter-spacing: -.01em;
+}
+.demo-card__use {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .65rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* Variantes dos 5 estilos preview */
+.demo-card.v-viral    .demo-card__legenda { background: #fbbf24; color: #0a0a0a; transform: rotate(-2deg); }
+.demo-card.v-tiktok   .demo-card__legenda { background: white; color: #0a0a0a; text-transform: uppercase; }
+.demo-card.v-reels    .demo-card__legenda { background: rgba(255,255,255,.18); color: white; backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.25); }
+.demo-card.v-classico .demo-card__legenda { background: rgba(0,0,0,.65); color: white; font-weight: 600; }
+.demo-card.v-minimal  .demo-card__legenda { background: transparent; color: white; font-weight: 300; letter-spacing: .05em; text-shadow: 0 1px 8px rgba(0,0,0,.7); }
+
+/* ── ANTES/DEPOIS DE VÍDEO ── */
+.ba-section { background: var(--bg-elevated); }
+.ba-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+  max-width: 1100px; margin: 0 auto;
+}
+@media (max-width: 800px) { .ba-grid { grid-template-columns: 1fr; max-width: 540px; } }
+.ba-card {
+  background: #0a0a0a;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  position: relative;
+}
+.ba-card__label {
+  position: absolute; top: 16px; left: 16px;
+  z-index: 3;
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .62rem; letter-spacing: .2em; text-transform: uppercase;
+  font-weight: 700;
+}
+.ba-card--antes .ba-card__label { background: rgba(255,255,255,.12); color: white; border: 1px solid rgba(255,255,255,.18); }
+.ba-card--depois .ba-card__label { background: var(--accent); color: white; }
+.ba-card__frame {
+  aspect-ratio: 16 / 9;
+  position: relative;
+  background: linear-gradient(135deg, #1a1d29 0%, #0a0c12 100%);
+  overflow: hidden;
+}
+.ba-card__frame::before {
+  content: ""; position: absolute; inset: 12%;
+  background: rgba(255,255,255,.04);
+  border-radius: 8px;
+}
+.ba-card__frame::after {
+  content: ""; position: absolute; top: 25%; left: 30%; right: 30%; bottom: 40%;
+  background: radial-gradient(circle at 50% 30%, rgba(255,255,255,.10), transparent 60%);
+}
+.ba-card--depois .ba-card__legenda {
+  position: absolute;
+  left: 50%; bottom: 14%;
+  transform: translateX(-50%);
+  z-index: 2;
+  padding: 8px 16px;
+  background: #fbbf24;
+  color: #0a0a0a;
+  font-family: 'Inter', sans-serif;
+  font-weight: 900;
+  font-size: clamp(14px, 1.6vw, 18px);
+  letter-spacing: -.01em;
+  border-radius: 4px;
+  text-transform: uppercase;
+  box-shadow: 0 8px 20px rgba(0,0,0,.5);
+  animation: legendaPop 3.6s ease-in-out infinite;
+  white-space: nowrap;
+}
+@keyframes legendaPop {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.06); }
+}
+.ba-card__bottom {
+  padding: 18px 22px;
+  background: white;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.ba-card__title { font-size: 15px; font-weight: 700; color: var(--fg); letter-spacing: -.01em; }
+.ba-card__sub { font-size: 13px; color: var(--fg-muted); }
+
+/* ── COMPATIBILIDADE STRIP ── */
+.compat-strip {
+  background: var(--bg);
+  padding: clamp(60px, 9vw, 90px) 0;
+  border-top: 1px solid var(--border);
+}
+.compat-strip__inner {
+  max-width: 1100px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 2fr; gap: 60px;
+  align-items: center;
+}
+@media (max-width: 800px) { .compat-strip__inner { grid-template-columns: 1fr; gap: 32px; text-align: center; } }
+.compat-strip__title {
+  font-size: clamp(1.4rem, 2.2vw, 1.7rem);
+  font-weight: 800; letter-spacing: -.02em; color: var(--fg);
+  line-height: 1.2;
+}
+.compat-strip__title em { color: var(--accent); font-style: italic; }
+.compat-strip__list {
+  display: flex; flex-wrap: wrap; gap: 10px;
+}
+@media (max-width: 800px) { .compat-strip__list { justify-content: center; } }
+.compat-chip {
+  padding: 8px 14px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .68rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--fg-muted);
+  font-weight: 500;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.compat-chip::before {
+  content: "✓";
+  color: var(--success);
+  font-weight: 800;
+}
+.compat-chip--os {
+  background: var(--bg-elevated);
+  border-color: var(--border-strong);
+  color: var(--fg);
+  font-weight: 600;
 }
 
 /* ── CTA FINAL ── */
@@ -777,6 +975,125 @@
   </div>
 </section>
 
+<!-- ════════════════════════ 5 ESTILOS DEMO LADO-A-LADO ════════════════════════ -->
+<section class="demo-strip" id="demo">
+  <div class="container">
+    <div class="demo-strip__head reveal">
+      <span class="tag-mono"><span class="dot"></span>— 5 ESTILOS EM AÇÃO</span>
+      <h2 class="section-title">Os 5 mais usados.<br><span class="italic-em">Lado a lado.</span></h2>
+      <p class="lede">Cada estilo foi feito pra um contexto específico de produção. Veja como cada um aparece numa frame real — e escolha o que combina com seu canal.</p>
+    </div>
+
+    <div class="demo-strip__grid">
+
+      <article class="demo-card v-viral reveal">
+        <div class="demo-card__preview">
+          <div class="demo-card__caption"><span class="demo-card__legenda">ISSO É HISTÓRICO</span></div>
+        </div>
+        <div class="demo-card__meta">
+          <div class="demo-card__name">Viral · word-by-word</div>
+          <div class="demo-card__use">Shorts · Reels · TikTok</div>
+        </div>
+      </article>
+
+      <article class="demo-card v-tiktok reveal">
+        <div class="demo-card__preview">
+          <div class="demo-card__caption"><span class="demo-card__legenda">FAZ ASSIM</span></div>
+        </div>
+        <div class="demo-card__meta">
+          <div class="demo-card__name">TikTok · centralizado</div>
+          <div class="demo-card__use">Vlog · Tutorial · Lifestyle</div>
+        </div>
+      </article>
+
+      <article class="demo-card v-reels reveal">
+        <div class="demo-card__preview">
+          <div class="demo-card__caption"><span class="demo-card__legenda">Acontece comigo</span></div>
+        </div>
+        <div class="demo-card__meta">
+          <div class="demo-card__name">Reels · glassmorphism</div>
+          <div class="demo-card__use">Instagram · Brand · Story</div>
+        </div>
+      </article>
+
+      <article class="demo-card v-classico reveal">
+        <div class="demo-card__preview">
+          <div class="demo-card__caption"><span class="demo-card__legenda">A entrevista começa</span></div>
+        </div>
+        <div class="demo-card__meta">
+          <div class="demo-card__name">Clássico · linha estática</div>
+          <div class="demo-card__use">Entrevista · Podcast · YouTube</div>
+        </div>
+      </article>
+
+      <article class="demo-card v-minimal reveal">
+        <div class="demo-card__preview">
+          <div class="demo-card__caption"><span class="demo-card__legenda">silêncio fala mais</span></div>
+        </div>
+        <div class="demo-card__meta">
+          <div class="demo-card__name">Minimal · sans serif</div>
+          <div class="demo-card__use">Cinema · Documentário · Mood</div>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ ANTES / DEPOIS ════════════════════════ -->
+<section class="ba-section">
+  <div class="container">
+    <div class="sec-head reveal" style="text-align:center;margin-left:auto;margin-right:auto;">
+      <span class="tag-mono"><span class="dot"></span>— ANTES vs DEPOIS</span>
+      <h2 class="section-title">O mesmo vídeo.<br>Com e <span class="italic-em">sem legenda.</span></h2>
+      <p class="lede" style="margin:24px auto 0">Sem legenda, sua audiência mute (que é 85% do feed do Instagram) passa direto. Com legenda animada estilo viral, ela para. Simples assim.</p>
+    </div>
+
+    <div class="ba-grid">
+      <article class="ba-card ba-card--antes reveal">
+        <span class="ba-card__label">Antes · sem legenda</span>
+        <div class="ba-card__frame"></div>
+        <div class="ba-card__bottom">
+          <span class="ba-card__title">Vídeo bruto direto do export</span>
+          <span class="ba-card__sub">Bom no áudio — mas a galera no mute passa direto.</span>
+        </div>
+      </article>
+
+      <article class="ba-card ba-card--depois reveal">
+        <span class="ba-card__label">Depois · com motion</span>
+        <div class="ba-card__frame">
+          <div class="ba-card__legenda">ISSO É HISTÓRICO</div>
+        </div>
+        <div class="ba-card__bottom">
+          <span class="ba-card__title">Mesmo vídeo · legenda estilo Viral</span>
+          <span class="ba-card__sub">Word-by-word animada · cor do canal · pronto pra postar.</span>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ COMPATIBILIDADE ════════════════════════ -->
+<section class="compat-strip" id="compat">
+  <div class="container">
+    <div class="compat-strip__inner reveal">
+      <h3 class="compat-strip__title">Compatível com o seu <em>Premiere.</em></h3>
+      <div class="compat-strip__list">
+        <span class="compat-chip">CC 2019</span>
+        <span class="compat-chip">CC 2020</span>
+        <span class="compat-chip">CC 2021</span>
+        <span class="compat-chip">CC 2022</span>
+        <span class="compat-chip">CC 2023</span>
+        <span class="compat-chip">CC 2024</span>
+        <span class="compat-chip">CC 2025</span>
+        <span class="compat-chip">CC 2026</span>
+        <span class="compat-chip compat-chip--os">Windows 10/11</span>
+        <span class="compat-chip compat-chip--os">macOS 12+ (Intel + Apple Silicon)</span>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ════════════════════════ EDITORIAL BANNER ════════════════════════ -->
 <section class="editorial-banner">
   <div class="container">
@@ -792,7 +1109,7 @@
   <div class="container">
     <div class="sec-head reveal" style="text-align:center;max-width:780px;margin:0 auto 60px">
       <span class="tag-mono"><span class="dot"></span>— FAMÍLIA</span>
-      <h2 class="section-title" style="margin-top:16px">Um ecossistema.<br>Vários <span class="italic-em">plugins.</span></h2>
+      <h2 class="section-title" style="margin-top:16px">Um ecossistema.<br>Três <span class="italic-em">plugins.</span></h2>
       <p style="color:rgba(255,255,255,.55);font-size:18px;line-height:1.5;margin-top:20px">Cada plugin foi feito pra resolver uma dor específica do editor. Funcionam separados, melhores juntos.</p>
     </div>
 
@@ -824,22 +1141,23 @@
         </div>
       </div>
 
-      <!-- Em breve: IA -->
-      <div class="familia-card reveal" style="display:block;background:#0a0a0a;border:1px dashed rgba(255,255,255,.1);border-radius:16px;padding:32px;position:relative;overflow:hidden;opacity:.6">
-        <div style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1.2px">EM BREVE</div>
+      <!-- Motion IA · ATIVO -->
+      <a href="/ia/" class="familia-card reveal" style="display:block;text-decoration:none;color:inherit;background:#0e0e0e;border:1px solid rgba(124,58,237,.4);border-radius:16px;padding:32px;transition:all .25s;position:relative;overflow:hidden">
+        <div style="position:absolute;top:16px;right:16px;background:rgba(124,58,237,.18);color:#c4b5fd;padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1.2px">NOVO</div>
         <div style="font-size:36px;margin-bottom:16px">🤖</div>
         <h3 style="font-size:22px;font-weight:800;letter-spacing:-.4px;margin-bottom:8px">Motion IA</h3>
-        <p style="color:rgba(255,255,255,.4);font-size:14px;line-height:1.5;margin-bottom:20px">Agente Claude que edita a timeline do Premiere por comandos em linguagem natural.</p>
-        <div style="font-size:12px;color:rgba(255,255,255,.3);font-weight:600;letter-spacing:.5px">Beta privado · Q4 2026</div>
-        <div style="margin-top:24px">
-          <a href="/account.html" style="color:rgba(255,255,255,.5);font-weight:700;font-size:13px;text-decoration:none">Entrar na lista de espera →</a>
+        <p style="color:rgba(255,255,255,.55);font-size:14px;line-height:1.5;margin-bottom:20px">13 features de IA dentro do Premiere. Whisper local + Gemini 2.5 + Casper · Auto-edit. Cortar pausas, capítulos, legenda word-by-word automática.</p>
+        <div style="font-size:12px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.5px">Premiere Pro · Plugin CEP nativo</div>
+        <div style="margin-top:24px;display:flex;justify-content:space-between;align-items:center">
+          <span style="color:#c4b5fd;font-weight:700;font-size:13px">Ver plugin →</span>
+          <span style="color:rgba(255,255,255,.3);font-size:12px">R$ 49,90/mês</span>
         </div>
-      </div>
+      </a>
 
     </div>
 
     <div style="text-align:center;margin-top:40px">
-      <p style="color:rgba(255,255,255,.45);font-size:14px">Plano <strong style="color:#fff">Bundle Completo</strong> dá acesso a Titles + Legendas por R$ 299/ano. Veja em <a href="#planos" style="color:#2563eb">planos</a>.</p>
+      <p style="color:rgba(255,255,255,.45);font-size:14px">Plano <strong style="color:#fff">Suite Total</strong> dá acesso aos três plugins por R$ 79,90/mês. Veja em <a href="#planos" style="color:#2563eb">planos</a>.</p>
     </div>
   </div>
 </section>
@@ -960,17 +1278,17 @@
   </div>
 </section>
 
-<!-- ════════════════════════ PRICING ════════════════════════ -->
+<!-- ════════════════════════ PRICING (3 tiers · Solo / Duo / Total) ════════════════════════ -->
 <section class="pricing" id="planos">
   <div class="container">
     <div class="sec-head reveal">
       <span class="tag-mono"><span class="dot"></span>— INVESTIMENTO</span>
-      <h2 class="section-title">Dois planos.<br>Zero <span class="italic-em">pegadinha.</span></h2>
-      <p class="lede" style="margin-top:20px">Leva só as Legendas. Ou leva a Suite inteira por mais R$ 10/mês.</p>
+      <h2 class="section-title">Três planos.<br>Zero <span class="italic-em">pegadinha.</span></h2>
+      <p class="lede" style="margin-top:20px">Leva só as Legendas. Ou combina com Titles. Ou pega tudo (com IA) por R$ 30/mês a mais.</p>
     </div>
     <div class="price-grid">
       <article class="price-card reveal">
-        <div class="price-tag">01 · Só Legendas</div>
+        <div class="price-tag">Solo · só Legendas</div>
         <h3>Motion Legendas</h3>
         <div class="price-amount"><span class="num">R$ 49,90</span><span class="suf">/mês</span></div>
         <p class="price-micro">ou R$ 249,00/ano · 2 meses grátis</p>
@@ -981,23 +1299,38 @@
           <li>2 dispositivos simultâneos</li>
           <li>Atualizações inclusas</li>
         </ul>
-        <button class="btn btn-dark btn-full" data-buy-suite="legendas_monthly">Assinar Legendas · R$ 49,90/mês <span class="arrow">→</span></button>
+        <button class="btn btn-dark btn-full" data-buy-suite="legendas_monthly">Assinar Legendas <span class="arrow">→</span></button>
         <div class="price-foot">7 dias trial · cancele em 1 clique</div>
       </article>
-      <article class="price-card popular reveal">
-        <span class="price-badge">Mais escolhido</span>
-        <div class="price-tag">02 · A Suite</div>
-        <h3>Motion Suite (Legendas + Titles)</h3>
+      <article class="price-card reveal">
+        <div class="price-tag">Suite Duo · 2 plugins</div>
+        <h3>Legendas <em style="font-style:normal;color:var(--fg-muted);font-weight:500">+</em> Titles</h3>
         <div class="price-amount"><span class="num">R$ 59,90</span><span class="suf">/mês</span></div>
         <p class="price-micro">ou R$ 399,90/ano · o segundo plugin sai por R$ 10/mês</p>
         <ul class="price-features">
           <li>549 títulos legendados <strong>+</strong> 7.906 motion graphics</li>
-          <li>Transcrição automática + SFX inclusos</li>
-          <li>Lower thirds, transições, reels, glitch e mais</li>
+          <li>10 estilos de motion + sound effects</li>
+          <li>Lower thirds, transições, reels, glitch</li>
           <li>2 dispositivos simultâneos</li>
           <li>Suporte prioritário</li>
         </ul>
-        <button class="btn btn-primary btn-full" data-buy-suite="suite_monthly">Quero a Suite · R$ 59,90/mês <span class="arrow">→</span></button>
+        <button class="btn btn-dark btn-full" data-buy-suite="suite_monthly">Quero a Suite Duo <span class="arrow">→</span></button>
+        <div class="price-foot">7 dias trial · cancele em 1 clique</div>
+      </article>
+      <article class="price-card popular reveal">
+        <span class="price-badge">⭐ Mais escolhido</span>
+        <div class="price-tag">Suite Total · 3 plugins</div>
+        <h3>Legendas <em style="font-style:normal;color:var(--fg-muted);font-weight:500">+</em> Titles <em style="font-style:normal;color:var(--fg-muted);font-weight:500">+</em> IA</h3>
+        <div class="price-amount"><span class="num">R$ 79,90</span><span class="suf">/mês</span></div>
+        <p class="price-micro">ou R$ 549,00/ano · adiciona 13 features de IA (Casper · Auto-edit)</p>
+        <ul class="price-features">
+          <li>Tudo da Suite Duo <strong>+</strong> Motion IA</li>
+          <li>Legenda IA word-by-word automática (5 estilos)</li>
+          <li>Cortar pausas + Caça-Trechos + Capítulos</li>
+          <li>Auto Crop face tracking · Biblioteca Stock</li>
+          <li>2 dispositivos · Suporte VIP</li>
+        </ul>
+        <button class="btn btn-primary btn-full" data-buy-suite="suite_total_monthly">Quero a Suite Total <span class="arrow">→</span></button>
         <div class="price-foot">7 dias trial · cancele em 1 clique</div>
       </article>
     </div>
@@ -1005,7 +1338,7 @@
     <div class="pricing-callout reveal" style="text-align:center">
       <p>
         <strong>Faz a conta:</strong>
-        Um plugin: R$ 49,90/mês. Os dois juntos: R$ 59,90/mês. O segundo plugin sai por <strong style="color:var(--accent)">R$ 10/mês</strong>. Quase de graça.
+        Solo R$ 49,90 · Duo R$ 59,90 · Total R$ 79,90. Cada plugin extra sai por <strong style="color:var(--accent)">R$ 10–20/mês</strong> dentro do combo. A conta favorece quem leva mais.
       </p>
     </div>
   </div>
@@ -1039,7 +1372,8 @@
       <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Posso usar em projetos comerciais?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Sim. Licença comercial inclusa nos 2 planos. Vídeo de cliente, YouTube monetizado, social ads, evento pago — tudo liberado.</p></div></div>
       <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Quantas máquinas posso ativar?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Anual: 2 simultâneas. Vitalício: 3 simultâneas. Troca de máquina em 1 clique no dashboard.</p></div></div>
       <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">E se eu cancelar a assinatura?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Mantém acesso até o fim do período pago. Sem multa. Sem ligação de retenção. Sem chantagem.</p></div></div>
-      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Como funciona o reembolso?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>14 dias a partir da compra. Não gostou, pede no suporte, devolve 100%. Sem formulário de 12 campos.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Como funciona a garantia de 7 dias?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p><strong>7 dias money-back incondicional</strong> a partir da compra. Não gostou, pede no suporte, devolve 100%. Sem formulário de 12 campos. O trial de 7 dias sem cartão já te dá tempo de testar antes — a garantia é segurança extra depois de assinar.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">O que ganho na Suite Total que não tem na Duo?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>A Suite Duo (R$ 59,90) inclui Legendas + Titles — você ainda transcreve manualmente. A Suite Total (R$ 79,90) adiciona <strong>Motion IA</strong>: 13 features incluindo <strong>Legendas IA word-by-word automática</strong> em 5 estilos (Viral, TikTok, Reels, Clássico, Minimal), além de cortar pausas, capítulos, auto crop. Se você faz reels/shorts em volume, paga sozinho.</p></div></div>
       <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Aceita Pix?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Aceita. Pix, cartão, boleto via Stripe Checkout. Vitalício no Pix sai com desconto adicional.</p></div></div>
       <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Funciona offline?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Sim. Depois de baixar os templates, funciona 7 dias offline antes de pedir reauth. Pra trabalhar em viagem ou em locação sem internet.</p></div></div>
       <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Vale comprar Titles + Legendas juntos?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Sim — pelo Bundle Anual de R$ 299, você paga R$ 49 a menos que comprando separado. 8.455 templates totais, mesma conta, mesma licença.</p></div></div>
@@ -1083,8 +1417,8 @@
     <div class="sec-head reveal" style="text-align:center; margin:0 auto 60px; max-width:780px;">
       <span class="tag-mono" style="color:#93c5fd"><span class="dot"></span>— FAZ A CONTA</span>
       <h2 class="section-title" style="color:var(--fg-on-dark); margin-top:16px;">Leva só as Legendas?<br>Ou <span class="italic-em">a edição inteira?</span></h2>
-      <p style="color:var(--fg-on-dark-muted); margin-top:24px; font-size:clamp(1rem,1.3vw,1.15rem); max-width:560px; margin-left:auto; margin-right:auto;">
-        O Motion Legendas sozinho já resolve suas legendas. Mas a Suite resolve legenda <strong>e</strong> título — e o segundo plugin sai por só R$ 10 a mais.
+      <p style="color:var(--fg-on-dark-muted); margin-top:24px; font-size:clamp(1rem,1.3vw,1.15rem); max-width:580px; margin-left:auto; margin-right:auto;">
+        O Motion Legendas sozinho já resolve suas legendas. Mas a Suite Total resolve legenda <strong>+</strong> título <strong>+</strong> IA — os outros dois plugins saem por R$ 15/mês cada dentro do combo.
       </p>
     </div>
 
@@ -1097,15 +1431,15 @@
       </div>
       <div style="background:linear-gradient(180deg, rgba(37,99,235,.18), rgba(37,99,235,.04)); border:2px solid var(--accent); border-radius:18px; padding:32px; text-align:left; position:relative;">
         <div style="position:absolute; top:-14px; left:32px; background:var(--accent); color:white; padding:6px 14px; border-radius:100px; font-family:'JetBrains Mono',monospace; font-size:.65rem; letter-spacing:.2em; text-transform:uppercase; font-weight:500;">Mais escolhido</div>
-        <div style="font-family:'JetBrains Mono',monospace; font-size:.7rem; letter-spacing:.2em; text-transform:uppercase; color:#93c5fd; margin-bottom:14px;">A SUITE COMPLETA</div>
-        <div style="font-size:clamp(2rem,3.5vw,2.8rem); font-weight:800; letter-spacing:-.04em; color:#fff;">R$ 59,90<span style="font-size:.45em; color:rgba(255,255,255,.55); font-weight:500"> /mês</span></div>
-        <p style="color:rgba(255,255,255,.7); font-size:14px; margin-top:14px; max-width:none;">Legendas <strong>+</strong> Titles. A edição inteira.</p>
-        <button class="btn btn-primary btn-full" data-buy-suite="suite_monthly" style="margin-top:24px;">Quero a Suite (+R$10) <span class="arrow">→</span></button>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:.7rem; letter-spacing:.2em; text-transform:uppercase; color:#93c5fd; margin-bottom:14px;">A SUITE TOTAL · 3 PLUGINS</div>
+        <div style="font-size:clamp(2rem,3.5vw,2.8rem); font-weight:800; letter-spacing:-.04em; color:#fff;">R$ 79,90<span style="font-size:.45em; color:rgba(255,255,255,.55); font-weight:500"> /mês</span></div>
+        <p style="color:rgba(255,255,255,.7); font-size:14px; margin-top:14px; max-width:none;">Legendas <strong>+</strong> Titles <strong>+</strong> IA. A edição inteira.</p>
+        <button class="btn btn-primary btn-full" data-buy-suite="suite_total_monthly" style="margin-top:24px;">Quero a Suite Total (+R$30) <span class="arrow">→</span></button>
       </div>
     </div>
 
     <p class="reveal" style="font-family:'JetBrains Mono',monospace; font-size:.75rem; letter-spacing:.18em; text-transform:uppercase; color:#93c5fd; margin-top:50px; text-align:center;">
-      Faz a conta: o segundo plugin sai por <strong style="color:#fff">R$ 10/mês</strong>. Quase de graça.
+      Faz a conta: os outros 2 plugins saem por <strong style="color:#fff">R$ 15/mês cada</strong> dentro do combo.
     </p>
   </div>
 </section>
@@ -1471,13 +1805,16 @@
       else el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
-    // ─── CHECKOUT MOTION SUITE (legendas_monthly / legendas_yearly / suite_monthly / suite_yearly) ───
+    // ─── CHECKOUT MOTION SUITE (legendas/titles/ia/suite/suite_total × monthly/yearly) ───
     document.addEventListener('click', async e => {
       const btn = e.target.closest('[data-buy-suite]');
       if (!btn) return;
       e.preventDefault();
       const plan = btn.dataset.buySuite;
-      const [product, freq] = plan.split('_');
+      // split no ÚLTIMO "_" pra suportar product "suite_total"
+      const lastUnderscore = plan.lastIndexOf('_');
+      const product = plan.slice(0, lastUnderscore);
+      const freq    = plan.slice(lastUnderscore + 1);
       const orig = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span> Indo pra Stripe...';
