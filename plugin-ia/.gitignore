@@ -1,0 +1,9 @@
+# Whisper models — baixados em runtime (até 150MB cada)
+models/*.bin
+models/*.bin.part
+
+# Logs locais
+.debug
+
+# Cache CEP local
+__pycache__/

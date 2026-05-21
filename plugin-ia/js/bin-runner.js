@@ -100,24 +100,53 @@
             }
             var stdout = ""; var stderr = "";
             var child;
+            var timedOut = false;
+            var killedByCaller = false;
+            var done = false;
+            var timeoutHandle = null;
+
+            function safeReject(err) {
+                if (done) return; done = true;
+                if (timeoutHandle) clearTimeout(timeoutHandle);
+                reject(err);
+            }
+            function safeResolve(val) {
+                if (done) return; done = true;
+                if (timeoutHandle) clearTimeout(timeoutHandle);
+                resolve(val);
+            }
+
             try {
                 child = cp.spawn(bp, args || [], {
                     cwd: opts.cwd || binDir(),
                     env: Object.assign({}, process.env, opts.env || {}),
                     windowsHide: true
                 });
-            } catch (e) { return reject(e); }
+            } catch (e) { return safeReject(e); }
+
             child.stdout && child.stdout.on("data", function (d) { stdout += d.toString(); if (opts.onStdout) opts.onStdout(d.toString()); });
             child.stderr && child.stderr.on("data", function (d) { stderr += d.toString(); if (opts.onStderr) opts.onStderr(d.toString()); });
-            child.on("error", reject);
+            child.on("error", safeReject);
             child.on("close", function (code) {
-                if (code === 0 || opts.allowNonZero) resolve({ stdout: stdout, stderr: stderr, code: code });
-                else reject(new Error(name + " exit " + code + ": " + stderr.slice(0, 500)));
+                if (timedOut) {
+                    return safeReject(new Error(name + " timeout após " + (opts.timeoutMs || 0) + "ms (matou processo)"));
+                }
+                // 3221225477 = 0xC0000005 ACCESS_VIOLATION (crash do binário, não erro de uso)
+                if (code === 3221225477 || code === -1073741819) {
+                    return safeReject(new Error(name + " CRASH (access violation 0xC0000005) — provavelmente input inválido ou flag incompatível. stderr: " + stderr.slice(0, 300)));
+                }
+                if (code === 0 || opts.allowNonZero) safeResolve({ stdout: stdout, stderr: stderr, code: code });
+                else safeReject(new Error(name + " exit " + code + ": " + stderr.slice(0, 500)));
             });
-            // timeout opcional
-            if (opts.timeoutMs) {
-                setTimeout(function () { try { child.kill(); } catch (_) {} }, opts.timeoutMs);
-            }
+
+            // timeout obrigatório por padrão (evita travar PC se binário pendurar)
+            // default: 5 min. Caller pode setar timeoutMs explicitamente.
+            var tMs = (typeof opts.timeoutMs === "number" && opts.timeoutMs > 0) ? opts.timeoutMs : 5 * 60 * 1000;
+            timeoutHandle = setTimeout(function () {
+                timedOut = true;
+                try { child.kill("SIGKILL"); } catch (_) {}
+                // resolve via close handler que vai detectar timedOut
+            }, tMs);
         });
     }
 
@@ -134,58 +163,149 @@
         });
     }
 
-    // ── DOWNLOAD MODEL (Whisper.cpp da Hugging Face) ────────────────
+    // ── DOWNLOAD MODEL (Whisper.cpp · multi-mirror com fallback) ────
+    // Cada modelo tem N mirrors. Tenta um por vez até funcionar.
     var MODEL_URLS = {
-        "ggml-tiny.bin":           "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin",
-        "ggml-base.bin":           "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin",
-        "ggml-small.bin":          "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin",
-        "ggml-medium.bin":         "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin",
-        "ggml-large-v3-turbo.bin": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin"
+        "ggml-tiny.bin": [
+            "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin",
+            "https://cdn.kendyproducoes.com.br/models/ggml-tiny.bin"
+        ],
+        "ggml-base.bin": [
+            "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin",
+            "https://cdn.kendyproducoes.com.br/models/ggml-base.bin"
+        ],
+        "ggml-small.bin": [
+            "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin",
+            "https://cdn.kendyproducoes.com.br/models/ggml-small.bin"
+        ],
+        "ggml-medium.bin": [
+            "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin",
+            "https://cdn.kendyproducoes.com.br/models/ggml-medium.bin"
+        ],
+        "ggml-large-v3-turbo.bin": [
+            "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin",
+            "https://cdn.kendyproducoes.com.br/models/ggml-large-v3-turbo.bin"
+        ]
     };
 
     function modelExists(name) {
-        try { return fs.existsSync(modelPath(name)); } catch (e) { return false; }
+        try {
+            if (!fs.existsSync(modelPath(name))) return false;
+            // Sanity check: arquivo precisa ter > 1MB (modelo .bin nunca é pequeno)
+            var st = fs.statSync(modelPath(name));
+            return st.size > 1024 * 1024;
+        } catch (e) { return false; }
     }
 
-    function downloadModel(name, onProgress) {
+    function downloadFromUrl(url, tmpDst, dst, onProgress) {
         return new Promise(function (resolve, reject) {
-            var url = MODEL_URLS[name];
-            if (!url) return reject(new Error("model_unknown: " + name));
-            var dst = modelPath(name);
-            try { fs.mkdirSync(modelsDir(), { recursive: true }); } catch (_) {}
-            if (fs.existsSync(dst)) { resolve({ path: dst, alreadyExists: true }); return; }
+            // limpa .part antigo (evita ENOENT no rename + lixo de tentativas anteriores)
+            try { if (fs.existsSync(tmpDst)) fs.unlinkSync(tmpDst); } catch (_) {}
 
-            // Follow redirects (HF redireciona)
-            function doRequest(reqUrl) {
-                var req = https.get(reqUrl, function (res) {
-                    if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-                        res.resume();
-                        return doRequest(res.headers.location);
-                    }
-                    if (res.statusCode !== 200) {
-                        return reject(new Error("download_failed_" + res.statusCode));
-                    }
-                    var total = parseInt(res.headers["content-length"] || "0", 10);
-                    var downloaded = 0;
-                    var tmpDst = dst + ".part";
-                    var out = fs.createWriteStream(tmpDst);
-                    res.pipe(out);
-                    res.on("data", function (chunk) {
-                        downloaded += chunk.length;
-                        if (onProgress && total) onProgress(downloaded / total, downloaded, total);
-                    });
-                    out.on("error", reject);
-                    out.on("finish", function () {
-                        out.close(function () {
-                            try { fs.renameSync(tmpDst, dst); } catch (e) { return reject(e); }
-                            resolve({ path: dst, downloaded: downloaded });
+            var settled = false;
+            function safeReject(err) {
+                if (settled) return; settled = true;
+                try { if (fs.existsSync(tmpDst)) fs.unlinkSync(tmpDst); } catch (_) {}
+                reject(err);
+            }
+            function safeResolve(val) {
+                if (settled) return; settled = true;
+                resolve(val);
+            }
+
+            function doRequest(reqUrl, redirectCount) {
+                redirectCount = redirectCount || 0;
+                if (redirectCount > 5) return safeReject(new Error("too_many_redirects"));
+
+                var req;
+                try {
+                    req = https.get(reqUrl, { timeout: 20000 }, function (res) {
+                        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                            res.resume();
+                            return doRequest(res.headers.location, redirectCount + 1);
+                        }
+                        if (res.statusCode !== 200) {
+                            return safeReject(new Error("download_failed_" + res.statusCode + " from " + reqUrl));
+                        }
+                        var total = parseInt(res.headers["content-length"] || "0", 10);
+                        var downloaded = 0;
+                        var out = fs.createWriteStream(tmpDst);
+                        var stallTimer = null;
+                        function resetStallTimer() {
+                            if (stallTimer) clearTimeout(stallTimer);
+                            // se não vier dado por 30s, aborta
+                            stallTimer = setTimeout(function () {
+                                try { req.destroy(); } catch (_) {}
+                                try { out.destroy(); } catch (_) {}
+                                safeReject(new Error("download_stalled (no data 30s)"));
+                            }, 30000);
+                        }
+                        resetStallTimer();
+                        res.pipe(out);
+                        res.on("data", function (chunk) {
+                            downloaded += chunk.length;
+                            resetStallTimer();
+                            if (onProgress && total) onProgress(downloaded / total, downloaded, total);
+                        });
+                        out.on("error", function (e) {
+                            if (stallTimer) clearTimeout(stallTimer);
+                            safeReject(e);
+                        });
+                        res.on("error", function (e) {
+                            if (stallTimer) clearTimeout(stallTimer);
+                            safeReject(e);
+                        });
+                        out.on("finish", function () {
+                            if (stallTimer) clearTimeout(stallTimer);
+                            out.close(function () {
+                                try {
+                                    if (!fs.existsSync(tmpDst)) {
+                                        return safeReject(new Error("part_disappeared"));
+                                    }
+                                    var sz = fs.statSync(tmpDst).size;
+                                    if (sz < 1024 * 1024) {
+                                        try { fs.unlinkSync(tmpDst); } catch (_) {}
+                                        return safeReject(new Error("downloaded_too_small_" + sz));
+                                    }
+                                    fs.renameSync(tmpDst, dst);
+                                    safeResolve({ path: dst, downloaded: downloaded });
+                                } catch (e) { safeReject(e); }
+                            });
                         });
                     });
-                });
-                req.on("error", reject);
+                    req.on("timeout", function () {
+                        try { req.destroy(); } catch (_) {}
+                        safeReject(new Error("connect_timeout_20s"));
+                    });
+                    req.on("error", function (e) { safeReject(new Error("net_" + (e.code || "err") + ": " + e.message)); });
+                } catch (e) { safeReject(e); }
             }
             doRequest(url);
         });
+    }
+
+    function downloadModel(name, onProgress) {
+        var urls = MODEL_URLS[name];
+        if (!urls) return Promise.reject(new Error("model_unknown: " + name));
+        if (!Array.isArray(urls)) urls = [urls];
+
+        var dst = modelPath(name);
+        var tmpDst = dst + ".part";
+        try { fs.mkdirSync(modelsDir(), { recursive: true }); } catch (_) {}
+        if (modelExists(name)) return Promise.resolve({ path: dst, alreadyExists: true });
+
+        // tenta cada mirror em sequência
+        function tryNext(idx, errors) {
+            if (idx >= urls.length) {
+                return Promise.reject(new Error("all_mirrors_failed: " + errors.join(" | ")));
+            }
+            if (onProgress) onProgress(0, 0, 0, { mirror: idx + 1, total_mirrors: urls.length, url: urls[idx] });
+            return downloadFromUrl(urls[idx], tmpDst, dst, onProgress).catch(function (e) {
+                errors.push("[" + urls[idx] + "] " + e.message);
+                return tryNext(idx + 1, errors);
+            });
+        }
+        return tryNext(0, []);
     }
 
     global.BinRunner = {

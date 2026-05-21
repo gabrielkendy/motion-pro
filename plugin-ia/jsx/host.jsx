@@ -610,16 +610,53 @@ $.global.MotionProIA = (function () {
         try {
             var seq = getSeq();
             if (!seq) return err("Sem sequência ativa");
-            // Premiere expõe app.project.activeSequence.clone() em versões recentes
             var clone = null;
             try { if (seq.clone) clone = seq.clone(); } catch (eC) {}
-            if (!clone) return err("clone_not_supported (use ensureQE + QE clone)");
-            if (newName && clone.name !== undefined) {
-                try { clone.name = newName; } catch (eN) {}
+            if (!clone) {
+                // Fallback: snapshot do ID antes/depois (clone pode ter sido criado mas não retornado)
+                try {
+                    var idsBefore = {};
+                    if (app.project.sequences) {
+                        for (var ib = 0; ib < app.project.sequences.numSequences; ib++) {
+                            var sb = app.project.sequences[ib];
+                            if (sb && sb.sequenceID) idsBefore[sb.sequenceID] = true;
+                        }
+                    }
+                    // Tenta seq.clone() de novo, ignorando retorno
+                    try { seq.clone(); } catch (_) {}
+                    // Procura sequencia nova
+                    if (app.project.sequences) {
+                        for (var ic = 0; ic < app.project.sequences.numSequences; ic++) {
+                            var sc = app.project.sequences[ic];
+                            if (sc && sc.sequenceID && !idsBefore[sc.sequenceID]) {
+                                clone = sc;
+                                break;
+                            }
+                        }
+                    }
+                } catch (eS) {}
             }
-            // Abre a nova
-            try { app.project.openSequence(clone.sequenceID); } catch (eO) {}
-            return ok({ name: clone.name, id: clone.sequenceID });
+            if (!clone) return err("clone_failed — Premiere não suporta seq.clone() nesta versão");
+
+            // Resolve nome (precisa LER pra confirmar antes de retornar — algumas versões setam async)
+            var resolvedName = "";
+            try { resolvedName = clone.name || ""; } catch (_) {}
+
+            if (newName && clone.name !== undefined) {
+                try { clone.name = newName; resolvedName = newName; } catch (eN) {}
+            }
+            // Re-lê o nome se vazio (fallback: nome derivado)
+            if (!resolvedName) {
+                try { resolvedName = clone.name; } catch (_) {}
+                if (!resolvedName) resolvedName = (seq.name || "Sequence") + " (cópia)";
+            }
+            var resolvedId = null;
+            try { resolvedId = clone.sequenceID || null; } catch (_) {}
+
+            // Abre a nova (best-effort)
+            try { if (resolvedId) app.project.openSequence(resolvedId); } catch (eO) {}
+
+            return ok({ name: resolvedName, id: resolvedId });
         } catch (e) { return err(e.message); }
     }
 
@@ -827,45 +864,87 @@ $.global.MotionProIA = (function () {
     }
 
     // ─── TRANSITIONS (Transições IA) ─────────────────────────────────
-    // Aplica Cross Dissolve em todos os boundaries de clip nas video tracks
+    // Aplica transição em todos os boundaries de clip nas video tracks
+    // Premiere QE API varia muito por versão — tenta múltiplas assinaturas.
     function applyTransitionsAllCuts(durationSec, transitionName) {
         try {
             var seq = getSeq();
-            if (!seq) return err("Sem sequência");
-            if (!ensureQE()) return err("qe_dom_required_for_transitions");
+            if (!seq) return err("Sem sequência ativa — abra uma sequência primeiro");
+            if (!ensureQE()) return err("qe_dom_required — Premiere QE não está disponível. Reabra o Premiere ou ative QE.");
             var qeSeq = qe.project.getActiveSequence();
-            if (!qeSeq) return err("qe_no_active_sequence");
+            if (!qeSeq) return err("qe_no_active_sequence — selecione uma sequência ativa");
 
             transitionName = transitionName || "Cross Dissolve";
             durationSec = Number(durationSec || 1);
-            // QE addTransition: track.addTransition(name, ?alignment, ?duration, ?atTime)
+
+            // Map de display name → variantes que diferentes versões de Premiere aceitam
+            var NAME_MAP = {};
+            NAME_MAP["Cross Dissolve"]      = ["Cross Dissolve", "AE.ADBE Cross Dissolve New"];
+            NAME_MAP["Dip to Black"]        = ["Dip to Black", "AE.ADBE Dip to Black"];
+            NAME_MAP["Dip to White"]        = ["Dip to White", "AE.ADBE Dip to White"];
+            NAME_MAP["Additive Dissolve"]   = ["Additive Dissolve", "AE.ADBE Additive Dissolve"];
+            NAME_MAP["Film Dissolve"]       = ["Film Dissolve", "AE.ADBE Film Dissolve"];
+            NAME_MAP["Push"]                = ["Push", "AE.ADBE Push"];
+            NAME_MAP["Slide"]               = ["Slide", "AE.ADBE Slide"];
+            NAME_MAP["Wipe"]                = ["Wipe", "AE.ADBE Wipe"];
+            NAME_MAP["Iris Cross"]          = ["Iris Cross", "AE.ADBE Iris Cross"];
+            NAME_MAP["Split"]               = ["Split", "AE.ADBE Split"];
+            NAME_MAP["Zoom Trails"]         = ["Zoom Trails", "AE.ADBE Zoom Trails"];
+            NAME_MAP["Morph Cut"]           = ["Morph Cut", "AE.ADBE Morph Cut"];
+
+            var nameVariants = NAME_MAP[transitionName] || [transitionName];
+            var durStr = _secToTimeStr(durationSec);
+
             var applied = 0, failed = 0;
+            var lastErr = "";
+            var firstSuccessName = null;
+            var boundariesFound = 0;
 
             for (var t = 0; t < qeSeq.numVideoTracks; t++) {
                 var qeTrack;
                 try { qeTrack = qeSeq.getVideoTrackAt(t); } catch (eT) { continue; }
                 if (!qeTrack || qeTrack.numItems == null) continue;
-                // Aplica entre cada item adjacente
+
                 for (var i = 0; i < qeTrack.numItems - 1; i++) {
                     try {
                         var clipA = qeTrack.getItemAt(i);
                         if (!clipA || clipA.type !== "Clip") continue;
-                        // addTransition(transitionName, alignmentCenter=true, durationStr, atTimecode)
-                        // Tenta API mais comum:
-                        try {
-                            clipA.addTransition(transitionName, false, _secToTimeStr(durationSec), clipA.end);
-                            applied++;
-                        } catch (eA) {
-                            // Fallback: addVideoTransition
+                        boundariesFound++;
+
+                        var done = false;
+                        // tenta cada variante de nome
+                        for (var v = 0; v < nameVariants.length && !done; v++) {
+                            var vName = nameVariants[v];
+
+                            // Assinatura 1: clipA.addTransition(name, alignCenter, duration, atTime)
                             try {
-                                qeTrack.addVideoTransition(transitionName, _secToTimeStr(durationSec), clipA.end, true);
-                                applied++;
-                            } catch (eB) { failed++; }
+                                clipA.addTransition(vName, false, durStr, clipA.end);
+                                applied++; done = true;
+                                if (!firstSuccessName) firstSuccessName = vName;
+                                continue;
+                            } catch (eA) { lastErr = "clip.addTransition[" + vName + "]: " + eA.message; }
+
+                            // Assinatura 2: qeTrack.addVideoTransition(name, duration, atTime, alignCenter)
+                            try {
+                                qeTrack.addVideoTransition(vName, durStr, clipA.end, true);
+                                applied++; done = true;
+                                if (!firstSuccessName) firstSuccessName = vName;
+                                continue;
+                            } catch (eB) { lastErr = "track.addVideoTransition[" + vName + "]: " + eB.message; }
                         }
-                    } catch (eC) { failed++; }
+                        if (!done) failed++;
+                    } catch (eC) { failed++; lastErr = "boundary_iter: " + eC.message; }
                 }
             }
-            return ok({ applied: applied, failed: failed, transition: transitionName, duration_sec: durationSec });
+            return ok({
+                applied: applied,
+                failed: failed,
+                boundaries_found: boundariesFound,
+                transition: transitionName,
+                resolved_name: firstSuccessName,
+                duration_sec: durationSec,
+                last_error: failed > 0 ? lastErr : null
+            });
         } catch (e) { return err(e.message); }
     }
     function _secToTimeStr(sec) {
@@ -981,23 +1060,74 @@ $.global.MotionProIA = (function () {
     }
 
     // ─── MULTICAM ────────────────────────────────────────────────────
+    // Tenta múltiplas estratégias até alguma funcionar.
+    // Premiere muda essa API quase em toda versão — então robustez > elegância.
     function createMulticamFromSelected() {
         try {
-            // Premiere: app.project.createNewSequenceFromClips / createMulticamSequence
             if (!app.project) return err("Sem project");
             var sel = (app.project.getSelection && app.project.getSelection()) || [];
-            if (!sel.length) return err("Selecione 2+ clips no Project Panel");
-            // app.project.createNewSequenceFromClips não existe oficialmente
-            // Workaround: cria nova sequência + insere clips em tracks separadas
+            if (!sel || !sel.length) return err("Selecione 2+ clips no Project Panel antes de executar");
+            if (sel.length < 2) return err("Precisa de pelo menos 2 clips selecionados (você tem " + sel.length + ")");
+
+            var name = "MultiCam_" + Date.now();
+            var attempts = [];
+
+            // Estratégia 1: API nativa createMulticamSequence (Premiere 23+)
+            if (app.project.createMulticamSequence) {
+                try {
+                    var multi = app.project.createMulticamSequence(name, sel, 3); // 3 = audio sync
+                    if (multi) return ok({ sequence: name, clips: sel.length, method: "native_audio_sync" });
+                    attempts.push("createMulticamSequence: retornou null");
+                } catch (eM) { attempts.push("createMulticamSequence: " + eM.message); }
+            } else {
+                attempts.push("createMulticamSequence: API indisponível");
+            }
+
+            // Estratégia 2: createNewSequenceFromClips (Premiere 22+)
+            if (app.project.createNewSequenceFromClips) {
+                try {
+                    var seqFromClips = app.project.createNewSequenceFromClips(name, sel);
+                    if (seqFromClips) return ok({ sequence: name, clips: sel.length, method: "from_clips" });
+                    attempts.push("createNewSequenceFromClips: retornou null");
+                } catch (eC) { attempts.push("createNewSequenceFromClips: " + eC.message); }
+            } else {
+                attempts.push("createNewSequenceFromClips: API indisponível");
+            }
+
+            // Estratégia 3: createNewSequence sem preset + insertClip em cada track
             try {
-                var seq = app.project.createNewSequence("MultiCam_" + Date.now(), "MultiCam");
-                for (var i = 0; i < sel.length; i++) {
-                    if (seq.videoTracks && seq.videoTracks[i] && sel[i] && sel[i].canProxy) {
-                        seq.videoTracks[i].insertClip(sel[i], 0);
+                // createNewSequence(name) sem preset usa default do projeto atual
+                var seqManual = null;
+                try { seqManual = app.project.createNewSequence(name); } catch (e1) {
+                    try { seqManual = app.project.createNewSequence(name, ""); } catch (e2) {
+                        attempts.push("createNewSequence: " + e2.message);
                     }
                 }
-                return ok({ sequence: seq.name, clips: sel.length });
-            } catch (eS) { return err("multicam_create_fail: " + eS.message); }
+                if (seqManual && seqManual.videoTracks) {
+                    var inserted = 0;
+                    for (var i = 0; i < sel.length && i < seqManual.videoTracks.numTracks; i++) {
+                        try {
+                            var track = seqManual.videoTracks[i];
+                            if (track && track.insertClip && sel[i]) {
+                                track.insertClip(sel[i], 0);
+                                inserted++;
+                            }
+                        } catch (eT) { attempts.push("track[" + i + "].insertClip: " + eT.message); }
+                    }
+                    if (inserted > 0) {
+                        return ok({
+                            sequence: name,
+                            clips: inserted,
+                            method: "manual_tracks",
+                            note: inserted < sel.length ? ("Apenas " + inserted + "/" + sel.length + " clips inseridos — tracks insuficientes") : null
+                        });
+                    }
+                    attempts.push("createNewSequence: criada mas nenhum clip inserido");
+                }
+            } catch (eS) { attempts.push("manual_tracks: " + eS.message); }
+
+            // Todas falharam — retorna detalhes do que tentou
+            return err("multicam_failed | tentativas: " + attempts.join(" | ") + " | sugestão: selecione clips no Project Panel → click direito → 'Create Multi-Camera Source Sequence'");
         } catch (e) { return err(e.message); }
     }
 

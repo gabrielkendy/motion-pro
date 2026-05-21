@@ -39,13 +39,9 @@
             minTier: "pro", tech: "gemini",
             prompt: "Analisa o vídeo e cria marcadores de capítulo no Premiere. Cada capítulo deve ter título curto e timestamp de início"
         },
-        {
-            id: "legendas", view: "feat-legendas",
-            icon: "💬", title: "Legendas IA",
-            sub: "Integra com Motion Legendas pra captionar word-level",
-            minTier: "basic", tech: "whisper-local + motion-legendas",
-            prompt: "Transcreve o clip selecionado word-level e gera legenda animada via Motion Legendas"
-        },
+        // [legendas] feature removida do menu — redundante com plugin Motion Legendas
+        // (61 mogrts + Estilo Global v4.25.1). Mantida no SKILLS map pro Agente IA
+        // usar via "tools", mas não aparece no sidebar/grid.
         {
             id: "copiar-seq", view: "feat-copiar-seq",
             icon: "✂️", title: "Copiar Sequência",
@@ -91,9 +87,10 @@
         {
             id: "stock", view: "feat-stock",
             icon: "📚", title: "Biblioteca Stock",
-            sub: "Pexels + Pixabay + Giphy direto no plugin · import 1 click",
+            sub: "Pexels + Pixabay + Giphy · em breve",
             minTier: "basic", tech: "api",
-            prompt: null // tem UI própria (busca)
+            prompt: null,
+            disabled: true, disabled_reason: "Em desenvolvimento — disponível na próxima atualização"
         },
         {
             id: "casper", view: "feat-casper",
@@ -143,15 +140,17 @@
         var tier = userTier();
         var html = FEATURES.map(function (f) {
             var unlocked = tierAtLeast(tier, f.minTier);
-            var cls = "feat-card" + (unlocked ? "" : " locked");
-            var badge = unlocked
-                ? ""
-                : '<span class="feat-card__lock">🔒</span>';
+            var isDisabled = f.disabled === true;
+            var cls = "feat-card" + (unlocked && !isDisabled ? "" : " locked");
+            var badge = "";
+            if (isDisabled) badge = '<span class="feat-card__lock" title="' + (f.disabled_reason || "Em breve") + '">⏳</span>';
+            else if (!unlocked) badge = '<span class="feat-card__lock">🔒</span>';
+            var subText = isDisabled && f.disabled_reason ? f.disabled_reason : f.sub;
             return ''
-                + '<div class="' + cls + '" data-feature="' + f.id + '">'
+                + '<div class="' + cls + '" data-feature="' + f.id + '"' + (isDisabled ? ' data-disabled="1"' : '') + '>'
                 +   '<div class="feat-card__ico">' + f.icon + '</div>'
                 +   '<div class="feat-card__title">' + f.title + '</div>'
-                +   '<div class="feat-card__sub">' + f.sub + '</div>'
+                +   '<div class="feat-card__sub">' + subText + '</div>'
                 +   badge
                 + '</div>';
         }).join("");
@@ -159,6 +158,10 @@
         // bind clicks
         Array.prototype.forEach.call(el.querySelectorAll("[data-feature]"), function (card) {
             card.addEventListener("click", function () {
+                if (card.dataset.disabled === "1") {
+                    global.MIA && global.MIA.toast && global.MIA.toast("⏳ " + (card.querySelector(".feat-card__sub").textContent || "Em breve"), "warn", 3000);
+                    return;
+                }
                 var fid = card.dataset.feature;
                 openFeature(fid);
             });

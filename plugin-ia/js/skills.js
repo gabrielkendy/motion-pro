@@ -600,29 +600,67 @@
         if (!global.BinRunner || !global.BinRunner.exists("yt-dlp")) {
             throw new Error("yt-dlp.exe não instalado. Rode tools/download-bin-motion-ia.ps1");
         }
-        if (!opts.url) throw new Error("url_required");
+        if (!opts.url) throw new Error("URL obrigatória");
+        if (!/^https?:\/\//i.test(opts.url)) throw new Error("URL inválida (precisa começar com http:// ou https://)");
 
         var outDir = opts.outDir || path.join(os.homedir(), "Downloads", "MotionIA");
         try { fs.mkdirSync(outDir, { recursive: true }); } catch (_) {}
         var outTemplate = path.join(outDir, "%(title)s.%(ext)s");
 
         var quality = opts.quality || "best";
-        var args = [opts.url, "-o", outTemplate];
+        var args = [
+            opts.url,
+            "-o", outTemplate,
+            "--no-playlist",                 // se for playlist, baixa só o vídeo
+            "--retries", "3",                // 3 retries por fragmento (não infinito)
+            "--socket-timeout", "20",        // 20s socket timeout
+            "--no-continue",                 // não continua download parcial corrompido
+            "--no-part",                     // sem .part (escreve direto)
+            "--max-filesize", "2G",          // safety: nada acima de 2GB
+            "--no-warnings"
+        ];
 
         if (quality === "audio") args.push("-x", "--audio-format", "mp3");
         else args.push("-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best");
 
-        emit(cb, "onProgress", { msg: "Baixando via yt-dlp…" });
-        var result = await global.BinRunner.runStreaming("yt-dlp", args, {
+        emit(cb, "onProgress", { msg: "Baixando via yt-dlp (timeout 10min)…" });
+
+        // Detecta progresso por inatividade: se nada acontece em 60s, aborta
+        var lastProgressTs = Date.now();
+        var stallCheck = null;
+
+        var resultPromise = global.BinRunner.runStreaming("yt-dlp", args, {
             onStdout: function (chunk) {
+                lastProgressTs = Date.now();
                 var m = chunk.match(/\[download\]\s+([\d.]+)%/);
                 if (m) emit(cb, "onProgress", { percent: parseFloat(m[1]) / 100, msg: "Baixando: " + m[1] + "%" });
             },
-            timeoutMs: 30 * 60 * 1000
+            onStderr: function (chunk) {
+                lastProgressTs = Date.now();
+                // yt-dlp usa stderr pra mensagens informativas também
+            },
+            timeoutMs: 10 * 60 * 1000  // hard timeout 10 min
         });
 
+        // Stall detector: se nada acontecer por 90s, considera travado
+        var stallPromise = new Promise(function (_, rej) {
+            stallCheck = setInterval(function () {
+                if (Date.now() - lastProgressTs > 90 * 1000) {
+                    clearInterval(stallCheck);
+                    rej(new Error("Download travado (nenhum progresso em 90s) — verifique URL ou conexão"));
+                }
+            }, 15 * 1000);
+        });
+
+        var result;
+        try {
+            result = await Promise.race([resultPromise, stallPromise]);
+        } finally {
+            if (stallCheck) clearInterval(stallCheck);
+        }
+
         // Detecta o arquivo baixado no output
-        var match = result.stdout.match(/\[download\]\s+Destination:\s+(.+)/);
+        var match = (result.stdout || "").match(/\[download\]\s+Destination:\s+(.+)/);
         var filePath = match ? match[1].trim() : null;
 
         return { ok: true, summary: "Vídeo baixado em " + outDir, out_dir: outDir, file_path: filePath };
@@ -635,7 +673,24 @@
         if (!global.BinRunner || !global.BinRunner.exists("ffmpeg")) {
             throw new Error("ffmpeg.exe não instalado");
         }
+        if (!global.BinRunner.exists("ffprobe")) {
+            throw new Error("ffprobe.exe não instalado (precisa pra detectar resolução do vídeo)");
+        }
         var videoPath = await getSelectedClipPath();
+        if (!videoPath || !fs.existsSync(videoPath)) {
+            throw new Error("Selecione um vídeo válido no Premiere antes de executar");
+        }
+
+        // Safety: rejeita arquivos > 3GB (evita travar PC com 4K longo)
+        try {
+            var st = fs.statSync(videoPath);
+            if (st.size > 3 * 1024 * 1024 * 1024) {
+                throw new Error("Vídeo muito grande (" + Math.round(st.size/1024/1024/1024) + "GB · máx 3GB). Use proxy antes.");
+            }
+        } catch (eStat) {
+            if (eStat.message.indexOf("muito grande") >= 0) throw eStat;
+        }
+
         var aspect = opts.aspect || "9:16";
         var tracking = opts.tracking !== false;
         var outDir = path.join(os.homedir(), "Documents", "MotionIA-AutoCrop");
@@ -650,79 +705,127 @@
         };
         var target = aspectMap[aspect] || aspectMap["9:16"];
 
-        var cropX = "(iw-out_w)/2";
-        var cropY = "(ih-out_h)/2";
+        // ── STEP 1: ffprobe pra pegar dimensões reais do vídeo ──────
+        emit(cb, "onProgress", { msg: "Lendo dimensões via ffprobe…" });
+        var probe;
+        try {
+            probe = await global.BinRunner.run("ffprobe", [
+                "-v", "error",
+                "-select_streams", "v:0",
+                "-show_entries", "stream=width,height,duration",
+                "-of", "json",
+                videoPath
+            ], { timeoutMs: 30 * 1000 });
+        } catch (eProbe) {
+            throw new Error("ffprobe falhou: " + eProbe.message);
+        }
+        var meta;
+        try {
+            var pj = JSON.parse(probe.stdout || "{}");
+            meta = (pj.streams && pj.streams[0]) || {};
+        } catch (eP) { meta = {}; }
+        var srcW = parseInt(meta.width, 10) || 0;
+        var srcH = parseInt(meta.height, 10) || 0;
+        if (srcW <= 0 || srcH <= 0) {
+            throw new Error("Não consegui detectar resolução do vídeo (ffprobe retornou vazio)");
+        }
+        // Safety: limita res máxima pra prevenir OOM/crash
+        if (srcW > 8000 || srcH > 8000) {
+            throw new Error("Resolução fora do range seguro (" + srcW + "x" + srcH + "). Use proxy.");
+        }
 
-        if (tracking) {
-            // FACE TRACKING — prioridade: FaceTracker (Canvas YCbCr) > cropdetect fallback
-            var faceDetected = false;
-            if (global.FaceTracker) {
-                emit(cb, "onProgress", { msg: "Analisando rostos no vídeo (Canvas YCbCr)…" });
-                try {
-                    var faceRes = await global.FaceTracker.analyzeVideo(videoPath, { frames: 12 });
-                    if (faceRes && faceRes.valid_frames > 2) {
-                        // Centro normalizado [0,1] do rosto detectado → vira px relativo no filter
-                        cropX = "max(0,min(iw-out_w,iw*" + faceRes.avg_x + "-out_w/2))";
-                        cropY = "max(0,min(ih-out_h,ih*" + faceRes.avg_y + "-out_h/2))";
-                        faceDetected = true;
-                        emit(cb, "onProgress", {
-                            msg: "Rosto detectado em " + faceRes.valid_frames + "/" + faceRes.frames_analyzed +
-                                 " frames · centro " + Math.round(faceRes.avg_x*100) + "%/" + Math.round(faceRes.avg_y*100) + "%"
-                        });
-                    }
-                } catch (eF) { /* cai pra cropdetect */ }
-            }
-            // Fallback cropdetect (motion-based) se face tracking não achou nada
-            if (!faceDetected) {
-                emit(cb, "onProgress", { msg: "Sem rosto detectado · usando cropdetect (motion)…" });
-                try {
-                    var detect = await global.BinRunner.run("ffmpeg", [
-                        "-i", videoPath,
-                        "-vf", "cropdetect=24:16:0",
-                        "-frames:v", "120",
-                        "-f", "null", "-"
-                    ], { allowNonZero: true, timeoutMs: 60 * 1000 });
-                    var matches = (detect.stderr || "").match(/crop=(\d+):(\d+):(\d+):(\d+)/g);
-                    if (matches && matches.length) {
-                        var last = matches[matches.length - 1].match(/crop=(\d+):(\d+):(\d+):(\d+)/);
-                        if (last) {
-                            var cw = parseInt(last[1], 10);
-                            var ch = parseInt(last[2], 10);
-                            var cx = parseInt(last[3], 10);
-                            var cy = parseInt(last[4], 10);
-                            var centerX = cx + cw / 2;
-                            var centerY = cy + ch / 2;
-                            cropX = "max(0,min(iw-out_w," + (centerX) + "-out_w/2))";
-                            cropY = "max(0,min(ih-out_h," + (centerY) + "-out_h/2))";
-                            emit(cb, "onProgress", { msg: "Centro motion: " + Math.round(centerX) + "," + Math.round(centerY) });
-                        }
-                    }
-                } catch (eD) { /* fallback pra center */ }
+        // ── STEP 2: calcula dimensões de saída em INTEIROS ──────────
+        // mantem o lado menor do vídeo, calcula o outro pro aspect alvo
+        var srcRatio = srcW / srcH;
+        var dstRatio = target.w / target.h;
+        var outW, outH;
+        if (srcRatio > dstRatio) {
+            // vídeo mais largo que alvo → mantém altura, corta largura
+            outH = srcH;
+            outW = Math.floor(srcH * dstRatio);
+        } else {
+            outW = srcW;
+            outH = Math.floor(srcW / dstRatio);
+        }
+        // garante par (ffmpeg/libx264 odeia dimensão ímpar)
+        outW = outW - (outW % 2);
+        outH = outH - (outH % 2);
+        if (outW < 2 || outH < 2) {
+            throw new Error("Dimensões de saída inválidas: " + outW + "x" + outH);
+        }
+
+        // ── STEP 3: face tracking (opcional, fallback pra centro) ───
+        var cropCenterX = Math.floor(srcW / 2);
+        var cropCenterY = Math.floor(srcH / 2);
+        var trackingUsed = "center";
+
+        if (tracking && global.FaceTracker) {
+            emit(cb, "onProgress", { msg: "Analisando rostos (Canvas YCbCr · 12 frames)…" });
+            try {
+                var faceRes = await Promise.race([
+                    global.FaceTracker.analyzeVideo(videoPath, { frames: 12 }),
+                    new Promise(function (_, rej) { setTimeout(function () { rej(new Error("face_tracker_timeout")); }, 45 * 1000); })
+                ]);
+                if (faceRes && faceRes.valid_frames > 2) {
+                    cropCenterX = Math.floor(srcW * faceRes.avg_x);
+                    cropCenterY = Math.floor(srcH * faceRes.avg_y);
+                    trackingUsed = "face";
+                    emit(cb, "onProgress", {
+                        msg: "Rosto em " + faceRes.valid_frames + "/" + faceRes.frames_analyzed +
+                             " frames · centro " + Math.round(faceRes.avg_x*100) + "%/" + Math.round(faceRes.avg_y*100) + "%"
+                    });
+                } else {
+                    emit(cb, "onProgress", { msg: "Sem rosto detectado · centralizando crop" });
+                }
+            } catch (eF) {
+                emit(cb, "onProgress", { msg: "Face tracking falhou (" + eF.message + ") · usando crop central" });
             }
         }
 
-        var outW = "if(gt(iw/ih," + target.w + "/" + target.h + "),ih*" + target.w + "/" + target.h + ",iw)";
-        var outH = "if(gt(iw/ih," + target.w + "/" + target.h + "),ih,iw*" + target.h + "/" + target.w + ")";
-        var filter = "crop='" + outW + "':'" + outH + "':'" + cropX + "':'" + cropY + "'";
+        // calcula cropX/cropY top-left clampado dentro dos limites
+        var cropX = Math.max(0, Math.min(srcW - outW, cropCenterX - Math.floor(outW / 2)));
+        var cropY = Math.max(0, Math.min(srcH - outH, cropCenterY - Math.floor(outH / 2)));
 
-        emit(cb, "onProgress", { msg: "ffmpeg encoding " + aspect + "…" });
-        await global.BinRunner.run("ffmpeg", [
-            "-y", "-i", videoPath,
-            "-vf", filter,
-            "-c:v", "libx264", "-preset", "fast", "-crf", "22",
-            "-c:a", "aac", "-b:a", "192k",
-            outPath
-        ], { timeoutMs: 30 * 60 * 1000 });
+        // ── STEP 4: ffmpeg com filter de inteiros (sem expressões frágeis)
+        var filter = "crop=" + outW + ":" + outH + ":" + cropX + ":" + cropY;
+        emit(cb, "onProgress", { msg: "ffmpeg encoding " + aspect + " (" + outW + "x" + outH + ", offset " + cropX + "," + cropY + ")…" });
+
+        try {
+            await global.BinRunner.run("ffmpeg", [
+                "-y", "-i", videoPath,
+                "-vf", filter,
+                "-c:v", "libx264", "-preset", "fast", "-crf", "22",
+                "-pix_fmt", "yuv420p",
+                "-c:a", "aac", "-b:a", "192k",
+                "-movflags", "+faststart",
+                outPath
+            ], { timeoutMs: 20 * 60 * 1000 });
+        } catch (eFf) {
+            // ffmpeg crashou ou falhou — limpa output parcial pra não enganar
+            try { if (fs.existsSync(outPath)) fs.unlinkSync(outPath); } catch (_) {}
+            throw new Error("Encoding falhou: " + eFf.message);
+        }
+
+        // valida output
+        if (!fs.existsSync(outPath)) throw new Error("ffmpeg terminou mas não criou o arquivo");
+        var outSt = fs.statSync(outPath);
+        if (outSt.size < 1024) {
+            try { fs.unlinkSync(outPath); } catch (_) {}
+            throw new Error("Arquivo de saída suspeito (apenas " + outSt.size + " bytes)");
+        }
 
         // Importa no Premiere
         try { await hostCall("importFile", [outPath]); } catch (_) {}
 
         return {
             ok: true,
-            summary: "Crop " + aspect + (tracking ? " (tracking)" : " (center)") + " salvo + importado",
+            summary: "Crop " + aspect + " (" + trackingUsed + ") · " + outW + "x" + outH + " · " + Math.round(outSt.size/1024/1024) + "MB",
             out_path: outPath,
             aspect: aspect,
-            tracking_used: tracking
+            tracking_used: trackingUsed,
+            src_size: srcW + "x" + srcH,
+            out_size: outW + "x" + outH,
+            crop_offset: { x: cropX, y: cropY }
         };
     }
 

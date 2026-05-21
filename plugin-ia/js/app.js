@@ -134,27 +134,31 @@
         };
 
         // Settings IA — Anthropic / Gemini / Pexels keys + modelo
+        // helper: lê .value de elemento que pode não existir
+        function readVal(id) { var el = $(id); return el && typeof el.value === "string" ? el.value : ""; }
+        function writeVal(id, v) { var el = $(id); if (el) el.value = v; }
+
         $("set-save").onclick = async function () {
             var btn = $("set-save"); btn.disabled = true; btn.textContent = "Salvando…";
             var result = $("set-result");
             try {
                 // Salva Gemini local
-                var geminiK = $("set-gemini-key").value.trim();
+                var geminiK = readVal("set-gemini-key").trim();
                 if (geminiK) {
                     if (window.GeminiClient) window.GeminiClient.setKey(geminiK);
                 }
                 // Salva Pexels / Pixabay / Giphy local
-                var pexK = $("set-pexels-key").value.trim();
+                var pexK = readVal("set-pexels-key").trim();
                 if (pexK) localStorage.setItem("mia_pexels_key", pexK);
-                var pixaK = ($("set-pixabay-key") || {}).value;
-                if (pixaK && pixaK.trim()) localStorage.setItem("mia_pixabay_key", pixaK.trim());
-                var giphyK = ($("set-giphy-key") || {}).value;
-                if (giphyK && giphyK.trim()) localStorage.setItem("mia_giphy_key", giphyK.trim());
+                var pixaK = readVal("set-pixabay-key").trim();
+                if (pixaK) localStorage.setItem("mia_pixabay_key", pixaK);
+                var giphyK = readVal("set-giphy-key").trim();
+                if (giphyK) localStorage.setItem("mia_giphy_key", giphyK);
 
                 // Salva Anthropic via backend (BYOK opcional)
-                var anthK = $("set-anthropic-key").value.trim();
-                var model = $("set-model").value;
-                var maxTokens = parseInt($("set-max-tokens").value, 10) || 4096;
+                var anthK = readVal("set-anthropic-key").trim();
+                var model = readVal("set-model") || "claude-sonnet-4-6";
+                var maxTokens = parseInt(readVal("set-max-tokens"), 10) || 4096;
 
                 var token = localStorage.getItem("mv_session") || "";
                 if (token) {
@@ -174,11 +178,11 @@
 
                 result.style.color = "var(--ok)";
                 result.textContent = "✓ Configuração salva";
-                $("set-anthropic-key").value = "";
-                $("set-gemini-key").value = "";
-                $("set-pexels-key").value = "";
-                if ($("set-pixabay-key")) $("set-pixabay-key").value = "";
-                if ($("set-giphy-key"))   $("set-giphy-key").value = "";
+                writeVal("set-anthropic-key", "");
+                writeVal("set-gemini-key", "");
+                writeVal("set-pexels-key", "");
+                writeVal("set-pixabay-key", "");
+                writeVal("set-giphy-key", "");
                 updateStatusBar();
                 toast("✓ Config salva", "ok");
             } catch (e) {
