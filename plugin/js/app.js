@@ -1060,6 +1060,12 @@ if (loadCatalog()) {
     checkEmailVerified();
     startHeartbeat();
     hostPing();   // confirma que host.jsx carregou e logga status
+
+    // Chunk 3: auto-revalida chave MTI-/MTS- a cada 24h em background.
+    // Funciona offline entre validações (LicenseCache valida via cache cifrado).
+    if (window.LicenseClient && typeof window.LicenseClient.startAutoValidate === "function") {
+        window.LicenseClient.startAutoValidate(24);
+    }
 }
 
 })();
