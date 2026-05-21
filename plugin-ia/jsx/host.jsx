@@ -973,7 +973,10 @@ $.global.MotionProIA = (function () {
                     try { it.moveBin(bins[cat]); moved[cat]++; } catch (_) {}
                 }
             }
-            return ok({ moved: moved, bins_created: Object.keys(binNames).length });
+            // ES3 ExtendScript não tem Object.keys — conta via for-in com hasOwnProperty.
+            var binCount = 0;
+            for (var bk in binNames) { if (binNames.hasOwnProperty(bk)) binCount++; }
+            return ok({ moved: moved, bins_created: binCount });
         } catch (e) { return err(e.message); }
     }
 
