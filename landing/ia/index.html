@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="Motion IA — 13 features de IA nativas no Premiere Pro. Cortar pausas, caçar trechos, capítulos automáticos, legendas word-by-word, auto crop com face tracking e Casper · Auto-edit. R$ 49,90/mês ou na Suite Total por R$ 79,90." />
+<meta property="og:title" content="Motion IA — 13 features de IA dentro do Premiere Pro" />
+<meta property="og:description" content="Whisper local + Gemini 2.5 + Casper · Auto-edit. Plugin CEP nativo. R$ 49,90/mês ou Suite Total a R$ 79,90." />
+<meta property="og:type" content="website" />
+<meta property="og:image" content="/img/og.png" />
+<title>Motion IA — 13 features de IA dentro do Premiere Pro</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/css/system.css">
+
+<link rel="preload" as="script" href="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin>
+<link rel="preload" as="script" href="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" crossorigin>
+<link rel="preload" as="script" href="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+<script src="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js" defer></script>
+
+<style>
+/* ════════════════════════════════════════════════════════════════
+   MOTION IA · LP STYLES (Plugin 03 da Motion Suite)
+   Reaproveita o design system — adiciona componente de vídeo demo
+   e grid das 13 features. Acento azul padrão + tint roxo (#7c3aed)
+   pra detalhes de IA.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  padding-top: 160px;
+  padding-bottom: 120px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+  text-align: center; isolation: isolate;
+}
+.hero-bg { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.hero-bg .blob {
+  position: absolute; border-radius: 50%; filter: blur(70px);
+  opacity: .55; transform: translateZ(0);
+}
+.hero-bg .blob.b1 { top: -160px; left: -120px; width: 520px; height: 520px;
+  background: radial-gradient(circle, #2563eb 0%, transparent 65%);
+  animation: blobDrift1 22s var(--ease-in-out) infinite; }
+.hero-bg .blob.b2 { top: 5%; right: -180px; width: 480px; height: 480px;
+  background: radial-gradient(circle, #a78bfa 0%, transparent 65%); opacity: .42;
+  animation: blobDrift2 26s var(--ease-in-out) infinite; }
+.hero-bg .blob.b3 { bottom: -200px; left: 30%; width: 600px; height: 600px;
+  background: radial-gradient(circle, #dbeafe 0%, transparent 60%); opacity: .7;
+  animation: blobDrift3 30s var(--ease-in-out) infinite; }
+@keyframes blobDrift1 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 33% { transform: translate3d(120px,80px,0) scale(1.1); } 66% { transform: translate3d(-40px,140px,0) scale(.95); } }
+@keyframes blobDrift2 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(-140px,100px,0) scale(1.15); } }
+@keyframes blobDrift3 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(80px,-120px,0) scale(1.08); } }
+.hero[data-paused="true"] .blob,
+.hero[data-paused="true"] .hero-marquee-track,
+.hero[data-paused="true"] .hero-badge::after { animation-play-state: paused !important; }
+
+.hero-bg::before {
+  content: ""; position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(10,10,10,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10,10,10,.04) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black, transparent 75%);
+}
+
+.hero-inner { position: relative; z-index: 2; max-width: 980px; margin: 0 auto; width: 100%; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 8px 16px;
+  background: rgba(255,255,255,.7);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .7rem; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--fg-muted);
+  margin-bottom: 40px;
+  box-shadow: 0 8px 24px -8px rgba(37,99,235,.18);
+  position: relative; overflow: hidden;
+}
+.hero-badge::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(124,58,237,.12) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: badgeShine 4s var(--ease-in-out) 2s infinite;
+}
+@keyframes badgeShine { 0% { transform: translateX(-100%); } 60%,100% { transform: translateX(100%); } }
+.hero-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: #7c3aed; animation: pulse 2.4s var(--ease-out) infinite; position: relative; z-index: 1; }
+
+.hero-title { font-size: clamp(2.6rem, 7vw, 6.2rem) !important; margin-bottom: 36px; }
+.hero-title .line { display: block; }
+.hero-title .char { display: inline-block; }
+.hero-sub {
+  font-size: clamp(1.05rem, 1.5vw, 1.25rem);
+  max-width: 660px; margin: 0 auto 48px;
+  color: var(--fg-muted); line-height: 1.55;
+}
+.hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-bottom: 36px; }
+.trust-line {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--fg-subtle);
+}
+.hero-marquee {
+  position: relative; width: 100%;
+  margin-top: 70px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 18px 0; overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent 0%, black 12%, black 88%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 12%, black 88%, transparent 100%);
+}
+.hero-marquee-track {
+  display: flex; gap: 56px; width: max-content;
+  animation: marquee 38s linear infinite;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .8rem; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--fg-subtle); align-items: center;
+}
+.hero-marquee-track span { display: inline-flex; align-items: center; gap: 16px; }
+.hero-marquee-track span::after { content: ""; width: 6px; height: 6px; background: #7c3aed; border-radius: 50%; }
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+.scroll-cue {
+  position: absolute; bottom: 28px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .65rem; letter-spacing: .3em; text-transform: uppercase;
+  color: var(--fg-subtle);
+}
+.scroll-cue .line { width: 1px; height: 40px; background: linear-gradient(180deg, transparent, var(--fg-subtle), transparent); animation: scrollLine 2.2s ease-in-out infinite; }
+@keyframes scrollLine { 0% { transform: scaleY(0); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
+
+/* ── DEMO VIDEO BLOCK (placeholder pronto pro vídeo real do Gabriel) ── */
+.demo-video {
+  background: var(--bg);
+  padding: clamp(60px, 10vw, 110px) 0;
+}
+.demo-video__inner {
+  max-width: 1100px; margin: 0 auto;
+}
+.demo-video__head {
+  text-align: center; max-width: 720px; margin: 0 auto 48px;
+}
+.demo-video__frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #0a0a0a;
+  border: 1px solid var(--border);
+  border-radius: clamp(14px, 1.5vw, 22px);
+  overflow: hidden;
+  box-shadow: 0 40px 90px -30px rgba(37,99,235,.22), 0 20px 40px -20px rgba(124,58,237,.15);
+}
+.demo-video__frame video {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.demo-video__overlay {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 0%, transparent 60%, rgba(0,0,0,.45) 100%);
+}
+.demo-video__caption {
+  position: absolute; left: 24px; bottom: 22px; right: 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; color: white;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .72rem; letter-spacing: .18em; text-transform: uppercase;
+  pointer-events: none;
+}
+.demo-video__caption .dot {
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.demo-video__caption .dot::before {
+  content: ""; width: 9px; height: 9px; border-radius: 50%;
+  background: #ef4444; box-shadow: 0 0 0 4px rgba(239,68,68,.25);
+  animation: pulse 2s var(--ease-out) infinite;
+}
+.demo-video__note {
+  margin: 22px auto 0; max-width: 540px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .7rem; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--fg-subtle);
+}
+
+/* ── STATS ── */
+.stats { padding: 80px 0; border-top: 1px solid var(--border); position: relative; }
+.stats::before { content: ""; position: absolute; top: -1px; left: 0; height: 1px; background: #7c3aed; width: 0; transition: width 1.4s var(--ease-out); }
+.stats.in-view::before { width: 100%; }
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+@media (max-width: 800px) { .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 50px 20px; } }
+.stat-item .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(2.8rem, 6vw, 4.5rem);
+  font-weight: 600; letter-spacing: -.04em;
+  color: var(--accent); line-height: 1; margin-bottom: 14px;
+}
+.stat-item .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .7rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--fg-muted); font-weight: 500;
+}
+
+/* ── SECTION HEADER ── */
+.sec-head { margin-bottom: 80px; max-width: 900px; }
+.sec-head .section-title { margin-bottom: 24px; }
+
+/* ── PROBLEMA ── */
+.problem { background: var(--bg-elevated); }
+.problem-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 100px; max-width: 1100px; margin: 0 auto; align-items: start; }
+@media (max-width: 900px) { .problem-grid { grid-template-columns: 1fr; gap: 50px; } }
+.problem-left p { font-size: clamp(1.1rem, 1.5vw, 1.35rem); color: var(--fg); font-weight: 400; line-height: 1.55; letter-spacing: -.01em; max-width: none; }
+.problem-right { padding-left: 24px; border-left: 1px solid var(--border); }
+@media (max-width: 900px) { .problem-right { padding-left: 0; border-left: none; border-top: 1px solid var(--border); padding-top: 36px; } }
+.problem-num { margin-bottom: 28px; }
+.problem-num .big { font-family: 'JetBrains Mono', monospace; font-size: clamp(2rem, 3.5vw, 2.8rem); font-weight: 600; color: var(--accent); letter-spacing: -.03em; line-height: 1; margin-bottom: 6px; }
+.problem-num .small { font-size: 14px; color: var(--fg-muted); font-family: 'JetBrains Mono', monospace; letter-spacing: .04em; }
+.problem-close { margin-top: 36px; padding-top: 28px; border-top: 1px solid var(--border); font-size: 1rem; color: var(--fg); font-weight: 500; font-style: italic; line-height: 1.5; }
+.problem-cta { margin-top: 60px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: .85rem; letter-spacing: .35em; text-transform: uppercase; color: #7c3aed; font-weight: 600; }
+
+/* ── PLATAFORMA ── */
+.platform-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+@media (max-width: 900px) { .platform-grid { grid-template-columns: 1fr; } }
+.feat-card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 44px 36px; transition: all .5s var(--ease-out); position: relative; overflow: hidden; }
+.feat-card::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 0% 0%, rgba(124,58,237,.05), transparent 60%); opacity: 0; transition: opacity .5s var(--ease-out); pointer-events: none; }
+.feat-card:hover { transform: translateY(-8px); border-color: var(--border-hover); box-shadow: 0 20px 40px rgba(124,58,237,.10); }
+.feat-card:hover::before { opacity: 1; }
+.feat-num { font-family: 'JetBrains Mono', monospace; font-size: 1rem; font-weight: 500; color: var(--accent); letter-spacing: .15em; margin-bottom: 36px; display: flex; align-items: center; gap: 10px; }
+.feat-num::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.feat-card h3 { margin-bottom: 18px; }
+.feat-card .desc { font-size: 15px; margin-bottom: 28px; line-height: 1.6; }
+
+/* ── FEATURES GRID (13 features) ── */
+.features-13 { background: var(--bg); }
+.features-13-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  max-width: 1200px; margin: 0 auto;
+}
+@media (max-width: 1100px) { .features-13-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 800px)  { .features-13-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 500px)  { .features-13-grid { grid-template-columns: 1fr; } }
+.f13-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 26px 22px;
+  position: relative;
+  transition: transform .35s var(--ease-out), border-color .35s, box-shadow .35s;
+  overflow: hidden;
+}
+.f13-card::after {
+  content: ""; position: absolute; top: 0; right: 0; width: 140px; height: 140px;
+  background: radial-gradient(circle, rgba(124,58,237,.07), transparent 65%);
+  transform: translate(45%, -45%);
+  pointer-events: none;
+}
+.f13-card:hover { transform: translateY(-5px); border-color: rgba(124,58,237,.4); box-shadow: 0 16px 36px -10px rgba(124,58,237,.18); }
+.f13-card__num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .65rem; letter-spacing: .18em; text-transform: uppercase;
+  color: #7c3aed; font-weight: 600;
+  margin-bottom: 14px;
+}
+.f13-card__ico {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(124,58,237,.10), rgba(37,99,235,.10));
+  display: grid; place-items: center;
+  font-size: 22px;
+  margin-bottom: 16px;
+  line-height: 1;
+}
+.f13-card h4 {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  margin-bottom: 8px;
+  color: var(--fg);
+}
+.f13-card p {
+  font-size: 13.5px;
+  color: var(--fg-muted);
+  line-height: 1.5;
+  max-width: none;
+  margin: 0;
+}
+.f13-card__tag {
+  position: absolute; top: 14px; right: 14px;
+  padding: 3px 8px; border-radius: 100px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .55rem; letter-spacing: .15em; text-transform: uppercase; font-weight: 600;
+  background: rgba(124,58,237,.12); color: #6d28d9;
+}
+.f13-card__tag--hot { background: rgba(239,68,68,.12); color: #b91c1c; }
+
+/* ── FLUXO (DARK) ── */
+.flux { background: var(--bg-dark); color: var(--fg-on-dark); }
+.flux .section-title { color: var(--fg-on-dark); }
+.flux .lede { color: var(--fg-on-dark-muted); }
+.flux-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; position: relative; margin-top: 40px; }
+@media (max-width: 800px) { .flux-grid { grid-template-columns: repeat(2, 1fr); } }
+.flux-line { position: absolute; top: 60px; left: 0; right: 0; height: 1px; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform 1.4s var(--ease-out); z-index: 0; }
+.flux-line.in { transform: scaleX(1); }
+@media (max-width: 800px) { .flux-line { display: none; } }
+.flux-step { position: relative; padding-top: 90px; z-index: 1; }
+.flux-step::before { content: ""; position: absolute; top: 56px; left: 0; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgba(37,99,235,.18); }
+.flux-step .num { font-family: 'JetBrains Mono', monospace; font-size: clamp(3rem, 5vw, 4.5rem); font-weight: 600; color: var(--accent); letter-spacing: -.04em; line-height: 1; margin-bottom: 16px; }
+.flux-step h4 { font-size: 1rem; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; color: var(--fg-on-dark); margin-bottom: 14px; }
+.flux-step p { color: var(--fg-on-dark-muted); font-size: 15px; line-height: 1.55; max-width: none; }
+.flux-close { margin-top: 100px; text-align: center; max-width: 700px; margin-left: auto; margin-right: auto; }
+.flux-close .head { font-size: clamp(1.3rem, 2.2vw, 1.8rem); font-weight: 700; letter-spacing: -.02em; color: var(--fg-on-dark); line-height: 1.3; }
+.flux-close .head .accent { color: var(--accent); }
+.flux-close .sub { margin-top: 14px; color: var(--fg-on-dark-muted); font-size: 15px; }
+
+/* ── COMPARE ── */
+.compare-table { max-width: 1100px; margin: 0 auto; border-top: 1px solid var(--border); }
+.compare-head, .compare-row { display: grid; grid-template-columns: 1.4fr 1fr 1fr; padding: 22px 16px; border-bottom: 1px solid var(--border); align-items: center; gap: 24px; }
+.compare-head { font-family: 'JetBrains Mono', monospace; font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; color: var(--fg-subtle); font-weight: 500; }
+.compare-head .h-pro { color: var(--accent); }
+.compare-row { transition: background .3s var(--ease-out); }
+.compare-row:hover { background: var(--bg-elevated); }
+.compare-row .task { font-size: 15px; font-weight: 500; color: var(--fg); }
+.compare-row .before { font-size: 15px; color: var(--fg-muted); font-style: italic; }
+.compare-row .after { font-size: 15px; color: var(--fg); font-weight: 600; display: flex; align-items: center; gap: 10px; }
+.compare-row .after::before {
+  content: ""; width: 14px; height: 14px; flex-shrink: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M3 8.5L6.5 12L13 4.5' stroke='%237c3aed' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-size: contain; background-repeat: no-repeat;
+}
+@media (max-width: 700px) {
+  .compare-head { display: none; }
+  .compare-row { grid-template-columns: 1fr; gap: 6px; padding: 18px 0; }
+  .compare-row .task { font-weight: 600; margin-bottom: 4px; }
+  .compare-row .before::before { content: "Hoje: "; font-style: normal; color: var(--fg-subtle); font-family: 'JetBrains Mono', monospace; font-size: .7rem; letter-spacing: .15em; text-transform: uppercase; }
+  .compare-row .after::before { display: none; }
+}
+.compare-close { max-width: 700px; margin: 90px auto 0; text-align: center; }
+.compare-close p { font-size: clamp(1.4rem, 2.5vw, 2rem); font-weight: 600; letter-spacing: -.025em; color: var(--fg); max-width: none; }
+.compare-close .accent { color: var(--accent); font-weight: 800; display: block; }
+
+/* ── PRICING ── */
+.pricing { background: var(--bg-elevated); }
+.price-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; max-width: 1200px; margin: 0 auto; align-items: stretch; }
+@media (max-width: 1000px) { .price-grid { grid-template-columns: 1fr; max-width: 540px; } }
+.price-card { background: white; border: 1px solid var(--border); border-radius: 20px; padding: 38px 32px; position: relative; transition: all .5s var(--ease-out); display: flex; flex-direction: column; }
+.price-card.popular { border: 2px solid var(--accent); box-shadow: 0 20px 60px rgba(37,99,235,.15); transform: translateY(-4px); }
+.price-card:not(.popular):hover { transform: translateY(-6px); border-color: var(--border-hover); box-shadow: 0 20px 40px rgba(0,0,0,.04); }
+.price-badge { position: absolute; top: -14px; left: 32px; background: var(--accent); color: white; padding: 6px 14px; border-radius: 100px; font-family: 'JetBrains Mono', monospace; font-size: .65rem; letter-spacing: .2em; text-transform: uppercase; font-weight: 500; }
+.price-tag { font-family: 'JetBrains Mono', monospace; font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; color: var(--accent); margin-bottom: 24px; font-weight: 500; }
+.price-card h3 { font-size: clamp(1.4rem, 2vw, 1.8rem); font-weight: 700; letter-spacing: -.02em; margin-bottom: 24px; }
+.price-amount { display: flex; align-items: baseline; gap: 6px; margin-bottom: 12px; }
+.price-amount .num { font-variant-numeric: tabular-nums; font-size: clamp(2.6rem, 4.5vw, 3.6rem); font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+.price-amount .suf { font-size: 15px; color: var(--fg-muted); font-weight: 500; }
+.price-micro { font-size: 13.5px; color: var(--fg-muted); margin-bottom: 32px; line-height: 1.5; }
+.price-features { list-style: none; display: flex; flex-direction: column; gap: 12px; padding: 24px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 28px; flex: 1; }
+.price-features li { font-size: 14.5px; color: var(--fg); display: flex; gap: 12px; align-items: flex-start; line-height: 1.5; }
+.price-features li::before { content: "→"; color: var(--accent); font-family: 'JetBrains Mono', monospace; flex-shrink: 0; font-weight: 500; }
+.price-foot { margin-top: 14px; font-size: 12.5px; color: var(--fg-subtle); text-align: center; font-family: 'JetBrains Mono', monospace; letter-spacing: .05em; }
+.price-toggle { display: inline-flex; align-items: center; gap: 8px; padding: 6px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 100px; margin: 0 auto 40px; }
+.price-toggle button { padding: 10px 22px; font-family: 'JetBrains Mono', monospace; font-size: .7rem; letter-spacing: .15em; text-transform: uppercase; color: var(--fg-muted); border-radius: 100px; transition: all .3s var(--ease-out); cursor: pointer; }
+.price-toggle button.active { background: white; color: var(--fg); box-shadow: 0 2px 6px rgba(10,10,10,.06); font-weight: 600; }
+.price-toggle .sale { background: var(--accent); color: white; padding: 3px 8px; border-radius: 100px; font-size: .55rem; margin-left: 6px; }
+.pricing-callout { max-width: 900px; margin: 70px auto 0; background: white; border: 1px solid var(--border); border-radius: 16px; padding: 28px 36px; text-align: center; }
+.pricing-callout p { font-size: 15px; color: var(--fg); line-height: 1.65; max-width: none; }
+
+/* ── MANIFESTO ── */
+.manifesto { padding: clamp(120px, 18vw, 180px) 0; text-align: center; }
+.manifesto-inner { max-width: 800px; margin: 0 auto; position: relative; }
+.manifesto-inner::before, .manifesto-inner::after { position: absolute; font-family: Georgia, serif; font-size: clamp(6rem, 10vw, 9rem); color: var(--accent); opacity: .25; line-height: 1; }
+.manifesto-inner::before { content: "«"; top: -40px; left: -10px; }
+.manifesto-inner::after  { content: "»"; bottom: -90px; right: -10px; }
+.manifesto-quote { font-weight: 500; font-style: italic; font-size: clamp(1.4rem, 2.5vw, 2rem); line-height: 1.4; letter-spacing: -.02em; color: var(--fg); max-width: none; }
+.manifesto-sig { margin-top: 50px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.manifesto-sig::before { content: ""; width: 60px; height: 1px; background: var(--border); margin-bottom: 18px; }
+.manifesto-sig .name { font-weight: 600; font-size: 16px; color: var(--fg); }
+.manifesto-sig .role { font-family: 'JetBrains Mono', monospace; font-size: .7rem; letter-spacing: .2em; text-transform: uppercase; color: var(--fg-muted); margin-top: 4px; }
+
+/* ── FAQ ── */
+.faq { background: var(--bg-elevated); }
+.faq-list { max-width: 800px; margin: 0 auto; border-top: 1px solid var(--border); }
+.faq-item { border-bottom: 1px solid var(--border); }
+.faq-q { width: 100%; text-align: left; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 28px 0; font-size: clamp(1rem, 1.3vw, 1.13rem); font-weight: 600; color: var(--fg); letter-spacing: -.01em; transition: color .3s; }
+.faq-q:hover { color: var(--accent); }
+.faq-icon { width: 24px; height: 24px; flex-shrink: 0; display: grid; place-items: center; transition: transform .4s var(--ease-out); color: var(--fg-muted); }
+.faq-item.open .faq-icon { transform: rotate(45deg); color: var(--accent); }
+.faq-a { max-height: 0; overflow: hidden; opacity: 0; transition: max-height .5s var(--ease-out), opacity .4s, padding .4s; }
+.faq-item.open .faq-a { max-height: 520px; opacity: 1; padding-bottom: 28px; }
+.faq-a p { font-size: 15.5px; color: var(--fg-muted); line-height: 1.65; max-width: 65ch; padding-right: 50px; }
+
+/* ── CTA FINAL ── */
+.cta-final { background: var(--bg-dark); color: var(--fg-on-dark); padding: clamp(120px, 18vw, 200px) 0; text-align: center; position: relative; overflow: hidden; }
+.cta-final::before { content: ""; position: absolute; top: 50%; left: 50%; width: 900px; height: 900px; transform: translate(-50%, -50%); background: radial-gradient(circle, rgba(124,58,237,.15), transparent 55%); pointer-events: none; }
+.cta-final .container { position: relative; }
+.cta-final h2 { font-size: clamp(1.8rem, 4vw, 3.2rem); font-weight: 800; line-height: 1.1; letter-spacing: -.035em; max-width: 820px; margin: 0 auto 32px; color: var(--fg-on-dark); }
+.cta-final h2 .line { display: block; }
+.cta-final h2 .accent { color: var(--accent); font-style: italic; }
+.cta-final .lede { font-size: clamp(1rem, 1.3vw, 1.2rem); color: var(--fg-on-dark-muted); max-width: 540px; margin: 0 auto 44px; }
+.cta-final .micro { margin: 32px auto 0; font-family: 'JetBrains Mono', monospace; font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; color: var(--fg-on-dark-muted); max-width: none; text-align: center; display: block; }
+
+/* ── CONTENT-VISIBILITY (perf) ── */
+.problem, .features-13, .flux, .compare, .pricing, .manifesto, .faq, .cta-final {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
+</style>
+</head>
+<body>
+
+<div class="scroll-progress" aria-hidden="true"></div>
+
+<!-- ════════════════════════ NAV ════════════════════════ -->
+<header class="nav" id="nav">
+  <div class="container nav-inner">
+    <a href="/" class="logo" aria-label="Motion Suite home">
+      <span class="logo-dot"></span>Motion Suite
+    </a>
+    <nav aria-label="Principal">
+      <ul class="nav-links">
+        <li><a href="/titles/">Titles</a></li>
+        <li><a href="/legendas/">Legendas</a></li>
+        <li><a href="/ia/" aria-current="page" style="color:var(--fg)"><strong>IA</strong></a></li>
+        <li><a href="#planos">Preços</a></li>
+        <li><a href="#faq">FAQ</a></li>
+        <li><a href="/ia/download.html">Download</a></li>
+      </ul>
+    </nav>
+    <div class="nav-right">
+      <a href="/account.html" class="link-login" data-action="login">Entrar</a>
+      <a href="/#planos" class="btn btn-primary">Quero a Suite</a>
+      <button class="menu-toggle" aria-label="Abrir menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<!-- ════════════════════════ HERO ════════════════════════ -->
+<section class="hero" id="hero">
+  <div class="hero-bg" aria-hidden="true">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+  </div>
+
+  <div class="container hero-inner">
+    <span class="hero-badge"><span class="dot"></span>MOTION SUITE · PLUGIN 03 · 13 FEATURES DE IA</span>
+    <h1 class="hero-title" id="heroTitle">
+      <span class="line">A IA mora dentro</span>
+      <span class="line">do <span class="italic-em" data-scramble="seu Premiere">seu Premiere.</span></span>
+    </h1>
+    <p class="hero-sub">
+      Cortar pausas, achar trechos virais, gerar capítulos e legendas word-by-word, auto-crop com face tracking, baixar stock, e <strong>Casper · Auto-edit</strong> rodando tudo de uma vez. Whisper local + Gemini 2.5. Sem render externo, sem export, sem chamada gringa.
+    </p>
+    <div class="hero-ctas">
+      <a href="#planos" class="btn btn-primary btn-magnetic"><span>Começar agora <span class="arrow">→</span></span></a>
+      <a href="#features" class="btn btn-secondary btn-magnetic">
+        <span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 1.5L10 6L2 10.5V1.5Z" fill="currentColor"/></svg>
+          Ver as 13 features
+        </span>
+      </a>
+    </div>
+    <p class="trust-line">7 dias grátis · Sem cartão · Cancele em 1 clique</p>
+
+    <div class="hero-marquee" aria-hidden="true">
+      <div class="hero-marquee-track">
+        <span>Cortar Pausas</span><span>Cortar Erros</span><span>Caça-Trechos</span>
+        <span>Capítulos IA</span><span>Legendas word-by-word</span><span>Auto Crop</span>
+        <span>MultiCam IA</span><span>Casper · Auto-edit</span><span>Biblioteca Stock</span>
+        <span>Cortar Pausas</span><span>Cortar Erros</span><span>Caça-Trechos</span>
+        <span>Capítulos IA</span><span>Legendas word-by-word</span><span>Auto Crop</span>
+        <span>MultiCam IA</span><span>Casper · Auto-edit</span><span>Biblioteca Stock</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-cue" aria-hidden="true">
+    <span>SCROLL</span><span class="line"></span>
+  </div>
+</section>
+
+<!-- ════════════════════════ DEMO VIDEO (placeholder pra gravação real) ════════════════════════ -->
+<section class="demo-video" id="demo">
+  <div class="container">
+    <div class="demo-video__inner">
+      <div class="demo-video__head reveal">
+        <span class="tag-mono"><span class="dot"></span>— TOUR RÁPIDO</span>
+        <h2 class="section-title" style="font-size:clamp(1.8rem,3.5vw,2.6rem); margin-top:14px;">As 13 features<br>em <span class="italic-em">21 segundos.</span></h2>
+      </div>
+      <div class="demo-video__frame reveal">
+        <video
+          id="demoVideo"
+          autoplay muted loop playsinline preload="metadata"
+          poster="https://cdn.kendyproducoes.com.br/public/img/motionia-poster.jpg"
+          aria-label="Demonstração do Motion IA no Premiere Pro">
+          <source src="https://cdn.kendyproducoes.com.br/public/img/motionia-demo.mp4" type="video/mp4">
+          <source src="/img/motionia-demo.mp4" type="video/mp4">
+          Seu navegador não suporta vídeo HTML5.
+        </video>
+        <div class="demo-video__overlay" aria-hidden="true"></div>
+        <div class="demo-video__caption" aria-hidden="true">
+          <span class="dot">Live · Motion IA v3.1</span>
+          <span>13 features · 21s</span>
+        </div>
+      </div>
+      <p class="demo-video__note">
+        Vídeo demo do plugin em ação · gravação real disponível em breve
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ STATS ════════════════════════ -->
+<section class="stats" id="stats">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-item reveal"><div class="num" data-counter="13">0</div><div class="label">Features de IA</div></div>
+      <div class="stat-item reveal"><div class="num" data-counter="0" data-suffix="ms">0ms</div><div class="label">Render externo</div></div>
+      <div class="stat-item reveal"><div class="num" data-counter="100" data-suffix="%">0%</div><div class="label">Dentro do Premiere</div></div>
+      <div class="stat-item reveal"><div class="num" data-counter="1">0</div><div class="label">Clique pra Casper rodar tudo</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ PROBLEMA ════════════════════════ -->
+<section class="problem">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="tag-mono"><span class="dot"></span>— A VERDADE INCÔMODA</span>
+      <h2 class="section-title">
+        Cortar pausa na mão<br>
+        é <span class="italic-em">trabalho de máquina.</span>
+      </h2>
+    </div>
+    <div class="problem-grid">
+      <div class="problem-left reveal">
+        <p>
+          Marker na pausa. Ripple delete. Próximo marker. Ripple. Próximo. Ripple. Você gasta 20 minutos da sua vida fazendo o que o Whisper faz em 3 segundos enquanto você toma café.
+        </p>
+        <p style="margin-top:18px">
+          Esse é o trabalho que devia ser invisível. A Motion IA torna invisível.
+        </p>
+      </div>
+      <div class="problem-right reveal">
+        <div class="problem-num"><div class="big">20min <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por vídeo</span></div><div class="small">cortando pausa na mão</div></div>
+        <div class="problem-num"><div class="big">15min <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por take longo</span></div><div class="small">achando trechos virais</div></div>
+        <div class="problem-num"><div class="big">10min <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por entrevista</span></div><div class="small">marcando capítulos</div></div>
+        <div class="problem-num"><div class="big">30min <span style="color:var(--fg-muted);font-size:.55em;letter-spacing:0">por reels</span></div><div class="small">no auto-crop manual</div></div>
+        <div class="problem-close">Some tudo: 75 minutos por vídeo de tarefa repetitiva que IA resolve sozinha.</div>
+      </div>
+    </div>
+    <div class="problem-cta reveal">Acabou.</div>
+  </div>
+</section>
+
+<!-- ════════════════════════ PLATAFORMA (3 pilares) ════════════════════════ -->
+<section id="plataforma">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="tag-mono"><span class="dot"></span>— A PLATAFORMA</span>
+      <h2 class="section-title">Três pilares.<br>Um <span class="italic-em">agente.</span></h2>
+    </div>
+    <div class="platform-grid">
+      <article class="feat-card reveal">
+        <div class="feat-num"><span>01</span><span>WHISPER LOCAL</span></div>
+        <h3 class="card-title">Transcrição roda na sua máquina.</h3>
+        <p class="desc">Zero custo de API, zero internet pra transcrever, zero vazamento. Modelo ggml-base baixa uma vez (140MB) e fica.</p>
+        <ul class="feat-list">
+          <li>Suporte PT-BR otimizado</li>
+          <li>Detecção de silêncio em segmentos precisos</li>
+          <li>Funciona offline depois de baixar o modelo</li>
+        </ul>
+      </article>
+      <article class="feat-card reveal">
+        <div class="feat-num"><span>02</span><span>MULTI-MODEL IA</span></div>
+        <h3 class="card-title">Gemini 2.5 incluso · Claude opcional.</h3>
+        <p class="desc">Créditos inclusos pra rodar Gemini 2.5 Pro/Flash com janela 1M tokens. Anthropic Claude e Pexels/Pixabay keys próprios via BYOK em ⚙ Config.</p>
+        <ul class="feat-list">
+          <li>Gemini 2.5 Pro pra raciocínio longo</li>
+          <li>Tool use multimodal (vídeo + texto)</li>
+          <li>BYOK Anthropic + stock providers</li>
+        </ul>
+      </article>
+      <article class="feat-card reveal">
+        <div class="feat-num"><span>03</span><span>CASPER · AUTO-EDIT</span></div>
+        <h3 class="card-title">Pipeline declarativo. Roda tudo.</h3>
+        <p class="desc">Configura uma sequência de skills (cortar pausas → caça-trechos → capítulos → legendas) e o Casper roda em fila. Salva regras em localStorage. Reaproveita o pipeline em todo vídeo novo.</p>
+        <ul class="feat-list">
+          <li>Regras editáveis: skill, opts, enabled, label</li>
+          <li>Persistência local</li>
+          <li>Resultado: timeline pronta enquanto você cafézinho</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ 13 FEATURES GRID ════════════════════════ -->
+<section class="features-13" id="features">
+  <div class="container">
+    <div class="sec-head reveal" style="text-align:center; margin-left:auto; margin-right:auto;">
+      <span class="tag-mono"><span class="dot"></span>— O CATÁLOGO</span>
+      <h2 class="section-title">As 13 features.<br>Todas dentro do <span class="italic-em">Premiere.</span></h2>
+      <p class="lede" style="margin:24px auto 0">Cada uma resolve uma dor real do editor. Você usa de uma em uma, ou empilha tudo num pipeline Casper e roda enquanto faz outra coisa.</p>
+    </div>
+
+    <div class="features-13-grid">
+
+      <article class="f13-card reveal">
+        <span class="f13-card__tag f13-card__tag--hot">Top</span>
+        <div class="f13-card__num">01</div>
+        <div class="f13-card__ico" aria-hidden="true">🎯</div>
+        <h4>Cortar Pausas</h4>
+        <p>Whisper detecta silêncios entre falas e faz ripple delete automático. Você revisa só os pontos limítrofes.</p>
+      </article>
+
+      <article class="f13-card reveal">
+        <span class="f13-card__tag f13-card__tag--hot">Top</span>
+        <div class="f13-card__num">02</div>
+        <div class="f13-card__ico" aria-hidden="true">🧹</div>
+        <h4>Cortar Erros</h4>
+        <p>Acha "ééé", "ahn", repetições e gaguejos. Marca pra revisão ou ripple direto, você escolhe.</p>
+      </article>
+
+      <article class="f13-card reveal">
+        <span class="f13-card__tag f13-card__tag--hot">Top</span>
+        <div class="f13-card__num">03</div>
+        <div class="f13-card__ico" aria-hidden="true">⚡</div>
+        <h4>Caça-Trechos</h4>
+        <p>IA lê a transcrição e marca os 3-5 cortes mais virais (hook, polêmica, frase de impacto). Pronto pra shorts.</p>
+      </article>
+
+      <article class="f13-card reveal">
+        <span class="f13-card__tag">Smart</span>
+        <div class="f13-card__num">04</div>
+        <div class="f13-card__ico" aria-hidden="true">📑</div>
+        <h4>Capítulos IA</h4>
+        <p>Gera markers de capítulo automaticamente pelo conteúdo da fala. Exporta pro YouTube com 1 clique.</p>
+      </article>
+
+      <article class="f13-card reveal">
+        <span class="f13-card__tag">Smart</span>
+        <div class="f13-card__num">05</div>
+        <div class="f13-card__ico" aria-hidden="true">💬</div>
+        <h4>Legendas IA</h4>
+        <p>Word-by-word ASS karaoke em 5 estilos: Viral, TikTok, Reels, Clássico e Minimal. Cor e fonte editáveis.</p>
+      </article>
+
+      <article class="f13-card reveal">
+        <span class="f13-card__tag">Smart</span>
+        <div class="f13-card__num">06</div>
+        <div class="f13-card__ico" aria-hidden="true">📋</div>
+        <h4>Copiar Sequência</h4>
+        <p>Duplica a sequência com markers e legendas pra criar variações sem mexer no master. Versão A/B em segundos.</p>
+      </article>
+
+      <article class="f13-card reveal">
+        <span class="f13-card__tag">Smart</span>
+        <div class="f13-card__num">07</div>
+        <div class="f13-card__ico" aria-hidden="true">✂️</div>
+        <h4>Transições IA</h4>
+        <p>Sugere transição apropriada pra cada corte (match cut, J-cut, L-cut) baseado no conteúdo de áudio e visual.</p>
+      </article>
+
+      <article class="f13-card reveal">
+        <span class="f13-card__tag">Smart</span>
+        <div class="f13-card__num">08</div>
+        <div class="f13-card__ico" aria-hidden="true">🗂️</div>
+        <h4>Organizar Bins</h4>
+        <p>IA renomeia e agrupa clips órfãos no project panel por tipo, data e conteúdo. Acaba com "Untitled 47.mp4".</p>
+      </article>
+
+      <article class="f13-card reveal">
+        <span class="f13-card__tag">Smart</span>
+        <div class="f13-card__num">09</div>
+        <div class="f13-card__ico" aria-hidden="true">🎥</div>
+        <h4>MultiCam IA</h4>
+        <p>Sincroniza câmeras por áudio waveform e troca de ângulo automaticamente nos pontos altos da fala.</p>
+      </article>
+
+      <article class="f13-card reveal">
+        <span class="f13-card__tag">Util</span>
+        <div class="f13-card__num">10</div>
+        <div class="f13-card__ico" aria-hidden="true">⬇️</div>
+        <h4>Baixar Vídeo</h4>
+        <p>yt-dlp + aria2c integrados. Cola URL, escolhe formato, baixa direto pro projeto. YouTube, Vimeo, social.</p>
+      </article>
+
+      <article class="f13-card reveal">
+        <span class="f13-card__tag">Smart</span>
+        <div class="f13-card__num">11</div>
+        <div class="f13-card__ico" aria-hidden="true">👤</div>
+        <h4>Auto Crop</h4>
+        <p>Face tracking Canvas YCbCr (sem ML lib externa pesada). Reframe pra vertical/quadrado seguindo o rosto.</p>
+      </article>
+
+      <article class="f13-card reveal">
+        <span class="f13-card__tag">Util</span>
+        <div class="f13-card__num">12</div>
+        <div class="f13-card__ico" aria-hidden="true">📚</div>
+        <h4>Biblioteca Stock</h4>
+        <p>Busca multi-fonte: Pexels (free), Pixabay (BYOK opcional) e Giphy. Import direto pra bin, com licença anexada.</p>
+      </article>
+
+      <article class="f13-card reveal">
+        <span class="f13-card__tag f13-card__tag--hot">Flagship</span>
+        <div class="f13-card__num">13</div>
+        <div class="f13-card__ico" aria-hidden="true">👻</div>
+        <h4>Casper · Auto-edit</h4>
+        <p>Pipeline declarativo que roda várias skills em sequência. Configura uma vez, aplica em todo vídeo novo. O motivo de Suite Total existir.</p>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ FLUXO ════════════════════════ -->
+<section class="flux" id="fluxo">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="tag-mono"><span class="dot"></span>— O FLUXO</span>
+      <h2 class="section-title">Quatro passos.<br>Edição inteira na <span class="italic-em">timeline.</span></h2>
+    </div>
+    <div class="flux-grid">
+      <div class="flux-line" id="fluxLine"></div>
+      <div class="flux-step reveal"><div class="num">01</div><h4>Importa</h4><p>Joga o vídeo bruto na sequência. Motion IA escuta o painel CEP.</p></div>
+      <div class="flux-step reveal"><div class="num">02</div><h4>Pede</h4><p>Em linguagem natural ou pelo botão da feature: "corta pausas + capítulos + legenda viral".</p></div>
+      <div class="flux-step reveal"><div class="num">03</div><h4>Espera o cafézinho</h4><p>Whisper transcreve local, IA analisa, ExtendScript aplica na timeline. Você nem precisa olhar.</p></div>
+      <div class="flux-step reveal"><div class="num">04</div><h4>Revisa</h4><p>Volta. Confere os 3 pontos limítrofes. Exporta. Entrega.</p></div>
+    </div>
+    <div class="flux-close reveal">
+      <div class="head">Da intenção à timeline pronta: <span class="accent">de minutos pra segundos.</span></div>
+      <div class="sub">O Casper · Auto-edit faz tudo isso em fila — sem você babá da timeline.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ COMPARAÇÃO ════════════════════════ -->
+<section>
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="tag-mono"><span class="dot"></span>— O QUE MUDA</span>
+      <h2 class="section-title">Antes do Motion IA.<br>Depois do <span class="italic-em">Motion IA.</span></h2>
+    </div>
+    <div class="compare-table">
+      <div class="compare-head"><div>Tarefa</div><div>Hoje</div><div class="h-pro">Motion IA</div></div>
+      <div class="compare-row reveal"><div class="task">Cortar pausa e silêncio</div><div class="before">Marker + ripple manual</div><div class="after">Whisper detecta e remove</div></div>
+      <div class="compare-row reveal"><div class="task">Achar trecho viral</div><div class="before">Revisar 32min na timeline</div><div class="after">IA marca os 3 melhores</div></div>
+      <div class="compare-row reveal"><div class="task">Cortar "éééé" e "ahn"</div><div class="before">Caçar take a take</div><div class="after">Detecção automática</div></div>
+      <div class="compare-row reveal"><div class="task">Gerar capítulos YouTube</div><div class="before">Anotar enquanto edita</div><div class="after">Markers IA exportáveis</div></div>
+      <div class="compare-row reveal"><div class="task">Legenda word-by-word viral</div><div class="before">Plugin caro + render externo</div><div class="after">5 estilos · ASS direto</div></div>
+      <div class="compare-row reveal"><div class="task">Auto crop pra vertical</div><div class="before">Reframe na mão · take a take</div><div class="after">Face tracking automático</div></div>
+      <div class="compare-row reveal"><div class="task">Sincronizar multicam</div><div class="before">Bater claps + nudge</div><div class="after">Audio waveform IA</div></div>
+      <div class="compare-row reveal"><div class="task">Baixar vídeo de referência</div><div class="before">Site sketchy + conversor</div><div class="after">yt-dlp integrado</div></div>
+      <div class="compare-row reveal"><div class="task">Stock de B-roll</div><div class="before">Abrir 3 sites · download · import</div><div class="after">Busca dentro do plugin</div></div>
+      <div class="compare-row reveal"><div class="task">Rodar tudo de uma vez</div><div class="before">Impossível</div><div class="after">Casper · Auto-edit pipeline</div></div>
+    </div>
+    <div class="compare-close reveal"><p>Não é uma evolução. <span class="accent">É outra categoria.</span></p></div>
+  </div>
+</section>
+
+<!-- ════════════════════════ FAMÍLIA Motion Suite ════════════════════════ -->
+<section class="familia" id="familia" style="padding:120px 0;background:linear-gradient(180deg,#0a0a0a 0%,#000 100%);border-top:1px solid rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.04)">
+  <div class="container">
+    <div class="sec-head reveal" style="text-align:center;max-width:780px;margin:0 auto 60px">
+      <span class="tag-mono"><span class="dot"></span>— FAMÍLIA</span>
+      <h2 class="section-title" style="color:#fff;margin-top:16px">Um ecossistema.<br>Três <span class="italic-em">plugins.</span></h2>
+      <p style="color:rgba(255,255,255,.55);font-size:18px;line-height:1.5;margin-top:20px">Cada plugin foi feito pra resolver uma dor específica do editor. Funcionam separados, melhores juntos.</p>
+    </div>
+
+    <div class="familia-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;max-width:1100px;margin:0 auto">
+
+      <!-- Motion Titles -->
+      <a href="/titles/" class="familia-card reveal" style="display:block;text-decoration:none;color:inherit;background:#0e0e0e;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:32px;transition:all .25s;position:relative;overflow:hidden">
+        <div style="position:absolute;top:16px;right:16px;background:rgba(37, 99, 235,.12);color:#2563eb;padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1.2px">CARRO-CHEFE</div>
+        <div style="font-size:36px;margin-bottom:16px">🎬</div>
+        <h3 style="font-size:22px;font-weight:800;letter-spacing:-.4px;margin-bottom:8px;color:#fff">Motion Titles</h3>
+        <p style="color:rgba(255,255,255,.55);font-size:14px;line-height:1.5;margin-bottom:20px">7.906 motion graphics premium importáveis em 1 clique. Títulos, transições, lower thirds, reels e mais.</p>
+        <div style="font-size:12px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.5px">Premiere Pro · Plugin CEP nativo</div>
+        <div style="margin-top:24px;display:flex;justify-content:space-between;align-items:center">
+          <span style="color:#2563eb;font-weight:700;font-size:13px">Ver plugin →</span>
+          <span style="color:rgba(255,255,255,.3);font-size:12px">R$ 49,90/mês</span>
+        </div>
+      </a>
+
+      <!-- Motion Legendas -->
+      <a href="/legendas/" class="familia-card reveal" style="display:block;text-decoration:none;color:inherit;background:#0e0e0e;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:32px;transition:all .25s;position:relative;overflow:hidden">
+        <div style="position:absolute;top:16px;right:16px;background:rgba(124,77,255,.15);color:#a78bfa;padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1.2px">LEGENDAS</div>
+        <div style="font-size:36px;margin-bottom:16px">💬</div>
+        <h3 style="font-size:22px;font-weight:800;letter-spacing:-.4px;margin-bottom:8px;color:#fff">Motion Legendas</h3>
+        <p style="color:rgba(255,255,255,.55);font-size:14px;line-height:1.5;margin-bottom:20px">549 títulos legendados em 10 estilos. Transcrição automática PT-BR + sound effects inclusos.</p>
+        <div style="font-size:12px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.5px">Premiere Pro · Plugin CEP nativo</div>
+        <div style="margin-top:24px;display:flex;justify-content:space-between;align-items:center">
+          <span style="color:#a78bfa;font-weight:700;font-size:13px">Ver plugin →</span>
+          <span style="color:rgba(255,255,255,.3);font-size:12px">R$ 49,90/mês</span>
+        </div>
+      </a>
+
+      <!-- Motion IA (atual) -->
+      <div class="familia-card reveal" style="display:block;background:#0e0e0e;border:1px solid rgba(124,58,237,.4);border-radius:16px;padding:32px;position:relative;overflow:hidden">
+        <div style="position:absolute;top:16px;right:16px;background:rgba(124,58,237,.18);color:#c4b5fd;padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1.2px">VOCÊ ESTÁ AQUI</div>
+        <div style="font-size:36px;margin-bottom:16px">🤖</div>
+        <h3 style="font-size:22px;font-weight:800;letter-spacing:-.4px;margin-bottom:8px;color:#fff">Motion IA</h3>
+        <p style="color:rgba(255,255,255,.55);font-size:14px;line-height:1.5;margin-bottom:20px">13 features de IA dentro do Premiere. Whisper local + Gemini 2.5 + Casper · Auto-edit.</p>
+        <div style="font-size:12px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.5px">Premiere Pro · Plugin CEP nativo</div>
+        <div style="margin-top:24px;display:flex;justify-content:space-between;align-items:center">
+          <a href="#planos" style="color:#c4b5fd;font-weight:700;font-size:13px;text-decoration:none">Ver planos ↓</a>
+          <span style="color:rgba(255,255,255,.3);font-size:12px">R$ 49,90/mês</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="text-align:center;margin-top:40px">
+      <p style="color:rgba(255,255,255,.45);font-size:14px">Plano <strong style="color:#fff">Suite Total</strong> dá acesso aos três plugins por R$ 79,90/mês. Veja em <a href="#planos" style="color:#7c3aed">planos</a>.</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .familia-card:hover {
+    border-color: rgba(124, 58, 237,.4) !important;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0,0,0,.5);
+  }
+</style>
+
+<!-- ════════════════════════ PRICING ════════════════════════ -->
+<section class="pricing" id="planos">
+  <div class="container">
+    <div class="sec-head reveal" style="text-align:center; margin-left:auto; margin-right:auto;">
+      <span class="tag-mono"><span class="dot"></span>— OS PLANOS</span>
+      <h2 class="section-title">Três planos.<br>Zero <span class="italic-em">pegadinha.</span></h2>
+      <p class="lede" style="margin:20px auto 0">Leva só o Motion IA. Ou leva a Suite Total e ganha Titles + Legendas no mesmo combo.</p>
+      <div class="price-toggle reveal" role="tablist" aria-label="Frequência" style="margin-top:32px;">
+        <button id="toggle-monthly" class="active" data-freq="monthly" role="tab" aria-selected="true">Mensal</button>
+        <button id="toggle-yearly" data-freq="yearly" role="tab" aria-selected="false">Anual <span class="sale">até 2 meses grátis</span></button>
+      </div>
+    </div>
+
+    <div class="price-grid">
+
+      <!-- SOLO IA -->
+      <article class="price-card reveal">
+        <div class="price-tag">Solo · só Motion IA</div>
+        <h3>Motion IA</h3>
+        <div class="price-amount" data-amount-monthly="R$ 49,90" data-amount-yearly="R$ 249,00">
+          <span class="num">R$ 49,90</span>
+          <span class="suf" data-suf-monthly="/mês" data-suf-yearly="/ano">/mês</span>
+        </div>
+        <p class="price-micro" data-micro-monthly="13 features de IA · cobrança mensal" data-micro-yearly="13 features de IA · 2 meses grátis no anual">13 features de IA · cobrança mensal</p>
+        <ul class="price-features">
+          <li>13 features de IA (Casper incluso)</li>
+          <li>Whisper local + Gemini 2.5 inclusos</li>
+          <li>Biblioteca Stock multi-fonte</li>
+          <li>2 dispositivos simultâneos</li>
+          <li>BYOK Anthropic + Pixabay opcional</li>
+        </ul>
+        <button class="btn btn-dark btn-full" data-buy-suite="ia_monthly" data-plan-ia-monthly="ia_monthly" data-plan-ia-yearly="ia_yearly">
+          Assinar Motion IA <span class="arrow">→</span>
+        </button>
+        <div class="price-foot">7 dias trial · cancele em 1 clique</div>
+      </article>
+
+      <!-- SUITE DUO -->
+      <article class="price-card reveal">
+        <div class="price-tag">Suite Duo · 2 plugins</div>
+        <h3>Titles <em style="font-style:normal;color:var(--fg-muted);font-weight:500">+</em> Legendas</h3>
+        <div class="price-amount" data-amount-monthly="R$ 59,90" data-amount-yearly="R$ 399,90">
+          <span class="num">R$ 59,90</span>
+          <span class="suf" data-suf-monthly="/mês" data-suf-yearly="/ano">/mês</span>
+        </div>
+        <p class="price-micro" data-micro-monthly="Sem Motion IA · combo Titles + Legendas" data-micro-yearly="Sem Motion IA · 2 meses grátis no anual">Sem Motion IA · combo Titles + Legendas</p>
+        <ul class="price-features">
+          <li>Motion Titles + Motion Legendas</li>
+          <li>7.906 títulos + 549 títulos legendados</li>
+          <li>10 estilos + sound effects</li>
+          <li>2 dispositivos simultâneos</li>
+          <li><em style="color:var(--fg-muted)">Sem features de IA</em></li>
+        </ul>
+        <button class="btn btn-dark btn-full" data-buy-suite="suite_monthly" data-plan-suite-monthly="suite_monthly" data-plan-suite-yearly="suite_yearly">
+          Quero a Suite Duo <span class="arrow">→</span>
+        </button>
+        <div class="price-foot">7 dias trial · cancele em 1 clique</div>
+      </article>
+
+      <!-- SUITE TOTAL · POPULAR -->
+      <article class="price-card popular reveal">
+        <span class="price-badge">⭐ Mais escolhido</span>
+        <div class="price-tag">Suite Total · 3 plugins</div>
+        <h3>Titles <em style="font-style:normal;color:var(--fg-muted);font-weight:500">+</em> Legendas <em style="font-style:normal;color:var(--fg-muted);font-weight:500">+</em> IA</h3>
+        <div class="price-amount" data-amount-monthly="R$ 79,90" data-amount-yearly="R$ 549,00">
+          <span class="num">R$ 79,90</span>
+          <span class="suf" data-suf-monthly="/mês" data-suf-yearly="/ano">/mês</span>
+        </div>
+        <p class="price-micro" data-micro-monthly="Edição inteira resolvida · +R$ 20 vs Duo" data-micro-yearly="Edição inteira resolvida · 2 meses grátis no anual">Edição inteira resolvida · +R$ 20 vs Duo</p>
+        <ul class="price-features">
+          <li>Tudo da Suite Duo <strong>+</strong> Motion IA</li>
+          <li>13 features de IA · Casper · Auto-edit</li>
+          <li>Whisper local + Gemini 2.5</li>
+          <li>Biblioteca Stock multi-fonte</li>
+          <li>2 dispositivos simultâneos · Suporte VIP</li>
+        </ul>
+        <button class="btn btn-primary btn-full btn-lg" data-buy-suite="suite_total_monthly" data-plan-suite-total-monthly="suite_total_monthly" data-plan-suite-total-yearly="suite_total_yearly">
+          Quero a Suite Total <span class="arrow">→</span>
+        </button>
+        <div class="price-foot">7 dias trial · cancele em 1 clique</div>
+      </article>
+
+    </div>
+
+    <div class="pricing-callout reveal">
+      <p>
+        Motion IA sozinho: <strong>R$ 49,90</strong>. Com Titles + Legendas (Suite Total): <strong>R$ 79,90</strong>. Os outros dois plugins saem por <strong style="color:var(--accent)">R$ 30/mês</strong>. A conta favorece quem leva mais.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ MANIFESTO ════════════════════════ -->
+<section class="manifesto">
+  <div class="container">
+    <div class="manifesto-inner reveal">
+      <p class="manifesto-quote">
+        Construí o Motion IA porque editor não devia perder hora cortando "ééé" ou caçando trecho viral na mão. A IA roda local quando dá, no Gemini quando precisa, e devolve a parte braçal pro Premiere fazer sozinho.
+      </p>
+      <div class="manifesto-sig">
+        <span class="name">Gabriel Kendy</span>
+        <span class="role">Criador da Motion Suite · PacotesFX</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ FAQ ════════════════════════ -->
+<section class="faq" id="faq">
+  <div class="container">
+    <div class="sec-head reveal" style="text-align:center; margin-left:auto; margin-right:auto;">
+      <span class="tag-mono"><span class="dot"></span>— PERGUNTAS FREQUENTES</span>
+      <h2 class="section-title">Dúvidas comuns.</h2>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Funciona em qual versão do Premiere?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Premiere Pro CC 2019 em diante (Windows e Mac). Plugin é CEP nativo, instalação automática. Já testado em Premiere 26.2 + CEP 12.0.1.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">A IA precisa de internet pra rodar?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Pra <strong>transcrição (Whisper)</strong>, não — roda 100% local na sua máquina depois de baixar o modelo (~140MB). Pra <strong>raciocínio com Gemini</strong>, Caça-Trechos, Capítulos e Casper, sim — usam Gemini 2.5 via nossos créditos inclusos. Stock (Pexels/Pixabay/Giphy) também online.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Preciso pagar OpenAI/Anthropic/Gemini separado?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Não. A assinatura já inclui créditos pra rodar tudo. Se você prefere usar sua própria key (Anthropic Claude, Pixabay Pro, Giphy enterprise), tem BYOK em ⚙ Config — usa direto sem passar pelos nossos créditos.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Quantas máquinas posso ativar?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>2 dispositivos simultâneos por padrão (ex: desktop + notebook). Troca de máquina em 1 clique no dashboard. Lifetime tem 5 ativações se você comprar nesse modelo.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">O que é o Casper · Auto-edit?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>É a feature 13 — um pipeline declarativo onde você configura uma sequência de skills (ex: cortar pausas → cortar erros → caça-trechos → capítulos → legenda viral) e roda tudo de uma vez. Salva a config localmente, reaproveita em todo vídeo novo. É o que justifica a Suite Total existir: rodar isso em vídeo de 30min enquanto você faz outra coisa.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">A legenda IA word-by-word é estilo qual?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>5 estilos prontos: <strong>Viral</strong> (cor mudando palavra a palavra), <strong>TikTok</strong> (centralizado bold), <strong>Reels</strong> (highlight box), <strong>Clássico</strong> (linha estática) e <strong>Minimal</strong> (sans serif limpo). Cor, fonte e posição editáveis depois.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Como funciona o reembolso?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>7 dias de garantia incondicional. Não curtiu, devolve o dinheiro. Sem formulário de 12 campos, sem ligação de retenção. Manda email pro suporte.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Posso usar em projetos comerciais?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Sim. Uso comercial liberado nos 3 planos. Vídeo de cliente, YouTube monetizado, social ads, evento pago — sem royalty.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Vale comprar a Suite Total ou só o IA?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Depende do que você edita. Se você só precisa de IA (corte de pausa, legenda viral, capítulos), o Solo IA resolve por R$ 49,90. Se você também animaria título e quer biblioteca de motion graphics + legenda manual estilizada, a Suite Total entrega tudo por R$ 79,90 — Titles e Legendas saem por R$ 15/mês cada dentro do combo.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ CROSS-SELL: as outras duas metades ════════════════════════ -->
+<section class="crosssell" style="background:var(--bg-elevated); padding:clamp(80px, 14vw, 140px) 0;">
+  <div class="container">
+    <div class="sec-head reveal" style="text-align:center; max-width:780px; margin:0 auto 60px">
+      <span class="tag-mono"><span class="dot"></span>— OS OUTROS DOIS</span>
+      <h2 class="section-title" style="margin-top:16px">A IA resolve metade.<br>E a <span class="italic-em">outra metade?</span></h2>
+      <p style="margin-top:24px; font-size:clamp(1.05rem,1.4vw,1.2rem); color:var(--fg-muted); line-height:1.55; max-width:680px; margin-left:auto; margin-right:auto;">
+        O Motion IA corta, transcreve e roda pipeline. Mas <strong>todo vídeo abre com título</strong> e <strong>fecha com legenda renderizada</strong> — e essa parte ainda é manual se você só tem IA. Por isso a Suite Total existe.
+      </p>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; max-width:1000px; margin:0 auto;">
+      <div class="reveal" style="background:white; border:1px solid var(--border); border-radius:20px; padding:36px; box-shadow:0 20px 60px -20px rgba(37,99,235,.10);">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:.7rem; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); margin-bottom:14px;">PLUGIN 01</div>
+        <h3 style="font-size:clamp(1.4rem,1.9vw,1.8rem); font-weight:800; letter-spacing:-.02em; margin-bottom:14px;">Motion Titles</h3>
+        <p style="margin-bottom:24px; color:var(--fg-muted); font-size:15px;">7.906 títulos animados prontos. Painel CEP nativo, fonte/cor/posição editáveis, aplica em 1 clique.</p>
+        <ul style="list-style:none; display:flex; flex-direction:column; gap:10px; margin-bottom:24px;">
+          <li style="font-size:14px; color:var(--fg);"><span style="color:var(--accent);">→</span> Lower thirds, transições, reels pack</li>
+          <li style="font-size:14px; color:var(--fg);"><span style="color:var(--accent);">→</span> Monster FX, Glitch, Cinematic titles</li>
+          <li style="font-size:14px; color:var(--fg);"><span style="color:var(--accent);">→</span> 100% editável na timeline</li>
+        </ul>
+        <a href="/titles/" class="btn btn-secondary btn-full"><span>Ver o Motion Titles <span class="arrow">→</span></span></a>
+      </div>
+      <div class="reveal" style="background:white; border:1px solid var(--border); border-radius:20px; padding:36px; box-shadow:0 20px 60px -20px rgba(167,139,250,.12);">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:.7rem; letter-spacing:.2em; text-transform:uppercase; color:#7c3aed; margin-bottom:14px;">PLUGIN 02</div>
+        <h3 style="font-size:clamp(1.4rem,1.9vw,1.8rem); font-weight:800; letter-spacing:-.02em; margin-bottom:14px;">Motion Legendas</h3>
+        <p style="margin-bottom:24px; color:var(--fg-muted); font-size:15px;">549 títulos legendados em 10 estilos. Pra quando você quer legenda estilizada estática (não word-by-word).</p>
+        <ul style="list-style:none; display:flex; flex-direction:column; gap:10px; margin-bottom:24px;">
+          <li style="font-size:14px; color:var(--fg);"><span style="color:#7c3aed;">→</span> Lower thirds + 9 categorias visuais</li>
+          <li style="font-size:14px; color:var(--fg);"><span style="color:#7c3aed;">→</span> Estilos editorial, urbano, glitch</li>
+          <li style="font-size:14px; color:var(--fg);"><span style="color:#7c3aed;">→</span> Sound effects já embutidos</li>
+        </ul>
+        <a href="/legendas/" class="btn btn-secondary btn-full"><span>Ver o Motion Legendas <span class="arrow">→</span></span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ CTA COMBO (dark) ════════════════════════ -->
+<section class="cta-combo" style="background:var(--bg-dark); color:var(--fg-on-dark); padding:clamp(80px, 14vw, 140px) 0; text-align:center; position:relative; overflow:hidden;">
+  <div style="position:absolute; inset:0; background:radial-gradient(circle at 50% 50%, rgba(124,58,237,.15), transparent 60%); pointer-events:none;"></div>
+  <div class="container" style="position:relative;">
+    <div class="sec-head reveal" style="text-align:center; margin:0 auto 60px; max-width:780px;">
+      <span class="tag-mono" style="color:#c4b5fd"><span class="dot" style="background:#c4b5fd"></span>— FAZ A CONTA</span>
+      <h2 class="section-title" style="color:var(--fg-on-dark); margin-top:16px;">Leva só o IA?<br>Ou <span class="italic-em">a edição inteira?</span></h2>
+      <p style="color:var(--fg-on-dark-muted); margin-top:24px; font-size:clamp(1rem,1.3vw,1.15rem); max-width:580px; margin-left:auto; margin-right:auto;">
+        O Motion IA sozinho já resolve corte, transcrição e auto-edit. Mas a Suite Total resolve IA <strong>+</strong> título <strong>+</strong> legenda estilizada — e os outros dois plugins saem por só R$ 15/mês cada dentro do combo.
+      </p>
+    </div>
+
+    <div class="reveal" style="display:grid; grid-template-columns:1fr 1fr; gap:24px; max-width:900px; margin:0 auto;">
+      <div style="background:#0e0e0e; border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:32px; text-align:left;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:.7rem; letter-spacing:.2em; text-transform:uppercase; color:rgba(255,255,255,.5); margin-bottom:14px;">SÓ IA</div>
+        <div style="font-size:clamp(2rem,3.5vw,2.8rem); font-weight:800; letter-spacing:-.04em; color:#fff;">R$ 49,90<span style="font-size:.45em; color:rgba(255,255,255,.5); font-weight:500"> /mês</span></div>
+        <p style="color:rgba(255,255,255,.55); font-size:14px; margin-top:14px; max-width:none;">13 features de IA. Só.</p>
+        <button class="btn btn-ghost btn-full" data-buy-suite="ia_monthly" style="margin-top:24px; border-color:rgba(255,255,255,.15); color:rgba(255,255,255,.85);">Quero só o IA <span class="arrow">→</span></button>
+      </div>
+      <div style="background:linear-gradient(180deg, rgba(124,58,237,.22), rgba(124,58,237,.06)); border:2px solid #7c3aed; border-radius:18px; padding:32px; text-align:left; position:relative;">
+        <div style="position:absolute; top:-14px; left:32px; background:#7c3aed; color:white; padding:6px 14px; border-radius:100px; font-family:'JetBrains Mono',monospace; font-size:.65rem; letter-spacing:.2em; text-transform:uppercase; font-weight:500;">Mais escolhido</div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:.7rem; letter-spacing:.2em; text-transform:uppercase; color:#c4b5fd; margin-bottom:14px;">A SUITE TOTAL</div>
+        <div style="font-size:clamp(2rem,3.5vw,2.8rem); font-weight:800; letter-spacing:-.04em; color:#fff;">R$ 79,90<span style="font-size:.45em; color:rgba(255,255,255,.55); font-weight:500"> /mês</span></div>
+        <p style="color:rgba(255,255,255,.7); font-size:14px; margin-top:14px; max-width:none;">IA <strong>+</strong> Titles <strong>+</strong> Legendas. A edição inteira.</p>
+        <button class="btn btn-primary btn-full" data-buy-suite="suite_total_monthly" style="margin-top:24px;">Quero a Suite Total (+R$30) <span class="arrow">→</span></button>
+      </div>
+    </div>
+
+    <p class="reveal" style="font-family:'JetBrains Mono',monospace; font-size:.75rem; letter-spacing:.18em; text-transform:uppercase; color:#c4b5fd; margin-top:50px; text-align:center;">
+      Faz a conta: os outros dois plugins saem por <strong style="color:#fff">R$ 15/mês cada</strong> dentro do combo.
+    </p>
+  </div>
+</section>
+
+<!-- ════════════════════════ CTA FINAL ════════════════════════ -->
+<section class="cta-final">
+  <div class="container">
+    <h2 class="reveal">
+      <span class="line">A pergunta não é</span>
+      <span class="line accent">se você precisa.</span>
+      <span class="line">É quanto tempo a mais</span>
+      <span class="line accent">você vai cortar pausa na mão.</span>
+    </h2>
+    <p class="lede reveal">7 dias grátis. Sem cartão. Cancele com 1 clique.</p>
+    <div class="reveal"><a href="#planos" class="btn btn-primary btn-giant">Começar agora <span class="arrow">→</span></a></div>
+    <p class="micro reveal">Suporte em português · Equipe brasileira · Sem fila gringa</p>
+  </div>
+</section>
+
+<!-- ════════════════════════ FOOTER ════════════════════════ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="logo"><span class="logo-dot"></span>Motion Suite</div>
+        <p class="footer-tag">Três plugins. Um Premiere. Sua edição inteira mais rápida. Construído por editor, pra editor.</p>
+        <div class="footer-copy">© <span data-yr></span> · PacotesFX</div>
+      </div>
+      <div class="footer-col"><h5>Produtos</h5><ul>
+        <li><a href="/titles/">Motion Titles</a></li>
+        <li><a href="/legendas/">Motion Legendas</a></li>
+        <li><a href="/ia/">Motion IA</a></li>
+        <li><a href="/#planos">A Suite (combo)</a></li>
+      </ul></div>
+      <div class="footer-col"><h5>Recursos</h5><ul>
+        <li><a href="#features">As 13 features</a></li>
+        <li><a href="#fluxo">Como funciona</a></li>
+        <li><a href="#planos">Preços</a></li>
+        <li><a href="#faq">FAQ</a></li>
+        <li><a href="/ia/download.html">Download</a></li>
+      </ul></div>
+      <div class="footer-col"><h5>Conta</h5><ul>
+        <li><a href="/account.html">Entrar</a></li>
+        <li><a href="#planos">Assinar</a></li>
+        <li><a href="/reset-password.html">Esqueci a senha</a></li>
+      </ul></div>
+      <div class="footer-col"><h5>Legal</h5><ul>
+        <li><a href="/terms.html">Termos de uso</a></li>
+        <li><a href="/privacy.html">Privacidade</a></li>
+        <li><a href="/seguranca.html">Segurança</a></li>
+        <li><a href="mailto:suporte@pacotesfx.com">suporte@pacotesfx.com</a></li>
+      </ul></div>
+    </div>
+    <div class="footer-bottom">
+      <span>Brasil · Belo Horizonte</span>
+      <span>v3.0 Motion Suite · <span data-yr></span></span>
+    </div>
+  </div>
+</footer>
+
+<!-- ════════════════════════ WHATSAPP FAB ════════════════════════ -->
+<a class="wa-fab"
+   href="https://wa.me/5531997554040?text=Quero%20conhecer%20o%20Motion%20IA"
+   target="_blank" rel="noopener noreferrer"
+   aria-label="Falar no WhatsApp">
+  <span class="wa-fab-label">
+    <strong>Fala com a gente</strong>
+    <small>31 99755-4040</small>
+  </span>
+  <span class="wa-fab-btn" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.464 3.488"/></svg>
+  </span>
+</a>
+
+<script>
+  // Flag pra system.js NÃO instanciar IO de reveal duplicado (GSAP cuida)
+  window.__MV_GSAP_REVEAL__ = true;
+</script>
+<script src="/js/system.js"></script>
+<script>
+/* ════════════════════════════════════════════════════════════════
+   MOTION IA · LP SCRIPT (mesma stack das outras LPs)
+   - Lenis + ScrollTrigger consolidado
+   - HERO timeline + scramble
+   - FAQ accordion
+   - Pricing toggle (Mensal/Anual) com suporte a planos: ia, suite, suite_total
+   - Checkout via /v1/billing/checkout
+   ════════════════════════════════════════════════════════════════ */
+(function () {
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let waited = 0;
+  function ready() {
+    if (typeof window.gsap === 'undefined' || typeof window.ScrollTrigger === 'undefined') {
+      waited += 50;
+      if (waited < 4000) return setTimeout(ready, 50);
+      return fallback();
+    }
+    gsap.registerPlugin(ScrollTrigger);
+    init();
+  }
+  function fallback() {
+    document.querySelectorAll('.reveal').forEach(el => el.classList.add('in'));
+  }
+  function init() {
+    let lenis = null;
+    if (!reduced && typeof window.Lenis !== 'undefined') {
+      try {
+        lenis = new Lenis({
+          duration: 1.05,
+          easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+          smoothWheel: true,
+          wheelMultiplier: 1,
+          touchMultiplier: 1.6,
+          syncTouch: false
+        });
+        lenis.on('scroll', ScrollTrigger.update);
+        gsap.ticker.add(time => lenis.raf(time * 1000));
+        gsap.ticker.lagSmoothing(0);
+        window.__lenis = lenis;
+      } catch (e) { lenis = null; }
+    }
+
+    // HERO split em chars
+    const titleEl = document.getElementById('heroTitle');
+    if (titleEl) {
+      titleEl.querySelectorAll('.line').forEach(line => {
+        function splitNode(node, parent) {
+          if (node.nodeType === 3) {
+            const frag = document.createDocumentFragment();
+            [...node.textContent].forEach(ch => {
+              const s = document.createElement('span');
+              s.className = 'char';
+              s.textContent = ch === ' ' ? ' ' : ch;
+              frag.appendChild(s);
+            });
+            parent.replaceChild(frag, node);
+          } else if (node.nodeType === 1) {
+            [...node.childNodes].forEach(c => splitNode(c, node));
+          }
+        }
+        [...line.childNodes].forEach(n => splitNode(n, line));
+      });
+    }
+
+    if (!reduced) {
+      const tl = gsap.timeline({ delay: 0.3, defaults: { ease: 'power3.out' } });
+      const badge = document.querySelector('.hero-badge');
+      const chars = document.querySelectorAll('.hero-title .char');
+      const sub   = document.querySelector('.hero-sub');
+      const ctas  = document.querySelectorAll('.hero-ctas > *');
+      const trust = document.querySelector('.trust-line');
+      const marquee = document.querySelector('.hero-marquee');
+      if (badge) tl.from(badge, { opacity: 0, y: 20, duration: .8 });
+      if (chars.length) tl.from(chars, { opacity: 0, y: 80, rotateX: -90, duration: 1, stagger: .03, ease: 'power4.out' }, '-=0.5');
+      if (sub) tl.from(sub, { opacity: 0, y: 30, duration: .8 }, '-=0.6');
+      if (ctas.length) tl.from(ctas, { opacity: 0, y: 40, duration: .7, stagger: .1, ease: 'back.out(1.7)' }, '-=0.4');
+      if (trust) tl.from(trust, { opacity: 0, y: 10, duration: .6 }, '-=0.4');
+      if (marquee) tl.from(marquee, { opacity: 0, y: 30, duration: 1 }, '-=0.5');
+    }
+
+    if (!reduced) {
+      ScrollTrigger.batch('.reveal', {
+        start: 'top 88%',
+        onEnter: batch => batch.forEach((el, i) => setTimeout(() => el.classList.add('in'), i * 70)),
+        once: true
+      });
+    } else {
+      document.querySelectorAll('.reveal').forEach(el => el.classList.add('in'));
+    }
+
+    // COUNTERS
+    document.querySelectorAll('[data-counter]').forEach(el => {
+      const target = parseFloat(el.dataset.counter);
+      const suffix = el.dataset.suffix || '';
+      const fmt    = el.dataset.format === 'thousand';
+      const obs = new IntersectionObserver((entries) => {
+        entries.forEach(en => {
+          if (en.isIntersecting) {
+            const dur = 2000, start = performance.now();
+            function tick(now) {
+              const p = Math.min((now - start) / dur, 1);
+              const eased = 1 - Math.pow(1 - p, 3);
+              const v = Math.round(target * eased);
+              el.textContent = (fmt ? v.toLocaleString('pt-BR') : v) + suffix;
+              if (p < 1) requestAnimationFrame(tick);
+              else el.textContent = (fmt ? target.toLocaleString('pt-BR') : target) + suffix;
+            }
+            requestAnimationFrame(tick);
+            obs.disconnect();
+          }
+        });
+      }, { threshold: .4 });
+      obs.observe(el);
+    });
+
+    // STATS line in
+    const stats = document.getElementById('stats');
+    if (stats) {
+      ScrollTrigger.create({ trigger: stats, start: 'top 80%', onEnter: () => stats.classList.add('in-view') });
+    }
+
+    // FLUX line
+    const fluxLine = document.getElementById('fluxLine');
+    const fluxGrid = document.querySelector('.flux-grid');
+    if (fluxLine && fluxGrid && !reduced) {
+      ScrollTrigger.create({ trigger: fluxGrid, start: 'top 70%', onEnter: () => fluxLine.classList.add('in') });
+    } else if (fluxLine) {
+      fluxLine.classList.add('in');
+    }
+
+    // Pausa CSS do hero quando offscreen
+    const heroEl = document.querySelector('.hero');
+    if (heroEl) {
+      const heroIO = new IntersectionObserver((entries) => {
+        entries.forEach(en => {
+          heroEl.dataset.paused = en.isIntersecting ? 'false' : 'true';
+        });
+      }, { rootMargin: '100px' });
+      heroIO.observe(heroEl);
+    }
+
+    // Magnetic buttons
+    if (!reduced && matchMedia('(pointer:fine)').matches) {
+      document.querySelectorAll('.btn-magnetic').forEach(btn => {
+        const inner = btn.querySelector('span') || btn;
+        btn.addEventListener('mousemove', e => {
+          const r = btn.getBoundingClientRect();
+          const x = e.clientX - r.left - r.width / 2;
+          const y = e.clientY - r.top - r.height / 2;
+          gsap.to(btn,   { x: x * .25, y: y * .35, duration: .5, ease: 'power3.out' });
+          gsap.to(inner, { x: x * .12, y: y * .18, duration: .5, ease: 'power3.out' });
+        });
+        btn.addEventListener('mouseleave', () => {
+          gsap.to(btn,   { x: 0, y: 0, duration: .7, ease: 'elastic.out(1, .5)' });
+          gsap.to(inner, { x: 0, y: 0, duration: .7, ease: 'elastic.out(1, .5)' });
+        });
+      });
+    }
+
+    // Scramble
+    const SCRAMBLE_CHARS = '!<>-_\\/[]{}—=+*^?#________';
+    function scramble(el, finalText, dur = 900) {
+      const len = finalText.length, start = performance.now();
+      function tick(now) {
+        const t = Math.min((now - start) / dur, 1);
+        let out = '';
+        for (let i = 0; i < len; i++) {
+          const reveal = t * len;
+          if (i < reveal - 2) out += finalText[i];
+          else if (i < reveal) out += SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
+          else out += finalText[i] === ' ' ? ' ' : '';
+        }
+        el.textContent = out;
+        if (t < 1) requestAnimationFrame(tick);
+        else el.textContent = finalText;
+      }
+      requestAnimationFrame(tick);
+    }
+    if (!reduced) {
+      document.querySelectorAll('[data-scramble]').forEach(el => {
+        const final = el.dataset.scramble + '.';
+        let intervalId = null;
+        let visible = true;
+        setTimeout(() => scramble(el, final, 1100), 1800);
+        const startLoop = () => {
+          if (intervalId) return;
+          intervalId = setInterval(() => { if (visible) scramble(el, final, 1000); }, 7000);
+        };
+        const stopLoop = () => { if (intervalId) { clearInterval(intervalId); intervalId = null; } };
+        const io = new IntersectionObserver(([entry]) => {
+          visible = entry.isIntersecting;
+          if (visible) startLoop(); else stopLoop();
+        }, { rootMargin: '50px' });
+        io.observe(el);
+      });
+    }
+
+    // FAQ accordion
+    document.querySelectorAll('.faq-item').forEach(item => {
+      const btn = item.querySelector('.faq-q');
+      btn.addEventListener('click', () => {
+        const open = item.classList.toggle('open');
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+    });
+
+    // Smooth anchor
+    document.addEventListener('click', e => {
+      const a = e.target.closest('a[href^="#"]');
+      if (!a) return;
+      const id = a.getAttribute('href');
+      if (id.length <= 1) return;
+      const el = document.querySelector(id);
+      if (!el) return;
+      e.preventDefault();
+      if (lenis) lenis.scrollTo(el, { offset: -60, duration: 1.1 });
+      else el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    // ─── PRICING TOGGLE (Mensal / Anual) ───
+    function setFreq(freq) {
+      document.querySelectorAll('.price-toggle button').forEach(b => {
+        const active = b.dataset.freq === freq;
+        b.classList.toggle('active', active);
+        b.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      document.querySelectorAll('.price-amount').forEach(el => {
+        const num = el.querySelector('.num');
+        const suf = el.querySelector('.suf');
+        if (num) num.textContent = el.dataset['amount' + freq.charAt(0).toUpperCase() + freq.slice(1)] || num.textContent;
+        if (suf) suf.textContent = suf.dataset['suf' + freq.charAt(0).toUpperCase() + freq.slice(1)] || suf.textContent;
+      });
+      document.querySelectorAll('.price-micro').forEach(el => {
+        el.textContent = el.dataset['micro' + freq.charAt(0).toUpperCase() + freq.slice(1)] || el.textContent;
+      });
+      document.querySelectorAll('[data-buy-suite]').forEach(btn => {
+        Object.keys(btn.dataset).forEach(k => {
+          const m = k.match(/^plan(Titles|Legendas|Ia|Suite|SuiteTotal)(Monthly|Yearly)$/);
+          if (m && m[2].toLowerCase() === freq) {
+            btn.dataset.buySuite = btn.dataset[k];
+          }
+        });
+      });
+    }
+    document.querySelectorAll('.price-toggle button').forEach(b => {
+      b.addEventListener('click', () => setFreq(b.dataset.freq));
+    });
+
+    // ─── CHECKOUT MOTION SUITE ───
+    document.addEventListener('click', async e => {
+      const btn = e.target.closest('[data-buy-suite]');
+      if (!btn) return;
+      e.preventDefault();
+      const plan = btn.dataset.buySuite;
+      // split no ÚLTIMO "_" pra suportar "suite_total_monthly"
+      const lastUnderscore = plan.lastIndexOf('_');
+      const product = plan.slice(0, lastUnderscore);
+      const freq    = plan.slice(lastUnderscore + 1);
+      const orig = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Indo pra Stripe...';
+      try {
+        const token = localStorage.getItem('mv_session');
+        const savedEmail = localStorage.getItem('mv_email');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers.Authorization = 'Bearer ' + token;
+        const url = (window.MV_API || 'https://motionpro.vercel.app')
+          + '/v1/billing/checkout?plan=' + encodeURIComponent(freq)
+          + '&product=' + encodeURIComponent(product);
+        const r = await fetch(url, {
+          method: 'POST', headers,
+          body: JSON.stringify({ plan: freq, product, email: savedEmail || undefined })
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok || !data.url) throw new Error(data.error || 'checkout_failed');
+        window.location.href = data.url;
+      } catch (err) {
+        if (window.MV && window.MV.toast) window.MV.toast('Erro: ' + err.message, 'error');
+        btn.disabled = false;
+        btn.innerHTML = orig;
+      }
+    });
+
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => ScrollTrigger.refresh());
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready);
+  else ready();
+})();
+</script>
+
+</body>
+</html>
