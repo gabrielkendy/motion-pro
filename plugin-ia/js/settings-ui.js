@@ -89,14 +89,21 @@
     }
 
     function bind() {
+        // Helper defensivo: ignora silenciosamente se o elemento não existe
+        // no DOM (ex: usuário ainda na tela de login, settings ainda não renderizadas).
+        function on(id, fn) {
+            var el = $(id);
+            if (el) el.onclick = fn;
+        }
+
         // Toggle show key
-        $("set-key-show").onclick = function () {
+        on("set-key-show", function () {
             var i = $("set-anthropic-key");
-            i.type = i.type === "password" ? "text" : "password";
-        };
+            if (i) i.type = i.type === "password" ? "text" : "password";
+        });
 
         // Save
-        $("set-save").onclick = async function () {
+        on("set-save", async function () {
             var btn = $("set-save");
             var status = $("set-result");
             var keyStatus = $("set-key-status");
@@ -124,10 +131,10 @@
             } finally {
                 btn.disabled = false; btn.textContent = "💾 Salvar tudo";
             }
-        };
+        });
 
         // Test
-        $("set-test").onclick = async function () {
+        on("set-test", async function () {
             var btn = $("set-test");
             var status = $("set-result");
             btn.disabled = true; btn.textContent = "Testando…";
@@ -154,10 +161,10 @@
             } finally {
                 btn.disabled = false; btn.textContent = "🧪 Testar conexões";
             }
-        };
+        });
 
         // Reset
-        $("set-reset").onclick = async function () {
+        on("set-reset", async function () {
             if (!confirm("Apagar TODA a config? (API key, modelo, motor, MCP). Você terá que reconfigurar.")) return;
             try {
                 await resetSettings();
@@ -174,7 +181,7 @@
             } catch (e) {
                 showStatus($("set-result"), "❌ " + e.message, "err");
             }
-        };
+        });
     }
 
     // Init quando tab CONFIG abrir pela primeira vez

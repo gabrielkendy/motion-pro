@@ -562,9 +562,16 @@ $.global.MotionProIA = (function () {
             if (!outDir) return err("outDir obrigatório");
             prefix = prefix || "frame_";
             var saved = [];
+            // Strip trailing slash sem regex: o literal /[\\/]$/ é parser-hostile em
+            // ES3 ExtendScript (Premiere 26.x reporta "Expected: )" em line=567).
+            // FIX B do briefing — defensivo via charAt/substring.
+            var _lastChar = outDir.charAt(outDir.length - 1);
+            if (_lastChar === "/" || _lastChar === "\\") {
+                outDir = outDir.substring(0, outDir.length - 1);
+            }
             for (var i = 0; i < arr.length; i++) {
                 var sec = Number(arr[i]);
-                var nm = outDir.replace(/[\\/]$/, "") + "/" + prefix + i + "_" + Math.round(sec * 1000) + "ms.png";
+                var nm = outDir + "/" + prefix + i + "_" + Math.round(sec * 1000) + "ms.png";
                 var r = exportFrame(sec, nm);
                 var parsed; try { parsed = JSON.parse(r); } catch (eP) { parsed = {}; }
                 if (parsed.path) saved.push({ time: sec, path: parsed.path });
@@ -635,7 +642,9 @@ $.global.MotionProIA = (function () {
             if (!seq) return err("Sem sequência");
             if (typeof inSec === "number" && seq.setInPoint)  seq.setInPoint(secondsToTicks(inSec));
             if (typeof outSec === "number" && seq.setOutPoint) seq.setOutPoint(secondsToTicks(outSec));
-            return ok({ in: inSec, out: outSec });
+            // "in" precisa de aspas: é reserved word ES3, ExtendScript rejeita
+            // como property name sem quoting (ES5+ permite, jshint --esversion=3 pega).
+            return ok({ "in": inSec, "out": outSec });
         } catch (e) { return err(e.message); }
     }
 

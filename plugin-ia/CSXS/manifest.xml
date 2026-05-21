@@ -23,7 +23,17 @@
             <DispatchInfo>
                 <Resources>
                     <MainPath>./index.html</MainPath>
-                    <ScriptPath>./jsx/host.jsx</ScriptPath>
+                    <!-- ScriptPath REMOVIDO (Agente α · 2026-05-21):
+                         Confirmado via log forense CEP12-PPRO.log: o CEP/Premiere 26.x
+                         tenta carregar host.jsx automaticamente no engine da extension
+                         (com.motionpro.ia_Engine_Id) e FALHA com error code 27 do
+                         PlugPlug. O engine ExtendScript fica INVÁLIDO permanentemente
+                         pra essa extension — qualquer cs.evalScript subsequente (até
+                         "1+1") retorna "EvalScript error." em ms.
+                         Causa real do error 27 desconhecida (tamanho, race, encoding).
+                         Fix: host.jsx é carregado SOMENTE em runtime via $.evalFile no
+                         host-bridge.js, dentro do listener de AppOnline (engine vivo).
+                         Ref: https://community.adobe.com/t5/after-effects/cep-hello-world-returns-quot-evalscript-error-quot/m-p/9366081 -->
                     <CEFCommandLine>
                         <Parameter>--enable-nodejs</Parameter>
                         <Parameter>--mixed-context</Parameter>

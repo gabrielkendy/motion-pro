@@ -454,16 +454,21 @@
         setInterval(updateStatusBar, 15000);
 
         // 10. Bootstrap explícito do host.jsx via HostBridge.bootstrap().
-        // Mostra um toast se falhar (Premiere fechado / projeto não aberto).
-        if (window.HostBridge && window.HostBridge.bootstrap) {
-            window.HostBridge.bootstrap().then(function (ok) {
-                if (!ok) {
-                    toast("⚠ host.jsx não carregou — abra um projeto no Premiere e clique 'Revalidar' em ⚙ Config", "warn", 8000);
-                } else {
-                    console.log("[boot] host.jsx OK · ExtendScript pronto");
-                }
-            });
-        }
+        // Defesa em profundidade: setTimeout 500ms dá chance pro evento AppOnline
+        // do CEP disparar primeiro (host-bridge.js também escuta esse evento).
+        // Chamar cs.evalScript() cedo demais em --mixed-context corrompe o engine
+        // ExtendScript permanentemente — não fazer.
+        setTimeout(function () {
+            if (window.HostBridge && window.HostBridge.bootstrap) {
+                window.HostBridge.bootstrap().then(function (ok) {
+                    if (!ok) {
+                        toast("⚠ host.jsx não carregou — abra um projeto no Premiere e clique 'Revalidar' em ⚙ Config", "warn", 8000);
+                    } else {
+                        console.log("[boot] host.jsx OK · ExtendScript pronto");
+                    }
+                });
+            }
+        }, 500);
 
         // 11. Paywall logout
         $("pw-logout").onclick = function () {
@@ -560,7 +565,7 @@
                             "    var hasGlobal = ($.global.MotionProIA && typeof $.global.MotionProIA.ping === 'function');" +
                             "    var hasLocal = (typeof MotionProIA !== 'undefined' && typeof MotionProIA.ping === 'function');" +
                             "    return 'evalfile=' + r + '|global=' + hasGlobal + '|local=' + hasLocal;" +
-                            "  } catch(e) { return 'exception:' + (e.message || e); }" +
+                            "  } catch(e) { return 'exception:line=' + (e.line || '?') + ' source=' + (e.source ? String(e.source).substring(0,80).replace(/\\n/g,' ') : '?') + ' msg=' + (e.message || e); }" +
                             "})()";
                         cs.evalScript(s, function (r) { res(r); });
                     });
