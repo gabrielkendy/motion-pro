@@ -9,11 +9,37 @@ const { welcomeEmail, paymentFailedEmail } = require("../utils/email");
 
 const stripe = Stripe(process.env.STRIPE_SECRET || "sk_test_xxx");
 
-// Gera license key MIA-{TIER}-XXXX-XXXX-XXXX-XXXX para Motion IA
-function generateMIAKey(tier) {
+// Gera license key PFX-{TIER}-XXXX-XXXX-XXXX-XXXX (4 grupos hex)
+//   PFX: MTI (titles), MTL (legendas), MIA (ia), MTS (suite bundle)
+function generateLicenseKey(prefix, tier) {
+    const VALID = ["MTI", "MTL", "MIA", "MTS"];
+    const px = String(prefix || "MIA").toUpperCase().slice(0, 3);
+    if (!VALID.includes(px)) throw new Error("invalid_prefix:" + px);
     const t = (tier || "PRO").toUpperCase().slice(0, 4);
     const rand = () => crypto.randomBytes(2).toString("hex").toUpperCase();
-    return `MIA-${t}-${rand()}-${rand()}-${rand()}-${rand()}`;
+    return `${px}-${t}-${rand()}-${rand()}-${rand()}-${rand()}`;
+}
+
+// Mapa: product_id (canônico ou alias) → { prefix, products[], productName, downloadUrl }
+function resolveProduct(productId) {
+    const id = String(productId || "").toLowerCase().trim();
+    const TABLE = {
+        // Motion IA
+        "ia":             { prefix: "MIA", products: ["ia"],       name: "Motion IA",       download: "/ia/download.html" },
+        "motionia":       { prefix: "MIA", products: ["ia"],       name: "Motion IA",       download: "/ia/download.html" },
+        "motion_ia":      { prefix: "MIA", products: ["ia"],       name: "Motion IA",       download: "/ia/download.html" },
+        // Motion Titles
+        "titles":         { prefix: "MTI", products: ["titles"],   name: "Motion Titles",   download: "/download.html" },
+        "motionpro":      { prefix: "MTI", products: ["titles"],   name: "Motion Titles",   download: "/download.html" },
+        "motion titles":  { prefix: "MTI", products: ["titles"],   name: "Motion Titles",   download: "/download.html" },
+        // Motion Legendas
+        "legendas":       { prefix: "MTL", products: ["legendas"], name: "Motion Legendas", download: "/legendas/download.html" },
+        // Bundle Motion Suite (todos os 3)
+        "suite":          { prefix: "MTS", products: ["titles", "legendas", "ia"], name: "Motion Suite",       download: "/download.html" },
+        "bundle_all":     { prefix: "MTS", products: ["titles", "legendas", "ia"], name: "Pacote Motion Suite", download: "/download.html" },
+        "motion_suite":   { prefix: "MTS", products: ["titles", "legendas", "ia"], name: "Motion Suite",       download: "/download.html" }
+    };
+    return TABLE[id] || null;
 }
 
 // Fallback caso DB esteja indisponível — só pro Motion Titles
@@ -257,43 +283,46 @@ async function webhook(req, res) {
                     [user.id, { plan, product_id, mode: cs.mode, amount: cs.amount_total, stripe_session: cs.id }]
                 );
 
-                // ─── Motion IA: gera license key MIA-XXXX automaticamente ───
-                let mia_key_plaintext = null;
-                if (product_id === "ia" || product_id === "motionia" || product_id === "bundle_all") {
+                // ─── Gera license key automaticamente conforme o produto ───
+                //   ia       → MIA-…  (Motion IA)
+                //   titles   → MTI-…  (Motion Titles)
+                //   legendas → MTL-…  (Motion Legendas)
+                //   suite    → MTS-…  (Bundle: cobre titles+legendas+ia)
+                const resolved = resolveProduct(product_id);
+                let licenseKeyPlaintext = null;
+                if (resolved) {
                     try {
-                        const miaTier = isLifetime ? "lifetime" : (plan === "lifetime" ? "lifetime" : "pro");
-                        mia_key_plaintext = generateMIAKey(miaTier);
-                        const prefix = mia_key_plaintext.slice(0, 14);
-                        const hash = await bcrypt.hash(mia_key_plaintext, 10);
-                        const maxDevices = miaTier === "lifetime" ? 5 : 3;
-                        const expiresAt = (miaTier === "lifetime") ? null
+                        const tier = isLifetime ? "lifetime" : (plan === "lifetime" ? "lifetime" : "pro");
+                        licenseKeyPlaintext = generateLicenseKey(resolved.prefix, tier);
+                        const prefix = licenseKeyPlaintext.slice(0, 14);
+                        const hash = await bcrypt.hash(licenseKeyPlaintext, 10);
+                        // Bundle ganha mais devices (5/3); plugin individual: 5 lifetime / 3 pro
+                        const maxDevices = tier === "lifetime" ? 5 : 3;
+                        const expiresAt = (tier === "lifetime") ? null
                             : (periodEnd || new Date(Date.now() + 365 * 24 * 3600 * 1000));
                         await pool.query(
                             `INSERT INTO license_keys
                              (key_hash, key_prefix, tier, products, max_devices, expires_at, notes, customer_email, issued_by)
                              VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-                            [hash, prefix, miaTier, ["ia"], maxDevices, expiresAt, "stripe-auto-" + cs.id, user.email, null]
+                            [hash, prefix, tier, resolved.products, maxDevices, expiresAt,
+                             "stripe-auto-" + cs.id, user.email, null]
                         );
                         await pool.query(
-                            "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'mia_key_auto_issued', $2)",
-                            [user.id, { tier: miaTier, key_prefix: prefix, stripe_session: cs.id }]
+                            "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'license_key_auto_issued', $2)",
+                            [user.id, {
+                                tier, key_prefix: prefix, prefix_type: resolved.prefix,
+                                products: resolved.products, stripe_session: cs.id
+                            }]
                         );
-                        console.log("[webhook] MIA license key generated for", user.email, prefix);
+                        console.log("[webhook]", resolved.prefix, "license key generated for", user.email, prefix);
                     } catch (e) {
-                        console.error("[webhook] MIA key generation FAILED:", e.message);
+                        console.error("[webhook] license key generation FAILED:", e.message);
                     }
                 }
 
                 // Manda welcome (com senha temporária se foi criado agora)
-                const productName = product_id === "legendas" ? "Motion Legendas"
-                                  : product_id === "ia" || product_id === "motionia" ? "Motion IA"
-                                  : product_id === "bundle_all" ? "Pacote Completo PacotesFX"
-                                  : "Motion Titles";
-                const downloadUrl = product_id === "legendas"
-                    ? PUBLIC_URL + "/legendas/download.html"
-                    : (product_id === "ia" || product_id === "motionia")
-                        ? PUBLIC_URL + "/ia/download.html"
-                        : PUBLIC_URL + "/download.html";
+                const productName = resolved ? resolved.name : "Motion Titles";
+                const downloadUrl = PUBLIC_URL + (resolved ? resolved.download : "/download.html");
                 const passwordToSend = plainPassword || "(use a senha que você já tem cadastrada)";
                 try {
                     await welcomeEmail({
@@ -302,7 +331,9 @@ async function webhook(req, res) {
                         plan,
                         productName,
                         downloadUrl,
-                        miaLicenseKey: mia_key_plaintext // só preenchido se product_id == ia
+                        // miaLicenseKey: nome legado mantido pra compat com email template;
+                        // contém qualquer chave (MTI/MTL/MIA/MTS) gerada nesse checkout.
+                        miaLicenseKey: licenseKeyPlaintext
                     });
                 } catch (e) { console.error("[webhook] welcome email fail", e.message); }
                 break;

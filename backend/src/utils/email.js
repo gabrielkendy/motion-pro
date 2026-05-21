@@ -109,9 +109,9 @@ ${BRAND_HEADER}
 
     ${miaLicenseKey ? `
     <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:2px solid #2563EB;border-radius:8px;padding:24px;margin-bottom:24px">
-      <div style="font:600 11px Inter,Arial,sans-serif;color:#2563EB;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px">🔑 Sua chave de licença Motion IA</div>
+      <div style="font:600 11px Inter,Arial,sans-serif;color:#2563EB;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px">🔑 Sua chave de licença ${pName}</div>
       <p style="color:#444;font:400 14px/1.6 Inter,Arial,sans-serif;margin:0 0 14px">
-        Use essa chave em <strong>⚙ Config → Ativar Licença</strong> dentro do Motion IA:
+        Use essa chave em <strong>⚙ Config → Ativar Licença</strong> dentro do ${pName}${miaLicenseKey.startsWith("MTS-") ? " (vale pros 3 plugins do bundle)" : ""}:
       </p>
       <div style="background:#fff;padding:18px;border-radius:6px;border:1px solid #bfdbfe;text-align:center">
         <code style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:16px;font-weight:700;color:#2563EB;letter-spacing:1px">${miaLicenseKey}</code>
@@ -160,7 +160,7 @@ ${BRAND_FOOTER}
         to: email,
         subject: `✅ Bem-vindo ao ${pName} · suas credenciais + download`,
         html,
-        text: `Bem-vindo ao ${pName}!\n\nSeu plano ${planName} está ativo.\n\nE-mail: ${email}\nSenha temporária: ${password}${miaLicenseKey ? `\n\nChave Motion IA: ${miaLicenseKey}` : ""}\n\nBaixe o plugin: ${downloadUrl}\n\nDepois abra o Premiere em Janela > Extensões > ${pName} e faça login.\n\nDúvidas: suporte@pacotesfx.com`
+        text: `Bem-vindo ao ${pName}!\n\nSeu plano ${planName} está ativo.\n\nE-mail: ${email}\nSenha temporária: ${password}${miaLicenseKey ? `\n\nChave ${pName}: ${miaLicenseKey}` : ""}\n\nBaixe o plugin: ${downloadUrl}\n\nDepois abra o Premiere em Janela > Extensões > ${pName} e faça login.\n\nDúvidas: suporte@pacotesfx.com`
     });
 }
 
