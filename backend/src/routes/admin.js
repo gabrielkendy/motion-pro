@@ -871,6 +871,488 @@ router.post("/users/:id/merge", requireAdmin, async (req, res, next) => {
     }
 });
 
+// ════════════════════════════════════════════════════════════════════
+// LICENSE KEYS (MIA-/MTI-/MTL-/MTS-) — por user + ações
+// Adicionado 2026-05-21 · AGENTE η · Dashboard SaaS Pro
+// ════════════════════════════════════════════════════════════════════
+
+// Helper: gera key plaintext no formato MIA-{TIER}-XXXX-XXXX-XXXX-XXXX
+function _genKey(tier) {
+    const crypto = require("crypto");
+    const t = (tier || "PRO").toUpperCase().slice(0, 4);
+    const rand = () => crypto.randomBytes(2).toString("hex").toUpperCase();
+    return `MIA-${t}-${rand()}-${rand()}-${rand()}-${rand()}`;
+}
+
+// === LISTA license_keys do user (via customer_email match) ===
+router.get("/users/:id/licenses", requireAdmin, async (req, res, next) => {
+    try {
+        const u = await pool.query("SELECT email FROM users WHERE id=$1", [req.params.id]);
+        if (!u.rowCount) return res.status(404).json({ error: "user_not_found" });
+        const email = u.rows[0].email;
+        const r = await pool.query(
+            `SELECT id, key_prefix, tier, products, max_devices,
+                    expires_at, revoked_at, revoke_reason, notes,
+                    customer_email, issued_by, created_at,
+                    active_devices, total_activations
+               FROM license_keys_with_usage
+              WHERE LOWER(customer_email) = LOWER($1)
+              ORDER BY created_at DESC`,
+            [email]
+        ).catch(() => ({ rows: [] }));
+        // Junta activations por key (devices ativos)
+        const keyIds = r.rows.map(k => k.id);
+        let activations = [];
+        if (keyIds.length > 0) {
+            const a = await pool.query(
+                `SELECT id, license_key_id, device_fingerprint, device_name, device_os,
+                        ip_address, activated_at, deactivated_at, last_validation_at
+                   FROM license_key_activations
+                  WHERE license_key_id = ANY($1::uuid[])
+                  ORDER BY activated_at DESC`,
+                [keyIds]
+            ).catch(() => ({ rows: [] }));
+            activations = a.rows;
+        }
+        const byKey = {};
+        activations.forEach(act => {
+            (byKey[act.license_key_id] = byKey[act.license_key_id] || []).push(act);
+        });
+        res.json({
+            user_email: email,
+            licenses: r.rows.map(k => ({ ...k, activations: byKey[k.id] || [] })),
+            count: r.rowCount || 0,
+        });
+    } catch (e) { next(e); }
+});
+
+// === REVOGAR TODAS as license_keys do user (botão "kill switch") ===
+// Review fix #2: usa client dedicado pra garantir transação atômica
+router.post("/users/:id/licenses/revoke-all", requireAdmin, async (req, res, next) => {
+    const client = await pool.connect();
+    try {
+        const reason = (req.body?.reason || "admin_revoke_all").slice(0, 200);
+        const u = await client.query("SELECT email FROM users WHERE id=$1", [req.params.id]);
+        if (!u.rowCount) {
+            client.release();
+            return res.status(404).json({ error: "user_not_found" });
+        }
+        const email = u.rows[0].email;
+
+        await client.query("BEGIN");
+        const keys = await client.query(
+            `SELECT id, key_prefix FROM license_keys
+              WHERE LOWER(customer_email)=LOWER($1) AND revoked_at IS NULL`,
+            [email]
+        );
+        await client.query(
+            `UPDATE license_keys SET revoked_at=now(), revoke_reason=$2
+              WHERE LOWER(customer_email)=LOWER($1) AND revoked_at IS NULL`,
+            [email, reason]
+        );
+        if (keys.rowCount > 0) {
+            const ids = keys.rows.map(k => k.id);
+            await client.query(
+                `UPDATE license_key_activations SET deactivated_at=now()
+                  WHERE license_key_id = ANY($1::uuid[]) AND deactivated_at IS NULL`,
+                [ids]
+            );
+        }
+        // Audit dentro da mesma transação
+        await client.query(
+            "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'admin_license_keys_revoke_all', $2)",
+            [req.params.id, JSON.stringify({ by: req.user.id, count: keys.rowCount, reason, prefixes: keys.rows.map(k => k.key_prefix) })]
+        );
+        await client.query("COMMIT");
+
+        res.json({ ok: true, revoked: keys.rowCount, email });
+    } catch (e) {
+        await client.query("ROLLBACK").catch(err => console.error("[revoke-all rollback]", err.message));
+        next(e);
+    } finally {
+        client.release();
+    }
+});
+
+// === REISSUE license_key (revoga antiga + gera nova) ===
+// Review fix #1: path corrigido (era /admin/license-keys → ficava /v1/admin/admin/...)
+// Review fix #2: client dedicado pra transação real
+router.post("/license-keys/:id/reissue", requireAdmin, async (req, res, next) => {
+    const bcrypt = require("bcrypt");
+    const client = await pool.connect();
+    try {
+        const old = await client.query("SELECT * FROM license_keys WHERE id=$1", [req.params.id]);
+        if (!old.rowCount) {
+            client.release();
+            return res.status(404).json({ error: "key_not_found" });
+        }
+        const o = old.rows[0];
+        const reason = (req.body?.reason || "admin_reissue").slice(0, 200);
+
+        // Resolve uid antes da transação (read-only)
+        let uid = null;
+        if (o.customer_email) {
+            const u = await client.query("SELECT id FROM users WHERE LOWER(email)=LOWER($1)", [o.customer_email]);
+            if (u.rowCount) uid = u.rows[0].id;
+        }
+
+        await client.query("BEGIN");
+        await client.query(
+            "UPDATE license_keys SET revoked_at=now(), revoke_reason=$2 WHERE id=$1 AND revoked_at IS NULL",
+            [o.id, reason]
+        );
+        await client.query(
+            "UPDATE license_key_activations SET deactivated_at=now() WHERE license_key_id=$1 AND deactivated_at IS NULL",
+            [o.id]
+        );
+
+        const plaintext = _genKey(o.tier);
+        const hash = await bcrypt.hash(plaintext, 10);
+        const prefix = plaintext.slice(0, 14);
+        const ins = await client.query(
+            `INSERT INTO license_keys
+             (key_hash, key_prefix, tier, products, max_devices, expires_at,
+              notes, customer_email, issued_by)
+             VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)
+             RETURNING id, key_prefix, tier, products, max_devices, expires_at, created_at`,
+            [hash, prefix, o.tier, o.products, o.max_devices, o.expires_at,
+             `Reissue de ${o.key_prefix} · motivo: ${reason}`, o.customer_email, req.user.id]
+        );
+        await client.query(
+            "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'admin_license_key_reissue', $2)",
+            [uid, JSON.stringify({ old_prefix: o.key_prefix, new_prefix: prefix, by: req.user.id, reason })]
+        );
+        await client.query("COMMIT");
+
+        res.json({
+            ok: true,
+            new_key: plaintext,
+            details: ins.rows[0],
+            old_key_prefix: o.key_prefix,
+            warning: "Esta é a ÚNICA vez que a key aparece em plaintext."
+        });
+    } catch (e) {
+        await client.query("ROLLBACK").catch(err => console.error("[reissue rollback]", err.message));
+        next(e);
+    } finally {
+        client.release();
+    }
+});
+
+// === TRANSFER device de uma license_key (deactivate from + activate to) ===
+// Review fix #1: path corrigido
+// Review fix #2: client dedicado pra transação real
+router.post("/license-keys/:id/transfer-device", requireAdmin, async (req, res, next) => {
+    const { from_fingerprint, to_fingerprint, to_name, to_os } = req.body || {};
+    if (!from_fingerprint || !to_fingerprint) {
+        return res.status(400).json({ error: "from_and_to_fingerprint_required" });
+    }
+    if (from_fingerprint === to_fingerprint) {
+        return res.status(400).json({ error: "same_fingerprint" });
+    }
+    const client = await pool.connect();
+    try {
+        const k = await client.query(
+            "SELECT id, customer_email FROM license_keys WHERE id=$1 AND revoked_at IS NULL",
+            [req.params.id]
+        );
+        if (!k.rowCount) {
+            client.release();
+            return res.status(404).json({ error: "key_not_found_or_revoked" });
+        }
+
+        // Resolve uid antes da transação
+        let uid = null;
+        if (k.rows[0].customer_email) {
+            const u = await client.query("SELECT id FROM users WHERE LOWER(email)=LOWER($1)", [k.rows[0].customer_email]);
+            if (u.rowCount) uid = u.rows[0].id;
+        }
+
+        await client.query("BEGIN");
+        const deact = await client.query(
+            `UPDATE license_key_activations
+                SET deactivated_at=now()
+              WHERE license_key_id=$1 AND device_fingerprint=$2 AND deactivated_at IS NULL
+             RETURNING id`,
+            [req.params.id, from_fingerprint]
+        );
+        const exists = await client.query(
+            "SELECT id FROM license_key_activations WHERE license_key_id=$1 AND device_fingerprint=$2",
+            [req.params.id, to_fingerprint]
+        );
+        let toId;
+        if (exists.rowCount > 0) {
+            toId = exists.rows[0].id;
+            await client.query(
+                "UPDATE license_key_activations SET deactivated_at=NULL, last_validation_at=now(), device_name=COALESCE($2, device_name), device_os=COALESCE($3, device_os) WHERE id=$1",
+                [toId, to_name || null, to_os || null]
+            );
+        } else {
+            const ins = await client.query(
+                `INSERT INTO license_key_activations(license_key_id, device_fingerprint, device_name, device_os)
+                 VALUES($1,$2,$3,$4) RETURNING id`,
+                [req.params.id, to_fingerprint, to_name || null, to_os || null]
+            );
+            toId = ins.rows[0].id;
+        }
+        await client.query(
+            "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'admin_license_key_transfer', $2)",
+            [uid, JSON.stringify({ license_key_id: req.params.id, from: from_fingerprint, to: to_fingerprint, by: req.user.id })]
+        );
+        await client.query("COMMIT");
+
+        res.json({ ok: true, deactivated_id: deact.rows[0]?.id || null, activated_id: toId });
+    } catch (e) {
+        await client.query("ROLLBACK").catch(err => console.error("[transfer-device rollback]", err.message));
+        next(e);
+    } finally {
+        client.release();
+    }
+});
+
+// ════════════════════════════════════════════════════════════════════
+// STRIPE TRANSACTIONS (globais) + REFUND
+// ════════════════════════════════════════════════════════════════════
+
+// === GET /v1/admin/transactions — lista charges com filtro ===
+// Review fix #4: paginação completa via starting_after até has_more=false.
+// KPIs (gross/refunded/net) refletem TODA a janela, não só 100 charges.
+// Hard cap em 1000 charges pra evitar travada se houver volume absurdo.
+router.get("/transactions", requireAdmin, async (req, res, next) => {
+    try {
+        const days = Math.min(Math.max(Number(req.query.days) || 90, 1), 365);
+        const statusFilter = (req.query.status || "").trim();
+        const since = Math.floor((Date.now() - days * 86400000) / 1000);
+        const HARD_CAP = 1000;
+        const PAGE_SIZE = 100;
+
+        const all = [];
+        let startingAfter = null;
+        let truncated = false;
+        try {
+            for (let i = 0; i < Math.ceil(HARD_CAP / PAGE_SIZE); i++) {
+                const params = { created: { gte: since }, limit: PAGE_SIZE };
+                if (startingAfter) params.starting_after = startingAfter;
+                const page = await stripe.charges.list(params);
+                all.push(...page.data);
+                if (!page.has_more || page.data.length === 0) { startingAfter = null; break; }
+                startingAfter = page.data[page.data.length - 1].id;
+                if (all.length >= HARD_CAP) { truncated = true; break; }
+            }
+        } catch (e) {
+            return res.status(503).json({ error: "stripe_unavailable", message: e.message });
+        }
+
+        // Lookup batch de user_id por stripe_customer
+        const customerIds = [...new Set(all.map(c => c.customer).filter(Boolean))];
+        let usersByCustomer = {};
+        if (customerIds.length > 0) {
+            const r = await pool.query(
+                "SELECT id, email, stripe_customer FROM users WHERE stripe_customer = ANY($1::text[])",
+                [customerIds]
+            ).catch(e => { console.error("[transactions user lookup]", e.message); return { rows: [] }; });
+            r.rows.forEach(u => { usersByCustomer[u.stripe_customer] = u; });
+        }
+
+        let list = all.map(c => {
+            const u = usersByCustomer[c.customer] || null;
+            return {
+                id: c.id,
+                amount: c.amount / 100,
+                amount_refunded: c.amount_refunded / 100,
+                currency: c.currency,
+                status: c.status,
+                paid: c.paid,
+                refunded: c.refunded,
+                disputed: c.disputed,
+                created: new Date(c.created * 1000).toISOString(),
+                description: c.description || c.metadata?.description || null,
+                receipt_url: c.receipt_url,
+                customer_id: c.customer,
+                user_id: u?.id || null,
+                user_email: u?.email || c.billing_details?.email || c.receipt_email || null,
+                metadata: c.metadata,
+            };
+        });
+
+        if (statusFilter === "refunded") list = list.filter(c => c.refunded || c.amount_refunded > 0);
+        else if (statusFilter === "failed") list = list.filter(c => !c.paid && c.status !== "succeeded");
+        else if (statusFilter === "succeeded") list = list.filter(c => c.paid && !c.refunded);
+        else if (statusFilter === "disputed") list = list.filter(c => c.disputed);
+
+        const totals = {
+            count: list.length,
+            gross_brl: list.reduce((s, c) => s + (c.paid && !c.refunded ? c.amount : 0), 0),
+            refunded_brl: list.reduce((s, c) => s + c.amount_refunded, 0),
+            net_brl: list.reduce((s, c) => s + (c.paid ? c.amount - c.amount_refunded : 0), 0),
+        };
+
+        res.json({
+            transactions: list,
+            totals: {
+                count: totals.count,
+                gross_brl: Number(totals.gross_brl.toFixed(2)),
+                refunded_brl: Number(totals.refunded_brl.toFixed(2)),
+                net_brl: Number(totals.net_brl.toFixed(2)),
+            },
+            filter: { days, status: statusFilter || "all", scanned: all.length, truncated },
+            generated_at: new Date().toISOString(),
+        });
+    } catch (e) { next(e); }
+});
+
+// === POST /v1/admin/transactions/:charge_id/refund — refund parcial ou total ===
+// Review fix #3: idempotencyKey previne double-refund em duplo-clique/retry.
+// Key inclui amount pra permitir refund parcial seguido de outro parcial (chaves diferentes).
+router.post("/transactions/:charge_id/refund", requireAdmin, async (req, res, next) => {
+    try {
+        const { amount_brl, reason } = req.body || {};
+        const params = { charge: req.params.charge_id };
+        if (amount_brl && Number(amount_brl) > 0) {
+            params.amount = Math.round(Number(amount_brl) * 100);
+        }
+        if (reason && ["duplicate", "fraudulent", "requested_by_customer"].includes(reason)) {
+            params.reason = reason;
+        }
+        params.metadata = { admin_refund_by: req.user.email || req.user.id };
+
+        // Idempotency: mesmo charge+reason+amount → mesma key → Stripe retorna o mesmo refund.
+        const idempotencyKey = `refund:${req.params.charge_id}:${reason || "req"}:${params.amount || "full"}`;
+
+        let refund;
+        try {
+            refund = await stripe.refunds.create(params, { idempotencyKey });
+        } catch (e) {
+            return res.status(400).json({ error: "stripe_refund_failed", message: e.message });
+        }
+
+        // Audit (tenta achar user via charge.customer)
+        let uid = null;
+        try {
+            const ch = await stripe.charges.retrieve(req.params.charge_id);
+            if (ch.customer) {
+                const u = await pool.query("SELECT id FROM users WHERE stripe_customer=$1", [ch.customer]);
+                if (u.rowCount) uid = u.rows[0].id;
+            }
+        } catch (e) {
+            console.error("[refund audit lookup]", e.message);
+        }
+        await pool.query(
+            "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'admin_refund', $2)",
+            [uid, JSON.stringify({
+                charge_id: req.params.charge_id,
+                refund_id: refund.id,
+                amount: refund.amount / 100,
+                reason: reason || null,
+                idempotency_key: idempotencyKey,
+                by: req.user.id,
+            })]
+        ).catch(e => console.error("[refund audit insert]", e.message));
+
+        res.json({
+            ok: true,
+            refund: {
+                id: refund.id,
+                amount: refund.amount / 100,
+                currency: refund.currency,
+                status: refund.status,
+                reason: refund.reason,
+                created: new Date(refund.created * 1000).toISOString(),
+            }
+        });
+    } catch (e) { next(e); }
+});
+
+// ════════════════════════════════════════════════════════════════════
+// CUSTOMERS — EXPORT CSV
+// ════════════════════════════════════════════════════════════════════
+router.get("/users.csv", requireAdmin, async (req, res, next) => {
+    try {
+        const search = (req.query.q || "").trim().toLowerCase();
+        const status = (req.query.status || "").trim();
+        const params = [];
+        const where = [];
+        if (search) { params.push("%" + search + "%"); where.push(`LOWER(u.email) LIKE $${params.length}`); }
+        if (status && status !== "all") {
+            params.push(status);
+            where.push(`EXISTS (SELECT 1 FROM subscriptions s2 WHERE s2.user_id=u.id AND s2.status=$${params.length})`);
+        }
+        const sql = `
+            SELECT u.id, u.email, u.name, u.phone, u.created_at, u.is_admin,
+                   u.email_verified, u.marketing_optin, u.blocked_at, u.lifetime_until,
+                   u.stripe_customer,
+                   (SELECT COUNT(*) FROM devices d WHERE d.user_id=u.id AND NOT d.revoked) AS active_devices,
+                   (SELECT MAX(d.last_seen) FROM devices d WHERE d.user_id=u.id) AS last_seen,
+                   (SELECT string_agg(DISTINCT s.product_id || ':' || s.status, '; ')
+                      FROM subscriptions s WHERE s.user_id=u.id) AS subscriptions
+              FROM users u
+             ${where.length ? "WHERE " + where.join(" AND ") : ""}
+             ORDER BY u.created_at DESC
+             LIMIT 5000
+        `;
+        const r = await pool.query(sql, params);
+        const cols = [
+            "id", "email", "name", "phone", "created_at", "is_admin",
+            "email_verified", "marketing_optin", "blocked_at", "lifetime_until",
+            "stripe_customer", "active_devices", "last_seen", "subscriptions"
+        ];
+        // Review bônus: CSV injection — prefixa apóstrofo se o campo começa
+        // com =/+/-/@/tab (senão o Excel/Sheets executa como fórmula).
+        const escape = (v) => {
+            if (v === null || v === undefined) return "";
+            let s = String(v);
+            if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+            s = s.replace(/"/g, '""');
+            return /[",\n\r;]/.test(s) ? `"${s}"` : s;
+        };
+        const lines = [cols.join(",")];
+        for (const row of r.rows) lines.push(cols.map(c => escape(row[c])).join(","));
+        const csv = "﻿" + lines.join("\r\n"); // BOM pra Excel pt-BR
+        const filename = `motionpro-customers-${new Date().toISOString().slice(0, 10)}.csv`;
+        res.setHeader("Content-Type", "text/csv; charset=utf-8");
+        res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+        res.send(csv);
+    } catch (e) { next(e); }
+});
+
+// ════════════════════════════════════════════════════════════════════
+// LICENSE_AUDIT — timeline filtrável + export
+// ════════════════════════════════════════════════════════════════════
+router.get("/audit.csv", requireAdmin, async (req, res, next) => {
+    try {
+        const limit = Math.min(Number(req.query.limit) || 1000, 5000);
+        const action = (req.query.action || "").trim();
+        const params = [limit];
+        let where = "";
+        if (action) { params.push(action); where = "WHERE a.action = $2"; }
+        const r = await pool.query(
+            `SELECT a.created_at, a.action, a.user_id, u.email, a.device_id, a.detail
+               FROM license_audit a
+               LEFT JOIN users u ON u.id=a.user_id
+              ${where}
+              ORDER BY a.created_at DESC
+              LIMIT $1`,
+            params
+        );
+        const cols = ["created_at", "action", "user_id", "email", "device_id", "detail"];
+        // Review bônus: CSV injection — prefixa apóstrofo se começa com =/+/-/@/tab
+        const escape = (v) => {
+            if (v === null || v === undefined) return "";
+            let s = typeof v === "object" ? JSON.stringify(v) : String(v);
+            if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+            s = s.replace(/"/g, '""');
+            return /[",\n\r;]/.test(s) ? `"${s}"` : s;
+        };
+        const lines = [cols.join(",")];
+        for (const row of r.rows) lines.push(cols.map(c => escape(row[c])).join(","));
+        const csv = "﻿" + lines.join("\r\n");
+        const filename = `motionpro-audit-${new Date().toISOString().slice(0, 10)}.csv`;
+        res.setHeader("Content-Type", "text/csv; charset=utf-8");
+        res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+        res.send(csv);
+    } catch (e) { next(e); }
+});
+
 // ============================================================
 // DUPLICATES — detecta emails com mesmo prefixo (jmr.andrade vs jmr.andrade11)
 // ============================================================
