@@ -289,21 +289,21 @@
   const HEADER_HTML = `
 <header class="nav">
   <div class="container nav-inner">
-    <a href="/" class="logo" aria-label="Motion Titles home">
-      <span class="logo-dot"></span>Motion Titles
+    <a href="/" class="logo" aria-label="Motion Suite home">
+      <span class="logo-dot"></span>Motion Suite
     </a>
     <nav aria-label="Principal">
       <ul class="nav-links">
-        <li><a href="/#plataforma">Plataforma</a></li>
-        <li><a href="/#fluxo">Fluxo</a></li>
-        <li><a href="/#planos">Planos</a></li>
-        <li><a href="/#faq">FAQ</a></li>
-        <li><a href="/download.html">Download</a></li>
+        <li><a href="/titles/">Titles</a></li>
+        <li><a href="/legendas/">Legendas</a></li>
+        <li><a href="/ia/">IA</a></li>
+        <li><a href="/#planos">Preços</a></li>
+        <li><a href="/docs/">Docs</a></li>
       </ul>
     </nav>
     <div class="nav-right">
-      <a href="/account.html" class="link-login">Minha conta</a>
-      <a href="/#planos" class="btn btn-primary">Assinar</a>
+      <a href="/account.html" class="link-login" data-action="login">Entrar</a>
+      <a href="/#planos" class="btn btn-primary">Quero a Suite</a>
     </div>
   </div>
 </header>`;
@@ -313,19 +313,24 @@
   <div class="container">
     <div class="footer-grid">
       <div>
-        <div class="logo"><span class="logo-dot"></span>Motion Titles</div>
-        <p class="footer-tag">O acervo definitivo de motion graphics. Construído por editor, pra editor.</p>
+        <div class="logo"><span class="logo-dot"></span>Motion Suite</div>
+        <p class="footer-tag">Três plugins. Um Premiere. Sua edição inteira mais rápida. Construído por editor, pra editor.</p>
         <div class="footer-copy">© <span data-yr></span> · PacotesFX</div>
       </div>
-      <div class="footer-col"><h5>Produto</h5><ul>
-        <li><a href="/#plataforma">Plataforma</a></li>
-        <li><a href="/#fluxo">Como funciona</a></li>
+      <div class="footer-col"><h5>Produtos</h5><ul>
+        <li><a href="/titles/">Motion Titles</a></li>
+        <li><a href="/legendas/">Motion Legendas</a></li>
+        <li><a href="/ia/">Motion IA</a></li>
+        <li><a href="/#planos">A Suite (combo)</a></li>
+      </ul></div>
+      <div class="footer-col"><h5>Recursos</h5><ul>
+        <li><a href="/#produtos">Os três plugins</a></li>
         <li><a href="/#planos">Preços</a></li>
-        <li><a href="/#faq">Perguntas frequentes</a></li>
-        <li><a href="/download.html">Download</a></li>
+        <li><a href="/#faq">FAQ</a></li>
+        <li><a href="/docs/">Docs</a></li>
       </ul></div>
       <div class="footer-col"><h5>Conta</h5><ul>
-        <li><a href="/account.html">Minha conta</a></li>
+        <li><a href="/account.html">Entrar</a></li>
         <li><a href="/#planos">Assinar</a></li>
         <li><a href="/reset-password.html">Esqueci a senha</a></li>
       </ul></div>
@@ -338,7 +343,7 @@
     </div>
     <div class="footer-bottom">
       <span>Brasil · Belo Horizonte</span>
-      <span>v2.5 · <span data-yr></span></span>
+      <span>v3.0 Motion Suite · <span data-yr></span></span>
     </div>
   </div>
 </footer>
@@ -362,11 +367,59 @@
   }
   injectIncludes();
 
+  // ---------- COOKIE BANNER LGPD ----------
+  // Persistência via localStorage chave "mv_cookie_consent" = "accepted" | "declined".
+  // Mostra após 1.2s se ainda não tem decisão. Expõe window.MV.hasCookieConsent().
+  const COOKIE_KEY = "mv_cookie_consent";
+  window.MV.hasCookieConsent = function () {
+    return localStorage.getItem(COOKIE_KEY) === "accepted";
+  };
+  function initCookieBanner() {
+    // Não injeta se a página já está marcada como sem banner (ex.: páginas internas legais)
+    if (document.body.dataset.cookieBanner === "skip") return;
+    if (localStorage.getItem(COOKIE_KEY)) return; // já decidiu
+
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `
+<div class="cookie-banner" role="dialog" aria-live="polite" aria-label="Aviso de cookies">
+  <button class="cookie-banner__close" data-cookie="close" aria-label="Fechar">×</button>
+  <div class="cookie-banner__title">A gente usa cookies.</div>
+  <p class="cookie-banner__text">
+    Cookies essenciais pra login + analytics anônimo pra entender o que está funcionando. Nada de rastreamento de terceiros pesado.
+    Veja a <a href="/privacy.html">Política de Privacidade</a> e os <a href="/terms.html">Termos</a>.
+  </p>
+  <div class="cookie-banner__actions">
+    <button class="btn btn-primary" data-cookie="accept">Aceitar todos</button>
+    <button class="btn btn-ghost" data-cookie="decline">Só essenciais</button>
+  </div>
+</div>`;
+    const banner = wrap.firstElementChild;
+    document.body.appendChild(banner);
+
+    // Reveal com pequeno delay pra não brigar com hero animations
+    setTimeout(() => banner.classList.add('show'), 1200);
+
+    banner.addEventListener('click', (e) => {
+      const t = e.target.closest('[data-cookie]');
+      if (!t) return;
+      const action = t.dataset.cookie;
+      if (action === 'accept') {
+        localStorage.setItem(COOKIE_KEY, 'accepted');
+      } else if (action === 'decline') {
+        localStorage.setItem(COOKIE_KEY, 'declined');
+      }
+      // "close" não persiste — banner volta na próxima visita
+      banner.classList.remove('show');
+      setTimeout(() => banner.remove(), 600);
+    });
+  }
+
   // ---------- INIT ----------
   function init() {
     initScroll();
     initReveal();
     bindModal();
+    initCookieBanner();
     // year footer
     document.querySelectorAll('[data-yr]').forEach(el => el.textContent = new Date().getFullYear());
   }

@@ -601,3 +601,96 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   font-family: 'JetBrains Mono', monospace;
   flex-shrink: 0; font-weight: 500;
 }
+
+/* ════════════════════════════════════════════════════════════════
+   COOKIE BANNER LGPD · injetado por system.js em todas as páginas
+   ════════════════════════════════════════════════════════════════ */
+.cookie-banner {
+  position: fixed;
+  left: 24px; right: 24px; bottom: 24px;
+  z-index: 1050;
+  max-width: 560px;
+  margin-left: 0;
+  background: var(--bg-dark);
+  color: var(--fg-on-dark);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 16px;
+  padding: 22px 24px;
+  box-shadow: 0 30px 60px -20px rgba(0,0,0,.5);
+  transform: translateY(160%);
+  opacity: 0;
+  transition: transform .55s var(--ease-spring), opacity .35s ease;
+}
+.cookie-banner.show { transform: translateY(0); opacity: 1; }
+.cookie-banner__title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  display: flex; align-items: center; gap: 8px;
+}
+.cookie-banner__title::before {
+  content: "🍪";
+  font-size: 16px;
+}
+.cookie-banner__text {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--fg-on-dark-muted);
+  margin-bottom: 14px;
+  max-width: none;
+}
+.cookie-banner__text a {
+  color: #93c5fd;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.cookie-banner__actions {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  align-items: center;
+}
+.cookie-banner .btn {
+  padding: 10px 18px;
+  font-size: 13.5px;
+  border-radius: 8px;
+}
+.cookie-banner .btn-primary {
+  background: var(--accent);
+  color: white;
+  border: 1px solid var(--accent);
+}
+.cookie-banner .btn-ghost {
+  background: transparent;
+  color: var(--fg-on-dark);
+  border: 1px solid rgba(255,255,255,.18);
+}
+.cookie-banner .btn-ghost:hover { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.3); }
+.cookie-banner__close {
+  position: absolute;
+  top: 12px; right: 14px;
+  width: 28px; height: 28px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  font-size: 18px; line-height: 1;
+  color: rgba(255,255,255,.6);
+  background: transparent;
+  transition: all .2s var(--ease-out);
+}
+.cookie-banner__close:hover { background: rgba(255,255,255,.08); color: white; }
+
+@media (max-width: 600px) {
+  .cookie-banner {
+    left: 12px; right: 12px; bottom: 12px;
+    padding: 18px 18px 16px;
+    border-radius: 14px;
+  }
+  .cookie-banner .btn { width: 100%; justify-content: center; }
+  .cookie-banner__actions { flex-direction: column-reverse; align-items: stretch; }
+}
+
+/* Quando o cookie banner está visível, dá um respiro pro WhatsApp FAB */
+.cookie-banner.show ~ .wa-fab,
+body:has(.cookie-banner.show) .wa-fab { bottom: 200px; }
+@media (max-width: 600px) {
+  .cookie-banner.show ~ .wa-fab,
+  body:has(.cookie-banner.show) .wa-fab { bottom: 260px; }
+}
