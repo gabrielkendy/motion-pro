@@ -118,6 +118,16 @@ function fmtBrl(v) { return "R$ " + (Number(v) || 0).toFixed(2).replace(".", ","
 function shortId(s, n = 8) { return s ? String(s).slice(0, n) + "…" : "—"; }
 function shortFp(s) { return s ? String(s).slice(0, 16) + "…" : "—"; }
 
+// Review fix #5: escape de strings que vêm de DB/Stripe/cliente antes de ir pra innerHTML.
+// Cliente malicioso pode injetar <img onerror=...> em billing email/description e roubar JWT
+// do localStorage. Aplica em todos os ${...} de campos não-confiáveis.
+function esc(s) {
+    return String(s == null ? "" : s).replace(
+        /[&<>"']/g,
+        c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
+    );
+}
+
 const PRODUCT_NAMES = { motionpro: "Titles", ia: "IA", legendas: "Legendas", bundle_all: "Bundle" };
 const STATUS_META = {
     active:    { label: "ATIVO",     cls: "badge--ok" },
@@ -130,12 +140,15 @@ const STATUS_META = {
     none:      { label: "—",         cls: "badge--mut" },
 };
 function statusBadge(s) {
-    const m = STATUS_META[s] || { label: (s || "?").toUpperCase(), cls: "badge--mut" };
+    const m = STATUS_META[s] || { label: esc((s || "?").toUpperCase()), cls: "badge--mut" };
     return `<span class="badge ${m.cls}">${m.label}</span>`;
 }
 function productBadge(p) {
-    const name = PRODUCT_NAMES[p] || p;
-    return `<span class="prod-badge prod-badge--${p}">${name}</span>`;
+    // Sanitiza p (vem do DB) — se não estiver no catálogo conhecido, usa "outro"
+    // como class e mostra o valor escapado.
+    const safe = /^[a-z0-9_]{1,32}$/i.test(p || "") ? p : "outro";
+    const name = PRODUCT_NAMES[p] || p || "—";
+    return `<span class="prod-badge prod-badge--${safe}">${esc(name)}</span>`;
 }
 function deviceStatusDot(lastSeen, revoked) {
     if (revoked) return `<span class="dot dot--offline"></span><span class="muted small">revogado</span>`;
@@ -298,8 +311,8 @@ function renderOverview(s) {
               : e.action.includes("trial") || e.action.includes("warning") ? "ev--warn" : "";
         return `<li>
             <div class="ts">${fmtDate(e.created_at)} · ${fmtRelative(e.created_at)}</div>
-            <div class="ev ${cls}">${e.action} <span class="muted small">${e.email || "(sistema)"}</span></div>
-            ${e.detail ? `<div class="det">${JSON.stringify(e.detail).slice(0, 200)}</div>` : ""}
+            <div class="ev ${cls}">${esc(e.action)} <span class="muted small">${esc(e.email || "(sistema)")}</span></div>
+            ${e.detail ? `<div class="det">${esc(JSON.stringify(e.detail).slice(0, 200))}</div>` : ""}
         </li>`;
     }).join("") || `<li class="muted small">Sem eventos recentes</li>`;
 
@@ -382,18 +395,18 @@ function renderUsers(users) {
         const mainSub = subs.find(s => s.status === "active") || subs.find(s => s.status === "trialing") || subs[0];
         const status = mainSub ? statusBadge(mainSub.status) : statusBadge("none");
         const ld = u.last_device || {};
-        const loc = ld.country ? `${flag(ld.country)} ${ld.city || ld.country}` : "—";
+        const loc = ld.country ? `${flag(ld.country)} ${esc(ld.city || ld.country)}` : "—";
         const blocked = u.blocked_at ? " blocked" : "";
         const lifetime = u.lifetime_until ? `<span class="badge badge--ok" title="Lifetime">∞</span>` : "";
-        return `<tr class="clickable${blocked}" data-uid="${u.id}">
-            <td><b>${u.email}</b> ${lifetime}${u.is_admin ? ` <span class="badge badge--ok">ADMIN</span>` : ""}<br>
-                <span class="muted small mono">${shortId(u.id, 8)}</span></td>
+        return `<tr class="clickable${blocked}" data-uid="${esc(u.id)}">
+            <td><b>${esc(u.email)}</b> ${lifetime}${u.is_admin ? ` <span class="badge badge--ok">ADMIN</span>` : ""}<br>
+                <span class="muted small mono">${esc(shortId(u.id, 8))}</span></td>
             <td>${products || `<span class="muted small">sem subs</span>`}</td>
             <td>${status}</td>
             <td><span class="dot ${(u.active_devices > 0) ? "dot--online" : "dot--offline"}"></span>${u.active_devices}/${u.total_devices}<br>
                 <span class="muted small">${u.active_sessions || 0} sessões</span></td>
             <td>${fmtRelative(u.last_seen)}</td>
-            <td>${loc}<br><span class="muted small mono">${ld.ip || "—"}</span></td>
+            <td>${loc}<br><span class="muted small mono">${esc(ld.ip || "—")}</span></td>
             <td><span class="muted small">${fmtDate(u.created_at)}</span></td>
         </tr>`;
     }).join("");
@@ -433,7 +446,7 @@ async function loadSubs() {
             ? `<tr><td colspan="4" class="tbl-empty">Sem subs</td></tr>`
             : rows.map(r => `<tr>
                 <td>${productBadge(r.p)}</td>
-                <td><code>${r.pl || "—"}</code></td>
+                <td><code>${esc(r.pl || "—")}</code></td>
                 <td>${statusBadge(r.st)}</td>
                 <td><b>${r.n}</b></td>
             </tr>`).join("");
@@ -475,13 +488,13 @@ function renderDevices() {
     tb.innerHTML = list.map(d => `
         <tr>
           <td>${deviceStatusDot(d.last_seen, d.revoked)}</td>
-          <td><a href="#" data-uid="${d.user_id}" class="user-link"><b>${d.email || "—"}</b></a></td>
-          <td>${osIcon(d.os_name)} <span class="small">${d.os_name || "—"}</span></td>
-          <td class="mono small">${d.last_ip || "—"}</td>
-          <td>${d.country ? flag(d.country) + " " + (d.city || d.country) : "—"}<br><span class="muted small">${d.region || ""}</span></td>
+          <td><a href="#" data-uid="${esc(d.user_id)}" class="user-link"><b>${esc(d.email || "—")}</b></a></td>
+          <td>${osIcon(d.os_name)} <span class="small">${esc(d.os_name || "—")}</span></td>
+          <td class="mono small">${esc(d.last_ip || "—")}</td>
+          <td>${d.country ? flag(d.country) + " " + esc(d.city || d.country) : "—"}<br><span class="muted small">${esc(d.region || "")}</span></td>
           <td>${fmtRelative(d.last_seen)}<br><span class="muted small">${fmtDate(d.last_seen)}</span></td>
-          <td class="mono small">${shortFp(d.fingerprint)}</td>
-          <td>${d.revoked ? `<span class="badge badge--err">revogado</span>` : `<button class="btn btn--sm btn--danger" data-revoke="${d.id}">Revogar</button>`}</td>
+          <td class="mono small">${esc(shortFp(d.fingerprint))}</td>
+          <td>${d.revoked ? `<span class="badge badge--err">revogado</span>` : `<button class="btn btn--sm btn--danger" data-revoke="${esc(d.id)}">Revogar</button>`}</td>
         </tr>
     `).join("");
     tb.querySelectorAll(".user-link").forEach(a => a.onclick = (e) => { e.preventDefault(); openUserDrawer(a.dataset.uid); });
@@ -530,14 +543,14 @@ function renderSessions() {
     }
     tb.innerHTML = list.map(s => `
         <tr>
-          <td><a href="#" data-uid="${s.user_id}" class="user-link"><b>${s.email}</b></a></td>
-          <td class="mono small">${s.last_ip || "—"}</td>
-          <td>${s.country ? flag(s.country) + " " + s.country : "—"}</td>
-          <td>${osIcon(s.device_os)} <span class="small">${s.device_os || "—"}</span></td>
+          <td><a href="#" data-uid="${esc(s.user_id)}" class="user-link"><b>${esc(s.email)}</b></a></td>
+          <td class="mono small">${esc(s.last_ip || "—")}</td>
+          <td>${s.country ? flag(s.country) + " " + esc(s.country) : "—"}</td>
+          <td>${osIcon(s.device_os)} <span class="small">${esc(s.device_os || "—")}</span></td>
           <td>${fmtDate(s.issued_at)}</td>
           <td>${fmtRelative(s.last_seen_at)}</td>
           <td>${fmtDate(s.expires_at)}</td>
-          <td><button class="btn btn--sm btn--danger" data-rev-sess="${s.id}">Encerrar</button></td>
+          <td><button class="btn btn--sm btn--danger" data-rev-sess="${esc(s.id)}">Encerrar</button></td>
         </tr>
     `).join("");
     tb.querySelectorAll(".user-link").forEach(a => a.onclick = (e) => { e.preventDefault(); openUserDrawer(a.dataset.uid); });
@@ -571,19 +584,19 @@ function renderDuplicates() {
     wrap.innerHTML = STATE.duplicates.map(g => `
         <div class="card">
           <div class="card__head">
-            <div><b>${g.prefix}@${g.domain}</b> <span class="badge badge--warn">${g.n} contas</span></div>
+            <div><b>${esc(g.prefix)}@${esc(g.domain)}</b> <span class="badge badge--warn">${g.n} contas</span></div>
           </div>
           <table style="width:100%">
             <thead><tr><th>E-mail</th><th>Criado em</th><th>ID</th><th></th></tr></thead>
             <tbody>
               ${g.users.map((u, i) => `<tr>
-                <td><b>${u.email}</b> ${i === 0 ? `<span class="badge badge--ok">MAIS ANTIGA</span>` : ""}</td>
+                <td><b>${esc(u.email)}</b> ${i === 0 ? `<span class="badge badge--ok">MAIS ANTIGA</span>` : ""}</td>
                 <td>${fmtDate(u.created_at)}</td>
-                <td class="mono small">${shortId(u.id)}</td>
+                <td class="mono small">${esc(shortId(u.id))}</td>
                 <td>
                   ${i === 0
-                    ? `<button class="btn btn--sm" data-open-uid="${u.id}">Abrir</button>`
-                    : `<button class="btn btn--sm btn--warn" data-merge-into="${g.users[0].id}" data-merge-from="${u.id}" data-merge-emails="${u.email}|${g.users[0].email}">Merge → ${g.users[0].email}</button>`}
+                    ? `<button class="btn btn--sm" data-open-uid="${esc(u.id)}">Abrir</button>`
+                    : `<button class="btn btn--sm btn--warn" data-merge-into="${esc(g.users[0].id)}" data-merge-from="${esc(u.id)}" data-merge-emails="${esc(u.email + "|" + g.users[0].email)}">Merge → ${esc(g.users[0].email)}</button>`}
                 </td>
               </tr>`).join("")}
             </tbody>
@@ -621,8 +634,8 @@ async function loadAudit() {
                 : e.action.includes("trial") || e.action.includes("warning") ? "ev--warn" : "";
             return `<li>
                 <div class="ts">${fmtDate(e.created_at)} · ${fmtRelative(e.created_at)}</div>
-                <div class="ev ${cls}">${e.action} <span class="muted small">${e.email || e.user_email || "(sistema)"}</span></div>
-                ${e.detail ? `<div class="det">${JSON.stringify(e.detail).slice(0, 300)}</div>` : ""}
+                <div class="ev ${cls}">${esc(e.action)} <span class="muted small">${esc(e.email || e.user_email || "(sistema)")}</span></div>
+                ${e.detail ? `<div class="det">${esc(JSON.stringify(e.detail).slice(0, 300))}</div>` : ""}
             </li>`;
         }).join("");
     } catch (e) { toast("Falha audit: " + e.message, "err"); }
@@ -675,8 +688,9 @@ document.querySelectorAll(".drawer__tab").forEach(t => {
 
 function renderDrawer(d) {
     const u = d.user;
-    document.getElementById("drawer-email").textContent = u.email + (u.is_admin ? " 👑" : "");
-    document.getElementById("drawer-id").textContent = u.id;
+    // textContent é safe (não interpreta HTML), não precisa esc()
+    document.getElementById("drawer-email").textContent = (u.email || "") + (u.is_admin ? " 👑" : "");
+    document.getElementById("drawer-id").textContent = u.id || "";
 
     const unblockBtn = document.querySelector('[data-action="unblock"]');
     const blockBtn   = document.querySelector('[data-action="block"]');
@@ -687,14 +701,14 @@ function renderDrawer(d) {
       <div class="drawer-section">
         <h3>Dados</h3>
         <div class="detail-grid">
-          <div class="k">E-mail</div><div class="v">${u.email} ${u.email_verified ? "✅" : `<span class="badge badge--warn">não verificado</span>`}</div>
-          <div class="k">Nome</div><div class="v">${u.name || "—"}</div>
-          <div class="k">Telefone</div><div class="v">${u.phone || "—"}</div>
+          <div class="k">E-mail</div><div class="v">${esc(u.email)} ${u.email_verified ? "✅" : `<span class="badge badge--warn">não verificado</span>`}</div>
+          <div class="k">Nome</div><div class="v">${esc(u.name || "—")}</div>
+          <div class="k">Telefone</div><div class="v">${esc(u.phone || "—")}</div>
           <div class="k">Criada em</div><div class="v">${fmtDate(u.created_at)} (${fmtRelative(u.created_at)})</div>
           <div class="k">Admin</div><div class="v">${u.is_admin ? "✅ SIM" : "Não"}</div>
           <div class="k">Lifetime</div><div class="v">${u.lifetime_until ? "✅ até " + fmtDate(u.lifetime_until) : "Não"}</div>
-          <div class="k">Bloqueado</div><div class="v">${u.blocked_at ? `<span class="badge badge--err">SIM desde ${fmtDate(u.blocked_at)}</span><br><span class="muted small">${u.blocked_reason || ""}</span>` : "Não"}</div>
-          <div class="k">Stripe customer</div><div class="v mono small">${u.stripe_customer || "—"}</div>
+          <div class="k">Bloqueado</div><div class="v">${u.blocked_at ? `<span class="badge badge--err">SIM desde ${fmtDate(u.blocked_at)}</span><br><span class="muted small">${esc(u.blocked_reason || "")}</span>` : "Não"}</div>
+          <div class="k">Stripe customer</div><div class="v mono small">${esc(u.stripe_customer || "—")}</div>
           <div class="k">Marketing opt-in</div><div class="v">${u.marketing_optin ? "✅" : "❌"}</div>
         </div>
       </div>
@@ -706,7 +720,7 @@ function renderDrawer(d) {
           <div class="kpi"><div class="kpi__label">Online agora</div><div class="kpi__value">${d.stats?.online_now || 0}</div></div>
           <div class="kpi"><div class="kpi__label">Sessões ativas</div><div class="kpi__value">${d.stats?.active_sessions || 0}</div></div>
         </div>
-        ${d.stats?.countries_seen?.length > 0 ? `<div style="margin-top:10px"><span class="muted small">Países vistos: </span>${d.stats.countries_seen.map(c => flag(c) + " " + c).join(" · ")}</div>` : ""}
+        ${d.stats?.countries_seen?.length > 0 ? `<div style="margin-top:10px"><span class="muted small">Países vistos: </span>${d.stats.countries_seen.map(c => flag(c) + " " + esc(c)).join(" · ")}</div>` : ""}
       </div>
     `;
 
@@ -719,7 +733,7 @@ function renderDrawer(d) {
             <tbody>
               ${d.subscriptions.map(s => `<tr>
                 <td>${productBadge(s.product_id)}</td>
-                <td><code>${s.plan || "—"}</code></td>
+                <td><code>${esc(s.plan || "—")}</code></td>
                 <td>${statusBadge(s.status)}</td>
                 <td>${fmtDate(s.started_at)}</td>
                 <td>${fmtDate(s.current_period_end)}<br><span class="muted small">${fmtRelative(s.current_period_end)}</span></td>
@@ -739,11 +753,11 @@ function renderDrawer(d) {
             <tbody>
               ${d.devices.map(dev => `<tr>
                 <td>${deviceStatusDot(dev.last_seen, dev.revoked)}</td>
-                <td>${osIcon(dev.os_name)} <span class="small">${dev.os_name || "—"}</span></td>
-                <td class="mono small">${dev.last_ip || "—"}</td>
-                <td>${dev.country ? flag(dev.country) + " " + (dev.city || dev.country) : "—"}</td>
+                <td>${osIcon(dev.os_name)} <span class="small">${esc(dev.os_name || "—")}</span></td>
+                <td class="mono small">${esc(dev.last_ip || "—")}</td>
+                <td>${dev.country ? flag(dev.country) + " " + esc(dev.city || dev.country) : "—"}</td>
                 <td>${fmtRelative(dev.last_seen)}</td>
-                <td>${dev.revoked ? `<span class="muted small">revogado</span>` : `<button class="btn btn--sm btn--danger" data-rev-dev="${dev.id}">Revogar</button>`}</td>
+                <td>${dev.revoked ? `<span class="muted small">revogado</span>` : `<button class="btn btn--sm btn--danger" data-rev-dev="${esc(dev.id)}">Revogar</button>`}</td>
               </tr>`).join("")}
             </tbody>
           </table>
@@ -768,12 +782,12 @@ function renderDrawer(d) {
             <tbody>
               ${d.sessions.map(s => `<tr>
                 <td>${s.revoked ? `<span class="badge badge--err">revogada</span>` : new Date(s.expires_at) < new Date() ? `<span class="badge badge--mut">expirada</span>` : `<span class="badge badge--ok">ativa</span>`}</td>
-                <td class="mono small">${s.last_ip || "—"}</td>
-                <td>${s.country ? flag(s.country) + " " + s.country : "—"}</td>
-                <td>${osIcon(s.device_os)} <span class="small">${s.device_os || "—"}</span></td>
+                <td class="mono small">${esc(s.last_ip || "—")}</td>
+                <td>${s.country ? flag(s.country) + " " + esc(s.country) : "—"}</td>
+                <td>${osIcon(s.device_os)} <span class="small">${esc(s.device_os || "—")}</span></td>
                 <td>${fmtDate(s.issued_at)}</td>
                 <td>${fmtDate(s.expires_at)}</td>
-                <td>${(s.revoked || new Date(s.expires_at) < new Date()) ? "" : `<button class="btn btn--sm btn--danger" data-rev-sess="${s.id}">Encerrar</button>`}</td>
+                <td>${(s.revoked || new Date(s.expires_at) < new Date()) ? "" : `<button class="btn btn--sm btn--danger" data-rev-sess="${esc(s.id)}">Encerrar</button>`}</td>
               </tr>`).join("")}
             </tbody>
           </table>
@@ -801,10 +815,10 @@ function renderDrawer(d) {
                 return `<li>
                   <div class="ts">${fmtDate(p.created_at)}</div>
                   <div class="ev ev--ok">${amt !== null ? fmtBrl(amt) : "—"}
-                    <span class="muted small">${p.detail?.product_id || ""} ${p.detail?.plan || ""} · ${p.action}</span>
+                    <span class="muted small">${esc(p.detail?.product_id || "")} ${esc(p.detail?.plan || "")} · ${esc(p.action)}</span>
                   </div>
-                  <div class="det">${JSON.stringify(p.detail || {}).slice(0, 200)}</div>
-                  ${canRefund ? `<div style="margin-top:6px"><button class="btn btn--sm btn--warn" data-refund-charge="${chargeId}" data-refund-amount="${amt}">💸 Reembolsar</button></div>` : ""}
+                  <div class="det">${esc(JSON.stringify(p.detail || {}).slice(0, 200))}</div>
+                  ${canRefund ? `<div style="margin-top:6px"><button class="btn btn--sm btn--warn" data-refund-charge="${esc(chargeId)}" data-refund-amount="${amt}">💸 Reembolsar</button></div>` : ""}
                 </li>`;
             }).join("")}
           </ul>
@@ -822,8 +836,8 @@ function renderDrawer(d) {
                   : e.action.includes("trial") ? "ev--warn" : "";
               return `<li>
                 <div class="ts">${fmtDate(e.created_at)} · ${fmtRelative(e.created_at)}</div>
-                <div class="ev ${cls}">${e.action}</div>
-                ${e.detail ? `<div class="det">${JSON.stringify(e.detail).slice(0, 200)}</div>` : ""}
+                <div class="ev ${cls}">${esc(e.action)}</div>
+                ${e.detail ? `<div class="det">${esc(JSON.stringify(e.detail).slice(0, 200))}</div>` : ""}
               </li>`;
           }).join("") || `<li class="muted">Sem eventos</li>`}
         </ul>
@@ -915,20 +929,33 @@ function modalSendEmail(uid) {
     }, { okText: "Enviar" });
 }
 
-function modalRevokeAllLicenses(uid) {
+async function modalRevokeAllLicenses(uid) {
+    // Review bônus: contagem real antes da confirmação ("revogar 7 chaves?")
+    let activeCount = "—", totalCount = "—", email = "";
+    try {
+        const r = await get(`/v1/admin/users/${uid}/licenses`);
+        const ls = r.licenses || [];
+        activeCount = ls.filter(k => !k.revoked_at).length;
+        totalCount = ls.length;
+        email = r.user_email || "";
+    } catch (e) {
+        toast("Falha ao buscar licenças: " + e.message, "err");
+    }
+
     const body = document.createElement("div");
     body.innerHTML = `
-      <p>Kill switch: revoga TODAS as license_keys vinculadas ao email desse user.</p>
-      <p>Inclui todas as ativações de devices (MIA/MTI/MTL/MTS). Reversível só via reissue manual.</p>
+      <p>Kill switch: revoga TODAS as license_keys vinculadas ao email <code>${esc(email)}</code>.</p>
+      <p><b style="color:var(--err)">${activeCount} licença(s) ativa(s)</b> · ${totalCount} total · todas as ativações de devices (MIA/MTI/MTL/MTS) serão desativadas.</p>
+      <p>Reversível só via reissue manual.</p>
       <label>Motivo</label>
       <input id="ra-reason" placeholder="Ex: chargeback total, fraude confirmada">
     `;
-    modal("🔑 Revogar TODAS licenças do user", body, async () => {
+    modal(`🔑 Revogar ${activeCount} licença(s) do user`, body, async () => {
         const reason = document.getElementById("ra-reason").value.trim() || "admin_kill_switch";
         const r = await post(`/v1/admin/users/${uid}/licenses/revoke-all`, { reason });
         toast(`${r.revoked} licença(s) revogadas`, "warn");
         openUserDrawer(uid);
-    }, { danger: true, okText: "Revogar tudo" });
+    }, { danger: true, okText: `Revogar ${activeCount} chave(s)` });
 }
 
 function modalBlock(uid) {
@@ -1002,17 +1029,17 @@ function renderLicenses() {
         const products = (k.products || []).map(p => productBadge(p)).join(" ") || `<span class="muted small">—</span>`;
         const validade = k.expires_at ? fmtDate(k.expires_at) : `<span class="badge badge--ok" title="lifetime">∞</span>`;
         return `<tr>
-            <td class="mono small"><b>${k.key_prefix}…</b></td>
-            <td><span class="badge badge--mut">${(k.tier || "").toUpperCase()}</span></td>
+            <td class="mono small"><b>${esc(k.key_prefix)}…</b></td>
+            <td><span class="badge badge--mut">${esc((k.tier || "").toUpperCase())}</span></td>
             <td>${products}</td>
             <td>${k.active_devices || 0}/${k.max_devices}<br><span class="muted small">${k.total_activations || 0} total</span></td>
-            <td>${k.customer_email || `<span class="muted small">—</span>`}</td>
+            <td>${k.customer_email ? esc(k.customer_email) : `<span class="muted small">—</span>`}</td>
             <td>${validade}</td>
             <td>${stBadge}</td>
             <td><span class="muted small">${fmtDate(k.created_at)}</span></td>
             <td>
-              ${s === "active" ? `<button class="btn btn--sm btn--warn" data-reissue="${k.id}">Reemitir</button>
-              <button class="btn btn--sm btn--danger" data-revoke-key="${k.id}">Revogar</button>` : ""}
+              ${s === "active" ? `<button class="btn btn--sm btn--warn" data-reissue="${esc(k.id)}">Reemitir</button>
+              <button class="btn btn--sm btn--danger" data-revoke-key="${esc(k.id)}">Revogar</button>` : ""}
             </td>
         </tr>`;
     }).join("");
@@ -1181,19 +1208,20 @@ function renderTransactions() {
         else                                              stBadge = `<span class="badge badge--err">FALHOU</span>`;
 
         const canRefund = c.paid && !c.refunded && c.amount_refunded < c.amount;
+        const safeReceipt = c.receipt_url && /^https:\/\//.test(c.receipt_url) ? c.receipt_url : null;
         return `<tr>
           <td>${fmtDate(c.created)}<br><span class="muted small">${fmtRelative(c.created)}</span></td>
           <td>${c.user_id
-              ? `<a href="#" class="user-link" data-uid="${c.user_id}"><b>${c.user_email}</b></a>`
-              : (c.user_email ? `<b>${c.user_email}</b>` : `<span class="muted small">—</span>`)}<br>
-              <span class="muted small mono">${c.customer_id || "—"}</span></td>
+              ? `<a href="#" class="user-link" data-uid="${esc(c.user_id)}"><b>${esc(c.user_email)}</b></a>`
+              : (c.user_email ? `<b>${esc(c.user_email)}</b>` : `<span class="muted small">—</span>`)}<br>
+              <span class="muted small mono">${esc(c.customer_id || "—")}</span></td>
           <td><b>${fmtBrl(c.amount)}</b>${c.amount_refunded > 0 ? `<br><span class="small" style="color:var(--warn)">-${fmtBrl(c.amount_refunded)} reemb.</span>` : ""}</td>
           <td>${stBadge}</td>
-          <td><span class="small">${c.description || "—"}</span></td>
-          <td class="mono small">${(c.id || "").slice(0, 18)}…</td>
+          <td><span class="small">${esc(c.description || "—")}</span></td>
+          <td class="mono small">${esc((c.id || "").slice(0, 18))}…</td>
           <td>
-              ${c.receipt_url ? `<a href="${c.receipt_url}" target="_blank" class="btn btn--sm">Recibo ↗</a> ` : ""}
-              ${canRefund ? `<button class="btn btn--sm btn--warn" data-refund="${c.id}" data-amt="${c.amount}">Reembolsar</button>` : ""}
+              ${safeReceipt ? `<a href="${esc(safeReceipt)}" target="_blank" rel="noopener noreferrer" class="btn btn--sm">Recibo ↗</a> ` : ""}
+              ${canRefund ? `<button class="btn btn--sm btn--warn" data-refund="${esc(c.id)}" data-amt="${c.amount}">Reembolsar</button>` : ""}
           </td>
         </tr>`;
     }).join("");
@@ -1207,7 +1235,7 @@ function modalRefund(chargeId, maxAmount) {
     const body = document.createElement("div");
     body.innerHTML = `
       <p>Refund via Stripe. Total ou parcial. Após confirmação, é IRREVERSÍVEL.</p>
-      <p>Charge: <code>${chargeId}</code> · Valor original: <b>${fmtBrl(maxAmount)}</b></p>
+      <p>Charge: <code>${esc(chargeId)}</code> · Valor original: <b>${fmtBrl(maxAmount)}</b></p>
       <label>Valor a reembolsar (deixe 0 = TOTAL)</label>
       <input id="rf-amount" type="number" step="0.01" min="0" max="${maxAmount}" value="0">
       <label>Motivo</label>
@@ -1219,14 +1247,26 @@ function modalRefund(chargeId, maxAmount) {
       </select>
     `;
     modal("💸 Reembolsar Stripe", body, async () => {
-        const amount_brl = Number(document.getElementById("rf-amount").value || 0);
-        const reason = document.getElementById("rf-reason").value || null;
-        const r = await post(`/v1/admin/transactions/${chargeId}/refund`, {
-            amount_brl: amount_brl > 0 ? amount_brl : null,
-            reason
-        });
-        toast(`Refund OK: ${fmtBrl(r.refund.amount)} (${r.refund.status})`, "ok");
-        loadTransactions();
+        // Review fix #3: disable do botão Confirmar durante o fetch pra
+        // bloquear double-click (defesa em profundidade junto com idempotencyKey backend).
+        const okBtn = document.getElementById("m-ok");
+        const cancelBtn = document.getElementById("m-cancel");
+        if (okBtn) { okBtn.disabled = true; okBtn.textContent = "Processando…"; }
+        if (cancelBtn) cancelBtn.disabled = true;
+        try {
+            const amount_brl = Number(document.getElementById("rf-amount").value || 0);
+            const reason = document.getElementById("rf-reason").value || null;
+            const r = await post(`/v1/admin/transactions/${chargeId}/refund`, {
+                amount_brl: amount_brl > 0 ? amount_brl : null,
+                reason
+            });
+            toast(`Refund OK: ${fmtBrl(r.refund.amount)} (${r.refund.status})`, "ok");
+            loadTransactions();
+        } catch (e) {
+            if (okBtn) { okBtn.disabled = false; okBtn.textContent = "Reembolsar"; }
+            if (cancelBtn) cancelBtn.disabled = false;
+            throw e;
+        }
     }, { danger: true, okText: "Reembolsar" });
 }
 
@@ -1243,7 +1283,7 @@ async function renderDrawerLicenses(uid) {
             panel.innerHTML = `
               <div class="drawer-section">
                 <h3>Sem licenças vinculadas</h3>
-                <div class="muted small">Nenhuma license_key com customer_email = <code>${r.user_email}</code>.</div>
+                <div class="muted small">Nenhuma license_key com customer_email = <code>${esc(r.user_email)}</code>.</div>
               </div>`;
             return;
         }
@@ -1261,8 +1301,8 @@ async function renderDrawerLicenses(uid) {
                   <div class="card" style="margin-bottom:12px">
                     <div class="card__head" style="margin-bottom:8px">
                       <div>
-                        <div class="mono" style="font-weight:700">${k.key_prefix}…</div>
-                        <div class="small muted">Tier <b>${k.tier}</b> · ${products} · ${k.active_devices}/${k.max_devices} devices · ${k.expires_at ? "expira " + fmtDate(k.expires_at) : "lifetime"}</div>
+                        <div class="mono" style="font-weight:700">${esc(k.key_prefix)}…</div>
+                        <div class="small muted">Tier <b>${esc(k.tier)}</b> · ${products} · ${k.active_devices}/${k.max_devices} devices · ${k.expires_at ? "expira " + fmtDate(k.expires_at) : "lifetime"}</div>
                       </div>
                       <div>${stBadge}</div>
                     </div>
@@ -1271,19 +1311,19 @@ async function renderDrawerLicenses(uid) {
                         <thead><tr><th>Device</th><th>OS</th><th>IP</th><th>Última validação</th><th></th></tr></thead>
                         <tbody>
                           ${activations.map(a => `<tr>
-                            <td class="mono small">${shortFp(a.device_fingerprint)}<br><span class="muted">${a.device_name || "—"}</span></td>
-                            <td>${osIcon(a.device_os)} <span class="small">${a.device_os || "—"}</span></td>
-                            <td class="mono small">${a.ip_address || "—"}</td>
+                            <td class="mono small">${esc(shortFp(a.device_fingerprint))}<br><span class="muted">${esc(a.device_name || "—")}</span></td>
+                            <td>${osIcon(a.device_os)} <span class="small">${esc(a.device_os || "—")}</span></td>
+                            <td class="mono small">${esc(a.ip_address || "—")}</td>
                             <td>${fmtRelative(a.last_validation_at)}</td>
-                            <td>${!k.revoked_at ? `<button class="btn btn--sm" data-transfer-key="${k.id}" data-from="${a.device_fingerprint}">↔ Transferir</button>` : ""}</td>
+                            <td>${!k.revoked_at ? `<button class="btn btn--sm" data-transfer-key="${esc(k.id)}" data-from="${esc(a.device_fingerprint)}">↔ Transferir</button>` : ""}</td>
                           </tr>`).join("")}
                         </tbody>
                       </table>
                     ` : `<div class="muted small">Nenhum device ativado</div>`}
                     ${s === "active" ? `
                       <div style="margin-top:10px;display:flex;gap:6px">
-                        <button class="btn btn--sm btn--warn" data-drawer-reissue="${k.id}">♻️ Reemitir</button>
-                        <button class="btn btn--sm btn--danger" data-drawer-revoke-key="${k.id}">🚫 Revogar</button>
+                        <button class="btn btn--sm btn--warn" data-drawer-reissue="${esc(k.id)}">♻️ Reemitir</button>
+                        <button class="btn btn--sm btn--danger" data-drawer-revoke-key="${esc(k.id)}">🚫 Revogar</button>
                       </div>` : ""}
                   </div>
                 `;
@@ -1303,7 +1343,7 @@ async function renderDrawerLicenses(uid) {
             modalTransferDevice(b.dataset.transferKey, b.dataset.from, () => renderDrawerLicenses(uid));
         });
     } catch (e) {
-        panel.innerHTML = `<div class="muted">Erro ao carregar licenças: ${e.message}</div>`;
+        panel.innerHTML = `<div class="muted">Erro ao carregar licenças: ${esc(e.message)}</div>`;
     }
 }
 

@@ -927,76 +927,89 @@ router.get("/users/:id/licenses", requireAdmin, async (req, res, next) => {
 });
 
 // === REVOGAR TODAS as license_keys do user (botão "kill switch") ===
+// Review fix #2: usa client dedicado pra garantir transação atômica
 router.post("/users/:id/licenses/revoke-all", requireAdmin, async (req, res, next) => {
+    const client = await pool.connect();
     try {
         const reason = (req.body?.reason || "admin_revoke_all").slice(0, 200);
-        const u = await pool.query("SELECT email FROM users WHERE id=$1", [req.params.id]);
-        if (!u.rowCount) return res.status(404).json({ error: "user_not_found" });
+        const u = await client.query("SELECT email FROM users WHERE id=$1", [req.params.id]);
+        if (!u.rowCount) {
+            client.release();
+            return res.status(404).json({ error: "user_not_found" });
+        }
         const email = u.rows[0].email;
 
-        await pool.query("BEGIN");
-        // Pega keys ativas pra audit + revoga
-        const keys = await pool.query(
+        await client.query("BEGIN");
+        const keys = await client.query(
             `SELECT id, key_prefix FROM license_keys
               WHERE LOWER(customer_email)=LOWER($1) AND revoked_at IS NULL`,
             [email]
         );
-        await pool.query(
+        await client.query(
             `UPDATE license_keys SET revoked_at=now(), revoke_reason=$2
               WHERE LOWER(customer_email)=LOWER($1) AND revoked_at IS NULL`,
             [email, reason]
         );
-        // Desativa todas as ativações dessas keys
         if (keys.rowCount > 0) {
             const ids = keys.rows.map(k => k.id);
-            await pool.query(
+            await client.query(
                 `UPDATE license_key_activations SET deactivated_at=now()
                   WHERE license_key_id = ANY($1::uuid[]) AND deactivated_at IS NULL`,
                 [ids]
             );
         }
-        await pool.query("COMMIT");
-
-        await pool.query(
+        // Audit dentro da mesma transação
+        await client.query(
             "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'admin_license_keys_revoke_all', $2)",
             [req.params.id, JSON.stringify({ by: req.user.id, count: keys.rowCount, reason, prefixes: keys.rows.map(k => k.key_prefix) })]
-        ).catch(() => {});
+        );
+        await client.query("COMMIT");
 
         res.json({ ok: true, revoked: keys.rowCount, email });
     } catch (e) {
-        await pool.query("ROLLBACK").catch(() => {});
+        await client.query("ROLLBACK").catch(err => console.error("[revoke-all rollback]", err.message));
         next(e);
+    } finally {
+        client.release();
     }
 });
 
-// === REISSUE license_key (revoga antiga + gera nova com mesmo tier/products) ===
-router.post("/admin/license-keys/:id/reissue", requireAdmin, async (req, res, next) => {
+// === REISSUE license_key (revoga antiga + gera nova) ===
+// Review fix #1: path corrigido (era /admin/license-keys → ficava /v1/admin/admin/...)
+// Review fix #2: client dedicado pra transação real
+router.post("/license-keys/:id/reissue", requireAdmin, async (req, res, next) => {
+    const bcrypt = require("bcrypt");
+    const client = await pool.connect();
     try {
-        const bcrypt = require("bcrypt");
-        const old = await pool.query(
-            "SELECT * FROM license_keys WHERE id=$1",
-            [req.params.id]
-        );
-        if (!old.rowCount) return res.status(404).json({ error: "key_not_found" });
+        const old = await client.query("SELECT * FROM license_keys WHERE id=$1", [req.params.id]);
+        if (!old.rowCount) {
+            client.release();
+            return res.status(404).json({ error: "key_not_found" });
+        }
         const o = old.rows[0];
         const reason = (req.body?.reason || "admin_reissue").slice(0, 200);
 
-        // Revoga antiga + desativa activations
-        await pool.query("BEGIN");
-        await pool.query(
+        // Resolve uid antes da transação (read-only)
+        let uid = null;
+        if (o.customer_email) {
+            const u = await client.query("SELECT id FROM users WHERE LOWER(email)=LOWER($1)", [o.customer_email]);
+            if (u.rowCount) uid = u.rows[0].id;
+        }
+
+        await client.query("BEGIN");
+        await client.query(
             "UPDATE license_keys SET revoked_at=now(), revoke_reason=$2 WHERE id=$1 AND revoked_at IS NULL",
             [o.id, reason]
         );
-        await pool.query(
+        await client.query(
             "UPDATE license_key_activations SET deactivated_at=now() WHERE license_key_id=$1 AND deactivated_at IS NULL",
             [o.id]
         );
 
-        // Gera nova mantendo tier/products/max_devices/expires_at/customer_email
         const plaintext = _genKey(o.tier);
         const hash = await bcrypt.hash(plaintext, 10);
         const prefix = plaintext.slice(0, 14);
-        const ins = await pool.query(
+        const ins = await client.query(
             `INSERT INTO license_keys
              (key_hash, key_prefix, tier, products, max_devices, expires_at,
               notes, customer_email, issued_by)
@@ -1005,18 +1018,11 @@ router.post("/admin/license-keys/:id/reissue", requireAdmin, async (req, res, ne
             [hash, prefix, o.tier, o.products, o.max_devices, o.expires_at,
              `Reissue de ${o.key_prefix} · motivo: ${reason}`, o.customer_email, req.user.id]
         );
-        await pool.query("COMMIT");
-
-        // Audit (tenta achar user_id via email)
-        let uid = null;
-        if (o.customer_email) {
-            const u = await pool.query("SELECT id FROM users WHERE LOWER(email)=LOWER($1)", [o.customer_email]);
-            if (u.rowCount) uid = u.rows[0].id;
-        }
-        await pool.query(
+        await client.query(
             "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'admin_license_key_reissue', $2)",
             [uid, JSON.stringify({ old_prefix: o.key_prefix, new_prefix: prefix, by: req.user.id, reason })]
-        ).catch(() => {});
+        );
+        await client.query("COMMIT");
 
         res.json({
             ok: true,
@@ -1026,70 +1032,81 @@ router.post("/admin/license-keys/:id/reissue", requireAdmin, async (req, res, ne
             warning: "Esta é a ÚNICA vez que a key aparece em plaintext."
         });
     } catch (e) {
-        await pool.query("ROLLBACK").catch(() => {});
+        await client.query("ROLLBACK").catch(err => console.error("[reissue rollback]", err.message));
         next(e);
+    } finally {
+        client.release();
     }
 });
 
 // === TRANSFER device de uma license_key (deactivate from + activate to) ===
-router.post("/admin/license-keys/:id/transfer-device", requireAdmin, async (req, res, next) => {
+// Review fix #1: path corrigido
+// Review fix #2: client dedicado pra transação real
+router.post("/license-keys/:id/transfer-device", requireAdmin, async (req, res, next) => {
+    const { from_fingerprint, to_fingerprint, to_name, to_os } = req.body || {};
+    if (!from_fingerprint || !to_fingerprint) {
+        return res.status(400).json({ error: "from_and_to_fingerprint_required" });
+    }
+    if (from_fingerprint === to_fingerprint) {
+        return res.status(400).json({ error: "same_fingerprint" });
+    }
+    const client = await pool.connect();
     try {
-        const { from_fingerprint, to_fingerprint, to_name, to_os } = req.body || {};
-        if (!from_fingerprint || !to_fingerprint) {
-            return res.status(400).json({ error: "from_and_to_fingerprint_required" });
+        const k = await client.query(
+            "SELECT id, customer_email FROM license_keys WHERE id=$1 AND revoked_at IS NULL",
+            [req.params.id]
+        );
+        if (!k.rowCount) {
+            client.release();
+            return res.status(404).json({ error: "key_not_found_or_revoked" });
         }
-        if (from_fingerprint === to_fingerprint) {
-            return res.status(400).json({ error: "same_fingerprint" });
-        }
-        const k = await pool.query("SELECT id, customer_email FROM license_keys WHERE id=$1 AND revoked_at IS NULL", [req.params.id]);
-        if (!k.rowCount) return res.status(404).json({ error: "key_not_found_or_revoked" });
 
-        await pool.query("BEGIN");
-        // Deactivate origem (idempotente)
-        const deact = await pool.query(
+        // Resolve uid antes da transação
+        let uid = null;
+        if (k.rows[0].customer_email) {
+            const u = await client.query("SELECT id FROM users WHERE LOWER(email)=LOWER($1)", [k.rows[0].customer_email]);
+            if (u.rowCount) uid = u.rows[0].id;
+        }
+
+        await client.query("BEGIN");
+        const deact = await client.query(
             `UPDATE license_key_activations
                 SET deactivated_at=now()
               WHERE license_key_id=$1 AND device_fingerprint=$2 AND deactivated_at IS NULL
              RETURNING id`,
             [req.params.id, from_fingerprint]
         );
-        // Activate destino (upsert)
-        const exists = await pool.query(
-            "SELECT id, deactivated_at FROM license_key_activations WHERE license_key_id=$1 AND device_fingerprint=$2",
+        const exists = await client.query(
+            "SELECT id FROM license_key_activations WHERE license_key_id=$1 AND device_fingerprint=$2",
             [req.params.id, to_fingerprint]
         );
         let toId;
         if (exists.rowCount > 0) {
             toId = exists.rows[0].id;
-            await pool.query(
-                "UPDATE license_key_activations SET deactivated_at=NULL, last_validation_at=now(), device_name=COALESCE($3, device_name), device_os=COALESCE($4, device_os) WHERE id=$1",
-                [toId, null, to_name || null, to_os || null]
+            await client.query(
+                "UPDATE license_key_activations SET deactivated_at=NULL, last_validation_at=now(), device_name=COALESCE($2, device_name), device_os=COALESCE($3, device_os) WHERE id=$1",
+                [toId, to_name || null, to_os || null]
             );
         } else {
-            const ins = await pool.query(
+            const ins = await client.query(
                 `INSERT INTO license_key_activations(license_key_id, device_fingerprint, device_name, device_os)
                  VALUES($1,$2,$3,$4) RETURNING id`,
                 [req.params.id, to_fingerprint, to_name || null, to_os || null]
             );
             toId = ins.rows[0].id;
         }
-        await pool.query("COMMIT");
-
-        // Audit
-        let uid = null;
-        if (k.rows[0].customer_email) {
-            const u = await pool.query("SELECT id FROM users WHERE LOWER(email)=LOWER($1)", [k.rows[0].customer_email]);
-            if (u.rowCount) uid = u.rows[0].id;
-        }
-        await pool.query(
+        await client.query(
             "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'admin_license_key_transfer', $2)",
             [uid, JSON.stringify({ license_key_id: req.params.id, from: from_fingerprint, to: to_fingerprint, by: req.user.id })]
-        ).catch(() => {});
+        );
+        await client.query("COMMIT");
 
         res.json({ ok: true, deactivated_id: deact.rows[0]?.id || null, activated_id: toId });
     } catch (e) {
-        await pool.query("ROLLBACK").catch(() => {});
+        await client.query("ROLLBACK").catch(err => console.error("[transfer-device rollback]", err.message));
         next(e);
+    } finally {
+        client.release();
     }
 });
 
@@ -1098,40 +1115,53 @@ router.post("/admin/license-keys/:id/transfer-device", requireAdmin, async (req,
 // ════════════════════════════════════════════════════════════════════
 
 // === GET /v1/admin/transactions — lista charges com filtro ===
-// Query: limit (default 50, max 100), status, days (default 90)
+// Review fix #4: paginação completa via starting_after até has_more=false.
+// KPIs (gross/refunded/net) refletem TODA a janela, não só 100 charges.
+// Hard cap em 1000 charges pra evitar travada se houver volume absurdo.
 router.get("/transactions", requireAdmin, async (req, res, next) => {
     try {
-        const limit = Math.min(Number(req.query.limit) || 50, 100);
         const days = Math.min(Math.max(Number(req.query.days) || 90, 1), 365);
-        const statusFilter = (req.query.status || "").trim(); // succeeded|refunded|failed|pending
+        const statusFilter = (req.query.status || "").trim();
         const since = Math.floor((Date.now() - days * 86400000) / 1000);
+        const HARD_CAP = 1000;
+        const PAGE_SIZE = 100;
 
-        let charges;
+        const all = [];
+        let startingAfter = null;
+        let truncated = false;
         try {
-            charges = await stripe.charges.list({ created: { gte: since }, limit });
+            for (let i = 0; i < Math.ceil(HARD_CAP / PAGE_SIZE); i++) {
+                const params = { created: { gte: since }, limit: PAGE_SIZE };
+                if (startingAfter) params.starting_after = startingAfter;
+                const page = await stripe.charges.list(params);
+                all.push(...page.data);
+                if (!page.has_more || page.data.length === 0) { startingAfter = null; break; }
+                startingAfter = page.data[page.data.length - 1].id;
+                if (all.length >= HARD_CAP) { truncated = true; break; }
+            }
         } catch (e) {
             return res.status(503).json({ error: "stripe_unavailable", message: e.message });
         }
 
-        // Lookup de user_id por stripe_customer (faz 1 query batch)
-        const customerIds = [...new Set(charges.data.map(c => c.customer).filter(Boolean))];
+        // Lookup batch de user_id por stripe_customer
+        const customerIds = [...new Set(all.map(c => c.customer).filter(Boolean))];
         let usersByCustomer = {};
         if (customerIds.length > 0) {
             const r = await pool.query(
                 "SELECT id, email, stripe_customer FROM users WHERE stripe_customer = ANY($1::text[])",
                 [customerIds]
-            ).catch(() => ({ rows: [] }));
+            ).catch(e => { console.error("[transactions user lookup]", e.message); return { rows: [] }; });
             r.rows.forEach(u => { usersByCustomer[u.stripe_customer] = u; });
         }
 
-        let list = charges.data.map(c => {
+        let list = all.map(c => {
             const u = usersByCustomer[c.customer] || null;
             return {
                 id: c.id,
                 amount: c.amount / 100,
                 amount_refunded: c.amount_refunded / 100,
                 currency: c.currency,
-                status: c.status, // succeeded, pending, failed
+                status: c.status,
                 paid: c.paid,
                 refunded: c.refunded,
                 disputed: c.disputed,
@@ -1150,7 +1180,6 @@ router.get("/transactions", requireAdmin, async (req, res, next) => {
         else if (statusFilter === "succeeded") list = list.filter(c => c.paid && !c.refunded);
         else if (statusFilter === "disputed") list = list.filter(c => c.disputed);
 
-        // Totals (sobre o batch retornado)
         const totals = {
             count: list.length,
             gross_brl: list.reduce((s, c) => s + (c.paid && !c.refunded ? c.amount : 0), 0),
@@ -1166,13 +1195,15 @@ router.get("/transactions", requireAdmin, async (req, res, next) => {
                 refunded_brl: Number(totals.refunded_brl.toFixed(2)),
                 net_brl: Number(totals.net_brl.toFixed(2)),
             },
-            filter: { days, status: statusFilter || "all", limit },
+            filter: { days, status: statusFilter || "all", scanned: all.length, truncated },
             generated_at: new Date().toISOString(),
         });
     } catch (e) { next(e); }
 });
 
 // === POST /v1/admin/transactions/:charge_id/refund — refund parcial ou total ===
+// Review fix #3: idempotencyKey previne double-refund em duplo-clique/retry.
+// Key inclui amount pra permitir refund parcial seguido de outro parcial (chaves diferentes).
 router.post("/transactions/:charge_id/refund", requireAdmin, async (req, res, next) => {
     try {
         const { amount_brl, reason } = req.body || {};
@@ -1185,9 +1216,12 @@ router.post("/transactions/:charge_id/refund", requireAdmin, async (req, res, ne
         }
         params.metadata = { admin_refund_by: req.user.email || req.user.id };
 
+        // Idempotency: mesmo charge+reason+amount → mesma key → Stripe retorna o mesmo refund.
+        const idempotencyKey = `refund:${req.params.charge_id}:${reason || "req"}:${params.amount || "full"}`;
+
         let refund;
         try {
-            refund = await stripe.refunds.create(params);
+            refund = await stripe.refunds.create(params, { idempotencyKey });
         } catch (e) {
             return res.status(400).json({ error: "stripe_refund_failed", message: e.message });
         }
@@ -1200,7 +1234,9 @@ router.post("/transactions/:charge_id/refund", requireAdmin, async (req, res, ne
                 const u = await pool.query("SELECT id FROM users WHERE stripe_customer=$1", [ch.customer]);
                 if (u.rowCount) uid = u.rows[0].id;
             }
-        } catch (_) {}
+        } catch (e) {
+            console.error("[refund audit lookup]", e.message);
+        }
         await pool.query(
             "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'admin_refund', $2)",
             [uid, JSON.stringify({
@@ -1208,9 +1244,10 @@ router.post("/transactions/:charge_id/refund", requireAdmin, async (req, res, ne
                 refund_id: refund.id,
                 amount: refund.amount / 100,
                 reason: reason || null,
+                idempotency_key: idempotencyKey,
                 by: req.user.id,
             })]
-        ).catch(() => {});
+        ).catch(e => console.error("[refund audit insert]", e.message));
 
         res.json({
             ok: true,
@@ -1259,9 +1296,13 @@ router.get("/users.csv", requireAdmin, async (req, res, next) => {
             "email_verified", "marketing_optin", "blocked_at", "lifetime_until",
             "stripe_customer", "active_devices", "last_seen", "subscriptions"
         ];
+        // Review bônus: CSV injection — prefixa apóstrofo se o campo começa
+        // com =/+/-/@/tab (senão o Excel/Sheets executa como fórmula).
         const escape = (v) => {
             if (v === null || v === undefined) return "";
-            const s = String(v).replace(/"/g, '""');
+            let s = String(v);
+            if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+            s = s.replace(/"/g, '""');
             return /[",\n\r;]/.test(s) ? `"${s}"` : s;
         };
         const lines = [cols.join(",")];
@@ -1294,11 +1335,13 @@ router.get("/audit.csv", requireAdmin, async (req, res, next) => {
             params
         );
         const cols = ["created_at", "action", "user_id", "email", "device_id", "detail"];
+        // Review bônus: CSV injection — prefixa apóstrofo se começa com =/+/-/@/tab
         const escape = (v) => {
             if (v === null || v === undefined) return "";
-            const s = typeof v === "object" ? JSON.stringify(v) : String(v);
-            const s2 = s.replace(/"/g, '""');
-            return /[",\n\r;]/.test(s2) ? `"${s2}"` : s2;
+            let s = typeof v === "object" ? JSON.stringify(v) : String(v);
+            if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+            s = s.replace(/"/g, '""');
+            return /[",\n\r;]/.test(s) ? `"${s}"` : s;
         };
         const lines = [cols.join(",")];
         for (const row of r.rows) lines.push(cols.map(c => escape(row[c])).join(","));
