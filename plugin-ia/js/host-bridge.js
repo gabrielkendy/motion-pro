@@ -65,7 +65,7 @@ window.HostBridge = (function () {
             "    if ($.global.MotionProIA && typeof $.global.MotionProIA.ping === 'function') return 'ok';" +
             "    if (typeof MotionProIA !== 'undefined' && typeof MotionProIA.ping === 'function') return 'ok_local';" +
             "    return 'no_registration:fileName=' + $.fileName;" +
-            "  } catch(e) { return 'exception:' + (e.message || e); }" +
+            "  } catch(e) { return 'exception:line=' + (e.line || '?') + ' source=' + (e.source ? String(e.source).substring(0,80) : '?') + ' msg=' + (e.message || e); }" +
             "})()";
         return evalRaw(script).then(function (raw) {
             return { ok: (raw === "ok" || raw === "ok_local"), stage: "evalFile", raw: raw, path: jsxPath };
@@ -88,9 +88,17 @@ window.HostBridge = (function () {
         } catch (e) {
             return Promise.resolve({ ok: false, stage: "readEval", raw: "read_error:" + (e && e.message), path: jsxPath });
         }
-        // Encapsula em IIFE de verificação no mesmo evalScript pra checar registro atomicamente
-        var verify = ";(function(){ if ($.global.MotionProIA && typeof $.global.MotionProIA.ping === 'function') return 'ok'; if (typeof MotionProIA !== 'undefined' && typeof MotionProIA.ping === 'function') return 'ok_local'; return 'no_registration_after_eval'; })()";
-        return evalRaw(src + verify).then(function (raw) {
+        // Envolve em try/catch ExtendScript pra capturar e.line se o source tem erro.
+        // Usa Function() pra criar escopo isolado e permitir o try/catch funcionar
+        // mesmo que o src tenha erro de parse na primeira evalScript pass.
+        var wrapped =
+            "(function(){ try { " +
+            "  eval(arguments[0]); " +
+            "  if ($.global.MotionProIA && typeof $.global.MotionProIA.ping === 'function') return 'ok'; " +
+            "  if (typeof MotionProIA !== 'undefined' && typeof MotionProIA.ping === 'function') return 'ok_local'; " +
+            "  return 'no_registration_after_eval'; " +
+            "} catch(e) { return 'exception:line=' + (e.line || '?') + ' source=' + (e.source ? String(e.source).substring(0,80) : '?') + ' msg=' + (e.message || e); } }).call(null, " + JSON.stringify(src) + ")";
+        return evalRaw(wrapped).then(function (raw) {
             return { ok: (raw === "ok" || raw === "ok_local"), stage: "readEval", raw: raw, path: jsxPath };
         });
     }
