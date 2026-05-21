@@ -1302,7 +1302,12 @@ $.global._MPL_VERSION = "4.0.0";
         applySrtBatch: function (mogrtPath, blocksJson, optsJson) {
             // converte pra format groups
             var blocks; try { blocks = JSON.parse(blocksJson); } catch (e) { return err("blocks inválido"); }
-            var groups = blocks.map(function (b) { return { mogrtPath: mogrtPath, start: b.start, end: b.end, text: b.text }; });
+            // ES3 polyfill: ExtendScript de Premiere antigo pode não ter Array.prototype.map.
+            var groups = [];
+            for (var bi = 0; bi < blocks.length; bi++) {
+                var b = blocks[bi];
+                groups.push({ mogrtPath: mogrtPath, start: b.start, end: b.end, text: b.text });
+            }
             return EP_hybridApplyTextsAndTiming(JSON.stringify(groups), optsJson);
         },
         readActiveCaptions: EP_readCaptions,
