@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="description" content="Motion Suite — dois plugins de Premiere Pro que resolvem sua edição inteira. 7.906 títulos animados + legenda automática com motion. R$ 59,90/mês." />
-<meta property="og:title" content="Motion Suite — Dois plugins. Um Premiere. Sua edição inteira mais rápida." />
-<meta property="og:description" content="7.906 títulos animados + legenda automática com motion. R$ 59,90/mês a Suite completa." />
+<meta name="description" content="Motion Suite — três plugins de Premiere Pro que resolvem sua edição inteira. 7.906 títulos animados, legenda automática com motion e 13 features de IA dentro do Premiere. A partir de R$ 49,90/mês." />
+<meta property="og:title" content="Motion Suite — Três plugins. Um Premiere. Sua edição inteira mais rápida." />
+<meta property="og:description" content="7.906 títulos animados + legenda automática com motion + 13 features de IA. A Suite completa por R$ 79,90/mês." />
 <meta property="og:type" content="website" />
 <meta property="og:image" content="/img/og.png" />
-<title>Motion Suite — Dois plugins. Um Premiere. Sua edição inteira mais rápida.</title>
+<title>Motion Suite — Três plugins. Um Premiere. Sua edição inteira mais rápida.</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -146,28 +146,33 @@
 .problem-num .small { font-size: 14px; color: var(--fg-muted); font-family: 'JetBrains Mono', monospace; letter-spacing: .04em; }
 .problem-close { margin-top: 36px; padding-top: 28px; border-top: 1px solid var(--border); font-size: 1rem; color: var(--fg); font-weight: 500; font-style: italic; line-height: 1.5; }
 
-/* ── OS DOIS PRODUTOS (coração da página) ── */
+/* ── OS TRÊS PRODUTOS (coração da página) ── */
 .products-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 28px;
-  max-width: 1100px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+  max-width: 1200px; margin: 0 auto;
 }
-@media (max-width: 900px) { .products-grid { grid-template-columns: 1fr; } }
+@media (max-width: 1000px) { .products-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 700px)  { .products-grid { grid-template-columns: 1fr; } }
 .product-card {
   background: white;
   border: 1px solid var(--border);
   border-radius: 20px;
-  padding: 44px 40px;
+  padding: 38px 32px;
   display: flex; flex-direction: column;
   transition: transform .5s var(--ease-out), border-color .5s, box-shadow .5s;
   position: relative; overflow: hidden;
 }
 .product-card::before {
   content: ""; position: absolute; top: 0; right: 0; width: 240px; height: 240px;
-  background: radial-gradient(circle, rgba(37,99,235,.06), transparent 65%);
+  background: radial-gradient(circle, var(--card-accent, rgba(37,99,235,.06)), transparent 65%);
   transform: translate(40%, -40%);
   pointer-events: none;
 }
 .product-card:hover { transform: translateY(-8px); border-color: var(--border-hover); box-shadow: 0 28px 60px -20px rgba(37,99,235,.15); }
+.product-card--ia    { --card-accent: rgba(167, 139, 250, .12); }
+.product-card--ia .product-card__num,
+.product-card--ia .product-card__features li::before { color: #7c3aed; }
+.product-card--ia:hover { border-color: rgba(124, 58, 237, .35); box-shadow: 0 28px 60px -20px rgba(124, 58, 237, .18); }
 .product-card__num {
   font-family: 'JetBrains Mono', monospace;
   font-size: .7rem; letter-spacing: .2em; text-transform: uppercase;
@@ -236,8 +241,8 @@
 
 /* ── PRICING ── */
 .pricing { background: var(--bg-elevated); }
-.price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1100px; margin: 0 auto; align-items: stretch; }
-@media (max-width: 900px) { .price-grid { grid-template-columns: 1fr; } }
+.price-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; max-width: 1200px; margin: 0 auto; align-items: stretch; }
+@media (max-width: 1000px) { .price-grid { grid-template-columns: 1fr; max-width: 540px; } }
 .price-card { background: white; border: 1px solid var(--border); border-radius: 20px; padding: 44px 40px; position: relative; transition: all .5s var(--ease-out); display: flex; flex-direction: column; }
 .price-card.popular { border: 2px solid var(--accent); box-shadow: 0 20px 60px rgba(37,99,235,.15); transform: translateY(-4px); }
 .price-card:not(.popular):hover { transform: translateY(-6px); border-color: var(--border-hover); box-shadow: 0 20px 40px rgba(0,0,0,.04); }
@@ -316,6 +321,7 @@
       <ul class="nav-links">
         <li><a href="/titles/">Titles</a></li>
         <li><a href="/legendas/">Legendas</a></li>
+        <li><a href="/ia/">IA</a></li>
         <li><a href="#planos">Preços</a></li>
         <li><a href="#faq">FAQ</a></li>
         <li><a href="/docs/">Docs</a></li>
@@ -338,19 +344,19 @@
   </div>
 
   <div class="container hero-inner">
-    <span class="hero-badge"><span class="dot"></span>MOTION SUITE · DOIS PLUGINS · UM PREMIERE</span>
+    <span class="hero-badge"><span class="dot"></span>MOTION SUITE · TRÊS PLUGINS · UM PREMIERE</span>
     <h1 class="hero-title" id="heroTitle">
       <span class="line">O Premiere já é seu.</span>
       <span class="line">Faltava parar de</span>
       <span class="line"><span class="italic-em" data-scramble="fazer tudo na mão">fazer tudo na mão.</span></span>
     </h1>
     <p class="hero-sub">
-      7.906 títulos animados e legenda automática com motion — nativos no Premiere, aplicados em 1 clique. A Motion Suite não te faz editor melhor. Te faz o editor que entrega no prazo.
+      7.906 títulos animados, legenda automática com motion e 13 features de IA — nativos no Premiere, aplicados em 1 clique. A Motion Suite não te faz editor melhor. Te faz o editor que entrega no prazo.
     </p>
     <div class="hero-ctas">
       <a href="#planos" class="btn btn-primary btn-magnetic btn-lg"><span>Quero a Suite <span class="arrow">→</span></span></a>
       <a href="#produtos" class="btn btn-secondary btn-magnetic btn-lg">
-        <span>Ver os dois plugins <span class="arrow">↓</span></span>
+        <span>Ver os três plugins <span class="arrow">↓</span></span>
       </a>
     </div>
     <p class="trust-line">7 dias grátis · Sem cartão · Cancele em 1 clique</p>
@@ -358,7 +364,7 @@
     <div class="hero-metrics">
       <div class="hero-metric"><div class="num" data-counter="7906" data-format="thousand">0</div><div class="label">títulos prontos</div></div>
       <div class="hero-metric"><div class="num" data-counter="549">0</div><div class="label">títulos legendados</div></div>
-      <div class="hero-metric"><div class="num" data-counter="1">0</div><div class="label">clique pra aplicar</div></div>
+      <div class="hero-metric"><div class="num" data-counter="13">0</div><div class="label">features de IA</div></div>
       <div class="hero-metric"><div class="num" data-counter="11" data-suffix="s">0</div><div class="label">intenção → timeline</div></div>
     </div>
   </div>
@@ -396,13 +402,13 @@
   </div>
 </section>
 
-<!-- ════════════════════════ OS DOIS PRODUTOS ════════════════════════ -->
+<!-- ════════════════════════ OS TRÊS PRODUTOS ════════════════════════ -->
 <section id="produtos">
   <div class="container">
     <div class="sec-head reveal" style="text-align:center; margin-left:auto; margin-right:auto;">
       <span class="tag-mono"><span class="dot"></span>— A SUITE</span>
-      <h2 class="section-title">Dois plugins.<br><span class="italic-em">Uma edição inteira.</span></h2>
-      <p class="lede" style="margin:24px auto 0">Cada um resolve metade do seu trabalho chato. Juntos, resolvem a edição inteira. Conheça os dois — ou pule direto pro combo.</p>
+      <h2 class="section-title">Três plugins.<br><span class="italic-em">Uma edição inteira.</span></h2>
+      <p class="lede" style="margin:24px auto 0">Cada um resolve uma parte do seu trabalho chato. Juntos, resolvem a edição inteira. Conheça os três — ou pule direto pro combo.</p>
     </div>
 
     <div class="products-grid">
@@ -415,7 +421,7 @@
         <p class="product-card__desc">Animações organizadas como editor pensa: categoria, estilo, duração. Você acha, arrasta, solta. Sem keyframe, sem expressão, sem "depois eu animo".</p>
         <ul class="product-card__features">
           <li>Painel CEP nativo, dentro do Premiere</li>
-          <li>Fonte, cor e posição 100% editáveis na timeline</li>
+          <li>Fonte, cor e posição 100% editáveis</li>
           <li>Lower thirds, transições, reels, glitch, monster FX</li>
           <li>Aplica em 1 clique</li>
         </ul>
@@ -429,15 +435,32 @@
         <div class="product-card__num"><span>PLUGIN 02</span></div>
         <div class="product-card__brand">MOTION LEGENDAS</div>
         <h3 class="product-card__title">Legenda automática. Com motion.</h3>
-        <p class="product-card__desc">Transcreve, anima e entrega. 549 títulos legendados em 10 estilos + sound effects inclusos. A legenda que tomava 30 minutos da sua vida agora toma 11 segundos.</p>
+        <p class="product-card__desc">Transcreve, anima e entrega. 549 títulos legendados em 10 estilos + sound effects inclusos. A legenda que tomava 30 min agora toma 11 segundos.</p>
         <ul class="product-card__features">
-          <li>Transcrição automática em 1 clique (PT-BR)</li>
+          <li>Transcrição automática em PT-BR</li>
           <li>10 estilos de motion (word-by-word, karaokê)</li>
           <li>Sound effects já embutidos</li>
           <li>Lower thirds + 9 categorias visuais</li>
         </ul>
         <div class="product-card__cta">
           <a href="/legendas/" class="btn btn-secondary btn-lg btn-full"><span>Conhecer o Motion Legendas <span class="arrow">→</span></span></a>
+        </div>
+      </article>
+
+      <!-- CARD 3 — Motion IA -->
+      <article class="product-card product-card--ia reveal">
+        <div class="product-card__num"><span>PLUGIN 03</span></div>
+        <div class="product-card__brand">MOTION IA</div>
+        <h3 class="product-card__title">Um agente que edita com você.</h3>
+        <p class="product-card__desc">13 features de IA dentro do Premiere: corta pausas, acha trechos virais, gera capítulos, faz auto-crop com face tracking, baixa stock, e mais. Casper · Auto-edit roda tudo de uma vez.</p>
+        <ul class="product-card__features">
+          <li>Cortar Pausas + Cortar Erros + Caça-Trechos</li>
+          <li>Capítulos IA + Legendas word-by-word (5 estilos)</li>
+          <li>Auto Crop com face tracking + MultiCam IA</li>
+          <li>Biblioteca Stock (Pexels/Pixabay/Giphy)</li>
+        </ul>
+        <div class="product-card__cta">
+          <a href="/ia/" class="btn btn-secondary btn-lg btn-full"><span>Conhecer o Motion IA <span class="arrow">→</span></span></a>
         </div>
       </article>
 
@@ -490,6 +513,8 @@
       <div class="compare-row reveal"><div class="task">Personalizar</div><div class="before">Refaz tudo do zero</div><div class="after">Fonte, cor, posição</div></div>
       <div class="compare-row reveal"><div class="task">Sound effects</div><div class="before">Banco genérico avulso</div><div class="after">Já vem na legenda</div></div>
       <div class="compare-row reveal"><div class="task">Lower third pra entrevista</div><div class="before">Title Tool manual</div><div class="after">100 layouts prontos</div></div>
+      <div class="compare-row reveal"><div class="task">Cortar "ééé" e pausas</div><div class="before">Marker + ripple manual</div><div class="after">Whisper IA detecta e remove</div></div>
+      <div class="compare-row reveal"><div class="task">Achar trechos virais</div><div class="before">Revisar 32min na timeline</div><div class="after">IA marca os 3 melhores cortes</div></div>
       <div class="compare-row reveal"><div class="task">Cliente pede alteração</div><div class="before">Refazer do zero</div><div class="after">Editar inline</div></div>
     </div>
     <div class="compare-close reveal">
@@ -498,57 +523,59 @@
   </div>
 </section>
 
-<!-- ════════════════════════ PRICING (combo ancorado) ════════════════════════ -->
+<!-- ════════════════════════ PRICING (3 tiers · Solo / Duo / Total) ════════════════════════ -->
 <section class="pricing" id="planos">
   <div class="container">
     <div class="sec-head reveal" style="text-align:center; margin-left:auto; margin-right:auto;">
       <span class="tag-mono"><span class="dot"></span>— OS PLANOS</span>
-      <h2 class="section-title">Dois planos.<br>Zero <span class="italic-em">pegadinha.</span></h2>
+      <h2 class="section-title">Três planos.<br>Zero <span class="italic-em">pegadinha.</span></h2>
       <div class="price-toggle reveal" role="tablist" aria-label="Frequência" style="margin-top:32px;">
         <button id="toggle-monthly" class="active" data-freq="monthly" role="tab" aria-selected="true">Mensal</button>
-        <button id="toggle-yearly" data-freq="yearly" role="tab" aria-selected="false">Anual <span class="sale">2 meses grátis</span></button>
+        <button id="toggle-yearly" data-freq="yearly" role="tab" aria-selected="false">Anual <span class="sale">até 2 meses grátis</span></button>
       </div>
     </div>
 
     <div class="price-grid">
 
-      <!-- 1 PLUGIN -->
+      <!-- SOLO · 1 PLUGIN -->
       <article class="price-card reveal">
-        <div class="price-tag">À escolha</div>
-        <h3>Motion Titles <em style="font-style:normal;color:var(--fg-muted);font-weight:500">ou</em> Motion Legendas</h3>
+        <div class="price-tag">Solo · escolhe 1</div>
+        <h3>1 plugin à escolha</h3>
         <div class="price-amount" data-amount-monthly="R$ 49,90" data-amount-yearly="R$ 249,00">
           <span class="num">R$ 49,90</span>
           <span class="suf" data-suf-monthly="/mês" data-suf-yearly="/ano">/mês</span>
         </div>
-        <p class="price-micro" data-micro-monthly="Escolhe 1 dos 2 plugins · cobrança mensal" data-micro-yearly="Escolhe 1 dos 2 plugins · 2 meses grátis no anual">Escolhe 1 dos 2 plugins · cobrança mensal</p>
+        <p class="price-micro" data-micro-monthly="Titles, Legendas ou IA · cobrança mensal" data-micro-yearly="Titles, Legendas ou IA · 2 meses grátis no anual">Titles, Legendas ou IA · cobrança mensal</p>
         <ul class="price-features">
-          <li>Escolhe 1 dos 2 plugins</li>
+          <li>Escolhe 1 dos 3 plugins</li>
           <li>2 dispositivos simultâneos</li>
           <li>Atualizações inclusas</li>
-          <li>Suporte direto por e-mail</li>
+          <li>Suporte por e-mail</li>
           <li>Cancele quando quiser</li>
         </ul>
         <div style="display:flex; gap:8px; flex-direction:column;">
           <button class="btn btn-dark btn-full" data-buy-suite="titles_monthly" data-plan-titles-monthly="titles_monthly" data-plan-titles-yearly="titles_yearly">
-            <span data-cta-monthly="Começar com Titles" data-cta-yearly="Começar com Titles">Começar com Titles</span> <span class="arrow">→</span>
+            <span>Começar com Titles</span> <span class="arrow">→</span>
           </button>
           <button class="btn btn-secondary btn-full" data-buy-suite="legendas_monthly" data-plan-legendas-monthly="legendas_monthly" data-plan-legendas-yearly="legendas_yearly">
             <span>Começar com Legendas</span> <span class="arrow">→</span>
+          </button>
+          <button class="btn btn-secondary btn-full" data-buy-suite="ia_monthly" data-plan-ia-monthly="ia_monthly" data-plan-ia-yearly="ia_yearly">
+            <span>Começar com IA</span> <span class="arrow">→</span>
           </button>
         </div>
         <div class="price-foot">7 dias trial · cancele em 1 clique</div>
       </article>
 
-      <!-- COMBO -->
-      <article class="price-card popular reveal">
-        <span class="price-badge">⭐ Mais escolhido</span>
-        <div class="price-tag">Recomendado</div>
-        <h3>A Suite completa</h3>
+      <!-- SUITE DUO · 2 PLUGINS -->
+      <article class="price-card reveal">
+        <div class="price-tag">Suite Duo · 2 plugins</div>
+        <h3>Titles <em style="font-style:normal;color:var(--fg-muted);font-weight:500">+</em> Legendas</h3>
         <div class="price-amount" data-amount-monthly="R$ 59,90" data-amount-yearly="R$ 399,90">
           <span class="num">R$ 59,90</span>
           <span class="suf" data-suf-monthly="/mês" data-suf-yearly="/ano">/mês</span>
         </div>
-        <p class="price-micro" data-micro-monthly="Motion Titles + Motion Legendas · o segundo plugin sai por R$ 10/mês" data-micro-yearly="Motion Titles + Motion Legendas · 2 meses grátis no anual">Motion Titles + Motion Legendas · o segundo plugin sai por R$ 10/mês</p>
+        <p class="price-micro" data-micro-monthly="O segundo plugin sai por R$ 10/mês" data-micro-yearly="2 meses grátis no anual">O segundo plugin sai por R$ 10/mês</p>
         <ul class="price-features">
           <li>Motion Titles <strong>+</strong> Motion Legendas</li>
           <li>7.906 títulos + 549 títulos legendados</li>
@@ -556,8 +583,31 @@
           <li>2 dispositivos simultâneos</li>
           <li>Suporte prioritário</li>
         </ul>
-        <button class="btn btn-primary btn-full btn-lg" data-buy-suite="suite_monthly" data-plan-suite-monthly="suite_monthly" data-plan-suite-yearly="suite_yearly">
-          Quero a Suite completa <span class="arrow">→</span>
+        <button class="btn btn-dark btn-full btn-lg" data-buy-suite="suite_monthly" data-plan-suite-monthly="suite_monthly" data-plan-suite-yearly="suite_yearly">
+          Quero a Suite Duo <span class="arrow">→</span>
+        </button>
+        <div class="price-foot">7 dias trial · cancele em 1 clique</div>
+      </article>
+
+      <!-- SUITE TOTAL · 3 PLUGINS · POPULAR -->
+      <article class="price-card popular reveal">
+        <span class="price-badge">⭐ Mais escolhido</span>
+        <div class="price-tag">Suite Total · 3 plugins</div>
+        <h3>Titles <em style="font-style:normal;color:var(--fg-muted);font-weight:500">+</em> Legendas <em style="font-style:normal;color:var(--fg-muted);font-weight:500">+</em> IA</h3>
+        <div class="price-amount" data-amount-monthly="R$ 79,90" data-amount-yearly="R$ 549,00">
+          <span class="num">R$ 79,90</span>
+          <span class="suf" data-suf-monthly="/mês" data-suf-yearly="/ano">/mês</span>
+        </div>
+        <p class="price-micro" data-micro-monthly="Edição inteira resolvida · 3 plugins por +R$ 20 vs Duo" data-micro-yearly="Edição inteira resolvida · 2 meses grátis no anual">Edição inteira resolvida · 3 plugins por +R$ 20 vs Duo</p>
+        <ul class="price-features">
+          <li>Tudo da Suite Duo <strong>+</strong> Motion IA</li>
+          <li>13 features de IA (Casper · Auto-edit incluso)</li>
+          <li>Whisper local + Gemini 2.5 (sem extra)</li>
+          <li>Biblioteca Stock multi-fonte</li>
+          <li>2 dispositivos simultâneos · Suporte VIP</li>
+        </ul>
+        <button class="btn btn-primary btn-full btn-lg" data-buy-suite="suite_total_monthly" data-plan-suite-total-monthly="suite_total_monthly" data-plan-suite-total-yearly="suite_total_yearly">
+          Quero a Suite Total <span class="arrow">→</span>
         </button>
         <div class="price-foot">7 dias trial · cancele em 1 clique</div>
       </article>
@@ -566,7 +616,7 @@
 
     <div class="pricing-callout reveal">
       <p>
-        Um plugin: <strong>R$ 49,90</strong>. Os dois: <strong>R$ 59,90</strong>. Faz a conta — o segundo plugin sai por <strong style="color:var(--accent)">R$ 10/mês</strong>.
+        Solo: <strong>R$ 49,90</strong> · Duo: <strong>R$ 59,90</strong> · Total: <strong>R$ 79,90</strong>. Cada plugin extra sai por <strong style="color:var(--accent)">R$ 10–20/mês</strong> dentro do combo. O cálculo favorece sempre quem leva mais.
       </p>
     </div>
   </div>
@@ -598,7 +648,9 @@
       <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Funciona no Premiere e no After Effects?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>A Motion Suite é nativa do Premiere Pro (painel CEP). Os títulos podem ser levados pro After, mas a experiência de 1 clique foi feita pro Premiere. CC 2019 em diante (Windows e Mac).</p></div></div>
       <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Posso usar em projetos comerciais / de cliente?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Sim. A licença cobre uso comercial ilimitado. Vídeo de cliente, YouTube monetizado, social ads, evento pago — tudo liberado. Sem royalty.</p></div></div>
       <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Quantas máquinas posso ativar?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Cada licença ativa em até 2 máquinas (ex: desktop + notebook). Troca de máquina em 1 clique no dashboard. Precisa de mais? Fala com a gente.</p></div></div>
-      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Posso assinar só um plugin?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Pode. O plano de 1 plugin (R$ 49,90/mês) deixa você escolher Titles ou Legendas. Mas pelo combo, o segundo plugin sai por só R$ 10 a mais.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Posso assinar só um plugin?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Pode. O plano Solo (R$ 49,90/mês) deixa você escolher Titles, Legendas <strong>ou</strong> IA. Mas pela Suite Total (R$ 79,90), você leva os três — cada plugin extra sai por R$ 10–20/mês. A conta sempre favorece quem leva mais.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">O que o Motion IA faz exatamente?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>13 features de IA dentro do Premiere: <strong>Cortar Pausas</strong> e <strong>Cortar Erros</strong> (Whisper local detecta silêncios e ums), <strong>Caça-Trechos</strong> (acha cortes virais), <strong>Capítulos IA</strong> (gera markers), <strong>Legendas IA</strong> word-by-word em 5 estilos (Viral/TikTok/Reels/Clássico/Minimal), <strong>Auto Crop</strong> com face tracking, <strong>MultiCam IA</strong>, <strong>Baixar Vídeo</strong>, <strong>Biblioteca Stock</strong> (Pexels/Pixabay/Giphy) e <strong>Casper · Auto-edit</strong> que roda tudo numa sequência. Tudo nativo, sem render externo.</p></div></div>
+      <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">A IA precisa de API key minha?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Não. Já vem com créditos inclusos pra rodar tudo. Whisper roda local na sua máquina (zero custo, zero internet pra transcrição). Gemini 2.5 e provedores stock usam pool compartilhado. Quem quiser <strong>BYOK</strong> (Anthropic Claude próprio ou Pexels/Pixabay key próprio) pode plugar em ⚙ Config.</p></div></div>
       <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">A legenda automática é precisa? Em português?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Sim, transcrição otimizada pra português-BR. Você sempre revisa antes de aplicar — mas o trabalho pesado já vem feito.</p></div></div>
       <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">Como funciona o reembolso?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>7 dias de garantia incondicional. Não curtiu, devolve. Sem perguntas, sem formulário de 12 campos.</p></div></div>
       <div class="faq-item reveal"><button class="faq-q" aria-expanded="false">O plugin precisa de internet?<span class="faq-icon"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></button><div class="faq-a"><p>Só pra ativar a licença e pra transcrição automática das legendas. Os títulos rodam offline por até 7 dias antes de pedir reauth.</p></div></div>
@@ -628,16 +680,17 @@
     <div class="footer-grid">
       <div>
         <div class="logo"><span class="logo-dot"></span>Motion Suite</div>
-        <p class="footer-tag">Dois plugins. Um Premiere. Sua edição inteira mais rápida. Construído por editor, pra editor.</p>
+        <p class="footer-tag">Três plugins. Um Premiere. Sua edição inteira mais rápida. Construído por editor, pra editor.</p>
         <div class="footer-copy">© <span data-yr></span> · PacotesFX</div>
       </div>
       <div class="footer-col"><h5>Produtos</h5><ul>
         <li><a href="/titles/">Motion Titles</a></li>
         <li><a href="/legendas/">Motion Legendas</a></li>
+        <li><a href="/ia/">Motion IA</a></li>
         <li><a href="#planos">A Suite (combo)</a></li>
       </ul></div>
       <div class="footer-col"><h5>Recursos</h5><ul>
-        <li><a href="#produtos">Os dois plugins</a></li>
+        <li><a href="#produtos">Os três plugins</a></li>
         <li><a href="#fluxo">Como funciona</a></li>
         <li><a href="#planos">Preços</a></li>
         <li><a href="#faq">FAQ</a></li>
@@ -902,11 +955,10 @@
       });
       // Atualiza data-buy-suite dos botões
       document.querySelectorAll('[data-buy-suite]').forEach(btn => {
-        const key = 'plan' + freq.charAt(0).toUpperCase() + freq.slice(1);
         // procura data-plan-{product}-{freq}
         Object.keys(btn.dataset).forEach(k => {
-          // ex: planTitlesMonthly, planSuiteYearly
-          const m = k.match(/^plan(Titles|Legendas|Suite)(Monthly|Yearly)$/);
+          // ex: planTitlesMonthly, planSuiteYearly, planIaMonthly, planSuiteTotalYearly
+          const m = k.match(/^plan(Titles|Legendas|Ia|Suite|SuiteTotal)(Monthly|Yearly)$/);
           if (m && m[2].toLowerCase() === freq) {
             btn.dataset.buySuite = btn.dataset[k];
           }
@@ -935,8 +987,11 @@
       const btn = e.target.closest('[data-buy-suite]');
       if (!btn) return;
       e.preventDefault();
-      const plan = btn.dataset.buySuite;  // ex: "suite_monthly"
-      const [product, freq] = plan.split('_');
+      const plan = btn.dataset.buySuite;  // ex: "suite_monthly", "suite_total_monthly", "ia_yearly"
+      // split no ÚLTIMO "_" pra suportar "suite_total_*"
+      const lastUnderscore = plan.lastIndexOf('_');
+      const product = plan.slice(0, lastUnderscore);
+      const freq    = plan.slice(lastUnderscore + 1);
       const orig = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span> Indo pra Stripe...';
