@@ -223,6 +223,33 @@ body {
 .tab-panel { display: none; flex: 1; overflow: hidden; min-height: 0 }
 .tab-panel.active { display: flex; flex-direction: column }
 
+/* ════════════ SCROLLBAR custom (Config tab + outros containers scrollaveis) ════════════ */
+#config-body::-webkit-scrollbar,
+.tab-panel::-webkit-scrollbar,
+#grid-wrap::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+#config-body::-webkit-scrollbar-track,
+.tab-panel::-webkit-scrollbar-track,
+#grid-wrap::-webkit-scrollbar-track {
+    background: transparent;
+}
+#config-body::-webkit-scrollbar-thumb,
+.tab-panel::-webkit-scrollbar-thumb,
+#grid-wrap::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.15);
+    border-radius: 5px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+#config-body::-webkit-scrollbar-thumb:hover,
+.tab-panel::-webkit-scrollbar-thumb:hover,
+#grid-wrap::-webkit-scrollbar-thumb:hover {
+    background: rgba(37, 99, 235, 0.5);
+    background-clip: padding-box;
+}
+
 /* ════════════ TAB TEMPLATES ════════════ */
 #content-wrap {
     flex: 1; display: flex; flex-direction: column;

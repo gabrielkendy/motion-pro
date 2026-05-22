@@ -103,11 +103,21 @@
     }
 
     function authHeader() {
-        var t = global.localStorage && global.localStorage.getItem("mpl_session_token");
+        // v2 SaaS: token unificado entre 3 plugins é "mv_session".
+        // Fallback pra "mpl_session_token" (legacy) e "mpl_session" (migração intermediária).
+        var ls = global.localStorage;
+        if (!ls) return null;
+        var t = ls.getItem("mv_session") ||
+                ls.getItem("mpl_session_token") ||
+                ls.getItem("mpl_session");
         return t ? ("Bearer " + t) : null;
     }
     function fingerprint() {
-        return (global.localStorage && global.localStorage.getItem("mpl_device_fingerprint")) || "unknown";
+        var ls = global.localStorage;
+        if (!ls) return "unknown";
+        return ls.getItem("mv_device_fingerprint") ||
+               ls.getItem("mpl_device_fingerprint") ||
+               "unknown";
     }
     function apiBase() {
         return (global.MPL_CFG && global.MPL_CFG.apiBase) || "https://motionpro.vercel.app";
