@@ -1527,8 +1527,25 @@ function installFonts() {
     log("✓ Fontes: " + installed + " instaladas · " + skipped + " já existiam" + (errors.length ? " · " + errors.length + " erros" : ""), "info");
     log("  pasta: " + userFontDir, "info");
     toast("✓ " + installed + " fontes instaladas! Reinicie o Premiere pra elas aparecerem.", "ok", 6000);
-    $("font-banner").classList.add("hidden");
-    localStorage.setItem("mpl_fonts_dismiss", "1");
+
+    // Re-check apos 3s (da tempo do registry escrever). Se ainda missing, mostra
+    // banner pedindo restart do Premiere em vez de esconder cegamente.
+    setTimeout(function () {
+        if (typeof checkFontsBanner === "function") {
+            checkFontsBanner();
+            // Se ainda houver fontes missing, atualiza texto pra "reinicie Premiere"
+            setTimeout(function () {
+                if (MISSING_FONTS && MISSING_FONTS.length > 0) {
+                    var txt = $("font-banner-text");
+                    if (txt) {
+                        txt.innerHTML = "✓ Fontes instaladas — <b>reinicie o Premiere</b> pra elas aparecerem nos templates";
+                    }
+                } else {
+                    $("font-banner").classList.add("hidden");
+                }
+            }, 500);
+        }
+    }, 3000);
 }
 
 // Cache de templates agrupados por wc pra picking eficiente
@@ -2408,7 +2425,33 @@ function applySfxAtAllLegendas() {
     jsx(sniffScript, function (d) {
         if (d.error) { toast("Erro: " + d.error, "err"); return; }
         if (!d.ticks || !d.ticks.length) { toast("Sem clips de legenda na timeline", "warn"); return; }
-        log("🔊 Aplicando SFX em " + d.ticks.length + " legendas · track=" + track, "info");
+
+        // Guarda contra travamento Premiere: > 80 clips em uma rajada bug GPU em
+        // videos grandes (relato real: 3min/16GB GPU travou). Avisa user + sugere
+        // alternativa (aplicar selecionado em CTI um por um).
+        var n = d.ticks.length;
+        var HARD_LIMIT = 200;   // acima disso, recusa
+        var SOFT_LIMIT = 80;    // entre 80-200, confirma
+        if (n > HARD_LIMIT) {
+            toast(
+                n + " legendas é demais. Premiere trava acima de " + HARD_LIMIT + ". " +
+                "Selecione só um trecho da timeline e use 'Aplicar no CTI'.",
+                "err", 7000
+            );
+            log("✗ SFX-em-todas BLOQUEADO: " + n + " clips > " + HARD_LIMIT, "err");
+            return;
+        }
+        if (n > SOFT_LIMIT) {
+            var ok = confirm(
+                "⚠ Atenção: " + n + " SFX serão inseridos na timeline.\n\n" +
+                "Premiere pode ficar lento ou travar (depende da placa/CPU).\n" +
+                "Recomendado: aplicar em trecho menor por vez.\n\n" +
+                "Continuar mesmo assim?"
+            );
+            if (!ok) { log("SFX-em-todas cancelado pelo user", "info"); return; }
+        }
+
+        log("🔊 Aplicando SFX em " + n + " legendas · track=" + track, "info");
         placeSfxBatch(d.ticks, track);
     });
 }

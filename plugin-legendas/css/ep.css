@@ -124,33 +124,64 @@ body {
 }
 #ep-srt-status-banner:hover .ep-srt-status-action { background: rgba(37, 99, 235, .14) }
 
-/* ════════════ TAB BAR ════════════ */
+/* ════════════ MAIN ROW (sidebar + content) ════════════ */
+#main-row {
+    display: flex; flex-direction: row;
+    flex: 1; min-height: 0;
+    overflow: hidden;
+}
+#content-col {
+    display: flex; flex-direction: column;
+    flex: 1; min-width: 0;
+    overflow: hidden;
+}
+
+/* ════════════ TAB BAR (SIDEBAR LATERAL) ════════════ */
 #tab-bar {
-    display: flex; background: var(--panel);
-    border-bottom: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
     flex-shrink: 0;
+    width: 52px;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 .tab-btn {
-    flex: 1; padding: 5px 3px;
-    font: 700 10px Inter; letter-spacing: .4px;
+    flex: 0 0 auto;
+    width: 100%;
+    padding: 9px 2px;
+    font: 700 9px Inter; letter-spacing: .3px;
     color: var(--text-3);
-    border-bottom: 2px solid transparent;
+    border-bottom: 1px solid transparent;
+    border-left: 2px solid transparent;
     transition: color .12s, border-color .12s, background .12s;
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
     position: relative;
 }
 .tab-btn:hover { color: var(--text-dim); background: var(--panel-alt) }
-.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--panel-alt) }
-.tab-ico { font-size: 13px; line-height: 1 }
-.tab-lbl { font: 700 9px Inter; letter-spacing: .7px; text-transform: uppercase }
+.tab-btn.active {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: var(--panel-alt);
+}
+.tab-ico { font-size: 16px; line-height: 1 }
+.tab-lbl {
+    font: 700 8px Inter; letter-spacing: .4px;
+    text-transform: uppercase;
+    text-align: center;
+    line-height: 1.1;
+}
 
-/* Largura estreita: esconde labels, mantém só ícones */
-@media (max-width: 560px) {
+/* Tela bem estreita (< 400px): esconde label, fica só icone (sidebar 40px) */
+@media (max-width: 400px) {
+    #tab-bar { width: 40px }
     .tab-lbl { display: none }
-    .tab-btn { padding: 7px 3px }
-    .tab-ico { font-size: 16px }
+    .tab-btn { padding: 11px 2px }
+    .tab-ico { font-size: 18px }
+}
+/* Tela ultra estreita (legacy): esconde subtitle do header */
+@media (max-width: 360px) {
     #header-subtitle { display: none }
-    .ep-srt-status-text { font-size: 10px }
 }
 .tab-badge {
     position: absolute; top: 4px; right: 4px;

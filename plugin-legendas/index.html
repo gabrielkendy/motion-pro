@@ -107,7 +107,10 @@
     <span class="ep-srt-status-action">Carregar agora →</span>
 </div>
 
-<!-- ════════════ TAB BAR ════════════ -->
+<!-- ════════════ MAIN ROW: sidebar (esq) + content (dir) ════════════ -->
+<div id="main-row">
+
+<!-- ════════════ TAB BAR (sidebar lateral) ════════════ -->
 <div id="tab-bar">
     <button class="tab-btn active" data-tab="tab-templates" title="Biblioteca de templates EP">
         <span class="tab-ico">📚</span><span class="tab-lbl">Templates</span>
@@ -129,6 +132,9 @@
         <span class="tab-ico">⚙️</span><span class="tab-lbl">Config</span>
     </button>
 </div>
+
+<!-- ════════════ CONTENT COL (tudo que era abaixo das tabs) ════════════ -->
+<div id="content-col">
 
 <!-- Wizard breadcrumb (aparece nas tabs de legenda) -->
 <div id="wizard-bar" class="hidden">
@@ -317,7 +323,6 @@
     <div id="auto-srt-body">
         <div class="auto-row">
             <button id="btn-auto-srt-swap" class="btn-util" style="flex:1">🔄 Trocar arquivo SRT</button>
-            <button id="btn-auto-srt-captions" class="btn-util" style="flex:1" title="Importar transcrição nativa do Premiere">🎙️ Captions Premiere</button>
         </div>
 
         <!-- ── Modo 1-palavra (padrão recomendado — evita problemas de slot múltiplo) ── -->
@@ -456,8 +461,7 @@
 
         <div id="editor-no-srt" class="editor-empty">
             📋<br>
-            Carregue um SRT na aba <b>SRT · Config</b><br>
-            <span class="dim">— ou clique 🎙️ Captions Premiere se já tem transcrição nativa</span>
+            Carregue um SRT na aba <b>Importar</b>
         </div>
     </div>
 </div>
@@ -604,6 +608,9 @@
         </div>
     </div>
 </div>
+
+</div><!-- /#content-col -->
+</div><!-- /#main-row -->
 
 <!-- ════════════ LOG ════════════ -->
 <div id="log-section" class="section">
