@@ -1,10 +1,66 @@
 "use strict";
 const router = require("express").Router();
 const Stripe = require("stripe");
+const crypto = require("crypto");
 const { pool } = require("../db");
 const { requireAdmin } = require("../middleware/auth");
 
 const stripe = Stripe(process.env.STRIPE_SECRET || "sk_test_xxx");
+
+// === CDN SELF-TEST ===
+// Diagnostica divergencia de CDN_SIGN_SECRET entre backend e Cloudflare Worker.
+// O backend assina uma URL com seu proprio secret e tenta baixar do Worker.
+// Se Worker responder 401 invalid_signature, secret esta divergente.
+router.get("/cdn-self-test", requireAdmin, async (_req, res, next) => {
+    try {
+        const SECRET   = process.env.CDN_SIGN_SECRET;
+        const CDN_BASE = (process.env.CDN_BASE || "").replace(/\/$/, "");
+        if (!SECRET)   return res.status(500).json({ error: "missing_CDN_SIGN_SECRET" });
+        if (!CDN_BASE) return res.status(500).json({ error: "missing_CDN_BASE" });
+
+        // Pega 1 asset published qualquer
+        const a = await pool.query("SELECT cdn_key FROM assets WHERE published=true LIMIT 1");
+        if (a.rowCount === 0) return res.status(404).json({ error: "no_published_asset" });
+        const key = a.rows[0].cdn_key;
+
+        // Assina URL com secret do backend
+        const fp      = "cdn-self-test";
+        const expires = Math.floor(Date.now() / 1000) + 300;
+        const data    = `${key}\n${fp}\n${expires}`;
+        const sig     = crypto.createHmac("sha256", SECRET).update(data).digest("base64url");
+        const url     = `${CDN_BASE}/${key}?fp=${encodeURIComponent(fp)}&e=${expires}&s=${sig}`;
+
+        // Tenta HEAD via Worker
+        let workerStatus = null, workerBody = null;
+        try {
+            const r = await fetch(url, { method: "GET" });
+            workerStatus = r.status;
+            if (r.status !== 200) {
+                workerBody = (await r.text()).slice(0, 200);
+            }
+        } catch (e) {
+            return res.status(500).json({ error: "fetch_failed", message: e.message });
+        }
+
+        return res.json({
+            cdn_base:        CDN_BASE,
+            asset_key:       key,
+            url_short:       url.slice(0, 90) + "...",
+            secret_present:  true,
+            secret_length:   SECRET.length,
+            secret_prefix:   SECRET.slice(0, 4) + "***" + SECRET.slice(-2),
+            worker_status:   workerStatus,
+            worker_body:     workerBody,
+            verdict: workerStatus === 200
+                ? "OK · backend e worker compartilham o mesmo CDN_SIGN_SECRET"
+                : (workerBody && workerBody.includes("invalid_signature"))
+                    ? "FAIL · secret divergente entre Vercel e Cloudflare Worker · rotacionar"
+                    : (workerBody && workerBody.includes("expired"))
+                        ? "FAIL · clock skew · sincronizar relogio do backend"
+                        : "FAIL · ver worker_status + worker_body acima"
+        });
+    } catch (e) { next(e); }
+});
 
 // === STATS / KPIs ===
 router.get("/stats", requireAdmin, async (_req, res, next) => {
