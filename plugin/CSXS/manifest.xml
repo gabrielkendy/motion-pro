@@ -2,7 +2,7 @@
 <ExtensionManifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    ExtensionBundleId="com.motionvault.panel"
                    ExtensionBundleVersion="1.0.4"
-                   ExtensionBundleName="MotionVault"
+                   ExtensionBundleName="Motion Titles"
                    Version="5.0">
     <ExtensionList>
         <Extension Id="com.motionvault.panel" Version="1.0.4" />
@@ -39,7 +39,7 @@
                 </Lifecycle>
                 <UI>
                     <Type>Panel</Type>
-                    <Menu>MotionVault</Menu>
+                    <Menu>Motion Titles</Menu>
                     <Geometry>
                         <Size>
                             <Height>700</Height>
