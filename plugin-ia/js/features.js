@@ -85,12 +85,11 @@
             prompt: "Faz auto crop 9:16 do clip selecionado com tracking de rosto"
         },
         {
-            id: "stock", view: "feat-stock",
-            icon: "📚", title: "Biblioteca Stock",
-            sub: "Pexels + Pixabay + Giphy · em breve",
-            minTier: "basic", tech: "api",
-            prompt: null,
-            disabled: true, disabled_reason: "Em desenvolvimento — disponível na próxima atualização"
+            id: "gerar-video", view: "feat-gerar-video",
+            icon: "🎬", title: "Gerar Vídeo IA",
+            sub: "Seedance: foto + prompt → vídeo gerado por IA · via fal.ai",
+            minTier: "pro", tech: "fal.ai · Seedance",
+            prompt: "Gera um vídeo a partir da imagem de referência e do prompt do usuário usando Seedance via fal.ai"
         },
         {
             id: "casper", view: "feat-casper",
@@ -225,15 +224,35 @@
                 + '</select></div>'
                 + '<div class="field"><label><input type="checkbox" id="feat-crop-tracking" checked> Face tracking inteligente (recomendado)</label></div>';
         }
-        if (f.id === "stock") {
+        if (f.id === "gerar-video") {
             customInput = ''
-                + '<div class="field"><label>Buscar</label><input id="feat-stock-query" placeholder="ex: oceano, cidade, pessoa correndo"></div>'
-                + '<div class="field"><label>Fonte</label><select id="feat-stock-source">'
-                +   '<option value="pexels">Pexels (vídeos HD)</option>'
-                +   '<option value="pixabay">Pixabay (vídeos HD)</option>'
-                +   '<option value="giphy">Giphy (GIFs animados)</option>'
-                +   '<option value="all">Todas (mais resultados)</option>'
-                + '</select></div>';
+                + '<div class="field">'
+                +   '<label>📸 Foto de referência</label>'
+                +   '<div id="feat-gv-drop" style="border:2px dashed var(--line);border-radius:8px;padding:24px;text-align:center;cursor:pointer;background:var(--bg);transition:border-color .2s">'
+                +     '<div id="feat-gv-drop-text" style="color:var(--mut);font-size:13px">Arrasta uma imagem aqui ou clica pra escolher</div>'
+                +     '<div id="feat-gv-preview" style="margin-top:10px;display:none"><img id="feat-gv-img" style="max-width:100%;max-height:180px;border-radius:6px"></div>'
+                +     '<input type="file" id="feat-gv-file" accept="image/png,image/jpeg,image/webp" style="display:none">'
+                +   '</div>'
+                + '</div>'
+                + '<div class="field"><label>✏️ Prompt (descreva o movimento/cena)</label>'
+                +   '<textarea id="feat-gv-prompt" rows="3" placeholder="ex: close em rosto sorrindo, luz dourada, câmera lenta, fundo desfocado"></textarea>'
+                + '</div>'
+                + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'
+                +   '<div class="field"><label>⏱ Duração</label><select id="feat-gv-duration">'
+                +     '<option value="5">5 segundos</option>'
+                +     '<option value="10">10 segundos</option>'
+                +   '</select></div>'
+                +   '<div class="field"><label>📐 Aspect</label><select id="feat-gv-aspect">'
+                +     '<option value="16:9">16:9 (Widescreen)</option>'
+                +     '<option value="9:16">9:16 (Reels/Shorts)</option>'
+                +     '<option value="1:1">1:1 (Quadrado)</option>'
+                +   '</select></div>'
+                +   '<div class="field"><label>🤖 Modelo</label><select id="feat-gv-model">'
+                +     '<option value="seedance">Seedance (ByteDance)</option>'
+                +     '<option value="kling-v2">Kling v2 (Kuaishou)</option>'
+                +   '</select></div>'
+                + '</div>'
+                + '<div class="hint" style="margin-top:6px">Custo estimado: $0.10-0.50 por vídeo · pago direto no fal.ai (BYOK).</div>';
         }
         if (f.id === "transicoes") {
             customInput = buildTransitionsPicker();
@@ -279,6 +298,7 @@
 
         // Bind click handlers para pickers visuais
         if (f.id === "transicoes") bindTransitionsPicker(view);
+        if (f.id === "gerar-video") bindGerarVideoPicker(view);
 
         var runBtn = document.getElementById("feat-run");
         if (!runBtn) return;
@@ -294,10 +314,17 @@
                 opts.aspect = (document.getElementById("feat-crop-aspect") || {}).value;
                 opts.tracking = !!(document.getElementById("feat-crop-tracking") || {}).checked;
             }
-            if (f.id === "stock") {
-                opts.query = (document.getElementById("feat-stock-query") || {}).value;
-                opts.source = (document.getElementById("feat-stock-source") || {}).value || "pexels";
-                if (!opts.query) { global.MIA.toast("Termo obrigatório", "warn"); return; }
+            if (f.id === "gerar-video") {
+                var imgPath = view._gvImagePath || null;
+                if (!imgPath) { global.MIA && global.MIA.toast && global.MIA.toast("Selecione uma imagem de referência", "warn"); return; }
+                var promptEl = document.getElementById("feat-gv-prompt");
+                var promptVal = promptEl ? promptEl.value.trim() : "";
+                if (!promptVal) { global.MIA && global.MIA.toast && global.MIA.toast("Prompt obrigatório", "warn"); return; }
+                opts.imagePath   = imgPath;
+                opts.prompt      = promptVal;
+                opts.duration    = parseInt((document.getElementById("feat-gv-duration") || {}).value || 5, 10);
+                opts.aspectRatio = (document.getElementById("feat-gv-aspect") || {}).value || "16:9";
+                opts.model       = (document.getElementById("feat-gv-model")  || {}).value || "seedance";
             }
             if (f.id === "transicoes") {
                 var pick = view.querySelector(".trans-item.is-selected");
@@ -481,6 +508,56 @@
         });
     }
 
+    // ── HANDLER de drag&drop pro picker de imagem do Gerar Vídeo IA ──
+    // Guarda o filePath em view._gvImagePath pro run handler pegar.
+    function bindGerarVideoPicker(view) {
+        var drop  = view.querySelector("#feat-gv-drop");
+        var input = view.querySelector("#feat-gv-file");
+        var preview = view.querySelector("#feat-gv-preview");
+        var imgEl   = view.querySelector("#feat-gv-img");
+        var textEl  = view.querySelector("#feat-gv-drop-text");
+        if (!drop || !input) return;
+
+        function setImage(filePath, dataUri) {
+            view._gvImagePath = filePath;
+            if (imgEl && dataUri) imgEl.src = dataUri;
+            if (preview) preview.style.display = "block";
+            if (textEl)  textEl.textContent = filePath ? ("✓ " + filePath.split(/[\\/]/).pop()) : "Arrasta uma imagem aqui ou clica pra escolher";
+        }
+
+        function readAsDataUri(file, cb) {
+            var r = new FileReader();
+            r.onload = function () { cb(r.result); };
+            r.readAsDataURL(file);
+        }
+
+        drop.addEventListener("click", function () { input.click(); });
+        drop.addEventListener("dragover", function (e) {
+            e.preventDefault();
+            drop.style.borderColor = "var(--acc)";
+        });
+        drop.addEventListener("dragleave", function () {
+            drop.style.borderColor = "var(--line)";
+        });
+        drop.addEventListener("drop", function (e) {
+            e.preventDefault();
+            drop.style.borderColor = "var(--line)";
+            var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+            if (file) {
+                // CEP: file.path tem o caminho real no disco
+                var filePath = file.path || file.name;
+                readAsDataUri(file, function (dataUri) { setImage(filePath, dataUri); });
+            }
+        });
+        input.addEventListener("change", function () {
+            var file = input.files && input.files[0];
+            if (file) {
+                var filePath = file.path || file.name;
+                readAsDataUri(file, function (dataUri) { setImage(filePath, dataUri); });
+            }
+        });
+    }
+
     function buildHowItWorks(f) {
         var map = {
             "whisper-local": "Usa Whisper.cpp (local, sem internet) pra transcrever o áudio word-level → analisa silêncios → executa ripple-delete no Premiere.",
@@ -490,6 +567,7 @@
             "yt-dlp": "yt-dlp local baixa do YouTube/Instagram/TikTok → ffmpeg processa → importa no Project Panel.",
             "ffmpeg": "ffmpeg local faz crop com tracking de rosto → reframe → reimporta no Premiere.",
             "api": "Busca em APIs externas (Pexels, Pixabay) → baixa via aria2c → importa.",
+            "fal.ai · Seedance": "Sua foto + prompt → fal.ai roda Seedance/Kling → MP4 gerado por IA (~30-90s) → importa no Premiere automaticamente.",
             "whisper-local + motion-legendas": "Whisper transcreve word-level → envia pro plugin Motion Legendas que renderiza MOGRT animado."
         };
         return map[f.tech] || "Feature do Motion IA.";

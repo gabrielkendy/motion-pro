@@ -248,40 +248,25 @@
 
                 <hr style="border:0;border-top:1px solid var(--line);margin:24px 0">
 
-                <!-- AI CONFIG -->
+                <!-- AI CONFIG · v4 Gemini-first (Anthropic removido) -->
                 <div class="card__title" style="margin-bottom:8px">🤖 Configuração de IA</div>
                 <div class="field">
-                    <label>Modelo Claude (Anthropic)</label>
+                    <label>Google Gemini API Key <strong style="color:var(--acc)">(obrigatório)</strong></label>
+                    <input id="set-gemini-key" type="password" placeholder="AIza… (cole sua key Gemini aqui)" autocomplete="off">
+                    <div id="set-key-status" class="hint">Motion IA roda 100% no Gemini Flash 2.0. Gratuita (1500 reqs/dia): <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a></div>
+                </div>
+                <div class="field">
+                    <label>Modelo Gemini</label>
                     <select id="set-model">
-                        <option value="claude-sonnet-4-6">Claude Sonnet 4.6 — recomendado</option>
-                        <option value="claude-opus-4-7">Claude Opus 4.7 — top (caro)</option>
-                        <option value="claude-haiku-4-5">Claude Haiku 4.5 — rápido/barato</option>
+                        <option value="gemini-2.0-flash">Gemini 2.0 Flash — recomendado (rápido + barato)</option>
+                        <option value="gemini-2.0-flash-thinking-exp">Gemini 2.0 Flash Thinking — raciocínio mais profundo</option>
+                        <option value="gemini-2.5-pro">Gemini 2.5 Pro — top quality (mais caro)</option>
                     </select>
                 </div>
                 <div class="field">
-                    <label>Anthropic API Key (opcional · BYOK)</label>
-                    <input id="set-anthropic-key" type="password" placeholder="sk-ant-… (deixe vazio pra usar a managed)" autocomplete="off">
-                    <div id="set-key-status" class="hint">Vazio = usa pacote managed. Preenchido = BYOK ilimitado.</div>
-                </div>
-                <div class="field">
-                    <label>Google Gemini API Key (opcional · pra video vision)</label>
-                    <input id="set-gemini-key" type="password" placeholder="AIza… (opcional)" autocomplete="off">
-                    <div class="hint">Permite que IA "veja" o vídeo inteiro. Pegue em <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a></div>
-                </div>
-                <div class="field">
-                    <label>Pexels API Key (opcional · vídeos stock HD)</label>
-                    <input id="set-pexels-key" type="password" placeholder="… (gratuita em pexels.com/api)" autocomplete="off">
-                    <div class="hint">Pegue em <a href="https://www.pexels.com/api/new/" target="_blank">pexels.com/api/new/</a></div>
-                </div>
-                <div class="field">
-                    <label>Pixabay API Key (opcional · stock complementar)</label>
-                    <input id="set-pixabay-key" type="password" placeholder="… (gratuita em pixabay.com/api/docs)" autocomplete="off">
-                    <div class="hint">Pegue em <a href="https://pixabay.com/api/docs/" target="_blank">pixabay.com/api/docs/</a></div>
-                </div>
-                <div class="field">
-                    <label>Giphy API Key (opcional · GIFs animados)</label>
-                    <input id="set-giphy-key" type="password" placeholder="… (gratuita em developers.giphy.com)" autocomplete="off">
-                    <div class="hint">Pegue em <a href="https://developers.giphy.com/dashboard/" target="_blank">developers.giphy.com</a></div>
+                    <label>fal.ai API Key (opcional · Seedance pra gerar vídeos IA)</label>
+                    <input id="set-fal-key" type="password" placeholder="…" autocomplete="off">
+                    <div class="hint">Permite gerar vídeos via Seedance a partir de foto+prompt. Pegue em <a href="https://fal.ai/dashboard/keys" target="_blank">fal.ai/dashboard/keys</a></div>
                 </div>
                 <div class="field">
                     <label>Max tokens por resposta</label>
@@ -330,19 +315,21 @@
 <script src="js/lib/CSInterface.js?v=313"></script>
 <script src="js/config.js?v=313"></script>
 <script src="js/host-bridge.js?v=313"></script>
-<script src="js/bin-runner.js?v=313"></script>
-<script src="js/gemini-client.js?v=313"></script>
-<script src="js/license-cache.js?v=313"></script>
-<script src="js/license-client.js?v=313"></script>
-<script src="js/auth.js?v=313"></script>
-<script src="js/claude-tools.js?v=313"></script>
-<script src="js/agent.js?v=313"></script>
-<script src="js/settings-ui.js?v=313"></script>
-<script src="js/face-tracker.js?v=313"></script>
-<script src="js/skills.js?v=313"></script>
-<script src="js/features.js?v=313"></script>
-<script src="js/onboarding-tour.js?v=313"></script>
-<script src="js/app.js?v=313"></script>
+<script src="js/bin-runner.js?v=400"></script>
+<script src="js/gemini-client.js?v=400"></script>
+<script src="js/fal-client.js?v=400"></script>
+<script src="js/license-cache.js?v=400"></script>
+<script src="js/license-client.js?v=400"></script>
+<script src="js/auth.js?v=400"></script>
+<script src="js/claude-tools.js?v=400"></script>
+<script src="js/gemini-tools.js?v=400"></script>
+<script src="js/agent.js?v=400"></script>
+<script src="js/settings-ui.js?v=400"></script>
+<script src="js/face-tracker.js?v=400"></script>
+<script src="js/skills.js?v=400"></script>
+<script src="js/features.js?v=400"></script>
+<script src="js/onboarding-tour.js?v=400"></script>
+<script src="js/app.js?v=400"></script>
 
 </body>
 </html>

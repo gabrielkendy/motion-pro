@@ -1095,6 +1095,54 @@
         };
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // SKILL 14 — GERAR VÍDEO IA (Seedance via fal.ai · v4)
+    // ═══════════════════════════════════════════════════════════════
+    // Substitui "Biblioteca Stock" (Pexels/Pixabay/Giphy) — em vez de buscar
+    // vídeos pré-existentes, GERA vídeos novos a partir de imagem + prompt.
+    async function gerarVideoIA(opts, cb) {
+        if (!global.FalClient) {
+            throw new Error("FalClient nao carregado");
+        }
+        if (!global.FalClient.hasKey()) {
+            throw new Error("fal.ai API key nao configurada. Configure em Licenca & Config (campo fal.ai)");
+        }
+        var imagePath = opts.imagePath || opts.image_path;
+        var prompt    = opts.prompt;
+        var duration  = parseInt(opts.duration || 5, 10);
+        var aspect    = opts.aspectRatio || opts.aspect_ratio || "16:9";
+        var model     = opts.model || "seedance";
+
+        if (!imagePath) throw new Error("imagePath obrigatorio (foto de referencia pro Seedance)");
+        if (!prompt) throw new Error("prompt obrigatorio (descreva o movimento/cena desejado)");
+
+        emit(cb, "onProgress", { msg: "Iniciando geracao via " + model + "..." });
+        var result = await global.FalClient.generateVideoFromImage({
+            imagePath: imagePath,
+            prompt: prompt,
+            duration: duration,
+            aspectRatio: aspect,
+            model: model,
+            onProgress: function (st) {
+                emit(cb, "onProgress", { msg: st.msg, stage: st.stage });
+            }
+        });
+
+        // Importa no Premiere
+        try { await hostCall("importFile", [result.out_path]); }
+        catch (e) { emit(cb, "onProgress", { msg: "Aviso: import no Premiere falhou (" + e.message + "), mas o video foi salvo em " + result.out_path }); }
+
+        return {
+            ok: true,
+            summary: "Video gerado (" + duration + "s · " + aspect + ") + importado no Premiere",
+            out_path: result.out_path,
+            duration: result.duration,
+            aspect_ratio: result.aspect_ratio,
+            model: result.model,
+            request_id: result.request_id
+        };
+    }
+
     var SKILLS = {
         "cortar-pausas":  cortarPausas,
         "cortar-erros":   cortarErros,
@@ -1108,6 +1156,8 @@
         "auto-crop":      autoCrop,
         "multicam":       multicamIA,
         "stock":          bibliotecaStock,
+        "gerar-video":    gerarVideoIA,
+        "generate-video": gerarVideoIA,
         "casper":         casper
     };
 
