@@ -613,9 +613,23 @@
     <div id="log-body" class="hidden"><div id="log-messages"></div></div>
 </div>
 
-<!-- ════════════ STATUS BAR ════════════ -->
+<!-- ════════════ STATUS BAR (4 dots — Backend / Host / Network / License) ════════════ -->
 <div id="status-bar">
     <span id="status-text">Pronto.</span>
+    <span class="status-dots" style="display:inline-flex;align-items:center;gap:10px;margin:0 12px;flex:1;justify-content:flex-end">
+        <span class="status-dot-group" style="display:inline-flex;align-items:center;gap:4px;font:600 9px Inter;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">
+            <span id="dot-backend" class="dot off" title="Backend"></span>BACK
+        </span>
+        <span class="status-dot-group" style="display:inline-flex;align-items:center;gap:4px;font:600 9px Inter;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">
+            <span id="dot-host" class="dot off" title="Host (host.jsx)"></span>HOST
+        </span>
+        <span class="status-dot-group" style="display:inline-flex;align-items:center;gap:4px;font:600 9px Inter;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">
+            <span id="dot-network" class="dot off" title="Network (CDN)"></span>NET
+        </span>
+        <span class="status-dot-group" style="display:inline-flex;align-items:center;gap:4px;font:600 9px Inter;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">
+            <span id="dot-license" class="dot off" title="License"></span>LIC
+        </span>
+    </span>
     <span id="status-user">—</span>
 </div>
 
@@ -775,6 +789,7 @@
 <script src="js/config-tab.js?v=425b"></script>
 <script src="js/tier-gating.js?v=425b"></script>
 <script src="js/cross-sell.js?v=425b"></script>
+<script src="js/status-bar.js?v=425b"></script>
 <script src="js/main.js?v=425b"></script>
 </body>
 </html>

@@ -1667,3 +1667,9 @@ body.mode-oneword .cut-multi-only { display: none !important; }
     margin-bottom: 8px;
     color: var(--txt);
 }
+
+/* ─── STATUS BAR · 4 dots states (ok/warn/err/off) ─── */
+.dot.ok    { background: var(--ok); box-shadow: 0 0 0 3px rgba(16,185,129,.18); animation: dotpulse 2s infinite; }
+.dot.warn  { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,.20); }
+.dot.err   { background: var(--err); box-shadow: 0 0 0 3px rgba(255,85,102,.20); }
+.dot.off   { background: var(--mut-2); box-shadow: 0 0 0 3px rgba(133,144,168,.10); }
