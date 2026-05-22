@@ -120,13 +120,22 @@
 
     // -------- Auth / config --------
     function authHeader() {
-        // license JWT stored by license.js
-        var t = global.localStorage && global.localStorage.getItem("mp_license_token");
+        // Unified token (auth.js salva como mv_session); legacy keys ficam como fallback
+        // pra users com cache antigo que ainda nao reautenticaram apos o rename.
+        var ls = global.localStorage;
+        if (!ls) return null;
+        var t = ls.getItem("mv_session") ||
+                ls.getItem("mp_license_token") ||
+                ls.getItem("mpl_session_token");
         return t ? ("Bearer " + t) : null;
     }
     function fingerprint() {
-        // computed by license.js at boot
-        return (global.localStorage && global.localStorage.getItem("mp_device_fingerprint")) || "unknown";
+        // auth.js salva como mvt_device_fp; legacy mp_device_fingerprint como fallback
+        var ls = global.localStorage;
+        if (!ls) return "unknown";
+        return ls.getItem("mvt_device_fp") ||
+               ls.getItem("mp_device_fingerprint") ||
+               "unknown";
     }
     function apiBase() {
         // CONFIG is exposed by config.js, e.g. window.MP_CONFIG.api

@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <ExtensionManifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    ExtensionBundleId="com.motionvault.panel"
-                   ExtensionBundleVersion="1.0.4"
+                   ExtensionBundleVersion="2.0.0"
                    ExtensionBundleName="Motion Titles"
                    Version="5.0">
     <ExtensionList>
-        <Extension Id="com.motionvault.panel" Version="1.0.4" />
+        <Extension Id="com.motionvault.panel" Version="2.0.0" />
     </ExtensionList>
     <ExecutionEnvironment>
         <HostList>
