@@ -1,31 +1,33 @@
 @echo off
-chcp 65001 >nul 2>&1
 title MotionPro IA - Desinstalador
-color 0C
-
-set "EXT_ID=com.motionpro.ia"
-set "DEST=%APPDATA%\Adobe\CEP\extensions\%EXT_ID%"
-
 echo.
-echo  ============================================================
-echo            MotionPro IA — Desinstalador
-echo  ============================================================
+echo ============================================================
+echo   MotionPro IA - Desinstalador
+echo ============================================================
 echo.
+
+set "DEST=%APPDATA%\Adobe\CEP\extensions\com.motionpro.ia"
+set "CACHE=%LOCALAPPDATA%\Temp\cep_cache"
 
 if not exist "%DEST%" (
-    echo  Plugin nao instalado.
+    echo Plugin nao instalado.
     pause
     exit /b 0
 )
 
-echo  Removendo: %DEST%
-rmdir /s /q "%DEST%"
-if exist "%LOCALAPPDATA%\Temp\cep_cache" rmdir /s /q "%LOCALAPPDATA%\Temp\cep_cache" >nul 2>&1
+choice /C SN /N /M "Confirma desinstalacao? (S/N): "
+if errorlevel 2 exit /b 0
 
-color 0A
+taskkill /F /IM "Adobe Premiere Pro.exe" >nul 2>&1
+timeout /t 2 /nobreak >nul
+
+echo Removendo: %DEST%
+rmdir /s /q "%DEST%"
+if exist "%CACHE%" rmdir /s /q "%CACHE%" >nul 2>&1
+
 echo.
-echo  ✓ MotionPro IA desinstalado.
-echo  Sua conta e licenca continuam intactas — pode reinstalar a qualquer momento.
+echo OK MotionPro IA desinstalado.
+echo Sua conta e licenca continuam intactas - pode reinstalar a qualquer momento.
 echo.
 pause
 exit /b 0

@@ -5,7 +5,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$Version    = "1.2.1"
+$Version    = "2.0.0"
 $ScriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot   = Resolve-Path (Join-Path $ScriptDir "..\..")
 $PluginSrc  = Join-Path $RepoRoot "plugin-legendas"
@@ -86,6 +86,7 @@ if ($SkipObfuscate -or $ObfuscateProfile -eq "off") {
 
 Write-Host "[3/5] Copiando scripts e leia-me..." -ForegroundColor Yellow
 Copy-Item -Path "$ScriptDir\INSTALAR.bat"    -Destination $StageDir -Force
+Copy-Item -Path "$ScriptDir\INSTALAR.ps1"    -Destination $StageDir -Force
 Copy-Item -Path "$ScriptDir\DESINSTALAR.bat" -Destination $StageDir -Force
 Copy-Item -Path "$ScriptDir\LEIA-ME.html"    -Destination $StageDir -Force
 Write-Host "      OK"
