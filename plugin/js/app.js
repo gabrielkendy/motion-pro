@@ -513,7 +513,14 @@ function importMogrt(item) {
         // CDN path (also fallback when local file is missing)
         resolvePath = window.AssetLoader.get(item).catch(function (err) {
             var msg = String(err && err.message || err);
-            if (msg === "auth_expired")           toast("Sessão expirou — entre de novo", "err", 4000);
+            if (msg === "not_logged_in") {
+                toast("Sessão expirou — clique Reconectar no topo", "err", 5000);
+                if (typeof showReauthBar === "function") showReauthBar();
+            }
+            else if (msg === "auth_expired") {
+                toast("Sessão expirou — entre de novo", "err", 4000);
+                if (typeof showReauthBar === "function") showReauthBar();
+            }
             else if (msg === "subscription_inactive") toast("Plano vencido — renove pra baixar", "err", 4000);
             else if (msg === "device_not_authorized") toast("Dispositivo não autorizado", "err", 4000);
             else if (msg === "asset_not_found")   toast("Template indisponível", "err", 4000);
@@ -1034,10 +1041,8 @@ function startHeartbeat() {
         }
     };
     tick();
-    // T3 (2026-05-22): interval 5min → 15min conforme spec γ atualizado.
-    // (Legendas usa 5min · ver auth.js linha 456 do plugin-legendas — diferença
-    // intencional pra reduzir tráfego no plugin de templates, que tem catálogo
-    // estático e não muda estado tanto quanto Legendas.)
+    // T3 (2026-05-22): interval 15min · paridade com plugin-legendas/auth.js
+    // (HEARTBEAT_INTERVAL_MS = 15 * 60 * 1000). Sticky session 30d grace nos 2.
     setInterval(tick, 15 * 60 * 1000);
 }
 
