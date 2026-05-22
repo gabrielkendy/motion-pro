@@ -336,6 +336,126 @@ router.post("/admin/license-keys/:id/revoke", requireAdmin, async (req, res, nex
     } catch (e) { next(e); }
 });
 
+// ============================================================
+// ADMIN: EXTEND expires_at em N dias
+// ============================================================
+router.post("/admin/license-keys/:id/extend", requireAdmin, async (req, res, next) => {
+    try {
+        const days = Number(req.body?.days);
+        if (!Number.isFinite(days) || days < 1 || days > 3650) {
+            return res.status(400).json({ error: "invalid_days", hint: "1..3650" });
+        }
+        // Se expires_at é null (lifetime) NÃO altera — retorna 422 explicativo.
+        const cur = await pool.query(
+            "SELECT id, key_prefix, expires_at, revoked_at FROM license_keys WHERE id=$1",
+            [req.params.id]
+        );
+        if (!cur.rowCount) return res.status(404).json({ error: "not_found" });
+        if (cur.rows[0].revoked_at) {
+            return res.status(409).json({ error: "key_revoked", revoked_at: cur.rows[0].revoked_at });
+        }
+        if (cur.rows[0].expires_at === null) {
+            return res.status(422).json({
+                error: "lifetime_key_no_expiry",
+                hint: "Chave lifetime não tem expires_at pra estender."
+            });
+        }
+        // Se já expirou, estende a partir de NOW (não do passado).
+        const r = await pool.query(
+            `UPDATE license_keys
+                SET expires_at = GREATEST(expires_at, now()) + ($2 || ' days')::interval
+              WHERE id = $1
+         RETURNING id, key_prefix, tier, expires_at`,
+            [req.params.id, days]
+        );
+        await pool.query(
+            "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'admin_license_key_extended', $2)",
+            [req.user.id, {
+                license_key_id: req.params.id,
+                key_prefix: r.rows[0].key_prefix,
+                extended_by_days: days,
+                new_expires_at: r.rows[0].expires_at,
+                by_admin: req.user.email
+            }]
+        );
+        res.json({ ok: true, license: r.rows[0], extended_by_days: days });
+    } catch (e) { next(e); }
+});
+
+// ============================================================
+// PUBLIC: HEARTBEAT (license_key-based · 15min cadence)
+// Distinto de /v1/license/heartbeat (subscription-based, requireAuth).
+// Aqui o plugin manda a chave PFX-XXX + fingerprint pra revalidar sem JWT
+// e receber 200/401/403 inequívocos.
+// ============================================================
+router.post("/license-keys/heartbeat", async (req, res, next) => {
+    try {
+        const { key, device_fingerprint, plugin } = req.body || {};
+        if (!key || !device_fingerprint) {
+            return res.status(400).json({ error: "key_and_fingerprint_required" });
+        }
+        const row = await findKeyByPlaintext(key.trim());
+        if (!row) return res.status(401).json({ active: false, error: "invalid_key" });
+
+        if (row.revoked_at) {
+            return res.status(403).json({
+                active: false,
+                error: "key_revoked",
+                reason: row.revoke_reason,
+                revoked_at: row.revoked_at
+            });
+        }
+        if (row.expires_at && new Date(row.expires_at) < new Date()) {
+            return res.status(403).json({
+                active: false,
+                error: "key_expired",
+                expires_at: row.expires_at
+            });
+        }
+
+        // Plugin opcional — se vier, valida que a chave cobre o plugin
+        if (plugin && Array.isArray(row.products) && row.products.length > 0) {
+            const requested = normalizeProductId(plugin);
+            const granted = expandProducts(row.products);
+            if (!requested || !granted.includes(requested)) {
+                return res.status(403).json({
+                    active: false,
+                    error: "plugin_not_licensed",
+                    requested: requested || plugin,
+                    granted
+                });
+            }
+        }
+
+        // Verifica device
+        const dev = await pool.query(
+            "SELECT id, deactivated_at FROM license_key_activations WHERE license_key_id=$1 AND device_fingerprint=$2",
+            [row.id, device_fingerprint]
+        );
+        if (dev.rowCount === 0) {
+            return res.status(403).json({ active: false, error: "device_not_activated" });
+        }
+        if (dev.rows[0].deactivated_at) {
+            return res.status(403).json({ active: false, error: "device_deactivated" });
+        }
+
+        // Toca last_validation_at (lightweight UPDATE)
+        await pool.query(
+            "UPDATE license_key_activations SET last_validation_at=now() WHERE id=$1",
+            [dev.rows[0].id]
+        );
+
+        res.json({
+            active: true,
+            tier: row.tier,
+            products: row.products,
+            max_devices: row.max_devices,
+            expires_at: row.expires_at,
+            last_validation_at: new Date().toISOString()
+        });
+    } catch (e) { next(e); }
+});
+
 // Endpoint admin pra rodar a migration 009
 router.post("/admin/maintenance/run-migration-009", requireAdmin, async (_req, res, next) => {
     try {

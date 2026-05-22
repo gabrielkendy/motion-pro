@@ -13,6 +13,10 @@
         {
             "path": "/v1/cron/trial-reminders",
             "schedule": "0 14 * * *"
+        },
+        {
+            "path": "/v1/cron/expire-licenses",
+            "schedule": "0 3 * * *"
         }
     ]
 }

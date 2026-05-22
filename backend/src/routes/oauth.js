@@ -16,9 +16,12 @@
  *   1. POST /v1/auth/magic-link { email } → email com link
  *   2. GET /v1/auth/magic-consume?token=... → emite JWT
  *
- * Env vars necessárias:
- *   OAUTH_GOOGLE_CLIENT_ID, OAUTH_GOOGLE_CLIENT_SECRET
- *   OAUTH_GITHUB_CLIENT_ID, OAUTH_GITHUB_CLIENT_SECRET
+ * Env vars necessárias (aceita 2 prefixos pra compat — basta UM par
+ * estar setado por provider):
+ *   OAUTH_GOOGLE_CLIENT_ID  OU  GOOGLE_CLIENT_ID
+ *   OAUTH_GOOGLE_CLIENT_SECRET OU GOOGLE_CLIENT_SECRET
+ *   OAUTH_GITHUB_CLIENT_ID  OU  GITHUB_CLIENT_ID
+ *   OAUTH_GITHUB_CLIENT_SECRET OU GITHUB_CLIENT_SECRET
  *   OAUTH_REDIRECT_BASE  (ex: https://motionpro.vercel.app)
  *   OAUTH_SUCCESS_URL    (ex: https://dashboard.motionpro.vercel.app)
  *   MV_JWT_SECRET
@@ -81,14 +84,23 @@ function issueJwt(user) {
     });
 }
 
+// Helper: aceita 2 conventions de naming (OAUTH_X_Y ou X_Y)
+function envEither(...names) {
+    for (const n of names) {
+        const v = process.env[n];
+        if (v && v.trim()) return v.trim();
+    }
+    return null;
+}
+
 const PROVIDERS = {
     google: {
         authorize:  "https://accounts.google.com/o/oauth2/v2/auth",
         token:      "https://oauth2.googleapis.com/token",
         userinfo:   "https://www.googleapis.com/oauth2/v2/userinfo",
         scope:      "openid email profile",
-        client_id:  () => process.env.OAUTH_GOOGLE_CLIENT_ID,
-        client_secret: () => process.env.OAUTH_GOOGLE_CLIENT_SECRET,
+        client_id:  () => envEither("OAUTH_GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_ID"),
+        client_secret: () => envEither("OAUTH_GOOGLE_CLIENT_SECRET", "GOOGLE_CLIENT_SECRET"),
         normalize: (u) => ({
             provider_uid: u.id,
             email: u.email,
@@ -102,8 +114,8 @@ const PROVIDERS = {
         userinfo:   "https://api.github.com/user",
         userinfoEmails: "https://api.github.com/user/emails",
         scope:      "read:user user:email",
-        client_id:  () => process.env.OAUTH_GITHUB_CLIENT_ID,
-        client_secret: () => process.env.OAUTH_GITHUB_CLIENT_SECRET,
+        client_id:  () => envEither("OAUTH_GITHUB_CLIENT_ID", "GITHUB_CLIENT_ID"),
+        client_secret: () => envEither("OAUTH_GITHUB_CLIENT_SECRET", "GITHUB_CLIENT_SECRET"),
         normalize: (u, emails) => ({
             provider_uid: String(u.id),
             email: u.email || (emails || []).find(e => e.primary && e.verified)?.email || null,
@@ -113,13 +125,36 @@ const PROVIDERS = {
     },
 };
 
+// ───────────────────── status (público, sem secrets) ─────────────────────
+// Útil pra debugar 503 sem mexer no Vercel dashboard. Retorna quais providers
+// têm client_id + client_secret presentes. Não vaza valores.
+router.get("/status", (_req, res) => {
+    const status = {};
+    for (const [name, p] of Object.entries(PROVIDERS)) {
+        status[name] = {
+            configured: !!(p.client_id() && p.client_secret()),
+            has_client_id: !!p.client_id(),
+            has_client_secret: !!p.client_secret()
+        };
+    }
+    res.json({
+        providers: status,
+        redirect_base: process.env.OAUTH_REDIRECT_BASE || null,
+        success_url: process.env.OAUTH_SUCCESS_URL || null
+    });
+});
+
 // ───────────────────── /start ─────────────────────
 router.get("/:provider/start", async (req, res, next) => {
     try {
         const p = PROVIDERS[req.params.provider];
         if (!p) return res.status(404).json({ error: "unknown_provider" });
         if (!p.client_id() || !p.client_secret()) {
-            return res.status(503).json({ error: "oauth_not_configured", provider: req.params.provider });
+            return res.status(503).json({
+                error: "oauth_not_configured",
+                provider: req.params.provider,
+                hint: "Set GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET (ou OAUTH_GOOGLE_CLIENT_ID/SECRET) no Vercel"
+            });
         }
 
         gcStates();   // best-effort, não awaita

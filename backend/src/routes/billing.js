@@ -5,7 +5,11 @@ const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const { pool } = require("../db");
 const { requireAuth } = require("../middleware/auth");
-const { welcomeEmail, paymentFailedEmail } = require("../utils/email");
+const {
+    welcomeEmail,
+    paymentFailedEmail,
+    subscriptionSuspendedEmail
+} = require("../utils/email");
 // M4: reusa gerador de keys já existente em license-keys.js (DRY)
 const { genKey: generateLicenseKey } = require("./license-keys");
 // A7: tabela canônica de produtos + aliases — fonte única
@@ -190,6 +194,94 @@ async function findOrCreateUser({ email, stripeCustomerId }) {
     };
 }
 
+// ============================================================
+// Lifecycle helpers — sync entre Stripe sub e license_keys
+// ============================================================
+
+// Renova a expires_at das license_keys ativas associadas ao customer_email,
+// quando a subscription Stripe renova (current_period_end → futuro).
+// Lifetime keys (expires_at IS NULL) NÃO são tocadas.
+async function renewLicensesForUser({ email, periodEnd, stripeSubId, productId }) {
+    if (!email || !periodEnd) return { updated: 0 };
+    const canonical = (productId && require("../utils/product-aliases").normalizeProductId(productId)) || null;
+    // Filtra por products[] do canonical OU produtos bundle que cobrem ele
+    const r = await pool.query(
+        `UPDATE license_keys
+            SET expires_at = $1
+          WHERE LOWER(customer_email) = LOWER($2)
+            AND revoked_at IS NULL
+            AND expires_at IS NOT NULL
+            AND ($3::text IS NULL OR products && ARRAY[$3]::text[]
+                 OR products && ARRAY['suite','duo']::text[])
+            AND expires_at < $1
+       RETURNING id, key_prefix, products, expires_at`,
+        [periodEnd, email, canonical]
+    );
+    if (r.rowCount > 0) {
+        const userR = await pool.query("SELECT id FROM users WHERE LOWER(email)=LOWER($1)", [email]);
+        const uid = userR.rows[0]?.id || null;
+        await pool.query(
+            "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'license_renewed_from_stripe', $2)",
+            [uid, {
+                stripe_sub_id: stripeSubId,
+                product_id: canonical,
+                new_expires_at: periodEnd,
+                renewed_keys: r.rows.map(x => x.key_prefix)
+            }]
+        );
+        console.log("[webhook] renovou", r.rowCount, "license_keys de", email, "→", periodEnd);
+    }
+    return { updated: r.rowCount, rows: r.rows };
+}
+
+// Revoga license_keys + deactiva activations associadas ao customer_email.
+// Usado em subscription.deleted e em payment_failed após dunning.
+async function revokeLicensesForUser({ email, reason, stripeSubId, productId }) {
+    if (!email) return { revoked: 0 };
+    const canonical = (productId && require("../utils/product-aliases").normalizeProductId(productId)) || null;
+    const client = await pool.connect();
+    try {
+        await client.query("BEGIN");
+        const r = await client.query(
+            `UPDATE license_keys
+                SET revoked_at = now(), revoke_reason = $1
+              WHERE LOWER(customer_email) = LOWER($2)
+                AND revoked_at IS NULL
+                AND ($3::text IS NULL OR products && ARRAY[$3]::text[]
+                     OR products && ARRAY['suite','duo']::text[])
+           RETURNING id, key_prefix, products`,
+        [reason, email, canonical]
+        );
+        if (r.rowCount > 0) {
+            const ids = r.rows.map(x => x.id);
+            await client.query(
+                `UPDATE license_key_activations
+                    SET deactivated_at = now()
+                  WHERE license_key_id = ANY($1::uuid[])
+                    AND deactivated_at IS NULL`,
+                [ids]
+            );
+            const userR = await client.query("SELECT id FROM users WHERE LOWER(email)=LOWER($1)", [email]);
+            const uid = userR.rows[0]?.id || null;
+            await client.query(
+                "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'license_auto_revoked', $2)",
+                [uid, {
+                    reason, stripe_sub_id: stripeSubId,
+                    product_id: canonical,
+                    revoked_keys: r.rows.map(x => x.key_prefix)
+                }]
+            );
+        }
+        await client.query("COMMIT");
+        return { revoked: r.rowCount, rows: r.rows };
+    } catch (e) {
+        try { await client.query("ROLLBACK"); } catch (_) {}
+        throw e;
+    } finally {
+        client.release();
+    }
+}
+
 async function upsertSubscription({ userId, productId, plan, status, stripeSubId, periodEnd, cancelAt }) {
     const product = normalizeProductId(productId) || "titles";
     if (stripeSubId) {
@@ -372,38 +464,108 @@ async function webhook(req, res) {
                 if (!userR.rowCount) break;
                 const priceId = sub.items?.data?.[0]?.price?.id;
                 const pp = await planAndProductFromPriceId(priceId);
+                const periodEnd = sub.current_period_end ? new Date(sub.current_period_end * 1000) : null;
                 await upsertSubscription({
                     userId: userR.rows[0].id,
                     productId: pp.product_id,
                     plan: pp.plan,
                     status: sub.status,
                     stripeSubId: sub.id,
-                    periodEnd: sub.current_period_end ? new Date(sub.current_period_end * 1000) : null,
+                    periodEnd,
                     cancelAt: sub.cancel_at ? new Date(sub.cancel_at * 1000) : null
                 });
+                // Auto-renew license: estende expires_at se sub ativa + period futuro
+                if (periodEnd && ["active", "trialing"].includes(sub.status)) {
+                    try {
+                        await renewLicensesForUser({
+                            email: userR.rows[0].email,
+                            periodEnd,
+                            stripeSubId: sub.id,
+                            productId: pp.product_id
+                        });
+                    } catch (e) {
+                        console.error("[webhook] renewLicenses fail", e.message);
+                        throw e;   // → catch externo limpa events_seen → Stripe retenta
+                    }
+                }
                 break;
             }
 
-            // -------- ASSINATURA CANCELADA --------
+            // -------- ASSINATURA CANCELADA (revoga license) --------
             case "customer.subscription.deleted": {
                 const sub = event.data.object;
+                const customerId = sub.customer;
                 await pool.query(
                     "UPDATE subscriptions SET status='canceled', updated_at=now() WHERE stripe_sub_id=$1",
                     [sub.id]
                 );
+                const userR = await pool.query("SELECT id, email FROM users WHERE stripe_customer=$1", [customerId]);
+                if (userR.rowCount) {
+                    const priceId = sub.items?.data?.[0]?.price?.id;
+                    const pp = await planAndProductFromPriceId(priceId);
+                    try {
+                        const result = await revokeLicensesForUser({
+                            email: userR.rows[0].email,
+                            reason: "subscription_cancelled",
+                            stripeSubId: sub.id,
+                            productId: pp.product_id
+                        });
+                        if (result.revoked > 0) {
+                            // Manda email só se houve revoke real (não spamma se já estava revogado)
+                            await subscriptionSuspendedEmail({
+                                email: userR.rows[0].email,
+                                productName: require("../utils/product-aliases")
+                                    .resolveProduct(pp.product_id)?.name || "Motion Suite",
+                                retryUrl: PUBLIC_URL + "/account.html"
+                            }).catch(e => console.error("[webhook] suspended email fail", e.message));
+                        }
+                    } catch (e) {
+                        console.error("[webhook] revokeLicenses fail", e.message);
+                        throw e;
+                    }
+                }
                 break;
             }
 
-            // -------- PAGAMENTO FALHOU --------
+            // -------- PAGAMENTO FALHOU (dunning + revoga após N retries) --------
             case "invoice.payment_failed": {
                 const inv = event.data.object;
                 const customerId = inv.customer;
+                const attempt = Number(inv.attempt_count || 0);
                 const userR = await pool.query("SELECT id, email FROM users WHERE stripe_customer=$1", [customerId]);
-                if (userR.rowCount) {
-                    await pool.query(
-                        "UPDATE subscriptions SET status='past_due', updated_at=now() WHERE user_id=$1 AND status='active'",
-                        [userR.rows[0].id]
-                    );
+                if (!userR.rowCount) break;
+                await pool.query(
+                    "UPDATE subscriptions SET status='past_due', updated_at=now() WHERE user_id=$1 AND status='active'",
+                    [userR.rows[0].id]
+                );
+                // attempt_count >= 4 ⇨ Stripe esgotou os retries do dunning (~8 dias).
+                // Revoga licenças associadas pra cortar acesso.
+                if (attempt >= 4) {
+                    try {
+                        const subId = inv.subscription || null;
+                        const productId = (await planAndProductFromPriceId(
+                            inv.lines?.data?.[0]?.price?.id
+                        ))?.product_id;
+                        const result = await revokeLicensesForUser({
+                            email: userR.rows[0].email,
+                            reason: `payment_failed_after_${attempt}_attempts`,
+                            stripeSubId: subId,
+                            productId
+                        });
+                        if (result.revoked > 0) {
+                            await subscriptionSuspendedEmail({
+                                email: userR.rows[0].email,
+                                productName: require("../utils/product-aliases")
+                                    .resolveProduct(productId)?.name || "Motion Suite",
+                                retryUrl: PUBLIC_URL + "/account.html"
+                            }).catch(e => console.error("[webhook] suspended email fail", e.message));
+                        }
+                    } catch (e) {
+                        console.error("[webhook] dunning revoke fail", e.message);
+                        throw e;
+                    }
+                } else {
+                    // Ainda em retry — só notifica
                     try {
                         await paymentFailedEmail({
                             email: userR.rows[0].email,

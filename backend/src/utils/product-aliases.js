@@ -136,9 +136,13 @@ function resolveProduct(productId) {
 
 /**
  * Expande um array de products[] de uma license_key, resolvendo
- * aliases e "suite" → ["titles","legendas","ia"]. Garante que o
- * caller (ex: /v1/me/products, validação no activate) sempre
- * compara contra ids canônicos.
+ * aliases e bundles. Garante que o caller (ex: /v1/me/products,
+ * validação no activate) sempre compara contra ids canônicos.
+ *
+ *   ["suite"]       → ["titles", "legendas", "ia"]
+ *   ["duo"]         → ["titles", "legendas"]
+ *   ["motionpro"]   → ["titles"]
+ *   ["ia", "suite"] → ["ia", "titles", "legendas"]  (deduplicado)
  */
 function expandProducts(productsArr) {
     if (!Array.isArray(productsArr)) return [];
@@ -146,8 +150,9 @@ function expandProducts(productsArr) {
     for (const raw of productsArr) {
         const canonical = normalizeProductId(raw);
         if (!canonical) continue;
-        if (canonical === "suite") {
-            for (const p of PRODUCT_META.suite.products) out.add(p);
+        // Bundles (suite, duo) expandem pros plugins individuais
+        if (canonical === "suite" || canonical === "duo") {
+            for (const p of PRODUCT_META[canonical].products) out.add(p);
         } else {
             out.add(canonical);
         }
