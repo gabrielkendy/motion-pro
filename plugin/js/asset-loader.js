@@ -59,6 +59,13 @@
         return new Promise(function (resolve, reject) {
             if (!http || !fs || !crypto) return reject(new Error("node modules unavailable"));
             var u = new URL(url);
+            try {
+                var sigShort = (u.searchParams.get("s") || "").slice(0, 12) + "...";
+                console.log("[Titles/asset-loader] CDN GET", u.hostname + u.pathname,
+                    "fp=", u.searchParams.get("fp"),
+                    "e=", u.searchParams.get("e"),
+                    "s=", sigShort);
+            } catch (_) {}
             var opts = {
                 method: "GET",
                 hostname: u.hostname,
@@ -68,8 +75,15 @@
             };
             var req = http.request(opts, function (res) {
                 if (res.statusCode !== 200) {
-                    res.resume();
-                    return reject(new Error("download_failed_" + res.statusCode));
+                    var errChunks = [];
+                    res.on("data", function (c) { errChunks.push(c); });
+                    res.on("end", function () {
+                        var errBody = "";
+                        try { errBody = Buffer.concat(errChunks).toString("utf8").slice(0, 200); } catch (_) {}
+                        console.error("[Titles/asset-loader] CDN " + res.statusCode + " · body=" + errBody);
+                        reject(new Error("download_failed_" + res.statusCode + (errBody ? ":" + errBody : "")));
+                    });
+                    return;
                 }
                 var tmpPath = destPath + ".part";
                 try { fs.mkdirSync(path.dirname(destPath), { recursive: true }); } catch (_) {}
