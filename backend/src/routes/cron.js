@@ -1,7 +1,12 @@
 "use strict";
 const router = require("express").Router();
 const { pool } = require("../db");
-const { trialReminderEmail, trialExpiredEmail } = require("../utils/email");
+const {
+    trialReminderEmail,
+    trialExpiredEmail,
+    licenseExpiredEmail
+} = require("../utils/email");
+const { resolveProduct } = require("../utils/product-aliases");
 
 const PUBLIC_URL = process.env.PUBLIC_URL || "https://motionpro-lp.vercel.app";
 
@@ -105,6 +110,107 @@ router.get("/trial-reminders", requireCronSecret, async (_req, res, next) => {
              RETURNING id
         `);
         result.subscriptions_expired = expiredUpd.rowCount;
+
+        res.json({ ok: true, ran_at: new Date().toISOString(), ...result });
+    } catch (e) { next(e); }
+});
+
+/**
+ * GET /v1/cron/expire-licenses
+ *
+ * Roda 1x/dia (Vercel Cron). Para cada license_key com `expires_at < now()`
+ * e que ainda não foi revogada:
+ *   1. UPDATE revoked_at = now(), revoke_reason = 'expired'
+ *   2. Deactiva todas as activations ativas
+ *   3. Manda licenseExpiredEmail pro customer_email
+ *   4. Insere license_audit('license_auto_expired')
+ *
+ * Tudo em transação por chave pra evitar email sem revoke (ou vice-versa).
+ * dedup via email_log(kind='license_expired', context_key=license_key_id).
+ */
+router.get("/expire-licenses", requireCronSecret, async (_req, res, next) => {
+    try {
+        const expired = await pool.query(`
+            SELECT lk.id, lk.key_prefix, lk.products, lk.expires_at,
+                   lk.customer_email, u.id AS user_id, u.name AS user_name
+              FROM license_keys lk
+         LEFT JOIN users u ON LOWER(u.email) = LOWER(lk.customer_email)
+             WHERE lk.expires_at IS NOT NULL
+               AND lk.expires_at < now()
+               AND lk.revoked_at IS NULL
+             LIMIT 500
+        `);
+
+        const result = { revoked: 0, emails_sent: 0, errors: 0, total: expired.rowCount };
+
+        for (const row of expired.rows) {
+            const client = await pool.connect();
+            try {
+                await client.query("BEGIN");
+                await client.query(
+                    `UPDATE license_keys
+                        SET revoked_at = now(), revoke_reason = 'expired'
+                      WHERE id = $1 AND revoked_at IS NULL`,
+                    [row.id]
+                );
+                await client.query(
+                    `UPDATE license_key_activations
+                        SET deactivated_at = now()
+                      WHERE license_key_id = $1 AND deactivated_at IS NULL`,
+                    [row.id]
+                );
+                await client.query(
+                    "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'license_auto_expired', $2)",
+                    [row.user_id, {
+                        license_key_id: row.id,
+                        key_prefix: row.key_prefix,
+                        expired_at: row.expires_at,
+                        products: row.products
+                    }]
+                );
+                await client.query("COMMIT");
+                result.revoked++;
+            } catch (e) {
+                try { await client.query("ROLLBACK"); } catch (_) {}
+                console.error("[cron expire] revoke fail", row.key_prefix, e.message);
+                result.errors++;
+                client.release();
+                continue;
+            }
+            client.release();
+
+            // Email (best-effort + dedup via email_log)
+            if (row.customer_email) {
+                try {
+                    const dup = await pool.query(
+                        "SELECT 1 FROM email_log WHERE kind='license_expired' AND context_key=$1 LIMIT 1",
+                        [row.id]
+                    ).catch(() => ({ rowCount: 0 }));
+                    if (dup.rowCount) continue;
+
+                    // Best-effort: tenta inferir productName via products[]
+                    let productName = "Motion Suite";
+                    const firstProduct = (row.products && row.products[0]) || null;
+                    if (firstProduct) {
+                        const meta = resolveProduct(firstProduct);
+                        if (meta) productName = meta.name;
+                    }
+                    const sent = await licenseExpiredEmail({
+                        email: row.customer_email,
+                        name: row.user_name,
+                        productName,
+                        pricingUrl: PUBLIC_URL + "/#pricing"
+                    });
+                    await pool.query(
+                        "INSERT INTO email_log(user_id, email, kind, context_key, resend_id) VALUES($1,$2,'license_expired',$3,$4) ON CONFLICT DO NOTHING",
+                        [row.user_id, row.customer_email, row.id, sent?.id || null]
+                    ).catch(() => {});
+                    result.emails_sent++;
+                } catch (e) {
+                    console.error("[cron expire] email fail", row.customer_email, e.message);
+                }
+            }
+        }
 
         res.json({ ok: true, ran_at: new Date().toISOString(), ...result });
     } catch (e) { next(e); }
