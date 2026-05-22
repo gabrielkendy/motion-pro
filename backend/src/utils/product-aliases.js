@@ -13,21 +13,41 @@
  */
 
 // ─── IDs canônicos suportados ───────────────────────────────────
-const CANONICAL_IDS = ["titles", "legendas", "ia", "suite"];
+// "duo" é canônico desde 2026-05-21 (sprint Motion Suite Ultra Pro · pricing
+// simplificado) — bundle de 2 plugins (Titles + Legendas), sem Motion IA.
+// "suite" continua sendo o bundle dos 3 plugins (Titles + Legendas + IA).
+const CANONICAL_IDS = ["titles", "legendas", "ia", "duo", "suite"];
 
 // ─── Aliases legacy → canônico ──────────────────────────────────
 // Chaves sempre lowercased (caller deve normalizar antes de consultar).
+//
+// SKUs comerciais (criados via bootstrap-stripe-suite-simple.js · 2026-05-21):
+//   - solo_titles    → 1 plugin Titles  R$ 59,90/mês
+//   - solo_legendas  → 1 plugin Legendas R$ 59,90/mês
+//   - duo            → Titles + Legendas R$ 89,90/mês (sem IA)
+//   - duo_yearly     → Titles + Legendas 12x R$ 69,90
+//
+// Convenção: o webhook Stripe lê cs.metadata.product_id; precisa ser um
+// alias listado abaixo OU um id canônico ("titles", "legendas", "ia", "suite").
 const ALIASES = Object.freeze({
     // Motion Titles
     "motionpro":       "titles",
     "motion titles":   "titles",
     "motion_titles":   "titles",
+    "solo_titles":     "titles",
+    "titles_solo":     "titles",
     // Motion Legendas
     "motion_legendas": "legendas",
+    "solo_legendas":   "legendas",
+    "legendas_solo":   "legendas",
     // Motion IA
     "motionia":        "ia",
     "motion_ia":       "ia",
-    // Bundle Motion Suite
+    // Bundle DUO (Titles + Legendas) — NÃO inclui Motion IA
+    "duo":             "duo",
+    "duo_monthly":     "duo",
+    "duo_yearly":      "duo",
+    // Bundle Motion Suite (3 plugins: Titles + Legendas + IA)
     "bundle_all":      "suite",
     "motion_suite":    "suite"
 });
@@ -55,6 +75,15 @@ const PRODUCT_META = Object.freeze({
         products: ["ia"],
         name: "Motion IA",
         download: "/ia/download.html"
+    },
+    duo: {
+        // Bundle Duo (Titles + Legendas) — sem IA. Usa o mesmo prefixo MTS-
+        // pois funciona como bundle key (license_keys.products[] declara o
+        // escopo exato). Plugin valida em runtime via /v1/me/products.
+        prefix: "MTS",
+        products: ["titles", "legendas"],
+        name: "Motion Suite Duo",
+        download: "/download.html"
     },
     suite: {
         prefix: "MTS",
