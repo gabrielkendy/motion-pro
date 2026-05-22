@@ -1,0 +1,7 @@
+# Local credentials - NUNCA committar
+.env
+.env.local
+*.env
+
+# Resultados de scripts
+*.log
