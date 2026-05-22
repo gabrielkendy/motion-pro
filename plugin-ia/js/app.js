@@ -318,18 +318,17 @@
         } else {
             dLic.className = "dot warn";
         }
-        // Gemini key (configurado?) — em v4 é a key principal
+        // Gemini key (obrigatório · primário em v4)
         var dGm = $("dot-gemini");
         if (dGm) {
             var hasGem = window.GeminiClient && window.GeminiClient.hasKey && window.GeminiClient.hasKey();
             dGm.className = "dot " + (hasGem ? "ok" : "warn");
         }
-        // dot-claude legacy: reaproveita pra mostrar status do agente (Gemini)
-        // ou esconde se não tiver no DOM (HTML atualizado já não tem)
-        var dCl = $("dot-claude");
-        if (dCl) {
-            var hasGem2 = window.GeminiClient && window.GeminiClient.hasKey && window.GeminiClient.hasKey();
-            dCl.className = "dot " + (hasGem2 ? "ok" : "warn");
+        // fal.ai key (opcional · pra Gerar Vídeo IA via Seedance)
+        var dFal = $("dot-fal");
+        if (dFal) {
+            var hasFal = !!localStorage.getItem("mia_fal_key");
+            dFal.className = "dot " + (hasFal ? "ok" : "");
         }
     }
 

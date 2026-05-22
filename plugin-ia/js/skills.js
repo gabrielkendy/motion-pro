@@ -786,10 +786,12 @@
         var cropX = Math.max(0, Math.min(srcW - outW, cropCenterX - Math.floor(outW / 2)));
         var cropY = Math.max(0, Math.min(srcH - outH, cropCenterY - Math.floor(outH / 2)));
 
-        // ── STEP 4: ffmpeg com filter de inteiros (sem expressões frágeis)
+        // ── STEP 4: ffmpeg com filter de inteiros + retry com fallbacks
         var filter = "crop=" + outW + ":" + outH + ":" + cropX + ":" + cropY;
         emit(cb, "onProgress", { msg: "ffmpeg encoding " + aspect + " (" + outW + "x" + outH + ", offset " + cropX + "," + cropY + ")…" });
 
+        var err1 = null, err2 = null;
+        // Tentativa 1: preset fast + AAC audio (qualidade boa)
         try {
             await global.BinRunner.run("ffmpeg", [
                 "-y", "-i", videoPath,
@@ -800,10 +802,31 @@
                 "-movflags", "+faststart",
                 outPath
             ], { timeoutMs: 20 * 60 * 1000 });
-        } catch (eFf) {
-            // ffmpeg crashou ou falhou — limpa output parcial pra não enganar
+        } catch (e1) {
+            err1 = e1.message;
             try { if (fs.existsSync(outPath)) fs.unlinkSync(outPath); } catch (_) {}
-            throw new Error("Encoding falhou: " + eFf.message);
+            emit(cb, "onProgress", { msg: "Tentativa 1 falhou (" + e1.message.slice(0, 60) + "), tentando modo simplificado..." });
+
+            // Tentativa 2: ultrafast + sem audio (descarta se audio travar)
+            try {
+                await global.BinRunner.run("ffmpeg", [
+                    "-y", "-i", videoPath,
+                    "-vf", filter,
+                    "-c:v", "libx264", "-preset", "ultrafast", "-crf", "28",
+                    "-pix_fmt", "yuv420p",
+                    "-an",
+                    outPath
+                ], { timeoutMs: 15 * 60 * 1000 });
+                emit(cb, "onProgress", { msg: "✓ Encoded em modo simplificado (sem áudio)" });
+            } catch (e2) {
+                err2 = e2.message;
+                try { if (fs.existsSync(outPath)) fs.unlinkSync(outPath); } catch (_) {}
+                throw new Error(
+                    "Auto Crop falhou em 2 tentativas. Provável: ffmpeg.exe v8.1.1 incompatível com este vídeo OU input corrompido. " +
+                    "Tente vídeo MP4/H.264 simples ou avise pra trocar ffmpeg.exe bundlado. " +
+                    "Erro 1: " + err1.slice(0, 100) + " | Erro 2: " + err2.slice(0, 100)
+                );
+            }
         }
 
         // valida output
@@ -833,33 +856,37 @@
     // SKILL 11 — MULTICAM IA (placeholder)
     // ═══════════════════════════════════════════════════════════════
     async function multicamIA(opts, cb) {
-        // Tenta sync automático via API Premiere createMulticamSequence(syncMethod=3 audio)
-        var clipNames = opts.clip_names;
-        if (!clipNames || !clipNames.length) {
-            // Pega selected do project panel via host
-            var sel = await hostCall("listProjectItems");
-            // Filtra só items selecionados — host atual não tem flag isSelected no project panel
-            // Fallback: pede ao user que selecione no Project Panel primeiro
-            emit(cb, "onProgress", { msg: "Tentando MultiCam Auto Sync via API Premiere…" });
-            var r = await hostCall("createMulticamFromSelected");
-            if (r.error) throw new Error(r.error + " — selecione 2+ clips no Project Panel");
+        // v4.0.1 — UI manda clip_names diretamente (do picker no plugin), NÃO depende
+        // do bugado app.project.getSelection() do Premiere.
+        var clipNames = opts.clip_names || opts.clipNames;
+        if (!clipNames || !clipNames.length || clipNames.length < 2) {
+            throw new Error("Escolha 2+ clips na lista do plugin antes de executar (clip_names obrigatório)");
+        }
+
+        // Estratégia 1: tenta multicam Auto-Sync por áudio
+        emit(cb, "onProgress", { msg: "Tentando MultiCam Auto-Sync por áudio…" });
+        var r2 = await hostCall("createMulticamAutoSync", [clipNames]);
+        if (!r2.error) {
             return {
                 ok: true,
-                summary: "MultiCam criada: " + r.sequence + " · " + r.clips + " clips",
-                sequence: r.sequence,
-                clips: r.clips,
-                next: "Sync por áudio: Project Panel → click direito no multicam → Sincronizar (já configurado pra audio)."
+                summary: "MultiCam Auto-Sync: " + r2.sequence + " · " + r2.clips + " clips sincronizados por áudio",
+                sequence: r2.sequence,
+                clips: r2.clips,
+                sync_method: "audio_waveform"
             };
         }
-        // Com nomes específicos: usa createMulticamAutoSync
-        var r2 = await hostCall("createMulticamAutoSync", [clipNames]);
-        if (r2.error) throw new Error(r2.error);
+
+        // Estratégia 2: cria multicam básica (sem auto-sync) com nomes passados
+        emit(cb, "onProgress", { msg: "Auto-sync falhou (" + r2.error + ") — criando multicam básica…" });
+        var r = await hostCall("createMulticamFromSelected", [JSON.stringify(clipNames)]);
+        if (r.error) throw new Error(r.error);
         return {
             ok: true,
-            summary: "MultiCam Auto-Sync: " + r2.sequence + " · " + r2.clips + " clips sincronizados por áudio",
-            sequence: r2.sequence,
-            clips: r2.clips,
-            sync_method: "audio_waveform"
+            summary: "MultiCam criada: " + r.sequence + " · " + r.clips + " clips (" + (r.method || "manual") + ")",
+            sequence: r.sequence,
+            clips: r.clips,
+            method: r.method,
+            note: r.note || "Sync por áudio: Project Panel → click direito no multicam → Sincronizar (já configurado pra audio)."
         };
     }
 
@@ -1029,7 +1056,7 @@
     // { skill: "<skill-id>", opts: {...}, enabled: bool }.
     // Default rules ficam em localStorage("mia_casper_rules").
     var CASPER_DEFAULT_RULES = [
-        { skill: "cortar-pausas", opts: { threshold_sec: 0.8, padding_sec: 0.1 }, enabled: true, label: "Cortar pausas > 0.8s" },
+        { skill: "cortar-pausas", opts: { threshold_sec: 0.4, padding_sec: 0.1 }, enabled: true, label: "Cortar pausas > 0.4s" },
         { skill: "bins",          opts: {},                                       enabled: true, label: "Organizar Project Panel" },
         { skill: "transicoes",    opts: { transition: "cross-dissolve", duration_sec: 0.5 }, enabled: true, label: "Cross Dissolve 0.5s" },
         { skill: "capitulos",     opts: {},                                       enabled: false, label: "Capítulos IA (Gemini)" }

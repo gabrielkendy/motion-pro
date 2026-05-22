@@ -1062,12 +1062,46 @@ $.global.MotionProIA = (function () {
     // ─── MULTICAM ────────────────────────────────────────────────────
     // Tenta múltiplas estratégias até alguma funcionar.
     // Premiere muda essa API quase em toda versão — então robustez > elegância.
-    function createMulticamFromSelected() {
+    //
+    // ACEITA opcionalmente clip_names: ["clip1.mp4", "clip2.mp4"] que faz busca
+    // por nome no Project Panel (mais confiável que getSelection() que é bugado).
+    function createMulticamFromSelected(clipNamesJson) {
         try {
             if (!app.project) return err("Sem project");
-            var sel = (app.project.getSelection && app.project.getSelection()) || [];
-            if (!sel || !sel.length) return err("Selecione 2+ clips no Project Panel antes de executar");
-            if (sel.length < 2) return err("Precisa de pelo menos 2 clips selecionados (você tem " + sel.length + ")");
+
+            // Estratégia preferida: nomes vindos do plugin UI picker (não getSelection!)
+            var sel = [];
+            var names = null;
+            try {
+                if (clipNamesJson) names = (typeof clipNamesJson === "string") ? JSON.parse(clipNamesJson) : clipNamesJson;
+            } catch (_) { names = null; }
+
+            if (names && names.length) {
+                // Busca recursiva por nome
+                function findInRoot(node, target) {
+                    if (!node || !node.children) return null;
+                    for (var i = 0; i < node.children.numItems; i++) {
+                        var c = node.children[i];
+                        if (c.type === ProjectItemType.BIN) {
+                            var r = findInRoot(c, target);
+                            if (r) return r;
+                        }
+                        if (c.name === target) return c;
+                    }
+                    return null;
+                }
+                for (var j = 0; j < names.length; j++) {
+                    var it = findInRoot(app.project.rootItem, names[j]);
+                    if (it) sel.push(it);
+                }
+                if (sel.length < 2) return err("Apenas " + sel.length + " de " + names.length + " clips encontrados por nome — confira spelling");
+            } else {
+                // Fallback legacy: tenta getSelection (Premiere bugado em algumas versoes)
+                sel = (app.project.getSelection && app.project.getSelection()) || [];
+                if (!sel || sel.length < 2) {
+                    return err("getSelection_falhou — chame createMulticamFromSelected com clip_names: [\"nome1\",\"nome2\"] em vez de depender do Premiere getSelection (bugado em algumas versões)");
+                }
+            }
 
             var name = "MultiCam_" + Date.now();
             var attempts = [];

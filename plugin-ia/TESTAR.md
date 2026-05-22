@@ -7,7 +7,7 @@
 │ Premiere Pro (CEP)       │         │ VIDEO-PRO-IA (existente) │
 │  ┌────────────────────┐  │  fetch  │  Next.js localhost:3333  │
 │  │ plugin-ia/         │──┼────────►│  /api/chat-premiere      │
-│  │ index.html + JS    │  │   SSE   │  Anthropic · Whisper ·   │
+│  │ index.html + JS    │  │   SSE   │  Gemini · Whisper ·   │
 │  └─────────┬──────────┘  │         │  FFmpeg · Remotion · 30+ │
 │            │ evalScript  │         │  tools                   │
 │  ┌─────────▼──────────┐  │         └──────────┬───────────────┘
@@ -26,13 +26,13 @@
                                      └──────────────────────────┘
 ```
 
-**Quem paga Anthropic:** o usuário, com sua própria key em
+**Quem paga Gemini:** o usuário, com sua própria key em
 `VIDEO-PRO-IA/video-editor/.env.local`. O plugin CEP só valida licença e
 delega tudo pro motor local. Zero custo de IA pro PacotesFX.
 
 ## Pré-requisitos (já existem na sua máquina)
 
-- ✅ `VIDEO-PRO-IA/video-editor` com `.env.local` (ANTHROPIC_API_KEY + GROQ_API_KEY)
+- ✅ `VIDEO-PRO-IA/video-editor` com `.env.local` (GEMINI_API_KEY + GROQ_API_KEY)
 - ✅ `VIDEO-PRO-IA/premiere-plugin` (UXP MCP Agent) instalado e ativo no Premiere
 - ✅ `VIDEO-PRO-IA/start-videopro.cmd` funciona (sobe Next.js + adb-proxy)
 - ✅ FFmpeg no PATH
@@ -158,7 +158,7 @@ Selecione um clip com fala no Premiere e:
 | Gerar legendas alpha | localhost:3333 `/api/render-alpha` (Remotion) |
 | Inserir clip no Premiere via IA | localhost:3333 → adb-mcp → UXP plugin → Premiere |
 | Auth / paywall | motionpro.vercel.app `/v1/auth` + `/v1/license` |
-| IA conversacional | localhost:3333 `/api/chat-premiere` (Anthropic do user) |
+| IA conversacional | localhost:3333 `/api/chat-premiere` (Gemini do user) |
 
 O plugin CEP é uma **interface unificada** sobre tudo isso — substitui o
-Claude Desktop como front-end.
+Gemini Flash Desktop como front-end.

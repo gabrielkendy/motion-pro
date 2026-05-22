@@ -257,6 +257,20 @@
         if (f.id === "transicoes") {
             customInput = buildTransitionsPicker();
         }
+        if (f.id === "multicam") {
+            customInput = ''
+                + '<div class="field">'
+                +   '<label>📋 Vídeos do projeto · marque 2+ pra fazer multicam</label>'
+                +   '<div id="feat-mc-list" style="border:1px solid var(--line);border-radius:8px;max-height:260px;overflow:auto;background:var(--bg);padding:8px;min-height:80px">'
+                +     '<div style="color:var(--mut);font-size:12px;padding:8px">Carregando lista...</div>'
+                +   '</div>'
+                +   '<div style="display:flex;gap:8px;margin-top:8px">'
+                +     '<button id="feat-mc-reload" class="btn btn--sm" type="button">↻ Recarregar lista</button>'
+                +     '<button id="feat-mc-selectall" class="btn btn--sm btn--ghost" type="button">Marcar todos</button>'
+                +   '</div>'
+                +   '<div id="feat-mc-count" class="hint" style="margin-top:8px">0 clip(s) selecionado(s)</div>'
+                + '</div>';
+        }
         if (f.id === "legendas") {
             customInput = ''
                 + '<div class="field"><label>Estilo da legenda</label><select id="feat-legendas-style">'
@@ -299,6 +313,7 @@
         // Bind click handlers para pickers visuais
         if (f.id === "transicoes") bindTransitionsPicker(view);
         if (f.id === "gerar-video") bindGerarVideoPicker(view);
+        if (f.id === "multicam")    bindMulticamPicker(view);
 
         var runBtn = document.getElementById("feat-run");
         if (!runBtn) return;
@@ -313,6 +328,14 @@
             if (f.id === "auto-crop") {
                 opts.aspect = (document.getElementById("feat-crop-aspect") || {}).value;
                 opts.tracking = !!(document.getElementById("feat-crop-tracking") || {}).checked;
+            }
+            if (f.id === "multicam") {
+                var checked = view.querySelectorAll('#feat-mc-list input[type="checkbox"]:checked');
+                if (checked.length < 2) {
+                    global.MIA && global.MIA.toast && global.MIA.toast("Marque pelo menos 2 vídeos na lista", "warn", 3000);
+                    return;
+                }
+                opts.clip_names = Array.prototype.map.call(checked, function (cb) { return cb.dataset.name; });
             }
             if (f.id === "gerar-video") {
                 var imgPath = view._gvImagePath || null;
@@ -506,6 +529,79 @@
             Array.prototype.forEach.call(grid.querySelectorAll(".trans-item"), function (n) { n.classList.remove("is-selected"); });
             item.classList.add("is-selected");
         });
+    }
+
+    // ── HANDLER do picker de clips do MultiCam IA ───────────────────
+    // Lista TODOS os vídeos do project panel via host.listProjectItems
+    // e deixa o user marcar 2+ via checkbox. Contorna o bug de
+    // app.project.getSelection() do Premiere.
+    function bindMulticamPicker(view) {
+        var listEl  = view.querySelector("#feat-mc-list");
+        var countEl = view.querySelector("#feat-mc-count");
+        var reload  = view.querySelector("#feat-mc-reload");
+        var selAll  = view.querySelector("#feat-mc-selectall");
+        if (!listEl) return;
+
+        function updateCount() {
+            var n = view.querySelectorAll('#feat-mc-list input[type="checkbox"]:checked').length;
+            if (countEl) countEl.textContent = n + " clip(s) selecionado(s)";
+        }
+
+        async function loadList() {
+            listEl.innerHTML = '<div style="color:var(--mut);font-size:12px;padding:8px">Carregando lista do Project Panel…</div>';
+            try {
+                // hostCall via window.ClaudeTools handler ou direct CSInterface
+                var items = null;
+                if (global.ClaudeTools && global.ClaudeTools.execute) {
+                    items = await global.ClaudeTools.execute("list_clips", {});
+                }
+                if (!items || !Array.isArray(items.clips)) {
+                    // fallback: chama listProjectItems direto via CSInterface
+                    var cs2 = (typeof CSInterface !== "undefined") ? new CSInterface() : null;
+                    if (cs2) {
+                        var raw = await new Promise(function (res) {
+                            cs2.evalScript("JSON.stringify(MotionProIA.listProjectItems())", function (r) { res(r); });
+                        });
+                        try { var pj = JSON.parse(raw); items = { clips: pj.items || [] }; } catch (_) { items = { clips: [] }; }
+                    }
+                }
+                var videos = (items.clips || []).filter(function (it) {
+                    // só items com mediaPath (vídeo/áudio), pula sequências e bins
+                    if (!it) return false;
+                    if (it.type === "SEQUENCE" || it.type === "BIN") return false;
+                    var mp = (it.mediaPath || it.path || "").toLowerCase();
+                    return /\.(mp4|mov|mkv|avi|webm|m4v)$/i.test(mp);
+                });
+                if (videos.length === 0) {
+                    listEl.innerHTML = '<div style="color:var(--err);font-size:12px;padding:8px">Nenhum vídeo encontrado no Project Panel. Importe vídeos primeiro.</div>';
+                    return;
+                }
+                listEl.innerHTML = videos.map(function (v) {
+                    var name = (v.name || "").replace(/"/g, "&quot;");
+                    return '<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:4px" ' +
+                           'onmouseenter="this.style.background=\'var(--bg-2)\'" onmouseleave="this.style.background=\'\'">'
+                         + '<input type="checkbox" data-name="' + name + '">'
+                         + '<span style="font-size:12px;font-family:ui-monospace,monospace">' + name + '</span>'
+                         + '</label>';
+                }).join("");
+                // bind change pra atualizar count
+                Array.prototype.forEach.call(listEl.querySelectorAll('input[type="checkbox"]'), function (cb) {
+                    cb.addEventListener("change", updateCount);
+                });
+                updateCount();
+            } catch (e) {
+                listEl.innerHTML = '<div style="color:var(--err);font-size:12px;padding:8px">Erro carregando lista: ' + e.message + '</div>';
+            }
+        }
+
+        if (reload) reload.addEventListener("click", loadList);
+        if (selAll) selAll.addEventListener("click", function () {
+            var allCb = listEl.querySelectorAll('input[type="checkbox"]');
+            var anyUnchecked = Array.prototype.some.call(allCb, function (cb) { return !cb.checked; });
+            Array.prototype.forEach.call(allCb, function (cb) { cb.checked = anyUnchecked; });
+            updateCount();
+        });
+        loadList();
     }
 
     // ── HANDLER de drag&drop pro picker de imagem do Gerar Vídeo IA ──

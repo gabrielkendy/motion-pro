@@ -82,7 +82,7 @@ Verificação no dashboard:
 ▢ Aba **AÇÕES → 📋 Listar clips** → vai pra TIMELINE, mostra todos os clips
 ▢ Move CTI pro meio dum clip → **AÇÕES → ⫿ Cortar no cursor** → clip vira 2
 
-### 5.2 Motor IA (Whisper + FFmpeg + Anthropic local)
+### 5.2 Motor IA (Whisper + FFmpeg + Gemini local)
 ▢ Aba **AÇÕES → ⚡ Testar motor IA local** → toast verde "Motor IA online"
 ▢ Aba **CHAT** → digita "lista as ferramentas que você tem"
 ▢ Stream de texto aparece em tempo real

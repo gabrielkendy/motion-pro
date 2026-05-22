@@ -41,7 +41,7 @@
         {
             target: '[data-view="config"]',
             title: "⚙️ Licença & API Keys",
-            body: "Pra usar tudo, ative sua licença (chave MIA-XXXX) e configure suas keys de Anthropic / Gemini / Pexels. Tudo opcional — Whisper roda offline.",
+            body: "Pra usar tudo, ative sua licença (chave MIA-XXXX) e configure sua key Google Gemini (obrigatória, gratuita em aistudio.google.com) + fal.ai opcional (pra gerar vídeos via Seedance). Whisper roda offline.",
             place: "right"
         },
         {
