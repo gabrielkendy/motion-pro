@@ -12,8 +12,8 @@ const stripe = Stripe(process.env.STRIPE_SECRET || "sk_test_xxx");
 // REMOVER APOS DIAGNOSE. Nao expoe secret completo, so prefix mascarado.
 router.get("/_diag/cdn", async (_req, res, next) => {
     try {
-        const SECRET   = process.env.CDN_SIGN_SECRET;
-        const CDN_BASE = (process.env.CDN_BASE || "").replace(/\/$/, "");
+        const SECRET   = (process.env.CDN_SIGN_SECRET || "").trim();
+        const CDN_BASE = (process.env.CDN_BASE || "").trim().replace(/\/$/, "");
         if (!SECRET)   return res.status(500).json({ error: "missing_CDN_SIGN_SECRET" });
         if (!CDN_BASE) return res.status(500).json({ error: "missing_CDN_BASE" });
 
@@ -55,8 +55,8 @@ router.get("/_diag/cdn", async (_req, res, next) => {
 
 router.get("/cdn-self-test", requireAdmin, async (_req, res, next) => {
     try {
-        const SECRET   = process.env.CDN_SIGN_SECRET;
-        const CDN_BASE = (process.env.CDN_BASE || "").replace(/\/$/, "");
+        const SECRET   = (process.env.CDN_SIGN_SECRET || "").trim();
+        const CDN_BASE = (process.env.CDN_BASE || "").trim().replace(/\/$/, "");
         if (!SECRET)   return res.status(500).json({ error: "missing_CDN_SIGN_SECRET" });
         if (!CDN_BASE) return res.status(500).json({ error: "missing_CDN_BASE" });
 

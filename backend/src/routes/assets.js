@@ -9,10 +9,13 @@ const { expandProducts, normalizeProductId } = require("../utils/product-aliases
 const TTL_MIN = Number(process.env.CDN_URL_TTL_MIN || 5);   // short TTL to limit sharing
 
 function signCdnUrl(key, fingerprint) {
+    // .trim() defensivo: env vars no Vercel as vezes vem com \n trailing
+    // se foram coladas via dashboard — quebra HMAC vs Worker (que tem secret sem \n).
+    const secret = (process.env.CDN_SIGN_SECRET || "").trim();
     const expires = Math.floor(Date.now() / 1000) + TTL_MIN * 60;
     const data = `${key}\n${fingerprint}\n${expires}`;
-    const sig = crypto.createHmac("sha256", process.env.CDN_SIGN_SECRET).update(data).digest("base64url");
-    const base = (process.env.CDN_BASE || "").replace(/\/$/, "");
+    const sig = crypto.createHmac("sha256", secret).update(data).digest("base64url");
+    const base = (process.env.CDN_BASE || "").trim().replace(/\/$/, "");
     return `${base}/${key}?fp=${encodeURIComponent(fingerprint)}&e=${expires}&s=${sig}`;
 }
 
