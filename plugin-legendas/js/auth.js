@@ -415,12 +415,16 @@ window.Auth = (function () {
         showReconnectBanner("Sua sessão expirou. Reconecte pra sincronizar licença e tier.");
     }
 
+    // Heartbeat cadence: 15min (padronizado com Titles · Neon free tier
+    // sustenta 4k req/h vs 12k req/h de 5min). Sticky 30d preserva UX.
+    var HEARTBEAT_INTERVAL_MS = 15 * 60 * 1000;
     function startHeartbeat() {
         if (DEV_BYPASS) return;
         var fp = computeFingerprint();
         var tick = async function () {
             try {
-                var r = await api("/v1/license/heartbeat", { fingerprint: fp, product_id: PRODUCT_ID });
+                var r = await api("/v1/license/heartbeat?plugin=" + encodeURIComponent(PRODUCT_ID),
+                                  { fingerprint: fp, product_id: PRODUCT_ID });
                 if (r.revoked || r.subscription_inactive) {
                     localStorage.setItem("mtl_plan", r.plan || "free");
                     localStorage.setItem("mtl_status", r.status || "revoked");
@@ -453,7 +457,7 @@ window.Auth = (function () {
             }
         };
         tick();
-        setInterval(tick, 5 * 60 * 1000);
+        setInterval(tick, HEARTBEAT_INTERVAL_MS);
     }
 
     async function refreshUserMeta() {
