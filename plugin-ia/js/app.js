@@ -133,7 +133,9 @@
             } catch (e) { toast("❌ " + e.message, "err"); }
         };
 
-        // Settings IA — Anthropic / Gemini / Pexels keys + modelo
+        // Settings IA · v4 — Gemini Flash 2.0 primary + fal.ai (Seedance)
+        // Anthropic removido. Stock keys (Pexels/Pixabay/Giphy) removidas
+        // (feature Biblioteca Stock virou Gerar Vídeo IA via fal.ai).
         // helper: lê .value de elemento que pode não existir
         function readVal(id) { var el = $(id); return el && typeof el.value === "string" ? el.value : ""; }
         function writeVal(id, v) { var el = $(id); if (el) el.value = v; }
@@ -142,49 +144,51 @@
             var btn = $("set-save"); btn.disabled = true; btn.textContent = "Salvando…";
             var result = $("set-result");
             try {
-                // Salva Gemini local
+                // ── Gemini key (obrigatório · localStorage) ─────────
                 var geminiK = readVal("set-gemini-key").trim();
                 if (geminiK) {
-                    if (window.GeminiClient) window.GeminiClient.setKey(geminiK);
+                    if (window.GeminiClient && window.GeminiClient.setKey) window.GeminiClient.setKey(geminiK);
+                    else localStorage.setItem("mia_gemini_key", geminiK);
                 }
-                // Salva Pexels / Pixabay / Giphy local
-                var pexK = readVal("set-pexels-key").trim();
-                if (pexK) localStorage.setItem("mia_pexels_key", pexK);
-                var pixaK = readVal("set-pixabay-key").trim();
-                if (pixaK) localStorage.setItem("mia_pixabay_key", pixaK);
-                var giphyK = readVal("set-giphy-key").trim();
-                if (giphyK) localStorage.setItem("mia_giphy_key", giphyK);
 
-                // Salva Anthropic via backend (BYOK opcional)
-                var anthK = readVal("set-anthropic-key").trim();
-                var model = readVal("set-model") || "claude-sonnet-4-6";
+                // ── fal.ai key (opcional · pra geração de vídeo Seedance) ──
+                var falK = readVal("set-fal-key").trim();
+                if (falK) localStorage.setItem("mia_fal_key", falK);
+
+                // ── Model + max_tokens (backend) ────────────────────
+                var model = readVal("set-model") || "gemini-2.0-flash";
+                // Garante que é modelo Gemini (legado pode ter "claude-*" salvo)
+                if (!/^gemini/i.test(model)) model = "gemini-2.0-flash";
                 var maxTokens = parseInt(readVal("set-max-tokens"), 10) || 4096;
 
                 var token = localStorage.getItem("mv_session") || "";
                 if (token) {
                     var payload = { model: model, max_tokens: maxTokens };
-                    if (anthK) payload.anthropic_key = anthK;
                     var r = await fetch((window.MV_CONFIG.apiBaseUrl || "https://motionpro.vercel.app") + "/v1/me/ai-settings", {
                         method: "PUT",
                         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
                         body: JSON.stringify(payload)
                     });
-                    if (!r.ok) throw new Error("ai_settings_" + r.status);
+                    // Não fatal se backend falhar — model fica em localStorage tb.
+                    if (!r.ok) console.warn("[settings] backend save falhou (status " + r.status + "), continuando com localStorage");
+                    localStorage.setItem("mia_model", model);
+                    localStorage.setItem("mia_max_tokens", String(maxTokens));
                 }
 
                 // Update settings cache flag for status bar
-                var cache = { anthropic_key_set: !!anthK || true, gemini_key_set: !!geminiK || (window.GeminiClient && window.GeminiClient.hasKey()), pexels_key_set: !!pexK || !!localStorage.getItem("mia_pexels_key") };
+                var cache = {
+                    gemini_key_set: !!geminiK || (window.GeminiClient && window.GeminiClient.hasKey()),
+                    fal_key_set:    !!falK    || !!localStorage.getItem("mia_fal_key"),
+                    model:          model
+                };
                 localStorage.setItem("mia_settings_cache", JSON.stringify(cache));
 
                 result.style.color = "var(--ok)";
                 result.textContent = "✓ Configuração salva";
-                writeVal("set-anthropic-key", "");
                 writeVal("set-gemini-key", "");
-                writeVal("set-pexels-key", "");
-                writeVal("set-pixabay-key", "");
-                writeVal("set-giphy-key", "");
+                writeVal("set-fal-key", "");
                 updateStatusBar();
-                toast("✓ Config salva", "ok");
+                if (typeof toast === "function") toast("✓ Config salva", "ok");
             } catch (e) {
                 result.style.color = "var(--err)";
                 result.textContent = "❌ " + e.message;
@@ -198,44 +202,42 @@
             result.style.color = "var(--mut)";
             result.innerHTML = "Testando…";
             var lines = [];
-            // Gemini
-            if (window.GeminiClient && window.GeminiClient.hasKey()) {
-                var g = await window.GeminiClient.validate();
-                lines.push((g.ok ? "✓" : "✗") + " Gemini: " + (g.ok ? "OK" : g.error));
-            } else lines.push("○ Gemini: sem key");
-            // Pexels
-            var pexK = localStorage.getItem("mia_pexels_key");
-            if (pexK) {
+
+            // Gemini (obrigatório)
+            if (window.GeminiClient && window.GeminiClient.hasKey && window.GeminiClient.hasKey()) {
                 try {
-                    var r = await fetch("https://api.pexels.com/videos/search?query=test&per_page=1", { headers: { "Authorization": pexK } });
-                    lines.push((r.ok ? "✓" : "✗") + " Pexels: " + (r.ok ? "OK" : "HTTP " + r.status));
-                } catch (e) { lines.push("✗ Pexels: " + e.message); }
-            } else lines.push("○ Pexels: sem key");
-            // Pixabay
-            var pixaK = localStorage.getItem("mia_pixabay_key");
-            if (pixaK) {
+                    var g = await window.GeminiClient.validate();
+                    lines.push((g.ok ? "✓" : "✗") + " Gemini: " + (g.ok ? "OK" : g.error));
+                } catch (e) {
+                    lines.push("✗ Gemini: " + e.message);
+                }
+            } else {
+                lines.push("✗ Gemini: SEM KEY · configure pra usar Motion IA");
+            }
+
+            // fal.ai (opcional · video generation)
+            var falK = localStorage.getItem("mia_fal_key");
+            if (falK) {
                 try {
-                    var rp = await fetch("https://pixabay.com/api/videos/?key=" + encodeURIComponent(pixaK) + "&q=test&per_page=3");
-                    lines.push((rp.ok ? "✓" : "✗") + " Pixabay: " + (rp.ok ? "OK" : "HTTP " + rp.status));
-                } catch (e) { lines.push("✗ Pixabay: " + e.message); }
-            } else lines.push("○ Pixabay: sem key");
-            // Giphy
-            var giphyK = localStorage.getItem("mia_giphy_key");
-            if (giphyK) {
-                try {
-                    var rg = await fetch("https://api.giphy.com/v1/gifs/search?api_key=" + encodeURIComponent(giphyK) + "&q=test&limit=1");
-                    lines.push((rg.ok ? "✓" : "✗") + " Giphy: " + (rg.ok ? "OK" : "HTTP " + rg.status));
-                } catch (e) { lines.push("✗ Giphy: " + e.message); }
-            } else lines.push("○ Giphy: sem key");
-            // Whisper local
+                    // healthcheck simples: lista modelos (endpoint público autorizado)
+                    var rf = await fetch("https://queue.fal.run/health", {
+                        headers: { "Authorization": "Key " + falK }
+                    });
+                    lines.push((rf.ok ? "✓" : "✗") + " fal.ai: " + (rf.ok ? "OK" : "HTTP " + rf.status));
+                } catch (e) { lines.push("✗ fal.ai: " + e.message); }
+            } else {
+                lines.push("○ fal.ai: sem key (opcional, só pra gerar vídeo)");
+            }
+
+            // Binários locais
             if (window.BinRunner) {
                 lines.push((window.BinRunner.exists("whisper-cli") ? "✓" : "✗") + " whisper-cli.exe: " + (window.BinRunner.exists("whisper-cli") ? "OK" : "não instalado"));
-                lines.push((window.BinRunner.exists("ffmpeg") ? "✓" : "✗") + " ffmpeg.exe: " + (window.BinRunner.exists("ffmpeg") ? "OK" : "não instalado"));
-                lines.push((window.BinRunner.exists("yt-dlp") ? "✓" : "✗") + " yt-dlp.exe: " + (window.BinRunner.exists("yt-dlp") ? "OK" : "não instalado"));
+                lines.push((window.BinRunner.exists("ffmpeg")      ? "✓" : "✗") + " ffmpeg.exe:      " + (window.BinRunner.exists("ffmpeg")      ? "OK" : "não instalado"));
+                lines.push((window.BinRunner.exists("yt-dlp")      ? "✓" : "✗") + " yt-dlp.exe:      " + (window.BinRunner.exists("yt-dlp")      ? "OK" : "não instalado"));
             }
             // License
             if (window.LicenseClient) {
-                lines.push((window.LicenseClient.isReady() ? "✓" : "✗") + " License: " + (window.LicenseClient.isReady() ? "ativa offline" : "não ativada/expirada"));
+                lines.push((window.LicenseClient.isReady() ? "✓" : "✗") + " License:        " + (window.LicenseClient.isReady() ? "ativa offline" : "não ativada/expirada"));
             }
             result.innerHTML = lines.join("<br>");
             result.style.color = "var(--txt)";
@@ -255,16 +257,22 @@
             if (r.ok) {
                 var d = await r.json();
                 if (d.model) $("set-model").value = d.model;
-                if (d.max_tokens) $("set-max-tokens").value = d.max_tokens;
-                if (d.anthropic_key_set) $("set-anthropic-key").placeholder = "Configurado · " + (d.anthropic_key_mask || "");
+                if (d.max_tokens) writeVal("set-max-tokens", d.max_tokens);
             }
         } catch (e) {}
-        // Gemini / Pexels: locais
-        if (window.GeminiClient && window.GeminiClient.hasKey()) {
-            $("set-gemini-key").placeholder = "Configurada · ✓";
+        // Local placeholders pras keys já configuradas
+        if (window.GeminiClient && window.GeminiClient.hasKey && window.GeminiClient.hasKey()) {
+            var gk = $("set-gemini-key");
+            if (gk) gk.placeholder = "Configurada · ✓";
         }
-        if (localStorage.getItem("mia_pexels_key")) {
-            $("set-pexels-key").placeholder = "Configurada · ✓";
+        if (localStorage.getItem("mia_fal_key")) {
+            var fk = $("set-fal-key");
+            if (fk) fk.placeholder = "Configurada · ✓";
+        }
+        // Recarrega model salvo se backend devolveu um Claude legado
+        var modelEl = $("set-model");
+        if (modelEl && (!modelEl.value || !/^gemini/i.test(modelEl.value))) {
+            modelEl.value = "gemini-2.0-flash";
         }
     }
 
@@ -310,18 +318,19 @@
         } else {
             dLic.className = "dot warn";
         }
-        // Claude key (configurado?)
-        var dCl = $("dot-claude");
-        try {
-            var settings = JSON.parse(localStorage.getItem("mia_settings_cache") || "{}");
-            dCl.className = "dot " + (settings.anthropic_key_set ? "ok" : "warn");
-        } catch (_) { dCl.className = "dot warn"; }
-        // Gemini
+        // Gemini key (configurado?) — em v4 é a key principal
         var dGm = $("dot-gemini");
-        try {
-            var s2 = JSON.parse(localStorage.getItem("mia_settings_cache") || "{}");
-            dGm.className = "dot " + (s2.gemini_key_set ? "ok" : "");
-        } catch (_) { dGm.className = "dot"; }
+        if (dGm) {
+            var hasGem = window.GeminiClient && window.GeminiClient.hasKey && window.GeminiClient.hasKey();
+            dGm.className = "dot " + (hasGem ? "ok" : "warn");
+        }
+        // dot-claude legacy: reaproveita pra mostrar status do agente (Gemini)
+        // ou esconde se não tiver no DOM (HTML atualizado já não tem)
+        var dCl = $("dot-claude");
+        if (dCl) {
+            var hasGem2 = window.GeminiClient && window.GeminiClient.hasKey && window.GeminiClient.hasKey();
+            dCl.className = "dot " + (hasGem2 ? "ok" : "warn");
+        }
     }
 
     // ───────────── CHAT (Agent) ─────────────
