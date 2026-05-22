@@ -16,11 +16,17 @@
     --danger:#ff5566;
     --radius: 6px;
 
-    /* === Motion IA design tokens (Chunk 1 — Motion Suite unified) === */
-    --bg:        #0a0c12;
-    --bg-hover:  #1c2130;
-    --line-soft: #1a1e2a;
-    --txt:       #e8ecf3;
+    /* === Motion Suite design tokens (Chunk 1 + T1 align c/ plugin-legendas) ===
+       Os valores aqui replicam plugin-legendas/css/ep.css :root (linhas 1349-1369)
+       pra paridade visual TOTAL com o Legendas (referência oficial da Suite). */
+    --bg:        #0d0d11;
+    --bg-2:      #15151c;
+    --bg-3:      #1c1c25;
+    --bg-hover:  #25252f;
+    --line:      #2a2a34;
+    --line-soft: #1f1f28;
+    --txt:       #ececf1;
+    --txt-2:     #c4c7d4;
     --mut:       #8590a8;
     --mut-2:     #5d6678;
     --acc-bright:#3b82f6;
@@ -28,8 +34,9 @@
     --acc-line:  rgba(37, 99, 235, 0.35);
     --ok:        #10b981;
     --ok-soft:   rgba(16, 185, 129, 0.12);
-    --err:       #ef4444;
-    --err-soft:  rgba(239, 68, 68, 0.12);
+    --err:       #ff5566;
+    --err-soft:  rgba(255, 85, 102, 0.12);
+    --warn-soft: rgba(245, 158, 11, 0.15);
     --radius-lg: 12px;
 }
 
@@ -478,7 +485,7 @@ body.wide  .card__thumb { min-height: 180px; }
 
 /* ════════════════ CROSS-SELL SUITE (Chunk 8) ════════════════ */
 .cross-sell { font-size: 12.5px; color: var(--txt-2); line-height: 1.5; }
-.cross-sell__default { padding: 14px 16px; background: #11141d; border: 1px solid #232838; border-radius: var(--radius); }
+.cross-sell__default { padding: 14px 16px; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); }
 .cross-sell__row { display: flex; gap: 14px; margin-top: 10px; flex-wrap: wrap; }
 .cross-sell__link {
     color: var(--acc-bright);
@@ -527,7 +534,7 @@ body.wide  .card__thumb { min-height: 180px; }
 .diag-output {
     margin-top: 14px;
     background: #0a0c12;
-    border: 1px solid #232838;
+    border: 1px solid var(--line);
     border-radius: var(--radius);
     padding: 12px;
     font-family: 'JetBrains Mono', ui-monospace, monospace;
@@ -615,8 +622,8 @@ body.wide  .card__thumb { min-height: 180px; }
     font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 .gate__box {
-    background: #11141d;
-    border: 1px solid #232838;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
     border-radius: var(--radius-lg);
     padding: 36px;
     width: 100%; max-width: 380px;
@@ -687,7 +694,7 @@ body.wide  .card__thumb { min-height: 180px; }
     text-transform: uppercase; letter-spacing: 1px;
 }
 .gate__sep::before, .gate__sep::after {
-    content: ""; flex: 1; height: 1px; background: #232838;
+    content: ""; flex: 1; height: 1px; background: var(--line);
 }
 
 /* ============ FIELDS (Motion IA-style) ============ */
@@ -703,8 +710,8 @@ body.wide  .card__thumb { min-height: 180px; }
 }
 .field input, .field select, .field textarea {
     width: 100%;
-    background: #11141d;
-    border: 1px solid #232838;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
     color: var(--txt);
     padding: 10px 13px;
     border-radius: var(--radius);
@@ -724,7 +731,7 @@ body.wide  .card__thumb { min-height: 180px; }
     display: inline-flex; align-items: center; justify-content: center;
     gap: 6px;
     background: transparent;
-    border: 1px solid #232838;
+    border: 1px solid var(--line);
     color: var(--txt);
     padding: 9px 16px;
     border-radius: var(--radius);
@@ -735,7 +742,7 @@ body.wide  .card__thumb { min-height: 180px; }
     cursor: pointer;
     font-family: inherit;
 }
-.btn:hover { background: #161a26; border-color: var(--mut-2); }
+.btn:hover { background: var(--bg-3); border-color: var(--mut-2); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn--primary { background: var(--acc); border-color: var(--acc); color: #fff; }
 .btn--primary:hover { background: var(--acc-bright); border-color: var(--acc-bright); }
@@ -745,7 +752,7 @@ body.wide  .card__thumb { min-height: 180px; }
 .btn--danger:hover { background: var(--err); color: #fff; }
 .btn--ok { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
 .btn--ghost { border-color: transparent; color: var(--mut); }
-.btn--ghost:hover { background: #161a26; color: var(--txt); }
+.btn--ghost:hover { background: var(--bg-3); color: var(--txt); }
 
 /* ========== TRIAL BAR (header strip) ========== */
 .trialbar{
@@ -899,7 +906,7 @@ body.wide  .card__thumb { min-height: 180px; }
     width: 100%; max-width: 440px;
     height: 100vh;
     background: var(--bg);
-    border-left: 1px solid #232838;
+    border-left: 1px solid var(--line);
     box-shadow: -16px 0 48px rgba(0,0,0,0.55);
     z-index: 9000;
     transition: right 0.25s ease;
@@ -911,7 +918,7 @@ body.wide  .card__thumb { min-height: 180px; }
 
 .cfg-drawer__head {
     padding: 20px 22px 16px;
-    border-bottom: 1px solid #232838;
+    border-bottom: 1px solid var(--line);
     display: flex; align-items: flex-start; justify-content: space-between;
     gap: 14px;
     flex-shrink: 0;
@@ -937,7 +944,7 @@ body.wide  .card__thumb { min-height: 180px; }
     transition: background 0.15s, color 0.15s;
     flex-shrink: 0;
 }
-.cfg-drawer__close:hover { background: #161a26; color: var(--txt); }
+.cfg-drawer__close:hover { background: var(--bg-3); color: var(--txt); }
 
 .cfg-drawer__body {
     padding: 20px 22px 32px;
@@ -952,8 +959,8 @@ body.wide  .card__thumb { min-height: 180px; }
     color: var(--mut);
 }
 .license-card {
-    background: linear-gradient(135deg, #11141d, #161a26);
-    border: 1px solid #232838;
+    background: linear-gradient(135deg, var(--bg-2), var(--bg-3));
+    border: 1px solid var(--line);
     border-left: 4px solid var(--ok);
     border-radius: var(--radius-lg);
     padding: 16px 18px;

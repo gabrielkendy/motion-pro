@@ -1,10 +1,17 @@
-/* status-bar.js — Motion Titles · Chunk 7
+/* status-bar.js — Motion Titles · Chunk 7 + T5 (2026-05-22)
  *
- * Status bar inferior com 4 dots: Premiere · Auth · Licença · CDN.
+ * Status bar inferior com 4 dots: Backend · Host · Network · License.
  * Cada dot tem estado: ok (verde) / warn (laranja) / err (vermelho) / off (cinza).
+ * Polling a cada 30s.
+ *
+ * Mapeamento dos dots:
+ *   - Backend → resposta de GET /v1/me com mv_session (sessão + servidor up)
+ *   - Host    → host.jsx (MotionVault.ping retornou JSON válido)
+ *   - Network → CDN R2 health (cdn.kendyproducoes.com.br/health)
+ *   - License → LicenseCache.info() (active / offline_valid / wrong_product / err)
  *
  * Também provê o Diagnóstico técnico (botão no drawer ⚙ Config) que roda
- * 5 testes e mostra output texto pra debug remoto (igual Motion IA).
+ * 5 testes e mostra output texto pra debug remoto.
  */
 window.StatusBar = (function () {
 
@@ -21,22 +28,51 @@ window.StatusBar = (function () {
     }
 
     // ── INDIVIDUAL CHECKS ─────────────────────────────────────────────
-    function checkPremiere() {
+    function checkHost() {
         // hostPing usa MotionVault.ping(); status fica em window._hostOk
         if (typeof window._hostOk === "undefined") {
-            setDot("dot-premiere", "warn", "host.jsx ainda não testado");
+            setDot("dot-host", "warn", "host.jsx ainda não testado");
             return;
         }
-        setDot("dot-premiere",
+        setDot("dot-host",
             window._hostOk ? "ok" : "err",
             window._hostOk ? "host.jsx OK" : "host.jsx não carregou");
     }
 
-    function checkAuth() {
-        var logged = window.Auth && window.Auth.isLoggedIn && window.Auth.isLoggedIn();
-        setDot("dot-auth",
-            logged ? "ok" : "off",
-            logged ? "Logado: " + (localStorage.getItem("mv_email") || "—") : "Não logado");
+    var _backendLast = 0;
+    async function checkBackend(force) {
+        // Backend ping via GET /v1/me (também testa session_token)
+        if (!force && Date.now() - _backendLast < 30 * 1000) return;
+        _backendLast = Date.now();
+        var tok = localStorage.getItem("mv_session");
+        if (!tok) {
+            setDot("dot-backend", "off", "Sem sessão — faça login");
+            return;
+        }
+        try {
+            var apiBase = (window.Auth && window.Auth.API_BASE)
+                || (window.MV_CONFIG && window.MV_CONFIG.apiBaseUrl)
+                || "https://motionpro.vercel.app";
+            var ctrl = new AbortController();
+            var to = setTimeout(function () { ctrl.abort(); }, 4000);
+            var r = await fetch(apiBase + "/v1/me", {
+                method: "GET",
+                headers: { "Authorization": "Bearer " + tok },
+                signal: ctrl.signal,
+                cache: "no-store"
+            });
+            clearTimeout(to);
+            if (r.ok) {
+                var email = localStorage.getItem("mv_email") || "—";
+                setDot("dot-backend", "ok", "Backend OK · " + email);
+            } else if (r.status === 401 || r.status === 403) {
+                setDot("dot-backend", "warn", "Sessão expirou — reconecte");
+            } else {
+                setDot("dot-backend", "warn", "Backend HTTP " + r.status);
+            }
+        } catch (e) {
+            setDot("dot-backend", "err", "Backend inacessível: " + (e.message || e));
+        }
     }
 
     function checkLicense() {
@@ -60,30 +96,30 @@ window.StatusBar = (function () {
         }
     }
 
-    var _cdnLast = 0;
-    async function checkCDN(force) {
-        // Cooldown 60s pra não martelar o CDN
-        if (!force && Date.now() - _cdnLast < 60 * 1000) return;
-        _cdnLast = Date.now();
+    var _networkLast = 0;
+    async function checkNetwork(force) {
+        // Cooldown 30s pra alinhar com polling geral
+        if (!force && Date.now() - _networkLast < 30 * 1000) return;
+        _networkLast = Date.now();
         try {
             var ctrl = new AbortController();
             var to = setTimeout(function () { ctrl.abort(); }, 4000);
             var r = await fetch(CDN_HEALTH, { method: "GET", signal: ctrl.signal, mode: "cors", cache: "no-store" });
             clearTimeout(to);
-            setDot("dot-cdn",
+            setDot("dot-network",
                 r.ok ? "ok" : "warn",
-                r.ok ? "CDN R2 OK" : "CDN HTTP " + r.status);
+                r.ok ? "Network · CDN R2 OK" : "Network · CDN HTTP " + r.status);
         } catch (e) {
-            setDot("dot-cdn", "err", "CDN inacessível: " + (e.message || e));
+            setDot("dot-network", "err", "Network inacessível: " + (e.message || e));
         }
     }
 
     function updateAll(opts) {
         opts = opts || {};
-        checkPremiere();
-        checkAuth();
+        checkHost();
+        checkBackend(!!opts.force);
         checkLicense();
-        checkCDN(!!opts.force);
+        checkNetwork(!!opts.force);
     }
 
     // ── DIAGNÓSTICO TÉCNICO ───────────────────────────────────────────
@@ -171,16 +207,19 @@ window.StatusBar = (function () {
         if (btn) btn.onclick = runDiagnostic;
         // Atualiza dots em eventos relevantes
         document.addEventListener("license:updated", function () { updateAll(); });
-        document.addEventListener("auth:ready",      function () { updateAll(); });
+        document.addEventListener("auth:ready",      function () { updateAll({ force: true }); });
         window.addEventListener("online",  function () { updateAll({ force: true }); });
-        window.addEventListener("offline", function () { setDot("dot-cdn", "err", "Offline"); });
+        window.addEventListener("offline", function () {
+            setDot("dot-network", "err", "Offline");
+            setDot("dot-backend", "err", "Offline");
+        });
     }
 
     function init() {
         bind();
         updateAll({ force: true });
-        // Refresh leve a cada 60s
-        setInterval(function () { updateAll(); }, 60 * 1000);
+        // T5 (2026-05-22): polling 30s (era 60s)
+        setInterval(function () { updateAll(); }, 30 * 1000);
     }
 
     return {

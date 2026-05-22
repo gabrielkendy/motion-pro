@@ -576,7 +576,7 @@ function importMogrt(item) {
 }
 
 /* Pinga o host.jsx no boot pra confirmar que carregou. Mostra toast se falhar.
- * Chunk 7: também publica window._hostOk pro StatusBar.checkPremiere. */
+ * Chunk 7 + T5: publica window._hostOk pro StatusBar.checkHost(). */
 function hostPing() {
     cs.evalScript("(typeof $.global.MotionVault === 'object') ? MotionVault.ping() : 'undefined'", function (res) {
         logLine("ping host: " + (res || "(vazio)"));
@@ -982,8 +982,8 @@ function startHeartbeat() {
         || (window.MV_CONFIG && window.MV_CONFIG.productId)
         || "titles";
     var tick = async function () {
-        // Chunk 6: paralelamente revalida a chave MTI-/MTS- (sistema novo).
-        // Se admin revogou no dashboard, o validate({silent:true}) atualiza o
+        // Chunk 6 + T3: paralelamente revalida a chave MTI-/MTS- (sistema novo).
+        // Se admin revogou no dashboard, validate({silent:true}) atualiza o
         // LicenseCache pra status revoked → updateTrialUI vai mostrar paywall.
         if (window.LicenseClient && window.LicenseCache) {
             var cached = window.LicenseCache.load && window.LicenseCache.load();
@@ -994,8 +994,18 @@ function startHeartbeat() {
             }
         }
         try {
-            // Backend β unified contract: product_id="titles" no heartbeat
-            var r = await gateApi("/v1/license/heartbeat", { fingerprint: fp, product_id: PRODUCT_ID });
+            // T3 (2026-05-22): payload unificado pro contrato do Backend β.
+            // - product_id  → compat com Legendas (5min flow) + handoff atual
+            // - plugin      → novo campo do spec γ Titles (idempotente no backend)
+            // - license_jwt → token legacy mv_license (se existir) pro audit log
+            var payload = {
+                fingerprint: fp,
+                product_id:  PRODUCT_ID,
+                plugin:      PRODUCT_ID
+            };
+            var legacyLic = localStorage.getItem("mv_license");
+            if (legacyLic) payload.license_jwt = legacyLic;
+            var r = await gateApi("/v1/license/heartbeat", payload);
             hideReauthBar();
             if (r.revoked || r.subscription_inactive) {
                 localStorage.setItem("mv_plan", r.plan || "free");
@@ -1024,7 +1034,11 @@ function startHeartbeat() {
         }
     };
     tick();
-    setInterval(tick, 5 * 60 * 1000);
+    // T3 (2026-05-22): interval 5min → 15min conforme spec γ atualizado.
+    // (Legendas usa 5min · ver auth.js linha 456 do plugin-legendas — diferença
+    // intencional pra reduzir tráfego no plugin de templates, que tem catálogo
+    // estático e não muda estado tanto quanto Legendas.)
+    setInterval(tick, 15 * 60 * 1000);
 }
 
 /* Banner não-destrutivo: aparece quando o JWT expirou e mostra botão "Reconectar".

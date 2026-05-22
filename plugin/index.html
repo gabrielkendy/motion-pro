@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src *; img-src * data: blob: file: filesystem:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; media-src * data: blob: file: filesystem:;">
-<title>Motion Titles</title>
+<title>Motion Titles — Premiere</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -15,10 +15,10 @@
 <div id="gate" class="gate hidden">
     <div class="gate__box">
         <div class="gate__brand">Motion <span>Titles</span></div>
-        <div class="gate__tagline">by PacotesFX</div>
+        <div class="gate__tagline">BY PACOTESFX</div>
         <div class="gate__tabs">
-            <button id="gt-login" class="gate__tab active">Entrar</button>
-            <button id="gt-signup" class="gate__tab">Criar conta</button>
+            <button id="gt-login" class="gate__tab active" type="button">Entrar</button>
+            <button id="gt-signup" class="gate__tab" type="button">Criar conta</button>
         </div>
         <div class="field signup-only" id="f-name" hidden>
             <label for="g-name">Nome</label>
@@ -40,7 +40,7 @@
             <input id="g-optin" type="checkbox" checked style="margin-top:2px;accent-color:var(--acc)">
             Quero receber novidades e ofertas no e-mail
         </label>
-        <button id="g-submit" class="btn btn--primary btn--full">Entrar</button>
+        <button id="g-submit" class="btn btn--primary btn--full" type="button">Entrar</button>
         <div id="g-msg" class="gate__msg"></div>
 
         <div class="gate__sep"><span>ou</span></div>
@@ -60,11 +60,11 @@
         </div>
 
         <!-- Modal "Tenho código" (oculto por default) -->
-        <div id="g-code-box" class="field" style="display:none;margin-top:14px;padding:14px;background:#11141d;border-radius:10px;border:1px solid #232838">
+        <div id="g-code-box" class="field" style="display:none;margin-top:14px;padding:14px;background:var(--bg-2);border-radius:10px;border:1px solid var(--line)">
             <label style="font-size:12px;color:var(--mut);margin-bottom:6px;display:block">Cole o código gerado após login no navegador:</label>
-            <textarea id="g-code-input" rows="3" placeholder="ey…" style="width:100%;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;resize:vertical;background:var(--bg);color:var(--txt);border:1px solid #232838;border-radius:6px;padding:8px"></textarea>
+            <textarea id="g-code-input" rows="3" placeholder="ey…" style="width:100%;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;resize:vertical;background:var(--bg);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:8px"></textarea>
             <div style="display:flex;gap:8px;margin-top:8px">
-                <button id="g-code-submit" class="btn btn--primary" style="flex:1">Entrar com código</button>
+                <button id="g-code-submit" class="btn btn--primary" style="flex:1" type="button">Entrar com código</button>
                 <button id="g-code-cancel" class="btn btn--ghost" type="button">Cancelar</button>
             </div>
         </div>
@@ -166,10 +166,10 @@
 <!-- ============ STATUS BAR (Chunk 7: 4 dots + status + count + tier badge) ============ -->
 <footer class="statusbar">
     <div class="statusbar__dots" id="statusbar-dots">
-        <span class="dot off" id="dot-premiere" title="Premiere host.jsx"></span><span class="dot-label">Premiere</span>
-        <span class="dot off" id="dot-auth"     title="Sessão"></span><span class="dot-label">Auth</span>
-        <span class="dot off" id="dot-license"  title="Licença"></span><span class="dot-label">Licença</span>
-        <span class="dot off" id="dot-cdn"      title="CDN R2"></span><span class="dot-label">CDN</span>
+        <span class="dot off" id="dot-backend" title="Backend MotionPro (/v1/me)"></span><span class="dot-label">Backend</span>
+        <span class="dot off" id="dot-host"    title="Host ExtendScript (host.jsx)"></span><span class="dot-label">Host</span>
+        <span class="dot off" id="dot-network" title="Network · CDN R2"></span><span class="dot-label">Network</span>
+        <span class="dot off" id="dot-license" title="Licença"></span><span class="dot-label">License</span>
     </div>
     <span id="status">Carregando...</span>
     <span id="count" class="muted"></span>
@@ -244,7 +244,7 @@
         </div>
         <div id="lic-msg" class="gate__msg" style="text-align:left;min-height:18px"></div>
 
-        <hr style="border:0;border-top:1px solid #232838;margin:24px 0">
+        <hr style="border:0;border-top:1px solid var(--line);margin:24px 0">
 
         <div class="card__title" style="margin-bottom:8px">✨ Motion Suite</div>
         <div id="cfg-cross-sell" class="cross-sell">
@@ -261,7 +261,7 @@
             </div>
         </div>
 
-        <hr style="border:0;border-top:1px solid #232838;margin:24px 0">
+        <hr style="border:0;border-top:1px solid var(--line);margin:24px 0">
 
         <div class="card__title" style="margin-bottom:8px">👤 Conta</div>
         <div class="hint" style="margin-bottom:12px">
@@ -269,7 +269,7 @@
         </div>
         <button id="cfg-logout" class="btn btn--ghost">Sair desta conta</button>
 
-        <hr style="border:0;border-top:1px solid #232838;margin:24px 0">
+        <hr style="border:0;border-top:1px solid var(--line);margin:24px 0">
 
         <div class="card__title" style="margin-bottom:8px">🩺 Diagnóstico técnico</div>
         <div class="hint" style="margin-bottom:10px">
