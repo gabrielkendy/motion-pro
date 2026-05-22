@@ -13,13 +13,26 @@ const { resolveProduct, normalizeProductId } = require("../utils/product-aliases
 
 const stripe = Stripe(process.env.STRIPE_SECRET || "sk_test_xxx");
 
-// Fallback caso DB esteja indisponível — só pro Motion Titles.
-// Mantemos `motionpro` aqui porque é o id legacy de envs antigas e o
-// FALLBACK lookup é só pra prices, não pra issuance de chave.
+// Fallback caso DB product_prices esteja vazio/indisponível — usado quando
+// o webhook ou /checkout não consegue resolver via banco. Em v4 (2026-05-22):
+//   - Titles Solo  → STRIPE_PRICE_SOLO_TITLES   (R$59,90/mês)
+//   - Legendas Solo→ STRIPE_PRICE_SOLO_LEGENDAS (R$59,90/mês)
+//   - Duo Mensal   → STRIPE_PRICE_DUO_MONTHLY   (R$89,90/mês · titles+legendas)
+//   - Duo Anual    → STRIPE_PRICE_DUO_YEARLY    (R$838,80/ano)
+// Compat: variáveis antigas (STRIPE_PRICE_YEARLY, STRIPE_PRICE_LIFETIME,
+// STRIPE_PRICE_SOLO_MONTHLY) continuam sendo lidas como fallback secundário.
 const FALLBACK_PRICES = {
     titles: {
-        yearly:   process.env.STRIPE_PRICE_YEARLY,
-        lifetime: process.env.STRIPE_PRICE_LIFETIME
+        monthly:  process.env.STRIPE_PRICE_SOLO_TITLES || process.env.STRIPE_PRICE_SOLO_MONTHLY || null,
+        yearly:   process.env.STRIPE_PRICE_YEARLY    || null,
+        lifetime: process.env.STRIPE_PRICE_LIFETIME  || null
+    },
+    legendas: {
+        monthly:  process.env.STRIPE_PRICE_SOLO_LEGENDAS || process.env.STRIPE_PRICE_SOLO_MONTHLY || null
+    },
+    duo: {
+        monthly:  process.env.STRIPE_PRICE_DUO_MONTHLY || null,
+        yearly:   process.env.STRIPE_PRICE_DUO_YEARLY  || null
     }
 };
 
@@ -52,10 +65,13 @@ async function planAndProductFromPriceId(priceId) {
         );
         if (r.rowCount) return r.rows[0];
     } catch (_) {}
-    // M1: fallback default é 'titles' (canônico), não 'motionpro' (alias legacy)
-    for (const [plan, pid] of Object.entries(FALLBACK_PRICES.titles)) {
-        if (pid === priceId) return { product_id: "titles", plan };
+    // Fallback: varre TODAS as combinações (titles/legendas/duo) × planos
+    for (const [productId, plans] of Object.entries(FALLBACK_PRICES)) {
+        for (const [plan, pid] of Object.entries(plans)) {
+            if (pid && pid === priceId) return { product_id: productId, plan };
+        }
     }
+    // Default seguro
     return { product_id: "titles", plan: "yearly" };
 }
 
