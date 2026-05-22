@@ -575,7 +575,25 @@ function applySingle() {
     resolveMogrtPath(SELECTED).then(function (abs) { _applySingleWithPath(abs); })
         .catch(function (e) {
             log("✗ resolveMogrt: " + e.message, "err");
-            toast("Falha ao obter template: " + e.message, "err", 5000);
+            // Mensagens user-friendly mapeadas pra erros conhecidos do asset-loader.
+            var msg = e.message;
+            var friendly = {
+                "not_logged_in":            "Sessao expirada. Clique em Sair e faca login novamente.",
+                "auth_expired":             "Sessao expirada. Faca login novamente.",
+                "subscription_inactive":    "Plano expirou. Renove em Config > Licenca.",
+                "device_not_authorized":    "Dispositivo nao autorizado. Reative em Config > Licenca.",
+                "asset_not_found":          "Template removido do catalogo. Atualize o catalog.",
+                "no_cdn_key_and_no_local":  "Template sem arquivo local nem CDN. Reinstale o plugin.",
+                "sign_parse_failed":        "Backend respondeu invalido. Tente novamente em 1min."
+            };
+            var pretty = friendly[msg] || ("Falha ao obter template: " + msg);
+            toast(pretty, "err", 6000);
+            // Auto-acao: se sessao caiu, mostra banner reconectar
+            if (msg === "not_logged_in" || msg === "auth_expired") {
+                if (window.Auth && typeof window.Auth.showReconnectBanner === "function") {
+                    window.Auth.showReconnectBanner();
+                }
+            }
         });
 }
 function _applySingleWithPath(abs) {

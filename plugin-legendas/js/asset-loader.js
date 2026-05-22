@@ -104,20 +104,36 @@
 
     function authHeader() {
         // v2 SaaS: token unificado entre 3 plugins é "mv_session".
-        // Fallback pra "mpl_session_token" (legacy) e "mpl_session" (migração intermediária).
+        // Fallback p/ chaves legacy de migracoes anteriores.
         var ls = global.localStorage;
-        if (!ls) return null;
+        if (!ls) { console.error("[MPL/asset-loader] localStorage indisponivel"); return null; }
         var t = ls.getItem("mv_session") ||
                 ls.getItem("mpl_session_token") ||
-                ls.getItem("mpl_session");
+                ls.getItem("mpl_session") ||
+                ls.getItem("mtl_session");
+        if (!t) {
+            // Debug: lista chaves do localStorage pra diagnostico no console
+            var keys = [];
+            try { for (var i = 0; i < ls.length; i++) keys.push(ls.key(i)); } catch (_) {}
+            console.error("[MPL/asset-loader] sem token. Chaves em localStorage:", keys.join(", ") || "(vazio)");
+        }
         return t ? ("Bearer " + t) : null;
     }
     function fingerprint() {
+        // license-cache.js salva em mtl_device_fp; outras versoes usaram mv_/mpl_.
+        // Se nenhuma existir, gera + persiste pra estabilidade.
         var ls = global.localStorage;
         if (!ls) return "unknown";
-        return ls.getItem("mv_device_fingerprint") ||
-               ls.getItem("mpl_device_fingerprint") ||
-               "unknown";
+        var fp = ls.getItem("mtl_device_fp") ||
+                 ls.getItem("mv_device_fingerprint") ||
+                 ls.getItem("mpl_device_fingerprint");
+        if (!fp) {
+            // Gera fp estavel (fallback) e persiste
+            fp = "fp-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
+            try { ls.setItem("mtl_device_fp", fp); } catch (_) {}
+            console.warn("[MPL/asset-loader] fingerprint ausente · gerou novo:", fp);
+        }
+        return fp;
     }
     function apiBase() {
         return (global.MPL_CFG && global.MPL_CFG.apiBase) || "https://motionpro.vercel.app";

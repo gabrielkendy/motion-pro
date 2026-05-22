@@ -120,22 +120,31 @@
 
     // -------- Auth / config --------
     function authHeader() {
-        // Unified token (auth.js salva como mv_session); legacy keys ficam como fallback
-        // pra users com cache antigo que ainda nao reautenticaram apos o rename.
+        // Unified token (auth.js salva como mv_session); legacy keys ficam como fallback.
         var ls = global.localStorage;
-        if (!ls) return null;
+        if (!ls) { console.error("[Titles/asset-loader] localStorage indisponivel"); return null; }
         var t = ls.getItem("mv_session") ||
                 ls.getItem("mp_license_token") ||
                 ls.getItem("mpl_session_token");
+        if (!t) {
+            var keys = [];
+            try { for (var i = 0; i < ls.length; i++) keys.push(ls.key(i)); } catch (_) {}
+            console.error("[Titles/asset-loader] sem token. Chaves em localStorage:", keys.join(", ") || "(vazio)");
+        }
         return t ? ("Bearer " + t) : null;
     }
     function fingerprint() {
-        // auth.js salva como mvt_device_fp; legacy mp_device_fingerprint como fallback
+        // auth.js salva como mvt_device_fp; gera + persiste se ausente.
         var ls = global.localStorage;
         if (!ls) return "unknown";
-        return ls.getItem("mvt_device_fp") ||
-               ls.getItem("mp_device_fingerprint") ||
-               "unknown";
+        var fp = ls.getItem("mvt_device_fp") ||
+                 ls.getItem("mp_device_fingerprint");
+        if (!fp) {
+            fp = "fp-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
+            try { ls.setItem("mvt_device_fp", fp); } catch (_) {}
+            console.warn("[Titles/asset-loader] fingerprint ausente · gerou novo:", fp);
+        }
+        return fp;
     }
     function apiBase() {
         // CONFIG is exposed by config.js, e.g. window.MP_CONFIG.api

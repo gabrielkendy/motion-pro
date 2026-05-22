@@ -535,6 +535,8 @@ window.Auth = (function () {
         isLoggedIn:         isLoggedIn,
         updateTrialUI:      updateTrialUI,
         refreshUserMeta:    refreshUserMeta,
+        showReconnectBanner: showReconnectBanner,
+        hideReconnectBanner: hideReconnectBanner,
         getState:           function () {
             return {
                 sessionToken: localStorage.getItem("mv_session") || null,
