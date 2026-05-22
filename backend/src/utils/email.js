@@ -224,6 +224,84 @@ ${BRAND_FOOTER}
     });
 }
 
+/**
+ * Email enviado quando a license_key do user é AUTO-REVOGADA porque a
+ * subscription Stripe foi cancelada OU o dunning esgotou (3-4 retries).
+ * Diferente do paymentFailedEmail (que só alerta) — aqui o acesso JÁ caiu.
+ */
+function subscriptionSuspendedEmail({ email, productName, retryUrl }) {
+    const pName = productName || "Motion Suite";
+    const url = retryUrl || (PUBLIC_URL + "/account.html");
+    const html = `
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${pName}</title></head><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
+${BRAND_HEADER}
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#fff;max-width:560px;margin:0 auto">
+  <tr><td style="padding:48px 40px 32px">
+    <h1 style="font:800 24px Inter,Arial,sans-serif;color:#dc2626;margin:0 0 18px;letter-spacing:-.5px">
+      Sua licença ${pName} foi suspensa
+    </h1>
+    <p style="color:#444;font:400 15px/1.6 Inter,Arial,sans-serif;margin:0 0 18px">
+      Sua assinatura foi cancelada (ou o cartão falhou repetidas vezes) e suspendemos o acesso ao plugin. Não se preocupe: seu histórico e dados ficam preservados.
+    </p>
+    <p style="color:#444;font:400 15px/1.6 Inter,Arial,sans-serif;margin:0 0 24px">
+      Pra reativar agora mesmo, atualize seu método de pagamento ou contrate um novo plano:
+    </p>
+    <a href="${url}" style="display:inline-block;background:#2563EB;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font:600 14px Inter,Arial,sans-serif">
+      Reativar acesso →
+    </a>
+    <p style="color:#888;font:400 13px Inter,Arial,sans-serif;margin:24px 0 0">
+      Dúvidas? Responda este e-mail ou escreva pra <a href="mailto:suporte@pacotesfx.com" style="color:#2563EB">suporte@pacotesfx.com</a>.
+    </p>
+  </td></tr>
+</table>
+${BRAND_FOOTER}
+</body></html>`;
+    return sendEmail({
+        to: email,
+        subject: `🚫 Sua licença ${pName} foi suspensa`,
+        html,
+        text: `Sua licença ${pName} foi suspensa porque a assinatura foi cancelada ou o pagamento falhou. Reative em ${url}`
+    });
+}
+
+/**
+ * Email enviado pelo cron diário quando uma license_key expira por
+ * tempo (expires_at < now) — independente de Stripe webhook.
+ */
+function licenseExpiredEmail({ email, name, productName, pricingUrl }) {
+    const pName = productName || "Motion Suite";
+    const greet = name ? `Olá ${name},` : "Olá,";
+    const url = pricingUrl || (PUBLIC_URL + "/#pricing");
+    const html = `
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${pName}</title></head><body style="margin:0;padding:0;background:#f6f6f8;font-family:Inter,Arial,sans-serif">
+${BRAND_HEADER}
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#fff;max-width:560px;margin:0 auto">
+  <tr><td style="padding:48px 40px 32px">
+    <h1 style="font:800 24px Inter,Arial,sans-serif;color:#0a0a0a;margin:0 0 18px;letter-spacing:-.5px">
+      Sua licença ${pName} expirou
+    </h1>
+    <p style="color:#444;font:400 15px/1.6 Inter,Arial,sans-serif;margin:0 0 18px">${greet}</p>
+    <p style="color:#444;font:400 15px/1.6 Inter,Arial,sans-serif;margin:0 0 24px">
+      Sua licença atingiu a data de expiração e o acesso ao plugin foi pausado. Renove em segundos pra retomar de onde parou — seus dados e configurações ficam preservados.
+    </p>
+    <a href="${url}" style="display:inline-block;background:#2563EB;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font:600 14px Inter,Arial,sans-serif">
+      Renovar agora →
+    </a>
+    <p style="color:#888;font:400 13px Inter,Arial,sans-serif;margin:24px 0 0">
+      Dúvidas? Responda este e-mail ou escreva pra <a href="mailto:suporte@pacotesfx.com" style="color:#2563EB">suporte@pacotesfx.com</a>.
+    </p>
+  </td></tr>
+</table>
+${BRAND_FOOTER}
+</body></html>`;
+    return sendEmail({
+        to: email,
+        subject: `Sua licença ${pName} expirou — renove em 1 clique`,
+        html,
+        text: `Sua licença ${pName} expirou. Renove em ${url}`
+    });
+}
+
 function verifyEmailMessage({ email, name, verifyUrl }) {
     const greet = name ? `Olá, ${name}!` : "Olá!";
     const html = `
@@ -449,4 +527,5 @@ module.exports = {
     sendEmail, welcomeEmail, resetPasswordEmail, paymentFailedEmail,
     verifyEmailMessage, trialReminderEmail, trialExpiredEmail,
     newDeviceLoginEmail, paymentSuccessEmail, magicLinkEmail,
+    subscriptionSuspendedEmail, licenseExpiredEmail,
 };
