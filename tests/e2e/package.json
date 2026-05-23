@@ -1,0 +1,15 @@
+{
+  "name": "motion-pro-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "End-to-end Playwright test harness for Motion Pro suite (stub-ready today, cred-ready tomorrow)",
+  "scripts": {
+    "e2e": "playwright test",
+    "e2e:headed": "playwright test --headed",
+    "e2e:report": "playwright show-report",
+    "install:browsers": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0"
+  }
+}
