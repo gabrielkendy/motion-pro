@@ -1359,3 +1359,353 @@ $.global.MotionProIA = (function () {
         importFile: importFile
     };
 })();
+
+// ============================================================
+// eta · Onda 5 · MIA_* funcs for Agent timeline manipulation
+// ES3 strict — Premiere [14.0, 99.9]
+// Appended 2026-05-23 · preserves all lines above (incl. Onda 1
+// fixes: L565-567 regex, L639 quoted "in"/"out", L1055 for-in count).
+// ============================================================
+(function () {
+
+    var TICKS_PER_SECOND_MIA = 254016000000;
+
+    function _ok(o)  { return JSON.stringify(o == null ? { ok: true } : o); }
+    function _err(m) { return JSON.stringify({ ok: false, error: String(m) }); }
+    function _data(d) { return JSON.stringify({ ok: true, data: d }); }
+
+    function _getSeq() {
+        if (!app || !app.project) return null;
+        return app.project.activeSequence || null;
+    }
+
+    function _ctiSeconds(seq) {
+        try {
+            if ($.global.MotionProIAUtils && typeof $.global.MotionProIAUtils.getCti === "function") {
+                return $.global.MotionProIAUtils.getCti();
+            }
+            if (!seq) return 0;
+            var pos = seq.getPlayerPosition();
+            if (!pos) return 0;
+            if (typeof pos.seconds === "number" && isFinite(pos.seconds)) return pos.seconds;
+            if (typeof pos.ticks !== "undefined") {
+                var t = Number(pos.ticks);
+                if (isFinite(t)) return t / TICKS_PER_SECOND_MIA;
+            }
+            return 0;
+        } catch (e) { return 0; }
+    }
+
+    function _secondsToTicksStr(sec) {
+        return String(Math.round(Number(sec) * TICKS_PER_SECOND_MIA));
+    }
+
+    function _fpsOf(seq) {
+        try {
+            if (seq && seq.getSettings) {
+                var s = seq.getSettings();
+                if (s && s.videoFrameRate && s.videoFrameRate.ticks) {
+                    var t = Number(s.videoFrameRate.ticks);
+                    if (t > 0) return TICKS_PER_SECOND_MIA / t;
+                }
+            }
+        } catch (e) {}
+        return 30;
+    }
+
+    // -- MIA_getActiveSequence ------------------------------------------
+    function MIA_getActiveSequence() {
+        try {
+            var seq = _getSeq();
+            if (!seq) return _err("no_active_sequence");
+
+            var name = "";
+            try { name = String(seq.name || ""); } catch (eN) {}
+
+            var seqId = "";
+            try { seqId = String(seq.sequenceID || seq.id || ""); } catch (eI) {}
+
+            var fps = _fpsOf(seq);
+
+            var inP = null, outP = null;
+            try {
+                if (typeof seq.getInPointAsTime === "function") {
+                    var ip = seq.getInPointAsTime();
+                    if (ip && typeof ip.seconds === "number") inP = ip.seconds;
+                }
+            } catch (eIn) {}
+            try {
+                if (typeof seq.getOutPointAsTime === "function") {
+                    var op = seq.getOutPointAsTime();
+                    if (op && typeof op.seconds === "number") outP = op.seconds;
+                }
+            } catch (eOut) {}
+
+            var durationSec = 0;
+            var durationTC = "";
+            try {
+                if (seq.end) {
+                    var endTicks = Number(seq.end);
+                    if (isFinite(endTicks)) durationSec = endTicks / TICKS_PER_SECOND_MIA;
+                }
+                if (typeof seq.getOutPoint === "function") {
+                    var outv = seq.getOutPoint();
+                    if (outv && typeof outv === "string") durationTC = outv;
+                }
+            } catch (eD) {}
+
+            var vCount = 0, aCount = 0;
+            try { vCount = seq.videoTracks ? (seq.videoTracks.numTracks || seq.videoTracks.length || 0) : 0; } catch (eV) {}
+            try { aCount = seq.audioTracks ? (seq.audioTracks.numTracks || seq.audioTracks.length || 0) : 0; } catch (eA) {}
+
+            var cti = _ctiSeconds(seq);
+
+            // bracket notation pra "in"/"out" (reserved words em ES3)
+            var out_data = {
+                name:             name,
+                id:               seqId,
+                framerate:        fps,
+                videoTracks:      vCount,
+                audioTracks:      aCount,
+                ctiSeconds:       cti,
+                durationSeconds:  durationSec,
+                durationTimecode: durationTC
+            };
+            out_data["in"]  = inP;
+            out_data["out"] = outP;
+
+            return _data(out_data);
+        } catch (e) { return _err(e.message); }
+    }
+
+    // -- MIA_insertClipAtCti --------------------------------------------
+    function MIA_insertClipAtCti(filePath, trackIndex) {
+        try {
+            if (!filePath) return _err("filePath required");
+            var seq = _getSeq();
+            if (!seq) return _err("no_active_sequence");
+            var idx = (typeof trackIndex === "number" && trackIndex >= 0) ? trackIndex : 0;
+
+            var track = null;
+            try {
+                if ($.global.MotionProIAUtils && typeof $.global.MotionProIAUtils.findVideoTrack === "function") {
+                    track = $.global.MotionProIAUtils.findVideoTrack(seq, idx);
+                }
+                if (!track && seq.videoTracks && seq.videoTracks[idx]) track = seq.videoTracks[idx];
+            } catch (eT) {}
+            if (!track) return _err("track_not_found:idx=" + idx);
+
+            var rootBefore = app.project.rootItem;
+            var beforeCount = 0;
+            try { beforeCount = rootBefore.children ? rootBefore.children.numItems : 0; } catch (eB) {}
+
+            var importOk = false;
+            try {
+                importOk = app.project.importFiles([filePath], false, app.project.rootItem, false);
+            } catch (eI) { return _err("import_failed: " + eI.message); }
+
+            var newItem = null;
+            try {
+                var rootAfter = app.project.rootItem;
+                var nowCount = rootAfter.children ? rootAfter.children.numItems : 0;
+                if (nowCount > beforeCount) {
+                    newItem = rootAfter.children[nowCount - 1];
+                } else {
+                    var base = String(filePath).replace(/\\/g, "/");
+                    var slashAt = base.lastIndexOf("/");
+                    var bn = slashAt >= 0 ? base.substring(slashAt + 1) : base;
+                    for (var k = 0; k < nowCount; k++) {
+                        var it = rootAfter.children[k];
+                        if (it && it.name === bn) { newItem = it; break; }
+                    }
+                }
+            } catch (eF) {}
+
+            if (!newItem) return _err("imported_item_not_found");
+
+            var ctiSec = _ctiSeconds(seq);
+            var insertedName = "";
+            var startSec = ctiSec, endSec = ctiSec;
+            try {
+                track.insertClip(newItem, ctiSec);
+                try {
+                    var clipsCount = track.clips ? (track.clips.numItems || track.clips.length || 0) : 0;
+                    if (clipsCount > 0) {
+                        var lastClip = track.clips[clipsCount - 1];
+                        if (lastClip) {
+                            try { insertedName = String(lastClip.name || ""); } catch (eN2) {}
+                            try {
+                                if (lastClip.start && typeof lastClip.start.seconds === "number") startSec = lastClip.start.seconds;
+                                if (lastClip.end && typeof lastClip.end.seconds === "number") endSec = lastClip.end.seconds;
+                            } catch (eSE) {}
+                        }
+                    }
+                } catch (eC) {}
+            } catch (eIns) { return _err("insertClip_failed: " + eIns.message); }
+
+            return _data({
+                clipName:     insertedName || String(newItem.name || ""),
+                trackIndex:   idx,
+                startSeconds: startSec,
+                endSeconds:   endSec,
+                importedOk:   !!importOk
+            });
+        } catch (e) { return _err(e.message); }
+    }
+
+    // -- MIA_cutAtCti ---------------------------------------------------
+    function MIA_cutAtCti() {
+        try {
+            var seq = _getSeq();
+            if (!seq) return _err("no_active_sequence");
+            var ctiSec = _ctiSeconds(seq);
+            if (!isFinite(ctiSec) || ctiSec < 0) return _err("invalid_cti");
+
+            var splitCount = 0;
+            var ctiTicks = _secondsToTicksStr(ctiSec);
+
+            var vCount = 0;
+            try { vCount = seq.videoTracks ? (seq.videoTracks.numTracks || seq.videoTracks.length || 0) : 0; } catch (eVC) {}
+            for (var vi = 0; vi < vCount; vi++) {
+                try {
+                    var vt = seq.videoTracks[vi];
+                    if (!vt) continue;
+                    var did = false;
+                    try {
+                        if (typeof vt.razor === "function") { vt.razor(ctiTicks); did = true; }
+                    } catch (eR1) {}
+                    if (!did) {
+                        try {
+                            if (typeof vt.razorClipAtTime === "function") { vt.razorClipAtTime(ctiSec); did = true; }
+                        } catch (eR2) {}
+                    }
+                    if (did) splitCount++;
+                } catch (eVi) {}
+            }
+
+            var aCount = 0;
+            try { aCount = seq.audioTracks ? (seq.audioTracks.numTracks || seq.audioTracks.length || 0) : 0; } catch (eAC) {}
+            for (var ai = 0; ai < aCount; ai++) {
+                try {
+                    var at = seq.audioTracks[ai];
+                    if (!at) continue;
+                    var did2 = false;
+                    try {
+                        if (typeof at.razor === "function") { at.razor(ctiTicks); did2 = true; }
+                    } catch (eR3) {}
+                    if (!did2) {
+                        try {
+                            if (typeof at.razorClipAtTime === "function") { at.razorClipAtTime(ctiSec); did2 = true; }
+                        } catch (eR4) {}
+                    }
+                    if (did2) splitCount++;
+                } catch (eAi) {}
+            }
+
+            if (splitCount === 0) return _err("razor_unsupported_in_this_premiere_version");
+            return _data({ splitCount: splitCount, ctiSeconds: ctiSec });
+        } catch (e) { return _err(e.message); }
+    }
+
+    // -- MIA_addTextOverlay ---------------------------------------------
+    // Premiere ES API pra titles legados (newTitle) foi removida em PPro 2022+.
+    function MIA_addTextOverlay(text, durationSeconds, fontSizePx) {
+        try {
+            if (!text) return _err("text required");
+            var dur = (typeof durationSeconds === "number" && durationSeconds > 0) ? durationSeconds : 5;
+            var size = (typeof fontSizePx === "number" && fontSizePx > 0) ? fontSizePx : 72;
+            var seq = _getSeq();
+            if (!seq) return _err("no_active_sequence");
+
+            var title = null;
+            try {
+                if (typeof app.project.newTitle === "function") {
+                    title = app.project.newTitle(String(text).substring(0, 32));
+                }
+            } catch (eT1) {}
+
+            if (!title) {
+                return _err("legacy_titles_unavailable_use_mogrt_fallback (PPro 22+ removeu newTitle; use applyMogrtAtCti com template de texto)");
+            }
+
+            var ctiSec = _ctiSeconds(seq);
+            var vCount = 0;
+            try { vCount = seq.videoTracks ? (seq.videoTracks.numTracks || seq.videoTracks.length || 0) : 0; } catch (eVC2) {}
+            if (vCount === 0) return _err("no_video_tracks");
+
+            var inserted = false;
+            for (var vt2 = vCount - 1; vt2 >= 0 && !inserted; vt2--) {
+                try {
+                    var trk = seq.videoTracks[vt2];
+                    if (!trk) continue;
+                    trk.insertClip(title, ctiSec);
+                    inserted = true;
+                } catch (eIns2) {}
+            }
+            if (!inserted) return _err("title_insert_failed");
+
+            return _data({
+                text: String(text),
+                durationSeconds: dur,
+                fontSizePx: size,
+                ctiSeconds: ctiSec,
+                note: "title legacy criado; ajuste de fonte/duracao via UI ou MOGRT recomendado"
+            });
+        } catch (e) { return _err(e.message); }
+    }
+
+    // -- MIA_exportPreview ----------------------------------------------
+    function MIA_exportPreview(outPath) {
+        try {
+            if (!outPath) return _err("outPath required");
+            var seq = _getSeq();
+            if (!seq) return _err("no_active_sequence");
+
+            if (!app.encoder) return _err("media_encoder_unavailable (AME nao instalado ou nao disponivel via ExtendScript)");
+
+            var queued = null;
+            try {
+                if (typeof app.encoder.launchEncoder === "function") {
+                    try { app.encoder.launchEncoder(); } catch (eL) {}
+                }
+                if (typeof app.encoder.encodeSequence === "function") {
+                    queued = app.encoder.encodeSequence(
+                        seq,
+                        String(outPath),
+                        "",
+                        app.encoder.ENCODE_ENTIRE || 0,
+                        1
+                    );
+                }
+                if (typeof app.encoder.startBatch === "function") {
+                    try { app.encoder.startBatch(); } catch (eSB) {}
+                }
+            } catch (eEnc) { return _err("encodeSequence_failed: " + eEnc.message); }
+
+            return _data({
+                queued: !!queued,
+                outPath: String(outPath),
+                note: "AME recebeu o job; conclusao depende do encoder rodar a fila"
+            });
+        } catch (e) { return _err(e.message); }
+    }
+
+    // -- Registro no namespace existente --------------------------------
+    if ($.global.MotionProIA) {
+        $.global.MotionProIA.MIA_getActiveSequence = MIA_getActiveSequence;
+        $.global.MotionProIA.MIA_insertClipAtCti   = MIA_insertClipAtCti;
+        $.global.MotionProIA.MIA_cutAtCti          = MIA_cutAtCti;
+        $.global.MotionProIA.MIA_addTextOverlay    = MIA_addTextOverlay;
+        $.global.MotionProIA.MIA_exportPreview     = MIA_exportPreview;
+    } else {
+        $.global.MotionProIA = {
+            MIA_getActiveSequence: MIA_getActiveSequence,
+            MIA_insertClipAtCti:   MIA_insertClipAtCti,
+            MIA_cutAtCti:          MIA_cutAtCti,
+            MIA_addTextOverlay:    MIA_addTextOverlay,
+            MIA_exportPreview:     MIA_exportPreview
+        };
+    }
+
+    $.writeln("[MotionProIA] eta MIA_* functions registered");
+})();

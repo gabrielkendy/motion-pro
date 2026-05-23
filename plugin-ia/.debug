@@ -1,8 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+    .debug — Motion IA (Agente η · Onda 5)
+
+    Porta CEF remote debug. Mapa de portas observado nos siblings:
+      plugin/CSXS/.debug         · PPRO 8088 · AEFT 8089
+      plugin-legendas/CSXS/.debug· PPRO 8090 · AEFT 8091
+      plugin-ia/.debug (antigo)  · PPRO 8089 ← COLIDIA com AEFT do plugin/
+    Próxima porta livre: 8092.
+
+    Compatibilidade CEF 7-13 (Premiere 14.x → 26.x). Extension Id MUST match
+    com.motionpro.ia (preserva install state + license linking).
+-->
 <ExtensionList>
     <Extension Id="com.motionpro.ia">
         <HostList>
-            <Host Name="PPRO" Port="8089"/>
+            <Host Name="PPRO" Port="8092"/>
         </HostList>
     </Extension>
 </ExtensionList>
