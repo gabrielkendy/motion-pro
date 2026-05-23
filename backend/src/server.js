@@ -68,8 +68,16 @@ app.use(globalLimiter);
 app.use("/v1/auth/login",  authLimiter);
 app.use("/v1/auth/signup", authLimiter);
 app.use("/v1/auth/forgot-password", forgotLimiter);
+// Magic link: 5 tentativas / 15 min — anti-spam de email
+app.use("/v1/oauth/magic/start", forgotLimiter);
 
-app.get("/health", (_req, res) => res.json({ ok: true, ts: Date.now() }));
+// Health check — exposto em /health (legado) e /v1/health (que e o que o
+// plugin status bar consulta a cada 30s).
+function healthHandler(_req, res) {
+    res.json({ ok: true, ts: Date.now(), version: process.env.VERCEL_GIT_COMMIT_SHA || "dev" });
+}
+app.get("/health", healthHandler);
+app.get("/v1/health", healthHandler);
 
 app.use("/v1/auth", auth.router);
 app.use("/v1/license", license.router);

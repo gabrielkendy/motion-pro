@@ -158,7 +158,10 @@
    ✅ Legendas animadas no vídeo</code></pre>
 
 <!-- 4. ABAS -->
-<h2 id="abas"><span class="num">4</span>As 5 abas</h2>
+<h2 id="abas"><span class="num">4</span>As 6 abas (sidebar lateral)</h2>
+<p>A navegação principal fica na <strong>sidebar esquerda do painel</strong> (52px de largura, 40px em telas estreitas — só ícones).
+Cada ícone é uma aba clicável. A aba ativa é destacada com borda azul à esquerda.</p>
+<pre><code>📚 Templates  ✍️ Criar  📥 Importar  📝 Editar  🔊 SFX  ⚙️ Config</code></pre>
 
 <h3 id="templates">4.1 📚 Templates</h3>
 <p>Biblioteca com <strong>549 templates</strong> em 10 categorias:</p>
@@ -192,13 +195,10 @@
 </div>
 
 <h3 id="importar">4.3 📥 Importar</h3>
-<h4>Opção A — arquivo SRT externo</h4>
-<p><strong>📂 Carregar SRT</strong> → escolhe <code>.srt</code> → vai pra Editar.</p>
-<h4>Opção B — Captions do Premiere</h4>
-<p>Se você usou <strong>Texto → Criar legendas → Transcrever sequência</strong>, clica em <strong>🎬 Importar do Premiere</strong>.</p>
-<div class="doc-callout warn">
-  <strong>⚠️ Requisito</strong>
-  A sequência precisa estar ativa e ter captions geradas.
+<p><strong>🔄 Trocar arquivo SRT</strong> → escolhe <code>.srt</code> do disco → vai pra Editar.</p>
+<div class="doc-callout">
+  <strong>💡 Sem SRT?</strong>
+  Use a aba <strong>Criar</strong> (gera SRT a partir do roteiro colado) ou exporte SRT do próprio Premiere via <code>Texto → Legendas → Exportar legendas</code>.
 </div>
 
 <h3 id="editar">4.4 📝 Editar</h3>
@@ -234,8 +234,14 @@
 <p><strong>Aplicar:</strong></p>
 <ul>
   <li><strong>⚡ No CTI</strong>: 1 SFX no playhead</li>
-  <li><strong>🎬 Em todas legendas</strong>: 1 SFX no início de cada legenda</li>
+  <li><strong>🎬 Em todas legendas</strong>: 1 SFX no início de cada legenda <span class="dim">(ver warning abaixo)</span></li>
 </ul>
+<div class="doc-callout warn">
+  <strong>⚠️ "Em todas legendas" tem limite</strong>
+  Acima de <strong>80 clips</strong>, o plugin pede confirmação (Premiere pode travar com muito SFX simultâneo).
+  Acima de <strong>200 clips</strong>, recusa e sugere aplicar em trecho menor por vez.
+  <br><strong>Recomendação:</strong> em vídeos longos, faça em partes (Razor cut → seleção parcial).
+</div>
 
 <!-- 5. FLUXOS -->
 <h2 id="fluxos"><span class="num">5</span>Fluxos práticos</h2>
@@ -252,7 +258,8 @@
 <h3>Cenário 2 — só áudio/vídeo (zero roteiro)</h3>
 <ol>
   <li>No Premiere: <strong>Texto → Criar legendas → Transcrever sequência</strong></li>
-  <li>No plugin: aba Importar → 🎬 Importar do Premiere</li>
+  <li>No painel Premiere de Captions: <strong>Exportar → SRT</strong></li>
+  <li>No plugin: aba Importar → <strong>🔄 Trocar arquivo SRT</strong> → escolhe o SRT exportado</li>
   <li>Aba Editar → revisa transcrição</li>
   <li>⚡ APLICAR NA TIMELINE</li>
 </ol>

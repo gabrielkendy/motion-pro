@@ -259,6 +259,14 @@ router.get("/:provider/callback", async (req, res, next) => {
         const userRow = (await pool.query("SELECT id, email FROM users WHERE id=$1", [userId])).rows[0];
         const token = issueJwt(userRow);
 
+        // Audit OAuth login pra forensics + dashboard de atividade
+        try {
+            await pool.query(
+                "INSERT INTO license_audit(user_id, action, detail) VALUES($1, 'oauth_login', $2)",
+                [userId, { provider: req.params.provider, plugin: saved.plugin, ip: clientIp(req) }]
+            );
+        } catch (_) { /* nao bloqueia login se audit falhar */ }
+
         // Anexa plugin no fragment pra que a bridge mostre UI específica
         // (logo + texto + "voltar pro plugin X")
         const pluginFrag = saved.plugin ? `&plugin=${encodeURIComponent(saved.plugin)}` : "";
