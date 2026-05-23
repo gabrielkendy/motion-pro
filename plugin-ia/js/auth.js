@@ -399,6 +399,59 @@ window.Auth = (function () {
         return !!localStorage.getItem("mv_session");
     }
 
+    /* ═══ ε · EPSILON — Reconnect banner (sticky, NEVER logout automático) ═══ */
+    function showReconnectBanner() {
+        var bar = document.getElementById("reauth-bar");
+        if (!bar) {
+            bar = document.createElement("div");
+            bar.id = "reauth-bar";
+            bar.className = "reauthbar";
+            bar.innerHTML =
+                '<span class="reauthbar__info">🔒 Sessão expirou. Reconecte pra atualizar sua assinatura — cache local continua intacto.</span>' +
+                '<button id="btn-reauth-ia" class="reauthbar__cta">Reconectar</button>';
+            document.body.insertBefore(bar, document.body.firstChild);
+        }
+        bar.classList.remove("hidden");
+        var btn = document.getElementById("btn-reauth-ia");
+        if (btn) btn.onclick = function () {
+            bar.classList.add("hidden");
+            showGate("login");
+        };
+    }
+
+    function hideReconnectBanner() {
+        var bar = document.getElementById("reauth-bar");
+        if (bar) bar.classList.add("hidden");
+    }
+
+    /* ═══ ε · Persist session helper (Motion Titles parity shim) ═══ */
+    function persistSession(token) {
+        if (!token) return Promise.reject(new Error("missing_token"));
+        localStorage.setItem("mv_session", token);
+        return fetch(API_BASE + "/v1/me", {
+            headers: { "Authorization": "Bearer " + token }
+        }).then(function (r) {
+            if (!r.ok) throw new Error("invalid_token");
+            return r.json();
+        }).then(function (me) {
+            if (me && me.email) localStorage.setItem("mv_email", me.email);
+            if (me && me.name)  localStorage.setItem("mv_name",  me.name);
+            if (me && me.is_admin) {
+                localStorage.setItem("mia_user_meta", JSON.stringify({ is_admin_verified: true, email: me.email }));
+            }
+            hideReconnectBanner();
+            return me;
+        });
+    }
+
+    /* ═══ ε · Logout com confirmação (NUNCA silent) ═══ */
+    function logoutWithConfirm() {
+        if (typeof confirm === "function" && !confirm("Sair da conta? Suas configurações locais permanecem.")) return false;
+        logout();
+        showGate("login");
+        return true;
+    }
+
     return {
         init: init,
         api: api,
@@ -406,10 +459,29 @@ window.Auth = (function () {
         openInBrowser: openInBrowser,
         showGate: showGate,
         hideGate: hideGate,
+        showReconnectBanner: showReconnectBanner,
+        hideReconnectBanner: hideReconnectBanner,
+        persistSession: persistSession,
+        logoutWithConfirm: logoutWithConfirm,
         logout: logout,
         isLoggedIn: isLoggedIn,
         updateTrialUI: updateTrialUI,
-        updateStatusLogin: updateStatusLogin,
-        isLoggedIn: function () { return !!localStorage.getItem("mv_session"); }
+        updateStatusLogin: updateStatusLogin
     };
 })();
+
+/* ═══════════════════════════════════════════════════════════════
+   ε · window.MvAuth — API unificada (Motion Titles/Legendas parity)
+   Shim leve sobre window.Auth pra outros plugins consumirem com
+   mesmo contrato. NÃO substitui window.Auth (back-compat).
+   ═══════════════════════════════════════════════════════════════ */
+window.MvAuth = {
+    isLoggedIn: function () { return window.Auth && window.Auth.isLoggedIn(); },
+    showAuthScreen: function () { return window.Auth && window.Auth.showGate("login"); },
+    hideAuthScreen: function () { return window.Auth && window.Auth.hideGate(); },
+    persistSession: function (token) { return window.Auth && window.Auth.persistSession(token); },
+    showReconnectBanner: function () { return window.Auth && window.Auth.showReconnectBanner(); },
+    hideReconnectBanner: function () { return window.Auth && window.Auth.hideReconnectBanner(); },
+    logout: function () { return window.Auth && window.Auth.logoutWithConfirm(); }
+};
+
