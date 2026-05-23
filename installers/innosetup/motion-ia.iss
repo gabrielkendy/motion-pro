@@ -63,6 +63,22 @@ Name: "brazilian"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
 [Tasks]
 Name: "runPremiere"; Description: "Abrir o Adobe Premiere Pro apos a instalacao"; Flags: unchecked
 
+[InstallDelete]
+; Limpa instalacoes anteriores que possam ter arquivos lockados ou de dev mode.
+; PRESERVA models/ se existir (cache Whisper baixado em runtime — ~145MB).
+Type: filesandordirs; Name: "{app}\js"
+Type: filesandordirs; Name: "{app}\jsx"
+Type: filesandordirs; Name: "{app}\css"
+Type: filesandordirs; Name: "{app}\img"
+Type: filesandordirs; Name: "{app}\bin"
+Type: filesandordirs; Name: "{app}\CSXS"
+Type: files; Name: "{app}\*.html"
+Type: files; Name: "{app}\*.md"
+Type: files; Name: "{app}\*.sql"
+Type: files; Name: "{app}\*.bat"
+Type: files; Name: "{app}\.debug"
+Type: files; Name: "{app}\.gitignore"
+
 [Files]
 ; Plugin completo (staging protegido).
 ; Excludes: models/*.bin (Whisper baixa runtime ~145MB), caches, backups, scripts dev.
