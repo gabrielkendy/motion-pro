@@ -442,3 +442,116 @@ code { font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px; back
 .status-bar__group { display: inline-flex; align-items: center; gap: 4px; }
 .status-bar__sep { color: var(--line); margin: 0 6px; }
 
+/* ═════════════════════════════════════════════════════════
+   ε · Agente EPSILON — Brand purple + UI parity aliases
+   ═════════════════════════════════════════════════════════
+   Adiciona acento roxo Motion IA (sem trocar --acc legado pra
+   não quebrar componentes existentes). Novas classes funcionam
+   como aliases visuais pra Motion Titles parity.
+   ───────────────────────────────────────────────────────── */
+:root {
+    --mv-accent:    #8b5cf6;
+    --mv-accent-2:  #7c3aed;
+    --mv-accent-soft: rgba(139, 92, 246, 0.12);
+    --mv-accent-line: rgba(139, 92, 246, 0.35);
+}
+
+/* Reconnect banner sticky (NEVER logout automático) */
+.reauthbar {
+    position: fixed; top: 0; left: 0; right: 0;
+    background: linear-gradient(90deg, var(--mv-accent), var(--mv-accent-2));
+    color: #fff; padding: 8px 16px; font-size: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    z-index: 1500; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35);
+    animation: slideDown 0.25s ease;
+}
+.reauthbar.hidden { display: none !important; }
+.reauthbar__info { flex: 1; font-weight: 500; }
+.reauthbar__cta {
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.35);
+    color: #fff; padding: 5px 14px; border-radius: 6px;
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    transition: background 0.15s;
+}
+.reauthbar__cta:hover { background: rgba(255,255,255,0.3); }
+@keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+
+/* Alias: .auth-screen → reaproveita .gate (Motion Titles parity) */
+.auth-screen { /* mantém compat caso algum código procure essa classe */ }
+
+/* Pill button Config (top-right action) — Motion Titles parity */
+.btn-config-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    color: var(--txt-2);
+    padding: 6px 14px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.btn-config-pill:hover {
+    background: var(--mv-accent-soft);
+    border-color: var(--mv-accent-line);
+    color: var(--mv-accent);
+}
+
+/* Sidebar tab (52px slim variant — usado se sidebar reduzido) */
+.sidebar-tab {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    width: 52px; height: 52px;
+    background: transparent; border: 0;
+    color: var(--mut); font-size: 18px;
+    cursor: pointer; position: relative;
+    transition: color 0.15s, background 0.15s;
+}
+.sidebar-tab:hover { color: var(--txt); background: var(--bg-3); }
+.sidebar-tab.active { color: var(--mv-accent); background: var(--mv-accent-soft); }
+.sidebar-tab.active::before {
+    content: ""; position: absolute; left: 0; top: 8px; bottom: 8px;
+    width: 2px; background: var(--mv-accent); border-radius: 0 2px 2px 0;
+}
+.sidebar-tab .badge {
+    position: absolute; top: 6px; right: 6px;
+    background: var(--err); color: #fff;
+    font-size: 9px; font-weight: 700;
+    padding: 1px 5px; border-radius: 99px;
+    min-width: 14px; text-align: center;
+    line-height: 1.3;
+}
+
+/* Config drawer (slide-in panel) */
+.config-drawer {
+    position: fixed; top: 0; right: 0; bottom: 0;
+    width: 360px; background: var(--bg-2);
+    border-left: 1px solid var(--line);
+    box-shadow: -8px 0 24px rgba(0,0,0,0.4);
+    z-index: 1200;
+    transform: translateX(100%);
+    transition: transform 0.22s ease;
+    overflow-y: auto;
+}
+.config-drawer.open { transform: translateX(0); }
+.config-drawer__head {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--line);
+    display: flex; justify-content: space-between; align-items: center;
+}
+.config-drawer__title { font-weight: 700; font-size: 14px; }
+.config-drawer__close {
+    background: transparent; border: 0;
+    color: var(--mut); font-size: 20px; cursor: pointer;
+}
+.config-drawer__body { padding: 20px; }
+
+/* Custom scrollbar — Motion Titles parity (thinner, branded thumb) */
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; transition: background 0.15s; }
+.sidebar::-webkit-scrollbar-thumb,
+.main::-webkit-scrollbar-thumb { background: var(--mv-accent-line); }
+.sidebar::-webkit-scrollbar-thumb:hover,
+.main::-webkit-scrollbar-thumb:hover { background: var(--mv-accent); }
+
