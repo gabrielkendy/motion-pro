@@ -12,9 +12,16 @@
 
     var FEATURES = [
         {
+            id: "smart-clean", view: "feat-smart-clean",
+            icon: "✨", title: "Smart Clean",
+            sub: "1 clique: calibra áudio + corta pausas + tira muletas",
+            minTier: "basic", tech: "ffmpeg-local",
+            prompt: "Roda a skill smart-clean no clip selecionado — limpeza completa em 1 passada"
+        },
+        {
             id: "cortar-pausas", view: "feat-cortar-pausas",
             icon: "🎯", title: "Cortar Pausas",
-            sub: "Remove silêncios reais (dB) · 3 níveis de agressividade",
+            sub: "Remove silêncios reais (dB) · auto-calibrado · 3 níveis",
             minTier: "basic", tech: "ffmpeg-local",
             prompt: "Roda a skill cortar pausas no clip selecionado com nível normal"
         },
@@ -217,19 +224,35 @@
 
         // UI especial pra features com input customizado
         var customInput = "";
+        var levelSelect = function (id) {
+            return '<div class="field"><label>Agressividade</label><select id="' + id + '">'
+                +   '<option value="conservador">Conservador — só pausas longas</option>'
+                +   '<option value="normal" selected>Normal — equilíbrio (recomendado)</option>'
+                +   '<option value="agressivo">Agressivo — ritmo TikTok</option>'
+                + '</select></div>';
+        };
+        var previewToggle = function () {
+            return '<div class="field"><label><input type="checkbox" id="feat-preview-mode" checked> 👁 Pré-visualizar antes de aplicar (recomendado)</label></div>';
+        };
+        if (f.id === "smart-clean") {
+            customInput = ''
+                + levelSelect("feat-smart-level")
+                + '<div class="field"><label><input type="checkbox" id="feat-smart-fillers" checked> Também remover muletas de fala (é/ahn/um)</label></div>'
+                + '<div class="field"><label><input type="checkbox" id="feat-smart-fillers-aggr"> ↳ incluir muletas contextuais (tipo/então/aí)</label></div>'
+                + previewToggle()
+                + '<div class="hint">Limpeza completa: calibra o volume do teu áudio, corta os silêncios reais e tira as muletas — tudo numa passada só, sem desalinhar a timeline. Backup automático.</div>';
+        }
         if (f.id === "cortar-pausas") {
             customInput = ''
-                + '<div class="field"><label>Agressividade</label><select id="feat-pausas-level">'
-                +   '<option value="conservador">Conservador — só pausas longas (-38dB / 0.7s)</option>'
-                +   '<option value="normal" selected>Normal — equilíbrio (-32dB / 0.45s)</option>'
-                +   '<option value="agressivo">Agressivo — ritmo TikTok (-26dB / 0.28s)</option>'
-                + '</select></div>'
-                + '<div class="hint">Detecta silêncio por volume real (dB) do áudio. Deixa um respiro nas bordas pra não cortar abrupto. Cria backup da sequência antes.</div>';
+                + levelSelect("feat-pausas-level")
+                + previewToggle()
+                + '<div class="hint">Detecta silêncio pelo volume REAL (dB) do áudio e auto-calibra pelo teu microfone. Deixa um respiro nas bordas pra não cortar abrupto. Backup automático.</div>';
         }
         if (f.id === "remove-fillers") {
             customInput = ''
                 + '<div class="field"><label><input type="checkbox" id="feat-fillers-aggressive"> Modo agressivo (também tira tipo/então/aí/sabe)</label></div>'
-                + '<div class="hint">Modo seguro remove só hesitações inequívocas (é, éé, ahn, um, uh, hmm). O agressivo inclui muletas contextuais — revise depois. Cria backup antes.</div>';
+                + previewToggle()
+                + '<div class="hint">Modo seguro remove só hesitações inequívocas (é, éé, ahn, um, uh, hmm). O agressivo inclui muletas contextuais — revise depois. Backup automático.</div>';
         }
         if (f.id === "baixar") {
             customInput = ''
@@ -341,11 +364,19 @@
 
         runBtn.onclick = async function () {
             var opts = {};
+            if (f.id === "smart-clean") {
+                opts.aggressiveness = (document.getElementById("feat-smart-level") || {}).value || "normal";
+                opts.fillers = !!(document.getElementById("feat-smart-fillers") || {}).checked;
+                opts.aggressiveFillers = !!(document.getElementById("feat-smart-fillers-aggr") || {}).checked;
+                opts.preview = !!(document.getElementById("feat-preview-mode") || {}).checked;
+            }
             if (f.id === "cortar-pausas") {
                 opts.aggressiveness = (document.getElementById("feat-pausas-level") || {}).value || "normal";
+                opts.preview = !!(document.getElementById("feat-preview-mode") || {}).checked;
             }
             if (f.id === "remove-fillers") {
                 opts.aggressive = !!(document.getElementById("feat-fillers-aggressive") || {}).checked;
+                opts.preview = !!(document.getElementById("feat-preview-mode") || {}).checked;
             }
             if (f.id === "baixar") {
                 opts.url = (document.getElementById("feat-baixar-url") || {}).value;
@@ -401,10 +432,18 @@
                         prog.scrollTop = prog.scrollHeight;
                     }
                 });
-                body.innerHTML = ''
-                    + '<div style="color:var(--ok);margin-bottom:10px;font-weight:600">✓ ' + (result.summary || "Concluído") + '</div>'
-                    + '<pre style="background:var(--bg-2);padding:10px;border-radius:6px;font-size:11px;overflow:auto;max-height:300px">' + esc(JSON.stringify(result, null, 2)) + '</pre>';
-                global.MIA && global.MIA.toast && global.MIA.toast("✓ " + (result.summary || f.title), "ok");
+                // PREVIEW MODE: mostra os cortes + botão Aplicar (não mexeu na timeline ainda)
+                if (result && result.preview && Array.isArray(result.ranges)) {
+                    renderPreview(result, body);
+                    global.MIA && global.MIA.toast && global.MIA.toast("👁 " + (result.summary || "Prévia pronta"), "info", 4000);
+                } else {
+                    body.innerHTML = ''
+                        + '<div style="color:var(--ok);margin-bottom:10px;font-weight:600">✓ ' + esc(result.summary || "Concluído") + '</div>'
+                        + (result.stats ? renderStats(result.stats) : '')
+                        + '<details style="margin-top:8px"><summary style="cursor:pointer;color:var(--mut);font-size:11px">ver detalhes técnicos</summary>'
+                        + '<pre style="background:var(--bg-2);padding:10px;border-radius:6px;font-size:11px;overflow:auto;max-height:240px">' + esc(JSON.stringify(result, null, 2)) + '</pre></details>';
+                    global.MIA && global.MIA.toast && global.MIA.toast("✓ " + (result.summary || f.title), "ok");
+                }
             } catch (e) {
                 body.innerHTML = '<div style="color:var(--err);font-weight:600">❌ ' + esc(e.message) + '</div>';
                 global.MIA && global.MIA.toast && global.MIA.toast("❌ " + e.message, "err", 5000);
@@ -418,6 +457,76 @@
         return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
             return { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c];
         });
+    }
+
+    function fmtT(sec) {
+        sec = Math.max(0, sec || 0);
+        var m = Math.floor(sec / 60), s = Math.floor(sec % 60), ms = Math.round((sec - Math.floor(sec)) * 10);
+        return m + ":" + (s < 10 ? "0" : "") + s + "." + ms;
+    }
+
+    // Painel de estatísticas (antes/depois, % comprimido, muletas)
+    function renderStats(st) {
+        if (!st) return '';
+        var rows = [];
+        if (st.clip_duration != null && st.new_duration != null) {
+            rows.push(['Duração', fmtT(st.clip_duration) + ' → ' + fmtT(st.new_duration) + 's']);
+        }
+        if (st.compression_pct != null) rows.push(['Comprimido', '-' + st.compression_pct + '%']);
+        if (st.total_cuts != null) rows.push(['Cortes totais', String(st.total_cuts)]);
+        else if (st.cuts != null) rows.push(['Cortes', String(st.cuts)]);
+        if (st.pauses != null) rows.push(['Pausas', String(st.pauses)]);
+        if (st.fillers != null) rows.push(['Muletas', String(st.fillers)]);
+        if (st.seconds_saved != null) rows.push(['Tempo economizado', st.seconds_saved + 's']);
+        if (st.threshold_db != null) rows.push(['Threshold', st.threshold_db + 'dB' + (st.calibrated ? ' (auto-calibrado)' : '')]);
+        if (st.audio_mean_db != null) rows.push(['Volume médio', st.audio_mean_db + 'dB']);
+        var ex = st.filler_examples || st.examples;
+        if (ex && ex.length) rows.push(['Ex. muletas', ex.slice(0, 8).join(', ')]);
+        if (!rows.length) return '';
+        return '<div style="display:grid;grid-template-columns:auto 1fr;gap:4px 14px;background:var(--bg-2);padding:10px 12px;border-radius:8px;font-size:12px;margin-bottom:8px">'
+            + rows.map(function (r) {
+                return '<div style="color:var(--mut)">' + esc(r[0]) + '</div><div style="font-weight:600;text-align:right">' + esc(r[1]) + '</div>';
+            }).join('') + '</div>';
+    }
+
+    // Renderiza a prévia dos cortes + botão "Aplicar" (timeline ainda intacta)
+    function renderPreview(result, body) {
+        var ranges = result.ranges || [];
+        var list = ranges.slice(0, 60).map(function (r, i) {
+            var dur = (r[1] - r[0]).toFixed(2);
+            return '<div style="display:flex;justify-content:space-between;padding:3px 8px;border-bottom:1px solid var(--line);font-size:11px;font-family:monospace">'
+                + '<span style="color:var(--mut)">#' + (i + 1) + '</span>'
+                + '<span>' + fmtT(r[0]) + ' → ' + fmtT(r[1]) + '</span>'
+                + '<span style="color:var(--accent)">-' + dur + 's</span></div>';
+        }).join('');
+        var more = ranges.length > 60 ? '<div style="text-align:center;color:var(--mut);font-size:11px;padding:6px">+ ' + (ranges.length - 60) + ' cortes…</div>' : '';
+
+        body.innerHTML = ''
+            + '<div style="color:var(--accent);margin-bottom:8px;font-weight:700;font-size:14px">👁 ' + esc(result.summary || 'Prévia') + '</div>'
+            + (result.stats ? renderStats(result.stats) : '')
+            + '<div style="max-height:240px;overflow:auto;border:1px solid var(--line);border-radius:8px;margin-bottom:12px">' + list + more + '</div>'
+            + '<div style="display:flex;gap:8px">'
+            +   '<button id="feat-apply-preview" class="btn btn--primary" style="flex:1">✓ Aplicar os ' + ranges.length + ' cortes</button>'
+            +   '<button id="feat-cancel-preview" class="btn btn--ghost">Cancelar</button>'
+            + '</div>'
+            + '<div class="hint" style="margin-top:6px">A timeline ainda está intacta. Revise acima e clique Aplicar. Um backup da sequência é criado antes.</div>';
+
+        var applyBtn = document.getElementById("feat-apply-preview");
+        var cancelBtn = document.getElementById("feat-cancel-preview");
+        if (cancelBtn) cancelBtn.onclick = function () {
+            body.innerHTML = '<div style="color:var(--mut)">Prévia descartada. Timeline intacta.</div>';
+        };
+        if (applyBtn) applyBtn.onclick = async function () {
+            applyBtn.disabled = true; applyBtn.textContent = "Aplicando…";
+            try {
+                var r = await global.Skills.run("apply-cuts", { ranges: ranges, backupName: "antes_cortes" }, {});
+                body.innerHTML = '<div style="color:var(--ok);font-weight:600">✓ ' + esc(r.summary || "Cortes aplicados") + '</div>';
+                global.MIA && global.MIA.toast && global.MIA.toast("✓ " + (r.summary || "Aplicado"), "ok");
+            } catch (e) {
+                body.innerHTML = '<div style="color:var(--err);font-weight:600">❌ ' + esc(e.message) + '</div>';
+                global.MIA && global.MIA.toast && global.MIA.toast("❌ " + e.message, "err", 5000);
+            }
+        };
     }
 
     // ── PICKER de Transições ──────────────────────────────────────

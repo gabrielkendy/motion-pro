@@ -224,6 +224,48 @@ $.global.MotionProIA = (function () {
         } catch (e) { return err(e.message); }
     }
 
+    // Retorna o timing do clip selecionado pra mapear tempo-do-arquivo → tempo-da-timeline.
+    // Sem isso, cortes calculados sobre o arquivo (ffmpeg/whisper) erram a posição quando
+    // o clip não começa em 00:00 da timeline ou tem in-point (trecho aparado).
+    //   timelineStart = onde o clip começa na sequência (s)
+    //   inPoint       = quanto do início do arquivo foi aparado (s)
+    //   outPoint      = fim do trecho usado, no arquivo (s)
+    // Mapeamento: timelineTime = timelineStart + (fileTime - inPoint)
+    function getSelectedClipTiming() {
+        try {
+            var seq = getSeq();
+            if (!seq) return err("Sem sequência");
+            var found = null;
+            // procura clip selecionado em video tracks; fallback pro primeiro clip
+            for (var t = 0; t < seq.videoTracks.numTracks && !found; t++) {
+                var clips = seq.videoTracks[t].clips;
+                for (var c = 0; c < clips.numItems; c++) {
+                    var cl = clips[c];
+                    if (cl && cl.isSelected && cl.isSelected()) { found = cl; break; }
+                }
+            }
+            if (!found && seq.videoTracks.numTracks > 0 && seq.videoTracks[0].clips.numItems > 0) {
+                found = seq.videoTracks[0].clips[0];
+            }
+            if (!found) return err("Nenhum clip na timeline");
+
+            var timelineStart = ticksToSeconds(found.start.ticks);
+            var timelineEnd   = ticksToSeconds(found.end.ticks);
+            var inPoint = 0, outPoint = timelineEnd - timelineStart;
+            try { if (found.inPoint  && found.inPoint.ticks  != null) inPoint  = ticksToSeconds(found.inPoint.ticks); } catch (eIn) {}
+            try { if (found.outPoint && found.outPoint.ticks != null) outPoint = ticksToSeconds(found.outPoint.ticks); } catch (eOut) {}
+
+            return ok({
+                timelineStart: timelineStart,
+                timelineEnd:   timelineEnd,
+                inPoint:       inPoint,
+                outPoint:      outPoint,
+                clipDuration:  timelineEnd - timelineStart,
+                name:          found.name || null
+            });
+        } catch (e) { return err(e.message); }
+    }
+
     // ────────────────────────────────────────────────────────────────────────
     function importAndInsert(filePath, opts) {
         try {
@@ -1322,6 +1364,7 @@ $.global.MotionProIA = (function () {
         getActiveSequenceInfo: getActiveSequenceInfo,
         listTimelineClips: listTimelineClips,
         getSelectedMediaPath: getSelectedMediaPath,
+        getSelectedClipTiming: getSelectedClipTiming,
         importAndInsert: importAndInsert,
         addCutsAtSeconds: addCutsAtSeconds,
         deleteRanges: deleteRanges,

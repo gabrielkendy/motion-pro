@@ -509,6 +509,28 @@
                 if (!global.Skills) throw new Error("skills_runtime_missing");
                 return await global.Skills.run("remove-fillers", { aggressive: !!args.aggressive });
             }
+        },
+        {
+            definition: {
+                name: "skill_smart_clean",
+                description: "SKILL COMBO (a melhor pra limpar talking-head): em 1 passada calibra o volume do áudio, detecta silêncios por dB real E muletas de fala (Whisper), funde tudo e aplica de uma vez sem desalinhar a timeline. Backup automático. Retorna stats ricos (antes/depois, % comprimido). Prefira esta pra pedidos genéricos de 'limpar/cortar gordura do vídeo'.",
+                input_schema: {
+                    type: "object",
+                    properties: {
+                        aggressiveness: { type: "string", description: "conservador|normal|agressivo. Default normal.", "enum": ["conservador", "normal", "agressivo"] },
+                        fillers: { type: "boolean", description: "Remover muletas também. Default true." },
+                        aggressiveFillers: { type: "boolean", description: "Incluir muletas contextuais (tipo/então/aí). Default false." }
+                    }
+                }
+            },
+            handler: async function (args) {
+                if (!global.Skills) throw new Error("skills_runtime_missing");
+                return await global.Skills.run("smart-clean", {
+                    aggressiveness: args.aggressiveness || "normal",
+                    fillers: args.fillers !== false,
+                    aggressiveFillers: !!args.aggressiveFillers
+                });
+            }
         }
     ];
 

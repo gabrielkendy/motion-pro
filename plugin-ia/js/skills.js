@@ -45,6 +45,82 @@
         if (cb && cb[ev]) cb[ev](data);
     }
 
+    // ── AUTO-CALIBRAÇÃO ──────────────────────────────────────────────
+    // Mede o volume real do áudio (ffmpeg volumedetect) pra ajustar o
+    // threshold de silêncio RELATIVO ao áudio, não um dB fixo. Resolve
+    // "cada microfone/gravação tem um piso de ruído diferente".
+    // Retorna { mean, max } em dB, ou null se falhar.
+    async function measureAudioLevel(videoPath) {
+        try {
+            var res = await global.BinRunner.run("ffmpeg", [
+                "-hide_banner", "-i", videoPath,
+                "-af", "volumedetect", "-f", "null", "-"
+            ], { allowNonZero: true, timeoutMs: 3 * 60 * 1000 });
+            var text = (res.stderr || "") + (res.stdout || "");
+            var mean = text.match(/mean_volume:\s*(-?[\d.]+)\s*dB/);
+            var max  = text.match(/max_volume:\s*(-?[\d.]+)\s*dB/);
+            if (!mean) return null;
+            return {
+                mean: parseFloat(mean[1]),
+                max:  max ? parseFloat(max[1]) : 0
+            };
+        } catch (e) {
+            console.warn("[skills] volumedetect falhou:", e.message);
+            return null;
+        }
+    }
+
+    // Calcula o threshold de silêncio (dB) calibrado pro áudio.
+    // gap = quão abaixo da média conta como silêncio (maior gap = mais agressivo).
+    function calibratedThreshold(level, gapByLevel) {
+        var gap = gapByLevel[level] != null ? gapByLevel[level] : gapByLevel.normal;
+        if (!level || !level.mean && level.mean !== 0) return null;
+        var thr = level.mean - gap;
+        // Clamp: nunca corta acima de -18dB (comeria fala) nem exige < -50 (não cortaria nada)
+        if (thr > -18) thr = -18;
+        if (thr < -50) thr = -50;
+        return Math.round(thr * 10) / 10;
+    }
+
+    // ── MAPEAMENTO TIMELINE ──────────────────────────────────────────
+    // Pega o offset do clip selecionado pra converter tempo-do-arquivo
+    // (ffmpeg/whisper) em tempo-da-timeline (deleteRanges). Fallback seguro
+    // pra {timelineStart:0, inPoint:0} = comportamento antigo.
+    async function getClipOffset() {
+        try {
+            var t = await hostCall("getSelectedClipTiming");
+            if (t && typeof t.timelineStart === "number") {
+                return {
+                    timelineStart: t.timelineStart || 0,
+                    inPoint:       t.inPoint || 0,
+                    outPoint:      t.outPoint,
+                    clipDuration:  t.clipDuration
+                };
+            }
+        } catch (e) { /* fallback abaixo */ }
+        return { timelineStart: 0, inPoint: 0, outPoint: null, clipDuration: null };
+    }
+
+    // Converte um range [fileStart, fileEnd] (tempo do arquivo) pra timeline.
+    // Descarta ranges fora do trecho usado do clip (in/out point).
+    function mapRangeToTimeline(fileStart, fileEnd, offset) {
+        var inP  = offset.inPoint || 0;
+        var outP = (offset.outPoint != null) ? offset.outPoint : Infinity;
+        // clampa ao trecho aproveitado do arquivo
+        var s = Math.max(fileStart, inP);
+        var e = Math.min(fileEnd, outP);
+        if (e <= s) return null;
+        var tlS = offset.timelineStart + (s - inP);
+        var tlE = offset.timelineStart + (e - inP);
+        return [tlS, tlE];
+    }
+
+    function fmtDur(sec) {
+        sec = Math.max(0, Math.round(sec));
+        var m = Math.floor(sec / 60), s = sec % 60;
+        return m + ":" + (s < 10 ? "0" : "") + s;
+    }
+
     // ═══════════════════════════════════════════════════════════════
     // SKILL 1 — CORTAR PAUSAS (Whisper local)
     // ═══════════════════════════════════════════════════════════════
@@ -57,6 +133,9 @@
         agressivo:   { noise: -26, dur: 0.28 }   // corta tudo, ritmo TikTok
     };
 
+    // Gap (dB abaixo da média) por nível, pra auto-calibração.
+    var SILENCE_GAP = { conservador: 16, normal: 12, agressivo: 8 };
+
     async function cortarPausas(opts, cb) {
         emit(cb, "onProgress", { step: "validate", msg: "Validando pré-requisitos…" });
         if (!global.BinRunner) throw new Error("bin_runner_missing");
@@ -65,65 +144,258 @@
         emit(cb, "onProgress", { step: "get_clip", msg: "Pegando clip selecionado…" });
         var videoPath = await getSelectedClipPath();
 
-        // Resolve nivel de agressividade (ou valores custom)
-        var lvl     = SILENCE_LEVELS[opts.aggressiveness] || SILENCE_LEVELS.normal;
-        var noiseDb = (opts.noiseDb != null) ? opts.noiseDb : lvl.noise;
-        var minSil  = (opts.minSilenceSec != null) ? opts.minSilenceSec : lvl.dur;
-        // Margin assimétrico (técnica do auto-editor): deixa um respiro de silêncio
-        // nas bordas pra não cortar abrupto. marginPost (antes da próxima fala) é
-        // maior porque cortar o ATAQUE de consoante soa pior que cortar respiração.
+        var levelName = opts.aggressiveness || "normal";
+        var lvl       = SILENCE_LEVELS[levelName] || SILENCE_LEVELS.normal;
+        var minSil    = (opts.minSilenceSec != null) ? opts.minSilenceSec : lvl.dur;
         var marginPre  = (opts.marginPreMs  != null ? opts.marginPreMs  : 60)  / 1000;
         var marginPost = (opts.marginPostMs != null ? opts.marginPostMs : 120) / 1000;
-        // Min do range final a deletar — evita microcortes que estragam o ritmo.
         var minDelete  = (opts.minDeleteSec != null ? opts.minDeleteSec : 0.15);
 
-        // 1. ffmpeg silencedetect — mede dB REAL do audio (muito mais preciso que
-        //    gaps de transcrição, que o Whisper "estica" cobrindo as pausas).
-        emit(cb, "onProgress", { step: "detect", msg: "Analisando áudio (silencedetect " + noiseDb + "dB / " + minSil + "s)…" });
+        // 1. AUTO-CALIBRAÇÃO: mede o volume real do áudio e define o threshold
+        //    relativo. Cai pro dB fixo do nível se volumedetect falhar ou se o
+        //    user passou noiseDb explícito.
+        var noiseDb, calibrated = false, audioLevel = null;
+        if (opts.noiseDb != null) {
+            noiseDb = opts.noiseDb;
+        } else {
+            emit(cb, "onProgress", { step: "calibrate", msg: "Calibrando pelo volume real do áudio…" });
+            audioLevel = await measureAudioLevel(videoPath);
+            if (audioLevel) {
+                var thr = audioLevel.mean - (SILENCE_GAP[levelName] || 12);
+                if (thr > -18) thr = -18;   // nunca corta acima disso (comeria fala)
+                if (thr < -50) thr = -50;   // nem exige silêncio impossível
+                noiseDb = Math.round(thr * 10) / 10;
+                calibrated = true;
+                emit(cb, "onProgress", { step: "calibrate", msg: "Áudio: média " + audioLevel.mean + "dB · threshold calibrado " + noiseDb + "dB" });
+            } else {
+                noiseDb = lvl.noise;  // fallback pro dB fixo do nível
+            }
+        }
+
+        // 2. silencedetect — mede dB REAL do áudio.
+        emit(cb, "onProgress", { step: "detect", msg: "Detectando pausas (" + noiseDb + "dB / " + minSil + "s)…" });
         var res = await global.BinRunner.run("ffmpeg", [
             "-hide_banner", "-i", videoPath,
             "-af", "silencedetect=noise=" + noiseDb + "dB:d=" + minSil,
             "-f", "null", "-"
         ], { allowNonZero: true, timeoutMs: 5 * 60 * 1000 });
+        var rawSilences = parseSilenceDetect((res.stderr || "") + (res.stdout || ""));
 
-        // 2. Parse stderr: pares silence_start / silence_end
-        var text = (res.stderr || "") + (res.stdout || "");
-        var rawSilences = parseSilenceDetect(text);
-
-        // 3. Aplica margin assimétrico (encolhe range). Descarta microcortes.
-        var silences = [];
+        // 3. Margin assimétrico + descarta microcortes (tempo do ARQUIVO ainda).
+        var fileRanges = [];
         rawSilences.forEach(function (r) {
             var s = r[0] + marginPre;
             var e = r[1] - marginPost;
-            if (e - s >= minDelete) silences.push([s, e]);
+            if (e - s >= minDelete) fileRanges.push([s, e]);
         });
 
-        emit(cb, "onProgress", { step: "found", msg: silences.length + " silêncios detectados (de " + rawSilences.length + " brutos)" });
+        // 4. MAPEAMENTO timeline: converte tempo-do-arquivo → tempo-da-timeline
+        //    respeitando in/out point e posição do clip na sequência.
+        var offset = await getClipOffset();
+        var silences = [];
+        fileRanges.forEach(function (r) {
+            var mapped = mapRangeToTimeline(r[0], r[1], offset);
+            if (mapped) silences.push(mapped);
+        });
+
+        emit(cb, "onProgress", { step: "found", msg: silences.length + " pausas detectadas" });
+
+        // Stats
+        var totalSaved = silences.reduce(function (s, r) { return s + (r[1] - r[0]); }, 0);
+        var clipDur = offset.clipDuration || null;
+        var stats = {
+            cuts: silences.length,
+            seconds_saved: Math.round(totalSaved * 10) / 10,
+            level: levelName,
+            threshold_db: noiseDb,
+            calibrated: calibrated,
+            audio_mean_db: audioLevel ? audioLevel.mean : null,
+            clip_duration: clipDur,
+            new_duration: clipDur != null ? Math.max(0, clipDur - totalSaved) : null,
+            compression_pct: clipDur ? Math.round((totalSaved / clipDur) * 100) : null
+        };
 
         if (silences.length === 0) {
             var hint = rawSilences.length > 0
-                ? "Achei " + rawSilences.length + " pausas mas todas curtas demais pós-margin. Tente nível 'agressivo'."
-                : "Nenhuma pausa detectada (nível " + (opts.aggressiveness || "normal") + " · " + noiseDb + "dB). Áudio pode ter ruído de fundo alto — tente 'agressivo' ou ajuste o dB.";
-            return { ok: true, summary: hint, silences: 0 };
+                ? "Achei " + rawSilences.length + " pausas mas curtas demais pós-margin. Tente nível 'agressivo'."
+                : "Nenhuma pausa detectada. Áudio pode ter ruído alto — tente 'agressivo'.";
+            return { ok: true, summary: hint, silences: 0, stats: stats };
         }
 
-        // 4. Backup
+        // 5. PREVIEW MODE: retorna os ranges sem aplicar (UI mostra + botão Aplicar).
+        if (opts.preview) {
+            return {
+                ok: true, preview: true,
+                summary: "Prévia: " + silences.length + " pausas · " + totalSaved.toFixed(1) + "s"
+                    + (clipDur ? " · " + fmtDur(clipDur) + " → " + fmtDur(stats.new_duration) + " (-" + stats.compression_pct + "%)" : ""),
+                ranges: silences,
+                apply_skill: "apply-cuts",
+                stats: stats
+            };
+        }
+
+        // 6. Backup + ripple delete (do fim pro começo)
         emit(cb, "onProgress", { step: "backup", msg: "Duplicando sequência (backup)…" });
         try { await hostCall("duplicateActiveSequence", ["antes_cortar_pausas"]); } catch (_) {}
-
-        // 5. Ripple delete (do fim pro começo pra não desalinhar offsets)
-        emit(cb, "onProgress", { step: "execute", msg: "Removendo " + silences.length + " silêncios…" });
+        emit(cb, "onProgress", { step: "execute", msg: "Removendo " + silences.length + " pausas…" });
         var ordered = silences.slice().sort(function (a, b) { return b[0] - a[0]; });
         await hostCall("deleteRanges", [ordered]);
 
-        var totalSaved = silences.reduce(function (s, r) { return s + (r[1] - r[0]); }, 0);
+        return {
+            ok: true,
+            summary: silences.length + " pausas removidas · " + totalSaved.toFixed(1) + "s"
+                + (clipDur ? " · " + fmtDur(clipDur) + " → " + fmtDur(stats.new_duration) + " (-" + stats.compression_pct + "%)" : "")
+                + (calibrated ? " · auto-calibrado " + noiseDb + "dB" : ""),
+            silences_removed: silences.length,
+            total_seconds_saved: totalSaved,
+            stats: stats
+        };
+    }
+
+    // Aplica ranges já calculados (vindo de um preview) sem reprocessar áudio.
+    async function applyCuts(opts, cb) {
+        var ranges = opts.ranges || [];
+        if (!ranges.length) return { ok: true, summary: "Nada pra aplicar", applied: 0 };
+        emit(cb, "onProgress", { step: "backup", msg: "Duplicando sequência (backup)…" });
+        try { await hostCall("duplicateActiveSequence", [opts.backupName || "antes_cortes"]); } catch (_) {}
+        emit(cb, "onProgress", { step: "execute", msg: "Aplicando " + ranges.length + " cortes…" });
+        var ordered = ranges.slice().sort(function (a, b) { return b[0] - a[0]; });
+        await hostCall("deleteRanges", [ordered]);
+        var saved = ranges.reduce(function (s, r) { return s + (r[1] - r[0]); }, 0);
+        return { ok: true, summary: ranges.length + " cortes aplicados · " + saved.toFixed(1) + "s", applied: ranges.length, total_seconds_saved: saved };
+    }
+
+    // Funde ranges [start,end] que se sobrepõem ou estão a <gap segundos.
+    function mergeRanges(ranges, gap) {
+        if (!ranges.length) return [];
+        var sorted = ranges.slice().sort(function (a, b) { return a[0] - b[0]; });
+        var out = [sorted[0].slice()];
+        for (var i = 1; i < sorted.length; i++) {
+            var last = out[out.length - 1];
+            if (sorted[i][0] <= last[1] + (gap || 0)) {
+                if (sorted[i][1] > last[1]) last[1] = sorted[i][1];
+            } else {
+                out.push(sorted[i].slice());
+            }
+        }
+        return out;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // SKILL — SMART CLEAN (combo 1-click: calibra + pausas + muletas)
+    // Coleta TODOS os cortes ANTES de aplicar (senão o 1º corte desloca a
+    // timeline e invalida os offsets do 2º). Funde tudo e aplica de uma vez.
+    // ═══════════════════════════════════════════════════════════════
+    async function smartClean(opts, cb) {
+        if (!global.BinRunner) throw new Error("bin_runner_missing");
+        if (!global.BinRunner.exists("ffmpeg")) throw new Error("ffmpeg.exe não instalado");
+        if (!global.BinRunner.exists("whisper-cli")) throw new Error("whisper-cli.exe não instalado");
+
+        var levelName = opts.aggressiveness || "normal";
+        var lvl       = SILENCE_LEVELS[levelName] || SILENCE_LEVELS.normal;
+        var doFillers = opts.fillers !== false;        // default true
+        var aggressiveFillers = opts.aggressiveFillers === true;
+        var marginPre  = 60 / 1000, marginPost = 120 / 1000, minDelete = 0.15;
+
+        emit(cb, "onProgress", { step: "get_clip", msg: "Pegando clip…" });
+        var videoPath = await getSelectedClipPath();
+        var model = opts.model || "ggml-base.bin";
+
+        // 1. Calibração
+        emit(cb, "onProgress", { step: "calibrate", msg: "Calibrando volume do áudio…" });
+        var audioLevel = await measureAudioLevel(videoPath);
+        var noiseDb = lvl.noise;
+        if (audioLevel) {
+            var thr = audioLevel.mean - (SILENCE_GAP[levelName] || 12);
+            if (thr > -18) thr = -18; if (thr < -50) thr = -50;
+            noiseDb = Math.round(thr * 10) / 10;
+        }
+
+        // 2. Pausas (silencedetect)
+        emit(cb, "onProgress", { step: "silences", msg: "Detectando pausas (" + noiseDb + "dB)…" });
+        var sres = await global.BinRunner.run("ffmpeg", [
+            "-hide_banner", "-i", videoPath,
+            "-af", "silencedetect=noise=" + noiseDb + "dB:d=" + lvl.dur, "-f", "null", "-"
+        ], { allowNonZero: true, timeoutMs: 5 * 60 * 1000 });
+        var pauseRanges = [];
+        parseSilenceDetect((sres.stderr || "") + (sres.stdout || "")).forEach(function (r) {
+            var s = r[0] + marginPre, e = r[1] - marginPost;
+            if (e - s >= minDelete) pauseRanges.push([s, e]);
+        });
+
+        // 3. Muletas (whisper word-level)
+        var fillerRanges = [], fillerWords = [];
+        if (doFillers) {
+            if (!global.BinRunner.models.exists(model)) {
+                emit(cb, "onProgress", { step: "download_model", msg: "Baixando modelo…" });
+                await global.BinRunner.models.download(model, function (pct) { emit(cb, "onProgress", { step: "download_model", percent: pct }); });
+            }
+            emit(cb, "onProgress", { step: "transcribe", msg: "Transcrevendo p/ achar muletas…" });
+            var wav = tmp("smartclean.wav");
+            await global.BinRunner.run("ffmpeg", ["-y", "-i", videoPath, "-vn", "-ac", "1", "-ar", "16000", "-c:a", "pcm_s16le", wav]);
+            var ob = wav.replace(/\.wav$/, "");
+            await global.BinRunner.run("whisper-cli", ["-m", global.BinRunner.models.path(model), "-f", wav, "-of", ob, "--output-json", "--max-len", "1", "-l", opts.lang || "auto", "--no-prints"], { timeoutMs: 10 * 60 * 1000 });
+            if (fs.existsSync(ob + ".json")) {
+                var tr = JSON.parse(fs.readFileSync(ob + ".json", "utf8"));
+                (tr.transcription || tr.segments || []).forEach(function (seg) {
+                    var w = normalizeWord(seg.text || "");
+                    if (!w) return;
+                    if (FILLERS_STRONG.test(w) || (aggressiveFillers && FILLERS_SOFT.test(w))) {
+                        var s = parseTimestamp(seg.timestamps && seg.timestamps.from || seg.start) || 0;
+                        var e = parseTimestamp(seg.timestamps && seg.timestamps.to || seg.end) || 0;
+                        if (e > s) { fillerRanges.push([s - 0.03, e + 0.03]); fillerWords.push(w); }
+                    }
+                });
+            }
+            cleanup([wav, ob + ".json"]);
+        }
+
+        // 4. Mapeia AMBOS pra timeline + funde
+        var offset = await getClipOffset();
+        var allFile = pauseRanges.concat(fillerRanges);
+        var mappedTl = [];
+        allFile.forEach(function (r) {
+            var m = mapRangeToTimeline(r[0], r[1], offset);
+            if (m) mappedTl.push(m);
+        });
+        var merged = mergeRanges(mappedTl, 0.05);
+
+        var totalSaved = merged.reduce(function (s, r) { return s + (r[1] - r[0]); }, 0);
+        var clipDur = offset.clipDuration || null;
+        var stats = {
+            total_cuts: merged.length,
+            pauses: pauseRanges.length,
+            fillers: fillerRanges.length,
+            filler_examples: fillerWords.slice(0, 8),
+            seconds_saved: Math.round(totalSaved * 10) / 10,
+            threshold_db: noiseDb,
+            clip_duration: clipDur,
+            new_duration: clipDur != null ? Math.max(0, clipDur - totalSaved) : null,
+            compression_pct: clipDur ? Math.round((totalSaved / clipDur) * 100) : null
+        };
+
+        emit(cb, "onProgress", { step: "found", msg: merged.length + " cortes (" + pauseRanges.length + " pausas + " + fillerRanges.length + " muletas)" });
+
+        if (!merged.length) return { ok: true, summary: "Nada pra cortar — áudio já está limpo!", stats: stats };
+
+        var durStr = clipDur ? " · " + fmtDur(clipDur) + " → " + fmtDur(stats.new_duration) + " (-" + stats.compression_pct + "%)" : "";
+
+        if (opts.preview) {
+            return { ok: true, preview: true,
+                summary: "Prévia Smart Clean: " + merged.length + " cortes · " + totalSaved.toFixed(1) + "s" + durStr,
+                ranges: merged, apply_skill: "apply-cuts", stats: stats };
+        }
+
+        emit(cb, "onProgress", { step: "backup", msg: "Backup da sequência…" });
+        try { await hostCall("duplicateActiveSequence", ["antes_smart_clean"]); } catch (_) {}
+        emit(cb, "onProgress", { step: "execute", msg: "Aplicando " + merged.length + " cortes…" });
+        var ordered = merged.slice().sort(function (a, b) { return b[0] - a[0]; });
+        await hostCall("deleteRanges", [ordered]);
 
         return {
             ok: true,
-            summary: silences.length + " pausas removidas · " + totalSaved.toFixed(1) + "s economizados (nível " + (opts.aggressiveness || "normal") + ")",
-            silences_removed: silences.length,
-            total_seconds_saved: totalSaved,
-            level: opts.aggressiveness || "normal"
+            summary: "✨ Smart Clean: " + merged.length + " cortes (" + pauseRanges.length + " pausas + " + fillerRanges.length + " muletas) · " + totalSaved.toFixed(1) + "s" + durStr,
+            stats: stats
         };
     }
 
@@ -240,22 +512,48 @@
         });
         if (cur) ranges.push(cur);
 
-        var deleteRanges = ranges.map(function (r) {
+        var fileRanges = ranges.map(function (r) {
             return [Math.max(0, r.start - marginMs), r.end + marginMs];
         });
+        var wordList = ranges.map(function (r) { return r.words.join(" "); }).slice(0, 12);
+        cleanup([wavPath, jsonPath]);
 
-        // 5. Backup
+        // 5. Mapeia tempo-do-arquivo → tempo-da-timeline (respeita in/out point)
+        var offset = await getClipOffset();
+        var deleteRanges = [];
+        fileRanges.forEach(function (r) {
+            var m = mapRangeToTimeline(r[0], r[1], offset);
+            if (m) deleteRanges.push(m);
+        });
+
+        var totalSaved = deleteRanges.reduce(function (s, r) { return s + (r[1] - r[0]); }, 0);
+        var clipDur = offset.clipDuration || null;
+        var stats = {
+            fillers_removed: deleteRanges.length,
+            seconds_saved: Math.round(totalSaved * 10) / 10,
+            examples: wordList,
+            aggressive: aggressive,
+            clip_duration: clipDur,
+            new_duration: clipDur != null ? Math.max(0, clipDur - totalSaved) : null
+        };
+
+        if (!deleteRanges.length) {
+            return { ok: true, summary: "Muletas detectadas mas fora do trecho usado do clip.", fillers: 0, stats: stats };
+        }
+
+        // 6. PREVIEW MODE
+        if (opts.preview) {
+            return { ok: true, preview: true,
+                summary: "Prévia: " + deleteRanges.length + " muletas · " + totalSaved.toFixed(1) + "s · ex: " + wordList.slice(0, 6).join(", "),
+                ranges: deleteRanges, apply_skill: "apply-cuts", stats: stats };
+        }
+
+        // 7. Backup + ripple delete (do fim pro começo)
         emit(cb, "onProgress", { step: "backup", msg: "Duplicando sequência (backup)…" });
         try { await hostCall("duplicateActiveSequence", ["antes_remove_fillers"]); } catch (_) {}
-
-        // 6. Ripple delete (do fim pro começo)
         emit(cb, "onProgress", { step: "execute", msg: "Removendo " + deleteRanges.length + " muletas…" });
         var ordered = deleteRanges.slice().sort(function (a, b) { return b[0] - a[0]; });
         await hostCall("deleteRanges", [ordered]);
-
-        var totalSaved = deleteRanges.reduce(function (s, r) { return s + (r[1] - r[0]); }, 0);
-        var wordList = ranges.map(function (r) { return r.words.join(" "); }).slice(0, 12);
-        cleanup([wavPath, jsonPath]);
 
         return {
             ok: true,
@@ -263,7 +561,8 @@
             fillers_removed: deleteRanges.length,
             total_seconds_saved: totalSaved,
             examples: wordList,
-            aggressive: aggressive
+            aggressive: aggressive,
+            stats: stats
         };
     }
 
@@ -1364,6 +1663,8 @@
     var SKILLS = {
         "cortar-pausas":  cortarPausas,
         "remove-fillers": removeFillers,
+        "smart-clean":    smartClean,
+        "apply-cuts":     applyCuts,
         "cortar-erros":   cortarErros,
         "caca-trechos":   cacaTrechos,
         "capitulos":      capitulosIA,
