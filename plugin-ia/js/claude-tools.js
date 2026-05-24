@@ -531,6 +531,32 @@
                     aggressiveFillers: !!args.aggressiveFillers
                 });
             }
+        },
+        {
+            definition: {
+                name: "skill_viral_clips",
+                description: "SKILL KILLER (estilo OpusClip): pega o vídeo selecionado, usa Gemini pra achar os N melhores momentos virais (com viral_score), e pra cada um gera um SHORT VERTICAL 9:16 completo — corte + reframe no rosto + legenda animada queimada — importado no Premiere. Use quando o user pedir 'clipes/cortes virais', 'shorts automáticos', 'fazer reels desse vídeo', 'igual opus clip'.",
+                input_schema: {
+                    type: "object",
+                    properties: {
+                        count: { type: "integer", description: "Quantos shorts gerar (2-5). Default 3." },
+                        aspect: { type: "string", description: "9:16 | 1:1 | 4:5. Default 9:16.", "enum": ["9:16", "1:1", "4:5"] },
+                        style: { type: "string", description: "Estilo da legenda: viral|tiktok|reels|classic. Default viral.", "enum": ["viral", "tiktok", "reels", "classic"] },
+                        subtitles: { type: "boolean", description: "Queimar legenda animada. Default true." },
+                        faceTracking: { type: "boolean", description: "Reframe seguindo o rosto. Default true." }
+                    }
+                }
+            },
+            handler: async function (args) {
+                if (!global.Skills) throw new Error("skills_runtime_missing");
+                return await global.Skills.run("viral-clips", {
+                    count: args.count || 3,
+                    aspect: args.aspect || "9:16",
+                    style: args.style || "viral",
+                    subtitles: args.subtitles !== false,
+                    faceTracking: args.faceTracking !== false
+                });
+            }
         }
     ];
 

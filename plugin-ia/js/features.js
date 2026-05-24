@@ -12,6 +12,13 @@
 
     var FEATURES = [
         {
+            id: "viral-clips", view: "feat-viral-clips",
+            icon: "🚀", title: "Clipes Virais",
+            sub: "Igual OpusClip: acha os melhores momentos → vertical 9:16 + legenda animada",
+            minTier: "pro", tech: "gemini + ffmpeg + whisper",
+            prompt: "Analisa o vídeo, acha os melhores trechos virais e gera cada um como short vertical 9:16 com legenda animada queimada, importando no Premiere"
+        },
+        {
             id: "smart-clean", view: "feat-smart-clean",
             icon: "✨", title: "Smart Clean",
             sub: "1 clique: calibra áudio + corta pausas + tira muletas",
@@ -238,6 +245,28 @@
         var previewToggle = function () {
             return '<div class="field"><label><input type="checkbox" id="feat-preview-mode" checked> 👁 Pré-visualizar antes de aplicar (recomendado)</label></div>';
         };
+        if (f.id === "viral-clips") {
+            customInput = ''
+                + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+                +   '<div class="field"><label>Quantos shorts</label><select id="feat-vc-count">'
+                +     '<option value="2">2 clipes</option><option value="3" selected>3 clipes</option>'
+                +     '<option value="4">4 clipes</option><option value="5">5 clipes</option>'
+                +   '</select></div>'
+                +   '<div class="field"><label>Formato</label><select id="feat-vc-aspect">'
+                +     '<option value="9:16" selected>9:16 (Reels/Shorts/TikTok)</option>'
+                +     '<option value="1:1">1:1 (Feed)</option><option value="4:5">4:5 (Feed alto)</option>'
+                +   '</select></div>'
+                + '</div>'
+                + '<div class="field"><label>Estilo da legenda</label><select id="feat-vc-style">'
+                +   '<option value="viral" selected>Viral — branco gigante + highlight amarelo (Submagic)</option>'
+                +   '<option value="tiktok">TikTok — Arial Black verde</option>'
+                +   '<option value="reels">Reels — Montserrat magenta</option>'
+                +   '<option value="classic">Clássico — branco/laranja</option>'
+                + '</select></div>'
+                + '<div class="field"><label><input type="checkbox" id="feat-vc-subs" checked> Legenda animada queimada</label></div>'
+                + '<div class="field"><label><input type="checkbox" id="feat-vc-face" checked> Reframe inteligente (segue o rosto)</label></div>'
+                + '<div class="hint">Pipeline estilo OpusClip: o Gemini acha os trechos com mais potencial viral (com score), corta cada um em vertical, reframe no rosto e queima a legenda animada. Shorts prontos salvos em Documentos/MotionIA-Shorts + importados no Premiere. Pode demorar alguns min por clipe.</div>';
+        }
         if (f.id === "smart-clean") {
             customInput = ''
                 + levelSelect("feat-smart-level")
@@ -368,6 +397,13 @@
 
         runBtn.onclick = async function () {
             var opts = {};
+            if (f.id === "viral-clips") {
+                opts.count = parseInt((document.getElementById("feat-vc-count") || {}).value || 3, 10);
+                opts.aspect = (document.getElementById("feat-vc-aspect") || {}).value || "9:16";
+                opts.style = (document.getElementById("feat-vc-style") || {}).value || "viral";
+                opts.subtitles = !!(document.getElementById("feat-vc-subs") || {}).checked;
+                opts.faceTracking = !!(document.getElementById("feat-vc-face") || {}).checked;
+            }
             if (f.id === "smart-clean") {
                 opts.aggressiveness = (document.getElementById("feat-smart-level") || {}).value || "normal";
                 opts.fillers = !!(document.getElementById("feat-smart-fillers") || {}).checked;
@@ -805,6 +841,7 @@
             "ffmpeg": "ffmpeg local faz crop com tracking de rosto → reframe → reimporta no Premiere.",
             "api": "Busca em APIs externas (Pexels, Pixabay) → baixa via aria2c → importa.",
             "fal.ai · Seedance": "Sua foto + prompt → fal.ai roda Seedance/Kling → MP4 gerado por IA (~30-90s) → importa no Premiere automaticamente.",
+            "gemini + ffmpeg + whisper": "Pipeline completo estilo OpusClip: Gemini vê o vídeo e escolhe os melhores trechos (com viral score) → ffmpeg corta cada um em vertical 9:16 com reframe no rosto → Whisper transcreve → legenda animada queimada → shorts prontos importados no Premiere.",
             "whisper-local + motion-legendas": "Whisper transcreve word-level → envia pro plugin Motion Legendas que renderiza MOGRT animado.",
             "whisper-local + ffmpeg": "Whisper.cpp transcreve word-level (local) → gera arquivo ASS animado (palavra destacada conforme falada) → ffmpeg queima no vídeo → reimporta no Premiere. Também salva .srt na inbox compartilhada."
         };

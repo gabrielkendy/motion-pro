@@ -1660,11 +1660,140 @@
         };
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // SKILL — CLIPES VIRAIS (pipeline OpusClip local · 1 clique)
+    // Gemini acha os melhores momentos → pra cada um: corta vertical 9:16
+    // (face tracking opcional) + legenda animada queimada (estilo Submagic)
+    // → short pronto importado no Premiere. Tudo local + Gemini só pra achar.
+    // ═══════════════════════════════════════════════════════════════
+    async function clipesVirais(opts, cb) {
+        if (!global.BinRunner || !global.BinRunner.exists("ffmpeg")) throw new Error("ffmpeg.exe não instalado");
+        if (!global.BinRunner.exists("whisper-cli")) throw new Error("whisper-cli.exe não instalado");
+        if (!global.GeminiClient || !global.GeminiClient.hasKey()) {
+            throw new Error("Configure sua Google Gemini API key em ⚙ Config (gratuita) — preciso dela pra achar os melhores momentos");
+        }
+
+        var videoPath = await getSelectedClipPath();
+        var n = opts.count || 3;
+        var style = opts.style || "viral";
+        var aspect = opts.aspect || "9:16";
+        var doSubs = opts.subtitles !== false;       // default true
+        var doFace = opts.faceTracking !== false;    // default true
+        var model = opts.model || "ggml-base.bin";
+
+        // 1. GEMINI acha os melhores trechos (mesmo prompt PRO do Caça-Trechos)
+        emit(cb, "onProgress", { step: "gemini", msg: "Gemini caçando os " + n + " melhores momentos…" });
+        var prompt = [
+            "Você é um clipador viral de elite. Assista o vídeo e extraia os " + n + " MELHORES clipes pra viralizar como Reel/Short.",
+            "Cada clipe: começa num HOOK forte (3s), entrega um PAYOFF, é autocontido, 15-50s.",
+            "Timestamps em SEGUNDOS decimais. Título que para o scroll. viral_score 0-100 honesto.",
+            "Ranqueie do mais viral pro menos."
+        ].join("\n");
+        var schema = {
+            type: "object",
+            properties: { highlights: { type: "array", items: { type: "object", properties: {
+                start: { type: "number" }, end: { type: "number" }, title: { type: "string" },
+                viral_score: { type: "number" }, reason: { type: "string" }
+            }, required: ["start", "end", "title"] } } }, required: ["highlights"]
+        };
+        var resp = await global.GeminiClient.analyzeVideo({ videoPath: videoPath, prompt: prompt, responseSchema: schema, model: opts.geminiModel || "gemini-2.5-flash", temperature: 0.5 });
+        var highlights = (resp.json && resp.json.highlights) || [];
+        highlights.sort(function (a, b) { return (b.viral_score || 0) - (a.viral_score || 0); });
+        highlights = highlights.slice(0, n);
+        if (!highlights.length) return { ok: true, summary: "Gemini não achou trechos virais nesse vídeo", clips: [] };
+
+        emit(cb, "onProgress", { step: "found", msg: highlights.length + " trechos · gerando shorts…" });
+
+        // dims do vídeo (1x) + crop 9:16 central
+        var probe = await global.BinRunner.run("ffprobe", ["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "json", videoPath], { timeoutMs: 30000 });
+        var meta = {}; try { meta = (JSON.parse(probe.stdout || "{}").streams || [])[0] || {}; } catch (_) {}
+        var srcW = parseInt(meta.width, 10) || 1920, srcH = parseInt(meta.height, 10) || 1080;
+        var aspMap = { "9:16": [9, 16], "1:1": [1, 1], "4:5": [4, 5] };
+        var tgt = aspMap[aspect] || aspMap["9:16"];
+        var dstRatio = tgt[0] / tgt[1], srcRatio = srcW / srcH;
+        var outW, outH;
+        if (srcRatio > dstRatio) { outH = srcH; outW = Math.floor(srcH * dstRatio); }
+        else { outW = srcW; outH = Math.floor(srcW / dstRatio); }
+        outW -= outW % 2; outH -= outH % 2;
+
+        // face tracking (1x sobre o vídeo todo, pra velocidade)
+        var cropCX = Math.floor(srcW / 2), cropCY = Math.floor(srcH / 2);
+        if (doFace && global.FaceTracker) {
+            emit(cb, "onProgress", { step: "face", msg: "Localizando rosto pro reframe…" });
+            try {
+                var fr = await Promise.race([
+                    global.FaceTracker.analyzeVideo(videoPath, { frames: 10 }),
+                    new Promise(function (_, rej) { setTimeout(function () { rej(new Error("timeout")); }, 40000); })
+                ]);
+                if (fr && fr.valid_frames > 2) { cropCX = Math.floor(srcW * fr.avg_x); cropCY = Math.floor(srcH * fr.avg_y); }
+            } catch (eF) {}
+        }
+        var cropX = Math.max(0, Math.min(srcW - outW, cropCX - Math.floor(outW / 2)));
+        var cropY = Math.max(0, Math.min(srcH - outH, cropCY - Math.floor(outH / 2)));
+
+        var outDir = path.join(os.homedir(), "Documents", "MotionIA-Shorts");
+        try { fs.mkdirSync(outDir, { recursive: true }); } catch (_) {}
+        var baseN = path.basename(videoPath, path.extname(videoPath));
+
+        var made = [], failed = 0;
+        for (var i = 0; i < highlights.length; i++) {
+            var h = highlights[i];
+            var idx = i + 1;
+            var safeTitle = (h.title || ("clip" + idx)).replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 40);
+            emit(cb, "onProgress", { step: "clip", msg: "Short " + idx + "/" + highlights.length + ": " + (h.title || "") + " (score " + (h.viral_score || "?") + ")" });
+
+            try {
+                // a. extrai o trecho (reencode pra precisão de corte)
+                var trim = tmp("vclip_" + idx + ".mp4");
+                await global.BinRunner.run("ffmpeg", ["-y", "-ss", String(h.start), "-to", String(h.end), "-i", videoPath, "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-c:a", "aac", trim], { timeoutMs: 5 * 60 * 1000 });
+
+                // b. legenda animada (whisper no trecho → ASS)
+                var vf = "crop=" + outW + ":" + outH + ":" + cropX + ":" + cropY + ",scale=1080:1920:flags=lanczos";
+                if (doSubs) {
+                    if (!global.BinRunner.models.exists(model)) await global.BinRunner.models.download(model);
+                    var wav = tmp("vclip_" + idx + ".wav");
+                    await global.BinRunner.run("ffmpeg", ["-y", "-i", trim, "-vn", "-ac", "1", "-ar", "16000", "-c:a", "pcm_s16le", wav]);
+                    var ob = wav.replace(/\.wav$/, "");
+                    await global.BinRunner.run("whisper-cli", ["-m", global.BinRunner.models.path(model), "-f", wav, "-of", ob, "--output-json", "--max-len", "1", "-l", opts.lang || "auto", "--no-prints"], { timeoutMs: 5 * 60 * 1000 });
+                    if (fs.existsSync(ob + ".json")) {
+                        var segs = (JSON.parse(fs.readFileSync(ob + ".json", "utf8")).transcription) || [];
+                        var assP = path.join(outDir, baseN + "_short" + idx + ".ass");
+                        fs.writeFileSync(assP, buildASS(segs, style), "utf8");
+                        var assEsc = assP.replace(/\\/g, "/").replace(/:/g, "\\:");
+                        vf = "crop=" + outW + ":" + outH + ":" + cropX + ":" + cropY + ",scale=1080:1920:flags=lanczos,ass='" + assEsc + "'";
+                    }
+                    cleanup([wav, ob + ".json"]);
+                }
+
+                // c. render final vertical + legenda queimada
+                var outP = path.join(outDir, baseN + "_short" + String(idx) + "_" + safeTitle + ".mp4");
+                await global.BinRunner.run("ffmpeg", ["-y", "-i", trim, "-vf", vf, "-c:v", "libx264", "-preset", "fast", "-crf", "20", "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", outP], { timeoutMs: 15 * 60 * 1000 });
+                cleanup([trim]);
+
+                // d. importa no Premiere
+                try { await hostCall("importFile", [outP]); } catch (_) {}
+                made.push({ title: h.title, viral_score: h.viral_score, duration: Math.round((h.end - h.start) * 10) / 10, path: outP });
+            } catch (eClip) {
+                failed++;
+                emit(cb, "onProgress", { step: "clip", msg: "Short " + idx + " falhou: " + eClip.message });
+            }
+        }
+
+        return {
+            ok: true,
+            summary: "🎬 " + made.length + " shorts virais prontos (" + aspect + (doSubs ? " + legenda" : "") + ")" + (failed ? " · " + failed + " falhas" : "") + " · salvos em Documentos/MotionIA-Shorts",
+            clips: made,
+            failed: failed,
+            output_dir: outDir
+        };
+    }
+
     var SKILLS = {
         "cortar-pausas":  cortarPausas,
         "remove-fillers": removeFillers,
         "smart-clean":    smartClean,
         "apply-cuts":     applyCuts,
+        "viral-clips":    clipesVirais,
         "cortar-erros":   cortarErros,
         "caca-trechos":   cacaTrechos,
         "capitulos":      capitulosIA,
