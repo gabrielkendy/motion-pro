@@ -406,67 +406,104 @@
             handler: async function (args) {
                 var numFrames = Math.max(3, Math.min(10, args.num_frames || 6));
                 var withTranscript = args.with_transcript !== false;
+                var BR = global.BinRunner;
 
-                // 1. Pega clip selecionado
+                // 1. Pega clip selecionado + timing (in/out point no arquivo)
                 var sel = await hostCall("getSelectedMediaPath");
                 if (!sel.path) throw new Error("selecione_um_clip_primeiro");
+                var videoPath = sel.path;
 
-                // 2. Pega contexto pra saber duração + CTI
-                var ctx = await hostCall("getContextSnapshot");
-                var clipStart = 0, clipEnd = ctx.durationSeconds || 30;
-                if (ctx.firstSelectedMediaPath && ctx.selectedClips && ctx.selectedClips[0]) {
-                    clipStart = ctx.selectedClips[0].start || 0;
-                    clipEnd   = ctx.selectedClips[0].end   || clipEnd;
+                var inPoint = 0, fileDur = 0;
+                try {
+                    var tm = await hostCall("getSelectedClipTiming");
+                    if (tm && typeof tm.inPoint === "number") {
+                        inPoint = tm.inPoint;
+                        fileDur = (tm.outPoint != null && tm.outPoint > inPoint) ? (tm.outPoint - inPoint) : (tm.clipDuration || 0);
+                    }
+                } catch (eTm) {}
+
+                // descobre duração real do arquivo via ffprobe se não veio do timing
+                if ((!fileDur || fileDur < 0.2) && BR && BR.exists("ffprobe")) {
+                    try {
+                        var pr = await BR.run("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "default=nw=1:nk=1", videoPath], { timeoutMs: 30000 });
+                        var d = parseFloat((pr.stdout || "").trim());
+                        if (isFinite(d) && d > 0) fileDur = d;
+                    } catch (eP) {}
                 }
-                var duration = Math.max(0.1, clipEnd - clipStart);
+                if (!fileDur || fileDur < 0.2) fileDur = 30;
 
-                // 3. Calcula timestamps espaçados (pula 5% início/fim pra evitar fades)
-                var pad = duration * 0.05;
-                var step = (duration - 2 * pad) / (numFrames - 1);
+                // 2. Timestamps espaçados (tempo do ARQUIVO), pulando 5% das bordas
+                var pad = fileDur * 0.05;
+                var span = Math.max(0.1, fileDur - 2 * pad);
+                var step = numFrames > 1 ? span / (numFrames - 1) : 0;
                 var timestamps = [];
-                for (var i = 0; i < numFrames; i++) timestamps.push(clipStart + pad + step * i);
+                for (var i = 0; i < numFrames; i++) timestamps.push(inPoint + pad + step * i);
 
-                // 4. Exporta cada frame e lê base64
                 var dir = tmpDir();
                 if (!dir) throw new Error("sem_acesso_tmpdir");
                 var images = [];
-                for (var j = 0; j < timestamps.length; j++) {
-                    var t = timestamps[j];
-                    var outPath = dir + "/frame_" + Date.now() + "_" + j + ".png";
-                    try {
-                        var fr = await hostCall("exportFrame", [t, outPath]);
-                        if (fr.path) {
-                            var b64 = readFileBase64(fr.path);
-                            if (b64) {
-                                images.push({ time: t, base64: b64, media_type: "image/png" });
-                                // Limpa o arquivo depois (não acumular)
-                                try { nfs.unlinkSync(fr.path); } catch (_) {}
+                var frameMethod = "none";
+
+                // 3. FRAMES via ffmpeg do ARQUIVO (confiável; independe do QE DOM).
+                if (BR && BR.exists("ffmpeg")) {
+                    frameMethod = "ffmpeg";
+                    for (var j = 0; j < timestamps.length; j++) {
+                        var t = timestamps[j];
+                        var outPath = npath.join(dir, "uf_" + Date.now() + "_" + j + ".jpg");
+                        try {
+                            // -ss antes do -i = seek rápido; escala pra largura 768 (suficiente p/ visão, leve)
+                            await BR.run("ffmpeg", ["-y", "-ss", String(t), "-i", videoPath, "-frames:v", "1", "-vf", "scale=768:-2", "-q:v", "3", outPath], { timeoutMs: 60000 });
+                            if (nfs && nfs.existsSync(outPath)) {
+                                var b64 = readFileBase64(outPath);
+                                if (b64) images.push({ time: Math.round((t - inPoint) * 10) / 10, base64: b64, media_type: "image/jpeg" });
+                                try { nfs.unlinkSync(outPath); } catch (_) {}
                             }
-                        }
-                    } catch (eF) { /* skip frame que falhou */ }
+                        } catch (eF) {}
+                    }
+                }
+                // Fallback: QE exportFrame (host) se ffmpeg não rolou
+                if (images.length === 0) {
+                    frameMethod = "qe_fallback";
+                    for (var k = 0; k < timestamps.length; k++) {
+                        var pth = dir + "/frame_" + Date.now() + "_" + k + ".png";
+                        try {
+                            var fr = await hostCall("exportFrame", [timestamps[k], pth]);
+                            if (fr.path) { var bb = readFileBase64(fr.path); if (bb) images.push({ time: timestamps[k], base64: bb, media_type: "image/png" }); try { nfs.unlinkSync(fr.path); } catch (_) {} }
+                        } catch (eQ) {}
+                    }
                 }
 
-                // 5. Transcrição (opcional)
-                var transcript = null;
-                if (withTranscript && await motorAvailable()) {
+                // 4. TRANSCRIÇÃO via Whisper LOCAL (não depende de motor externo)
+                var transcript = null, transcriptText = null;
+                if (withTranscript && BR && BR.exists("ffmpeg") && BR.exists("whisper-cli")) {
                     try {
-                        var tr = await motorCall("/api/transcribe-path", { media_path: sel.path });
-                        transcript = tr;
-                    } catch (eT) { /* sem transcript */ }
+                        var model = "ggml-base.bin";
+                        if (!BR.models.exists(model)) { try { await BR.models.download(model); } catch (eD) {} }
+                        if (BR.models.exists(model)) {
+                            var tmpAud = npath.join(dir, "uf_audio_" + Date.now() + ".wav");
+                            await BR.run("ffmpeg", ["-y", "-ss", String(inPoint), "-t", String(fileDur), "-i", videoPath, "-vn", "-ac", "1", "-ar", "16000", "-c:a", "pcm_s16le", tmpAud], { timeoutMs: 3 * 60 * 1000 });
+                            var ob = tmpAud.replace(/\.wav$/, "");
+                            await BR.run("whisper-cli", ["-m", BR.models.path(model), "-f", tmpAud, "-of", ob, "--output-json", "-l", "auto", "--no-prints"], { timeoutMs: 8 * 60 * 1000 });
+                            if (nfs.existsSync(ob + ".json")) {
+                                var tj = JSON.parse(nfs.readFileSync(ob + ".json", "utf8"));
+                                var segs = tj.transcription || tj.segments || [];
+                                transcriptText = segs.map(function (s) { return (s.text || "").trim(); }).join(" ").trim();
+                                transcript = { text: transcriptText, segments_count: segs.length, source: "whisper-local" };
+                                try { nfs.unlinkSync(ob + ".json"); } catch (_) {}
+                            }
+                            try { nfs.unlinkSync(tmpAud); } catch (_) {}
+                        }
+                    } catch (eT) { transcript = { error: eT.message }; }
                 }
 
                 return {
-                    clip: {
-                        path: sel.path,
-                        name: sel.basename,
-                        start_seconds: clipStart,
-                        end_seconds: clipEnd,
-                        duration_seconds: duration
-                    },
+                    clip: { path: videoPath, name: sel.basename, in_point: inPoint, duration_seconds: Math.round(fileDur * 10) / 10 },
                     frames_count: images.length,
-                    images: images,                // pro agent.js expandir em image content blocks
+                    frame_method: frameMethod,
+                    images: images,
                     transcript: transcript,
-                    note: images.length === 0 ? "frames_export_falhou — verifique QE DOM" : null
+                    transcript_text: transcriptText,
+                    note: images.length === 0 ? "frames_falharam — ffmpeg e QE indisponíveis" : null
                 };
             }
         },
