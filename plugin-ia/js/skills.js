@@ -48,87 +48,222 @@
     // ═══════════════════════════════════════════════════════════════
     // SKILL 1 — CORTAR PAUSAS (Whisper local)
     // ═══════════════════════════════════════════════════════════════
+    // Níveis de agressividade pra deteccao de silencio.
+    // noise = limiar em dB (mais negativo = só corta silencio MAIS fundo).
+    // dur   = duracao minima do silencio pra contar (segundos).
+    var SILENCE_LEVELS = {
+        conservador: { noise: -38, dur: 0.7 },   // só pausas longas e bem silenciosas
+        normal:      { noise: -32, dur: 0.45 },  // equilibrio (default)
+        agressivo:   { noise: -26, dur: 0.28 }   // corta tudo, ritmo TikTok
+    };
+
     async function cortarPausas(opts, cb) {
         emit(cb, "onProgress", { step: "validate", msg: "Validando pré-requisitos…" });
         if (!global.BinRunner) throw new Error("bin_runner_missing");
         if (!global.BinRunner.exists("ffmpeg")) throw new Error("ffmpeg.exe não instalado. Rode tools/download-bin-motion-ia.ps1");
+
+        emit(cb, "onProgress", { step: "get_clip", msg: "Pegando clip selecionado…" });
+        var videoPath = await getSelectedClipPath();
+
+        // Resolve nivel de agressividade (ou valores custom)
+        var lvl     = SILENCE_LEVELS[opts.aggressiveness] || SILENCE_LEVELS.normal;
+        var noiseDb = (opts.noiseDb != null) ? opts.noiseDb : lvl.noise;
+        var minSil  = (opts.minSilenceSec != null) ? opts.minSilenceSec : lvl.dur;
+        // Margin assimétrico (técnica do auto-editor): deixa um respiro de silêncio
+        // nas bordas pra não cortar abrupto. marginPost (antes da próxima fala) é
+        // maior porque cortar o ATAQUE de consoante soa pior que cortar respiração.
+        var marginPre  = (opts.marginPreMs  != null ? opts.marginPreMs  : 60)  / 1000;
+        var marginPost = (opts.marginPostMs != null ? opts.marginPostMs : 120) / 1000;
+        // Min do range final a deletar — evita microcortes que estragam o ritmo.
+        var minDelete  = (opts.minDeleteSec != null ? opts.minDeleteSec : 0.15);
+
+        // 1. ffmpeg silencedetect — mede dB REAL do audio (muito mais preciso que
+        //    gaps de transcrição, que o Whisper "estica" cobrindo as pausas).
+        emit(cb, "onProgress", { step: "detect", msg: "Analisando áudio (silencedetect " + noiseDb + "dB / " + minSil + "s)…" });
+        var res = await global.BinRunner.run("ffmpeg", [
+            "-hide_banner", "-i", videoPath,
+            "-af", "silencedetect=noise=" + noiseDb + "dB:d=" + minSil,
+            "-f", "null", "-"
+        ], { allowNonZero: true, timeoutMs: 5 * 60 * 1000 });
+
+        // 2. Parse stderr: pares silence_start / silence_end
+        var text = (res.stderr || "") + (res.stdout || "");
+        var rawSilences = parseSilenceDetect(text);
+
+        // 3. Aplica margin assimétrico (encolhe range). Descarta microcortes.
+        var silences = [];
+        rawSilences.forEach(function (r) {
+            var s = r[0] + marginPre;
+            var e = r[1] - marginPost;
+            if (e - s >= minDelete) silences.push([s, e]);
+        });
+
+        emit(cb, "onProgress", { step: "found", msg: silences.length + " silêncios detectados (de " + rawSilences.length + " brutos)" });
+
+        if (silences.length === 0) {
+            var hint = rawSilences.length > 0
+                ? "Achei " + rawSilences.length + " pausas mas todas curtas demais pós-margin. Tente nível 'agressivo'."
+                : "Nenhuma pausa detectada (nível " + (opts.aggressiveness || "normal") + " · " + noiseDb + "dB). Áudio pode ter ruído de fundo alto — tente 'agressivo' ou ajuste o dB.";
+            return { ok: true, summary: hint, silences: 0 };
+        }
+
+        // 4. Backup
+        emit(cb, "onProgress", { step: "backup", msg: "Duplicando sequência (backup)…" });
+        try { await hostCall("duplicateActiveSequence", ["antes_cortar_pausas"]); } catch (_) {}
+
+        // 5. Ripple delete (do fim pro começo pra não desalinhar offsets)
+        emit(cb, "onProgress", { step: "execute", msg: "Removendo " + silences.length + " silêncios…" });
+        var ordered = silences.slice().sort(function (a, b) { return b[0] - a[0]; });
+        await hostCall("deleteRanges", [ordered]);
+
+        var totalSaved = silences.reduce(function (s, r) { return s + (r[1] - r[0]); }, 0);
+
+        return {
+            ok: true,
+            summary: silences.length + " pausas removidas · " + totalSaved.toFixed(1) + "s economizados (nível " + (opts.aggressiveness || "normal") + ")",
+            silences_removed: silences.length,
+            total_seconds_saved: totalSaved,
+            level: opts.aggressiveness || "normal"
+        };
+    }
+
+    // Parseia o stderr do ffmpeg silencedetect em pares [start, end].
+    // Formato:
+    //   [silencedetect @ ..] silence_start: 12.345
+    //   [silencedetect @ ..] silence_end: 13.567 | silence_duration: 1.222
+    function parseSilenceDetect(text) {
+        var lines = text.split(/\r?\n/);
+        var out = [];
+        var openStart = null;
+        lines.forEach(function (ln) {
+            var ms = ln.match(/silence_start:\s*(-?[\d.]+)/);
+            if (ms) { openStart = Math.max(0, parseFloat(ms[1])); return; }
+            var me = ln.match(/silence_end:\s*(-?[\d.]+)/);
+            if (me && openStart != null) {
+                var end = parseFloat(me[1]);
+                if (end > openStart) out.push([openStart, end]);
+                openStart = null;
+            }
+        });
+        return out;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // SKILL — REMOVE FILLERS (hesitações "é/ahn/um/uh" via Whisper word-level)
+    // Estilo Descript/OpusClip: remove muletas de fala mantendo o ritmo.
+    // ═══════════════════════════════════════════════════════════════
+    // STRONG = quase sempre muleta (alongamentos + grunhidos). Removidos por padrão.
+    var FILLERS_STRONG = /^(é{2,}|e{2,}|a+h+n+|ã+h*|h+m+|hum+|u+h+m?|u+m+|e+r+|e+h+|h+ã+|ahn+|ahm+|mm+|né+m?)$/;
+    // SOFT = muletas contextuais (podem ser legítimas). Só no modo agressivo.
+    var FILLERS_SOFT = /^(tipo|então|aí|assim|sabe|cara|tá|olha|ó|enfim|bom|beleza|like|so|basically|actually|literally|yeah|okay|ok)$/;
+
+    function normalizeWord(w) {
+        return String(w || "")
+            .toLowerCase()
+            .replace(/[.,!?;:"'…\-–—\s]/g, "")  // tira pontuação + espaço
+            .trim();
+    }
+
+    async function removeFillers(opts, cb) {
+        emit(cb, "onProgress", { step: "validate", msg: "Validando pré-requisitos…" });
+        if (!global.BinRunner) throw new Error("bin_runner_missing");
+        if (!global.BinRunner.exists("ffmpeg")) throw new Error("ffmpeg.exe não instalado");
         if (!global.BinRunner.exists("whisper-cli")) throw new Error("whisper-cli.exe não instalado");
+
         var model = opts.model || "ggml-base.bin";
         if (!global.BinRunner.models.exists(model)) {
-            emit(cb, "onProgress", { step: "download_model", msg: "Baixando modelo " + model + " (~150MB)…" });
+            emit(cb, "onProgress", { step: "download_model", msg: "Baixando modelo " + model + "…" });
             await global.BinRunner.models.download(model, function (pct) {
                 emit(cb, "onProgress", { step: "download_model", percent: pct });
             });
         }
 
-        emit(cb, "onProgress", { step: "get_clip", msg: "Pegando clip selecionado…" });
+        emit(cb, "onProgress", { step: "get_clip", msg: "Pegando clip…" });
         var videoPath = await getSelectedClipPath();
 
-        // 1. Extrai áudio mono 16kHz WAV
+        // 1. Áudio mono 16kHz
         emit(cb, "onProgress", { step: "extract_audio", msg: "Extraindo áudio…" });
-        var wavPath = tmp("audio.wav");
+        var wavPath = tmp("fillers.wav");
         await global.BinRunner.run("ffmpeg", [
-            "-y", "-i", videoPath, "-vn",
-            "-ac", "1", "-ar", "16000",
+            "-y", "-i", videoPath, "-vn", "-ac", "1", "-ar", "16000",
             "-c:a", "pcm_s16le", wavPath
         ]);
 
-        // 2. Transcreve com Whisper
-        emit(cb, "onProgress", { step: "transcribe", msg: "Transcrevendo áudio (Whisper)…" });
-        var modelPath = global.BinRunner.models.path(model);
+        // 2. Whisper WORD-LEVEL (--max-len 1 → cada segment ~1 palavra c/ timestamp)
+        emit(cb, "onProgress", { step: "transcribe", msg: "Transcrevendo word-level (Whisper)…" });
         var outBase = wavPath.replace(/\.wav$/, "");
         await global.BinRunner.run("whisper-cli", [
-            "-m", modelPath,
-            "-f", wavPath,
-            "-of", outBase,
-            "--output-json",
-            "-l", opts.lang || "auto",
-            "--no-prints"
+            "-m", global.BinRunner.models.path(model),
+            "-f", wavPath, "-of", outBase,
+            "--output-json", "--max-len", "1",
+            "-l", opts.lang || "auto", "--no-prints"
         ], { timeoutMs: 10 * 60 * 1000 });
 
-        // 3. Lê JSON
         var jsonPath = outBase + ".json";
         if (!fs.existsSync(jsonPath)) throw new Error("whisper_no_output");
         var transcript = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
+        var segments = transcript.transcription || transcript.segments || [];
 
-        // 4. Detecta silêncios (gaps entre segments)
-        var minSilence = opts.minSilenceSec || 0.5;
-        var padding   = opts.paddingMs || 50;
-        var segments  = (transcript.transcription || transcript.segments || []);
-        var silences  = [];
-        var prevEnd = 0;
+        // 3. Detecta palavras-muleta
+        var aggressive = opts.aggressive === true || opts.aggressiveness === "agressivo";
+        var marginMs = (opts.marginMs != null ? opts.marginMs : 30) / 1000;
+        var hits = [];
         segments.forEach(function (seg) {
-            var start = parseTimestamp(seg.timestamps && seg.timestamps.from || seg.start) || 0;
-            var end   = parseTimestamp(seg.timestamps && seg.timestamps.to   || seg.end)   || 0;
-            if (start - prevEnd >= minSilence) {
-                silences.push([prevEnd + padding/1000, start - padding/1000]);
-            }
-            prevEnd = end;
+            var raw = seg.text || (seg.tokens && seg.tokens[0] && seg.tokens[0].text) || "";
+            var w = normalizeWord(raw);
+            if (!w) return;
+            var isFiller = FILLERS_STRONG.test(w) || (aggressive && FILLERS_SOFT.test(w));
+            if (!isFiller) return;
+            var s = parseTimestamp(seg.timestamps && seg.timestamps.from || seg.start) || 0;
+            var e = parseTimestamp(seg.timestamps && seg.timestamps.to   || seg.end)   || 0;
+            if (e > s) hits.push({ start: s, end: e, word: w });
         });
 
-        emit(cb, "onProgress", { step: "found", msg: silences.length + " silêncios detectados" });
+        emit(cb, "onProgress", { step: "found", msg: hits.length + " muletas detectadas" });
 
-        if (silences.length === 0) {
+        if (hits.length === 0) {
             cleanup([wavPath, jsonPath]);
-            return { ok: true, summary: "Nenhum silêncio detectado acima de " + minSilence + "s", silences: 0 };
+            return { ok: true, summary: "Nenhuma muleta detectada" + (aggressive ? "" : " (modo seguro · ative 'agressivo' p/ pegar tipo/então/aí)"), fillers: 0 };
         }
+
+        // 4. Merge muletas adjacentes (ex "é é é") + aplica margin
+        hits.sort(function (a, b) { return a.start - b.start; });
+        var ranges = [];
+        var cur = null;
+        hits.forEach(function (h) {
+            if (cur && h.start - cur.end <= 0.35) {
+                cur.end = h.end; cur.words.push(h.word);
+            } else {
+                if (cur) ranges.push(cur);
+                cur = { start: h.start, end: h.end, words: [h.word] };
+            }
+        });
+        if (cur) ranges.push(cur);
+
+        var deleteRanges = ranges.map(function (r) {
+            return [Math.max(0, r.start - marginMs), r.end + marginMs];
+        });
 
         // 5. Backup
         emit(cb, "onProgress", { step: "backup", msg: "Duplicando sequência (backup)…" });
-        try { await hostCall("duplicateActiveSequence", ["antes_cortar_pausas"]); } catch (_) {}
+        try { await hostCall("duplicateActiveSequence", ["antes_remove_fillers"]); } catch (_) {}
 
-        // 6. Ripple delete
-        emit(cb, "onProgress", { step: "execute", msg: "Removendo " + silences.length + " silêncios…" });
-        await hostCall("deleteRanges", [silences]);
+        // 6. Ripple delete (do fim pro começo)
+        emit(cb, "onProgress", { step: "execute", msg: "Removendo " + deleteRanges.length + " muletas…" });
+        var ordered = deleteRanges.slice().sort(function (a, b) { return b[0] - a[0]; });
+        await hostCall("deleteRanges", [ordered]);
 
-        var totalSaved = silences.reduce(function (s, r) { return s + (r[1] - r[0]); }, 0);
+        var totalSaved = deleteRanges.reduce(function (s, r) { return s + (r[1] - r[0]); }, 0);
+        var wordList = ranges.map(function (r) { return r.words.join(" "); }).slice(0, 12);
         cleanup([wavPath, jsonPath]);
 
         return {
             ok: true,
-            summary: silences.length + " silêncios removidos · " + totalSaved.toFixed(1) + "s economizados",
-            silences_removed: silences.length,
-            total_seconds_saved: totalSaved
+            summary: deleteRanges.length + " muletas removidas · " + totalSaved.toFixed(1) + "s · ex: " + wordList.slice(0, 6).join(", "),
+            fillers_removed: deleteRanges.length,
+            total_seconds_saved: totalSaved,
+            examples: wordList,
+            aggressive: aggressive
         };
     }
 
@@ -156,7 +291,25 @@
         var videoPath = await getSelectedClipPath();
 
         emit(cb, "onProgress", { step: "gemini", msg: "Gemini analisando vídeo (pode demorar 30s-2min)…" });
-        var prompt = "Analise este vídeo e identifique TAKES RUINS ou DUPLICADOS — momentos onde a pessoa erra, hesita, repete a mesma frase, ou começa a falar de novo. Retorne timestamps em segundos. Seja rigoroso — só inclua erros CLAROS.";
+        var prompt = [
+            "Você é um editor profissional de vídeo talking-head (YouTube/cursos/podcasts) com 10 anos de experiência em cortar takes ruins.",
+            "Sua tarefa: assistir o vídeo e marcar TODOS os trechos que um editor humano cortaria numa edição limpa.",
+            "",
+            "CORTE (marque como bad_take) quando houver:",
+            "1. RETAKE — a pessoa erra a frase e começa de novo. → corte a tentativa ERRADA, mantenha a BOA (geralmente a última).",
+            "2. GAGUEIRA/TRAVADA — repete palavra (‘o-o-o vídeo’), trava no meio, perde a linha de raciocínio.",
+            "3. FALSO COMEÇO — começa uma frase, para, e recomeça diferente.",
+            "4. AUTOCORREÇÃO — ‘...na terça, quer dizer, na quarta’ → corte o erro ‘na terça, quer dizer,’.",
+            "5. INSTRUÇÃO DE BASTIDOR — ‘deixa eu repetir’, ‘corta isso’, ‘pera’, ‘peraí’, conversa com a câmera/editor.",
+            "6. SILÊNCIO MORTO longo (>2s) sem ação visual relevante.",
+            "7. DIVAGAÇÃO claramente fora do tópico que não agrega.",
+            "",
+            "NÃO corte: pausas dramáticas curtas intencionais, ênfase, respiração natural entre frases, conteúdo válido mesmo que informal.",
+            "",
+            "PROCESSO: para cada problema, pense no timestamp exato de início e fim em SEGUNDOS (decimais ok, ex 12.4). Quando for retake, prefira cortar a versão pior e deixar a melhor intacta.",
+            "Seja PRECISO nos cortes (não corte sílabas da fala boa). É melhor marcar 15 cortes reais do que ser tímido — o usuário revisa antes de aplicar.",
+            "No campo reason, diga o tipo (retake/gagueira/falso começo/etc) + a frase envolvida."
+        ].join("\n");
         var schema = {
             type: "object",
             properties: {
@@ -165,9 +318,10 @@
                     items: {
                         type: "object",
                         properties: {
-                            start: { type: "number", description: "início em segundos" },
-                            end:   { type: "number", description: "fim em segundos" },
-                            reason:{ type: "string", description: "por que é ruim" }
+                            start:  { type: "number", description: "início em segundos (decimal)" },
+                            end:    { type: "number", description: "fim em segundos (decimal)" },
+                            kind:   { type: "string", description: "retake|gagueira|falso_comeco|autocorrecao|bastidor|silencio|divagacao" },
+                            reason: { type: "string", description: "frase/contexto do que é ruim" }
                         },
                         required: ["start", "end", "reason"]
                     }
@@ -177,7 +331,8 @@
         };
         var resp = await global.GeminiClient.analyzeVideo({
             videoPath: videoPath, prompt: prompt, responseSchema: schema,
-            model: opts.model || "gemini-2.5-flash"
+            model: opts.model || "gemini-2.5-flash",
+            temperature: 0.25
         });
         var ranges = (resp.json && resp.json.bad_takes) || [];
         if (!ranges.length) return { ok: true, summary: "Nenhum take ruim detectado", bad_takes: 0 };
@@ -209,7 +364,24 @@
 
         var n = opts.count || 5;
         var vertical = opts.vertical !== false; // default vertical (Reels)
-        var prompt = "Você é editor de Reels/Shorts. Analise o vídeo e escolha os " + n + " MELHORES trechos pra cortar como Reel/Short. Critérios: hook forte, frase memorável, momento emotional/engraçado/educativo. Cada trecho 15-60s. Inclua título punchy. Retorne start/end EM SEGUNDOS do vídeo (não timestamp).";
+        var prompt = [
+            "Você é um clipador viral de elite (estilo OpusClip/equipe do MrBeast). Já fez milhões de views cortando lives e podcasts em Shorts.",
+            "Sua tarefa: assistir o vídeo e extrair os " + n + " MELHORES clipes com MAIOR potencial de viralizar como Reel/Short/TikTok.",
+            "",
+            "O QUE FAZ UM CLIPE VIRAL (priorize trechos com o máximo destes):",
+            "• HOOK nos primeiros 3s — abre com tensão, pergunta, número chocante, afirmação polêmica ou promessa. Se o trecho começa devagar, ajuste o start pro momento que o hook realmente bate.",
+            "• PAYOFF — entrega uma virada, revelação, punchline ou conclusão satisfatória antes de acabar.",
+            "• EMOÇÃO — engraçado, chocante, inspirador, polêmico ou ‘aha!’. Conteúdo morno não viraliza.",
+            "• AUTOCONTIDO — faz sentido sozinho, sem precisar do resto do vídeo.",
+            "• DENSIDADE — sem gordura. Corte respiros e enrolação dentro do próprio clipe.",
+            "",
+            "DURAÇÃO: 15-50s é o ideal pro algoritmo. Pode chegar a 60s só se o conteúdo segurar.",
+            "TÍTULO: escreva como legenda de Reel que para o scroll — curiosidade/tensão, NÃO descritivo. Ex ruim: ‘Falando sobre marketing’. Ex bom: ‘O erro de marketing que quebrou minha empresa’.",
+            "",
+            "PROCESSO: identifique os momentos-pico do vídeo, escolha os " + n + " mais fortes, ajuste start/end pro clipe ficar redondo (começa no hook, termina no payoff). Timestamps em SEGUNDOS decimais.",
+            "Ranqueie do mais viral pro menos. No campo reason explique o hook + por que prende.",
+            "Inclua um campo viral_score de 0-100 (honesto — nem tudo é 90)."
+        ].join("\n");
         var schema = {
             type: "object",
             properties: {
@@ -218,10 +390,12 @@
                     items: {
                         type: "object",
                         properties: {
-                            start: { type: "number" },
-                            end:   { type: "number" },
-                            title: { type: "string" },
-                            reason:{ type: "string" }
+                            start:       { type: "number", description: "início em segundos (no hook)" },
+                            end:         { type: "number", description: "fim em segundos (no payoff)" },
+                            title:       { type: "string", description: "legenda que para o scroll" },
+                            hook:        { type: "string", description: "a primeira frase/gancho do clipe" },
+                            viral_score: { type: "number", description: "0-100 potencial de viralizar" },
+                            reason:      { type: "string", description: "por que prende a atenção" }
                         },
                         required: ["start", "end", "title", "reason"]
                     }
@@ -231,8 +405,13 @@
         };
         var resp = await global.GeminiClient.analyzeVideo({
             videoPath: videoPath, prompt: prompt, responseSchema: schema,
-            model: opts.model || "gemini-2.5-flash"
+            model: opts.model || "gemini-2.5-flash",
+            temperature: 0.5
         });
+        // Ordena por viral_score desc se o modelo retornou
+        if (resp.json && Array.isArray(resp.json.highlights)) {
+            resp.json.highlights.sort(function (a, b) { return (b.viral_score || 0) - (a.viral_score || 0); });
+        }
         var highlights = (resp.json && resp.json.highlights) || [];
         if (!highlights.length) return { ok: true, summary: "Nenhum highlight identificado", highlights: [] };
 
@@ -260,7 +439,17 @@
         emit(cb, "onProgress", { step: "gemini", msg: "Gemini criando capítulos…" });
         var videoPath = await getSelectedClipPath();
 
-        var prompt = "Analise este vídeo e identifique capítulos lógicos (mudanças de tópico/assunto). Cada capítulo tem timestamp de início e título curto (max 6 palavras). Mín 3, Máx 12 capítulos.";
+        var prompt = [
+            "Você é especialista em retenção no YouTube. Crie os capítulos (timestamps) deste vídeo pra maximizar navegação e watch-time.",
+            "",
+            "REGRAS:",
+            "• O 1º capítulo SEMPRE começa em 0 e se chama tipo ‘Introdução’ ou o gancho inicial (requisito do YouTube).",
+            "• Marque uma quebra a cada MUDANÇA REAL de tópico/seção — não corte no meio de um raciocínio.",
+            "• Título: 2-5 palavras, concreto e clicável. Use o BENEFÍCIO/assunto, não ‘Parte 2’. Ex bom: ‘Configurando o ambiente’. Ex ruim: ‘Continuação’.",
+            "• Ritmo: capítulo nem curto demais (<30s) nem longo demais. Vídeo de 10min ≈ 4-7 capítulos.",
+            "• Mín 3, Máx 12 capítulos. Timestamps em SEGUNDOS (start de cada seção).",
+            "Pense no arco do vídeo (intro → desenvolvimento → clímax → fechamento) e nomeie cada bloco."
+        ].join("\n");
         var schema = {
             type: "object",
             properties: {
@@ -269,8 +458,8 @@
                     items: {
                         type: "object",
                         properties: {
-                            start: { type: "number" },
-                            title: { type: "string" }
+                            start: { type: "number", description: "início em segundos" },
+                            title: { type: "string", description: "2-5 palavras clicáveis" }
                         },
                         required: ["start", "title"]
                     }
@@ -279,7 +468,8 @@
             required: ["chapters"]
         };
         var resp = await global.GeminiClient.analyzeVideo({
-            videoPath: videoPath, prompt: prompt, responseSchema: schema
+            videoPath: videoPath, prompt: prompt, responseSchema: schema,
+            temperature: 0.3
         });
         var chapters = (resp.json && resp.json.chapters) || [];
 
@@ -1056,10 +1246,11 @@
     // { skill: "<skill-id>", opts: {...}, enabled: bool }.
     // Default rules ficam em localStorage("mia_casper_rules").
     var CASPER_DEFAULT_RULES = [
-        { skill: "cortar-pausas", opts: { threshold_sec: 0.4, padding_sec: 0.1 }, enabled: true, label: "Cortar pausas > 0.4s" },
-        { skill: "bins",          opts: {},                                       enabled: true, label: "Organizar Project Panel" },
-        { skill: "transicoes",    opts: { transition: "cross-dissolve", duration_sec: 0.5 }, enabled: true, label: "Cross Dissolve 0.5s" },
-        { skill: "capitulos",     opts: {},                                       enabled: false, label: "Capítulos IA (Gemini)" }
+        { skill: "cortar-pausas", opts: { aggressiveness: "normal" },              enabled: true,  label: "Cortar pausas (nível normal)" },
+        { skill: "remove-fillers", opts: { aggressive: false },                    enabled: true,  label: "Tirar muletas (é/ahn/um)" },
+        { skill: "bins",          opts: {},                                        enabled: true,  label: "Organizar Project Panel" },
+        { skill: "transicoes",    opts: { transition: "cross-dissolve", duration_sec: 0.5 }, enabled: false, label: "Cross Dissolve 0.5s" },
+        { skill: "capitulos",     opts: {},                                        enabled: false, label: "Capítulos IA (Gemini)" }
     ];
 
     function getCasperRules() {
@@ -1172,6 +1363,7 @@
 
     var SKILLS = {
         "cortar-pausas":  cortarPausas,
+        "remove-fillers": removeFillers,
         "cortar-erros":   cortarErros,
         "caca-trechos":   cacaTrechos,
         "capitulos":      capitulosIA,

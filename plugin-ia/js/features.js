@@ -14,9 +14,16 @@
         {
             id: "cortar-pausas", view: "feat-cortar-pausas",
             icon: "🎯", title: "Cortar Pausas",
-            sub: "Remove silêncios automaticamente via Whisper",
+            sub: "Remove silêncios reais (dB) · 3 níveis de agressividade",
+            minTier: "basic", tech: "ffmpeg-local",
+            prompt: "Roda a skill cortar pausas no clip selecionado com nível normal"
+        },
+        {
+            id: "remove-fillers", view: "feat-remove-fillers",
+            icon: "🗣️", title: "Tirar Muletas",
+            sub: "Remove 'é, ahn, um, uh' e hesitações da fala",
             minTier: "basic", tech: "whisper-local",
-            prompt: "Roda a skill cortar pausas no clip selecionado"
+            prompt: "Roda a skill remove-fillers no clip selecionado — tira muletas de fala (é, ahn, um, tipo)"
         },
         {
             id: "cortar-erros", view: "feat-cortar-erros",
@@ -210,6 +217,20 @@
 
         // UI especial pra features com input customizado
         var customInput = "";
+        if (f.id === "cortar-pausas") {
+            customInput = ''
+                + '<div class="field"><label>Agressividade</label><select id="feat-pausas-level">'
+                +   '<option value="conservador">Conservador — só pausas longas (-38dB / 0.7s)</option>'
+                +   '<option value="normal" selected>Normal — equilíbrio (-32dB / 0.45s)</option>'
+                +   '<option value="agressivo">Agressivo — ritmo TikTok (-26dB / 0.28s)</option>'
+                + '</select></div>'
+                + '<div class="hint">Detecta silêncio por volume real (dB) do áudio. Deixa um respiro nas bordas pra não cortar abrupto. Cria backup da sequência antes.</div>';
+        }
+        if (f.id === "remove-fillers") {
+            customInput = ''
+                + '<div class="field"><label><input type="checkbox" id="feat-fillers-aggressive"> Modo agressivo (também tira tipo/então/aí/sabe)</label></div>'
+                + '<div class="hint">Modo seguro remove só hesitações inequívocas (é, éé, ahn, um, uh, hmm). O agressivo inclui muletas contextuais — revise depois. Cria backup antes.</div>';
+        }
         if (f.id === "baixar") {
             customInput = ''
                 + '<div class="field"><label>URL do vídeo</label><input id="feat-baixar-url" placeholder="https://youtube.com/watch?v=…"></div>'
@@ -320,6 +341,12 @@
 
         runBtn.onclick = async function () {
             var opts = {};
+            if (f.id === "cortar-pausas") {
+                opts.aggressiveness = (document.getElementById("feat-pausas-level") || {}).value || "normal";
+            }
+            if (f.id === "remove-fillers") {
+                opts.aggressive = !!(document.getElementById("feat-fillers-aggressive") || {}).checked;
+            }
             if (f.id === "baixar") {
                 opts.url = (document.getElementById("feat-baixar-url") || {}).value;
                 opts.quality = (document.getElementById("feat-baixar-quality") || {}).value;
@@ -656,7 +683,8 @@
 
     function buildHowItWorks(f) {
         var map = {
-            "whisper-local": "Usa Whisper.cpp (local, sem internet) pra transcrever o áudio word-level → analisa silêncios → executa ripple-delete no Premiere.",
+            "whisper-local": "Usa Whisper.cpp (local, sem internet) pra transcrever o áudio word-level → detecta muletas/silêncios → executa ripple-delete no Premiere.",
+            "ffmpeg-local": "Usa ffmpeg silencedetect (local, sem internet) pra medir o volume real (dB) do áudio → acha as pausas → deixa um respiro nas bordas → ripple-delete no Premiere. Backup automático antes.",
             "gemini": "Envia o vídeo selecionado pra Google Gemini 2.5 (vê o vídeo de verdade, multimodal) → análise temporal → executa ações no Premiere.",
             "extendscript": "Executa diretamente via ExtendScript no Premiere — sem internet, sem IA externa.",
             "whisper-local + extendscript": "Whisper local + comandos ExtendScript pra sincronização.",

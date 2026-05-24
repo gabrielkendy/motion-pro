@@ -475,33 +475,39 @@
         {
             definition: {
                 name: "skill_cut_silences",
-                description: "SKILL COMPLETA: pega clip selecionado → transcreve OU detecta silêncios → ripple-delete os silêncios. Tudo em 1 chamada. Requer motor local.",
+                description: "SKILL COMPLETA: pega clip selecionado → detecta silêncios por volume REAL (ffmpeg silencedetect, local, sem motor) → ripple-delete. Deixa respiro nas bordas. Backup automático. Tudo em 1 chamada.",
                 input_schema: {
                     type: "object",
                     properties: {
-                        threshold_db: { type: "number", default: -35 },
-                        min_silence_sec: { type: "number", default: 0.5 },
-                        padding_ms: { type: "integer", description: "Margem de segurança em ms (não corta tudo)", default: 50 }
+                        aggressiveness: { type: "string", description: "conservador | normal | agressivo. Default normal. Use agressivo pra ritmo TikTok.", "enum": ["conservador", "normal", "agressivo"] },
+                        noise_db: { type: "number", description: "Opcional: limiar dB custom (ex -32). Sobrescreve o nível." },
+                        min_silence_sec: { type: "number", description: "Opcional: duração mínima de silêncio em s." }
                     }
                 }
             },
             handler: async function (args) {
-                var sel = await hostCall("getSelectedMediaPath");
-                if (!sel.path) throw new Error("selecione_um_clip_primeiro");
-                if (!await motorAvailable()) throw new Error("motor_offline (configure URL em Settings)");
-                var sil = await motorCall("/api/detect-silences", {
-                    media_path: sel.path,
-                    threshold_db: args.threshold_db || -35,
-                    min_silence_sec: args.min_silence_sec || 0.5
+                if (!global.Skills) throw new Error("skills_runtime_missing");
+                return await global.Skills.run("cortar-pausas", {
+                    aggressiveness: args.aggressiveness || "normal",
+                    noiseDb: args.noise_db,
+                    minSilenceSec: args.min_silence_sec
                 });
-                var pad = (args.padding_ms || 50) / 1000;
-                var ranges = (sil.silences || []).map(function (s) {
-                    return [Math.max(0, s.start + pad), Math.max(0, s.end - pad)];
-                }).filter(function (r) { return r[1] > r[0] + 0.05; });
-                if (ranges.length === 0) return { ok: true, message: "nenhum silêncio detectado", silences: 0 };
-                await hostCall("duplicateActiveSequence", ["antes_cut_silences"]).catch(function () {});
-                var del = await hostCall("deleteRanges", [ranges]);
-                return { ok: true, silences_removed: ranges.length, total_seconds_saved: ranges.reduce(function (s, r) { return s + (r[1] - r[0]); }, 0).toFixed(2), del: del };
+            }
+        },
+        {
+            definition: {
+                name: "skill_remove_fillers",
+                description: "SKILL COMPLETA: pega clip selecionado → transcreve word-level (Whisper local) → detecta e remove muletas de fala (é, éé, ahn, um, uh, hmm; e no modo agressivo também tipo/então/aí/sabe). Ripple-delete + backup automático. Estilo Descript.",
+                input_schema: {
+                    type: "object",
+                    properties: {
+                        aggressive: { type: "boolean", description: "true = também remove muletas contextuais (tipo/então/aí/sabe). Default false (só hesitações inequívocas)." }
+                    }
+                }
+            },
+            handler: async function (args) {
+                if (!global.Skills) throw new Error("skills_runtime_missing");
+                return await global.Skills.run("remove-fillers", { aggressive: !!args.aggressive });
             }
         }
     ];
