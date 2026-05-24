@@ -53,9 +53,13 @@
             minTier: "pro", tech: "gemini",
             prompt: "Analisa o vídeo e cria marcadores de capítulo no Premiere. Cada capítulo deve ter título curto e timestamp de início"
         },
-        // [legendas] feature removida do menu — redundante com plugin Motion Legendas
-        // (61 mogrts + Estilo Global v4.25.1). Mantida no SKILLS map pro Agente IA
-        // usar via "tools", mas não aparece no sidebar/grid.
+        {
+            id: "legendas", view: "feat-legendas",
+            icon: "💬", title: "Legendas IA",
+            sub: "Legenda animada word-by-word queimada no vídeo (estilo Submagic)",
+            minTier: "basic", tech: "whisper-local + ffmpeg",
+            prompt: "Transcreve o clip selecionado word-level e renderiza legenda animada estilo viral queimada no vídeo, reimportando no Premiere"
+        },
         {
             id: "copiar-seq", view: "feat-copiar-seq",
             icon: "✂️", title: "Copiar Sequência",
@@ -801,7 +805,8 @@
             "ffmpeg": "ffmpeg local faz crop com tracking de rosto → reframe → reimporta no Premiere.",
             "api": "Busca em APIs externas (Pexels, Pixabay) → baixa via aria2c → importa.",
             "fal.ai · Seedance": "Sua foto + prompt → fal.ai roda Seedance/Kling → MP4 gerado por IA (~30-90s) → importa no Premiere automaticamente.",
-            "whisper-local + motion-legendas": "Whisper transcreve word-level → envia pro plugin Motion Legendas que renderiza MOGRT animado."
+            "whisper-local + motion-legendas": "Whisper transcreve word-level → envia pro plugin Motion Legendas que renderiza MOGRT animado.",
+            "whisper-local + ffmpeg": "Whisper.cpp transcreve word-level (local) → gera arquivo ASS animado (palavra destacada conforme falada) → ffmpeg queima no vídeo → reimporta no Premiere. Também salva .srt na inbox compartilhada."
         };
         return map[f.tech] || "Feature do Motion IA.";
     }

@@ -384,15 +384,27 @@
     }
 
     function bindChat() {
-        $("chat-send").onclick = function () {
-            var msg = $("chat-input").value.trim();
-            if (msg) { $("chat-input").value = ""; runAgent(msg); }
-        };
-        $("chat-input").addEventListener("keydown", function (e) {
-            if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-                e.preventDefault();
-                $("chat-send").click();
+        var input = $("chat-input");
+        function send() {
+            var msg = input.value.trim();
+            if (msg) {
+                input.value = "";
+                input.style.height = "auto";   // reseta altura pós-envio
+                runAgent(msg);
             }
+        }
+        $("chat-send").onclick = send;
+        input.addEventListener("keydown", function (e) {
+            // Enter envia · Shift+Enter (ou Ctrl/Cmd+Enter) faz nova linha
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                send();
+            }
+        });
+        // Auto-grow do textarea conforme digita (até o max-height do CSS)
+        input.addEventListener("input", function () {
+            input.style.height = "auto";
+            input.style.height = Math.min(input.scrollHeight, 120) + "px";
         });
     }
 

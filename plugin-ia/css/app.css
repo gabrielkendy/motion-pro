@@ -149,8 +149,11 @@ code { font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px; back
 .gate__sep::before, .gate__sep::after { content:""; flex:1; height:1px; background:var(--line); }
 
 /* CHAT */
-.chat { height: calc(100vh - 80px); display: flex; flex-direction: column; }
-.chat__stream { flex: 1; overflow-y: auto; padding: 16px 24px; }
+/* Chat ocupa a altura toda; header não encolhe, stream rola, input sempre visível acima da status-bar */
+#view-chat.active { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+#view-chat .main__header { flex-shrink: 0; }
+.chat { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.chat__stream { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 24px; }
 .chat__msg { display: flex; gap: 10px; margin-bottom: 14px; max-width: 100%; }
 .chat__msg--user { flex-direction: row-reverse; }
 .chat__avatar { width: 28px; height: 28px; background: var(--acc); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0; }
@@ -158,7 +161,7 @@ code { font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px; back
 .chat__bubble { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 10px 14px; font-size: 13px; line-height: 1.5; max-width: 70ch; }
 .chat__msg--user .chat__bubble { background: var(--acc); color: #fff; border-color: var(--acc); }
 .chat__msg--tool .chat__bubble { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: rgba(37,99,235,0.06); color: var(--acc-2); border-color: var(--acc-line); }
-.chat__input { border-top: 1px solid var(--line); background: var(--bg-2); padding: 12px 16px; display: flex; gap: 8px; }
+.chat__input { flex-shrink: 0; border-top: 1px solid var(--line); background: var(--bg-2); padding: 12px 16px 16px; margin-bottom: 30px; display: flex; gap: 8px; align-items: flex-end; }
 .chat__input textarea { flex: 1; background: var(--bg); border: 1px solid var(--line); color: var(--txt); padding: 10px 12px; border-radius: var(--radius); font-size: 13px; resize: none; min-height: 38px; max-height: 120px; }
 .chat__send { background: var(--acc); border: 0; color: #fff; width: 40px; border-radius: var(--radius); cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .chat__send:hover { background: var(--acc-2); }

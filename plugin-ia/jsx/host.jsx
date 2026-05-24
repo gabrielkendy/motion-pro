@@ -958,21 +958,36 @@ $.global.MotionProIA = (function () {
                         for (var v = 0; v < nameVariants.length && !done; v++) {
                             var vName = nameVariants[v];
 
-                            // Assinatura 1: clipA.addTransition(name, alignCenter, duration, atTime)
-                            try {
-                                clipA.addTransition(vName, false, durStr, clipA.end);
-                                applied++; done = true;
-                                if (!firstSuccessName) firstSuccessName = vName;
-                                continue;
-                            } catch (eA) { lastErr = "clip.addTransition[" + vName + "]: " + eA.message; }
+                            // API moderna (Premiere 2022+): o 1º arg é um OBJETO de transição,
+                            // não a string. Obtém via qe.project.getVideoTransitionByName().
+                            var tObj = null;
+                            try { tObj = qe.project.getVideoTransitionByName(vName); } catch (eName) {}
+                            if (!tObj) { lastErr = "transition_not_found: " + vName; continue; }
 
-                            // Assinatura 2: qeTrack.addVideoTransition(name, duration, atTime, alignCenter)
+                            // addTransition(obj, addToStart, duration, offset, alignment, singleSided, ...)
+                            //   alignment 0.5 = centrada no corte (entre os 2 clips)
                             try {
-                                qeTrack.addVideoTransition(vName, durStr, clipA.end, true);
+                                clipA.addTransition(tObj, false, durStr, "00:00:00:00", 0.5, false, true);
                                 applied++; done = true;
                                 if (!firstSuccessName) firstSuccessName = vName;
                                 continue;
-                            } catch (eB) { lastErr = "track.addVideoTransition[" + vName + "]: " + eB.message; }
+                            } catch (eA) { lastErr = "addTransition_full[" + vName + "]: " + eA.message; }
+
+                            // Fallback: assinatura curta (algumas builds)
+                            try {
+                                clipA.addTransition(tObj, false, durStr);
+                                applied++; done = true;
+                                if (!firstSuccessName) firstSuccessName = vName;
+                                continue;
+                            } catch (eB) { lastErr = "addTransition_short[" + vName + "]: " + eB.message; }
+
+                            // Fallback 2: via track
+                            try {
+                                qeTrack.addVideoTransition(tObj, durStr, clipA.end, true);
+                                applied++; done = true;
+                                if (!firstSuccessName) firstSuccessName = vName;
+                                continue;
+                            } catch (eC) { lastErr = "track.addVideoTransition[" + vName + "]: " + eC.message; }
                         }
                         if (!done) failed++;
                     } catch (eC) { failed++; lastErr = "boundary_iter: " + eC.message; }
